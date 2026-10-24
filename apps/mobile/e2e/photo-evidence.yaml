@@ -1,5 +1,5 @@
 # T8: add a photo to a job and see it in the job's photos.
-# The e2e script revokes camera access first, so this also proves the fallback: with the camera
+# Launched with the camera denied, so this also proves the fallback: with the camera
 # refused, the app explains why and still lets you choose a photo.
 appId: app.tandrix.mobile
 env:
@@ -7,7 +7,11 @@ env:
 ---
 - addMedia:
     - assets/sample-part.jpg
-- launchApp
+- launchApp:
+    # Camera refused: the app must still offer the photo picker.
+    permissions:
+      all: allow
+      camera: deny
 - runFlow: subflows/open-app.yaml
 - tapOn:
     id: new-job

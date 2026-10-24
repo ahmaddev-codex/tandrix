@@ -1,10 +1,10 @@
-import type { Asset, EvidenceWithUrl, Job } from "@tandrix/contracts";
+import type { Asset, EvidenceWithUrl, Job, Manual } from "@tandrix/contracts";
 import { radius, space } from "@tandrix/ui";
-import { Button, Icon, Text, useTheme } from "@tandrix/ui/native";
+import { Button, Icon, SourceChip, Text, useTheme } from "@tandrix/ui/native";
 import { Image } from "expo-image";
 import { router, Stack, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useState } from "react";
-import { FlatList, RefreshControl, useWindowDimensions, View } from "react-native";
+import { FlatList, Linking, RefreshControl, useWindowDimensions, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "@/lib/api";
 
@@ -16,6 +16,8 @@ export default function JobScreen() {
   const { width } = useWindowDimensions();
   const [job, setJob] = useState<Job>();
   const [asset, setAsset] = useState<Asset | null>();
+  const [manual, setManual] = useState<Manual | null>(null);
+  const [opening, setOpening] = useState(false);
   const [photos, setPhotos] = useState<EvidenceWithUrl[]>();
   const [error, setError] = useState<string>();
   const [refreshing, setRefreshing] = useState(false);
@@ -25,6 +27,7 @@ export default function JobScreen() {
       const [detail, items] = await Promise.all([api.getJob(id), api.listEvidence(id)]);
       setJob(detail.job);
       setAsset(detail.asset);
+      setManual(detail.manual);
       setPhotos(items);
       setError(undefined);
     } catch (e) {
@@ -37,6 +40,17 @@ export default function JobScreen() {
       load();
     }, [load]),
   );
+
+  const openManual = async (m: Manual) => {
+    setOpening(true);
+    try {
+      await Linking.openURL(await api.manualUrl(id, m.id));
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setOpening(false);
+    }
+  };
 
   const gap = space["space-2"];
   const tile = (width - space["space-4"] * 2 - gap * (COLUMNS - 1)) / COLUMNS;
@@ -135,6 +149,77 @@ export default function JobScreen() {
                 </Button>
               </View>
             )}
+            {asset && manual ? (
+              <View
+                testID="manual-card"
+                style={{
+                  padding: space["space-4"],
+                  borderRadius: radius["radius-lg"],
+                  backgroundColor: t.color["background-100"],
+                  borderWidth: 1,
+                  borderColor: t.color.border,
+                  gap: space["space-3"],
+                }}
+              >
+                <View style={{ gap: space["space-1"] }}>
+                  <Text variant="label-14" color="text-secondary">
+                    Manual
+                  </Text>
+                  <Text variant="heading-16">{manual.title}</Text>
+                  <Text variant="copy-14" color="text-secondary">
+                    {manual.pageCount} {manual.pageCount === 1 ? "page" : "pages"}
+                  </Text>
+                </View>
+                <SourceChip kind="manual">
+                  {manual.sourceUrl
+                    ? new URL(manual.sourceUrl).hostname.replace(/^www\./, "")
+                    : "Your copy"}
+                </SourceChip>
+                <Button
+                  variant="secondary"
+                  block
+                  icon="book"
+                  disabled={opening}
+                  onPress={() => openManual(manual)}
+                  testID="open-manual"
+                >
+                  Open manual
+                </Button>
+              </View>
+            ) : asset ? (
+              <View
+                style={{
+                  padding: space["space-4"],
+                  borderRadius: radius["radius-lg"],
+                  backgroundColor: t.color["blue-100"],
+                  gap: space["space-3"],
+                }}
+              >
+                <View style={{ flexDirection: "row", gap: space["space-2"], alignItems: "center" }}>
+                  <Icon name="book" size={20} color="blue-900" />
+                  <Text variant="heading-20" color="blue-900">
+                    Add the manual
+                  </Text>
+                </View>
+                <Text variant="copy-16" color="text">
+                  Tandrix builds the steps from the manufacturer's manual, so every step cites a
+                  page.
+                </Text>
+                <Button
+                  variant="primary"
+                  block
+                  onPress={() =>
+                    router.push({
+                      pathname: "/job/[id]/manual",
+                      params: { id, equipment: `${asset.make} ${asset.model}` },
+                    })
+                  }
+                  testID="find-manual"
+                >
+                  Find the manual
+                </Button>
+              </View>
+            ) : null}
             <Text variant="label-16" color="text-secondary">
               {photos ? `${photos.length} ${photos.length === 1 ? "photo" : "photos"}` : " "}
             </Text>

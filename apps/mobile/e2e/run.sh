@@ -5,14 +5,13 @@ set -eu
 cd "$(dirname "$0")"
 set -a; . ../../../.env.local; set +a
 
-APP=app.tandrix.mobile
 OUT=../../../.maestro
 RUN_ID=$(date +%s)
 run() { maestro test --test-output-dir "$OUT" -e DEV_USER_EMAIL="$DEV_USER_EMAIL" -e DEV_USER_PASSWORD="$DEV_USER_PASSWORD" -e RUN_ID="$RUN_ID" "$@"; }
 
 run sign-in-create-job.yaml design-gallery.yaml
 
-# Camera refused: the photo flow must still let the user choose a photo.
-xcrun simctl privacy booted revoke camera "$APP"
+# These flows deny the camera at launch (launchApp permissions) to drive the photo picker.
 run photo-evidence.yaml
 run identify-equipment.yaml
+run manual-from-pages.yaml

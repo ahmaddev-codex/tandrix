@@ -3,6 +3,9 @@ import type { CreateEvidenceRequest, SaveAssetRequest } from "@tandrix/contracts
 import {
   Asset,
   CreateEvidenceResponse,
+  CreateManualUploadResponse,
+  ManualResponse,
+  ManualSearchResponse,
   IdentifyAssetResponse,
   JobDetailResponse,
   Evidence,
@@ -84,6 +87,29 @@ export const api = {
     request(`/jobs/${jobId}/evidence`, z.object({ items: z.array(EvidenceWithUrl) })).then(
       (r) => r.items,
     ),
+  searchManual: (jobId: string) =>
+    request(`/jobs/${jobId}/manual/search`, ManualSearchResponse, { method: "POST" }),
+  fetchManual: (jobId: string, body: { url: string; title: string; token: string }) =>
+    request(`/jobs/${jobId}/manual/fetch`, ManualResponse, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }).then((r) => r.manual),
+  createManualUpload: (jobId: string, body: { byteSize: number; title: string }) =>
+    request(`/jobs/${jobId}/manual/upload`, CreateManualUploadResponse, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  completeManualUpload: (jobId: string, uploadId: string) =>
+    request(`/jobs/${jobId}/manual/upload/${uploadId}/complete`, ManualResponse, {
+      method: "POST",
+    }).then((r) => r.manual),
+  manualFromPhotos: (jobId: string, body: { evidenceIds: string[]; title: string }) =>
+    request(`/jobs/${jobId}/manual/from-photos`, ManualResponse, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }).then((r) => r.manual),
+  manualUrl: (jobId: string, manualId: string) =>
+    request(`/jobs/${jobId}/manual/${manualId}/url`, z.object({ url: z.url() })).then((r) => r.url),
   createJob: (input: { title: string; surface: Surface }) =>
     request("/jobs", z.object({ job: Job }), { method: "POST", body: JSON.stringify(input) }).then(
       (r) => r.job,

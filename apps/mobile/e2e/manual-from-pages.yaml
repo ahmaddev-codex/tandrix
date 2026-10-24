@@ -1,0 +1,115 @@
+# T10: add the job's manual. Search can't run without the model (no key, billing), so the app
+# says so and offers the other routes; here the user photographs the pages (photo picker, camera
+# denied) and Tandrix makes a private manual that shows on the job.
+appId: app.tandrix.mobile
+env:
+  JOB_TITLE: Manual job e2e ${RUN_ID}
+---
+- addMedia:
+    - assets/sample-part.jpg
+- launchApp:
+    # Camera refused: the app must still offer the photo picker.
+    permissions:
+      all: allow
+      camera: deny
+- runFlow: subflows/open-app.yaml
+- tapOn:
+    id: new-job
+- extendedWaitUntil:
+    visible:
+      id: job-title
+    timeout: 30000
+- tapOn:
+    id: job-title
+- inputText: ${JOB_TITLE}
+- tapOn:
+    id: create-job
+- extendedWaitUntil:
+    visible: ${JOB_TITLE},.*
+    timeout: 15000
+- tapOn: ${JOB_TITLE},.*
+# Equipment first: the manual is found by make and model.
+- extendedWaitUntil:
+    visible:
+      id: photograph-nameplate
+    timeout: 15000
+- tapOn:
+    id: photograph-nameplate
+- extendedWaitUntil:
+    visible:
+      id: choose-photo
+    timeout: 30000
+- tapOn:
+    id: choose-photo
+- extendedWaitUntil:
+    visible:
+      text: "Photo, .*"
+    timeout: 15000
+- tapOn:
+    text: "Photo, .*"
+    index: 0
+- tapOn:
+    id: use-photo
+- extendedWaitUntil:
+    visible:
+      id: identify-banner
+    timeout: 60000
+- tapOn:
+    id: asset-make
+- eraseText: 120
+- inputText: FlowSet
+- tapOn:
+    id: asset-model
+- eraseText: 120
+- inputText: E2E-${RUN_ID}
+- hideKeyboard
+- tapOn:
+    id: save-asset
+# Find the manual: search reports plainly that it can't run, upload and photos stay open.
+- extendedWaitUntil:
+    visible:
+      id: find-manual
+    timeout: 15000
+- tapOn:
+    id: find-manual
+- extendedWaitUntil:
+    visible:
+      id: manual-search-unavailable
+    timeout: 60000
+- assertVisible:
+    id: upload-manual
+- takeScreenshot: manual-search-unavailable
+- tapOn:
+    id: photograph-pages
+- extendedWaitUntil:
+    visible:
+      id: choose-pages
+    timeout: 30000
+- assertVisible: No pages yet
+- tapOn:
+    id: choose-pages
+- extendedWaitUntil:
+    visible:
+      text: "Photo, .*"
+    timeout: 15000
+- tapOn:
+    text: "Photo, .*"
+    index: 0
+# The multi-select picker confirms with a check button (id Add, label Done).
+- tapOn:
+    id: Add
+- extendedWaitUntil:
+    visible: 1 page
+    timeout: 30000
+- takeScreenshot: manual-pages
+- tapOn:
+    id: make-manual
+- extendedWaitUntil:
+    visible:
+      id: manual-card
+    timeout: 30000
+- assertVisible: FlowSet E2E-${RUN_ID} manual \(photographed\)
+- assertVisible: Your copy
+- assertVisible:
+    id: open-manual
+- takeScreenshot: job-with-manual

@@ -1,4 +1,4 @@
-# T9: identify the equipment from a nameplate photo. Runs with camera access revoked (photo
+# T9: identify the equipment from a nameplate photo. Runs with the camera denied (photo
 # picker). When the model can't help (no key, billing, rate limit), the app says so and the
 # user types the details; either way the confirmed equipment is saved on the job.
 appId: app.tandrix.mobile
@@ -7,7 +7,11 @@ env:
 ---
 - addMedia:
     - assets/sample-part.jpg
-- launchApp
+- launchApp:
+    # Camera refused: the app must still offer the photo picker.
+    permissions:
+      all: allow
+      camera: deny
 - runFlow: subflows/open-app.yaml
 - tapOn:
     id: new-job
