@@ -1,11 +1,13 @@
 // Native foundation components. Feature components (CaptureView, PartHighlight, CheckResult,
 // PartsList, HandoffBanner, StepCard, SafetyGate) are built on these in their feature tasks.
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import {
   Pressable,
   Text as RNText,
+  TextInput,
   View,
   type PressableProps,
+  type TextInputProps,
   type StyleProp,
   type TextStyle,
   type ViewStyle,
@@ -246,6 +248,98 @@ export function SourceChip({ kind = "manual", children }: SourceChipProps) {
       <Text variant="mono-13" color={fg}>
         {children ?? (generic ? genericSourceLabel : "")}
       </Text>
+    </View>
+  );
+}
+
+export interface InputProps {
+  label: string;
+  value: string;
+  onChangeText: (text: string) => void;
+  placeholder?: string;
+  hint?: string;
+  error?: string;
+  /** Unit shown inside the field, e.g. "Nm". */
+  suffix?: string;
+  mono?: boolean;
+  /** field 56 (default on phone) or lg 48. */
+  size?: "field" | "lg";
+  keyboardType?: TextInputProps["keyboardType"];
+  autoComplete?: TextInputProps["autoComplete"];
+  textContentType?: TextInputProps["textContentType"];
+  autoCapitalize?: TextInputProps["autoCapitalize"];
+  secureTextEntry?: boolean;
+  autoFocus?: boolean;
+  editable?: boolean;
+  maxLength?: number;
+  returnKeyType?: TextInputProps["returnKeyType"];
+  onSubmitEditing?: () => void;
+  testID?: string;
+}
+
+export function Input({
+  label,
+  hint,
+  error,
+  suffix,
+  mono,
+  size = "field",
+  editable = true,
+  testID,
+  ...field
+}: InputProps) {
+  const t = useTheme();
+  const [focused, setFocused] = useState(false);
+  const height = size === "field" ? sizes["control-field"] : sizes["control-lg"];
+  const message = error ?? hint;
+  const borderColor = error
+    ? t.color["red-700"]
+    : focused
+      ? t.color["focus-ring"]
+      : t.color["border-control"];
+  return (
+    <View style={{ gap: 6 }}>
+      <Text variant="label-16">{label}</Text>
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          height,
+          paddingHorizontal: space["space-4"],
+          borderRadius: radius["radius-md"],
+          borderWidth: focused || error ? 2 : 1,
+          borderColor,
+          backgroundColor: editable ? t.color["background-100"] : t.color["gray-100"],
+        }}
+      >
+        <TextInput
+          {...field}
+          testID={testID}
+          editable={editable}
+          accessibilityLabel={label}
+          accessibilityHint={message}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          placeholderTextColor={t.color["gray-700"]}
+          style={[
+            nativeTextStyle(mono ? "mono-16" : "field-body"),
+            { flex: 1, color: editable ? t.color.text : t.color["gray-700"] },
+          ]}
+        />
+        {suffix ? (
+          <Text variant="mono-14" color="text-secondary">
+            {suffix}
+          </Text>
+        ) : null}
+      </View>
+      {message ? (
+        <View style={{ flexDirection: "row", gap: 6, alignItems: "center" }}>
+          {error ? <Icon name="alert" color="red-900" /> : null}
+          <Text variant="copy-14" color={error ? "red-900" : "text-secondary"}>
+            {message}
+          </Text>
+        </View>
+      ) : null}
     </View>
   );
 }
