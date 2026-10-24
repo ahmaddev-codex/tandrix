@@ -1,0 +1,14 @@
+<!-- @dsCard group="Forms" height=140 -->
+<!doctype html>
+<html>
+<head><meta charset="utf-8"></head>
+<body>
+<div id="root" class="tx-col"></div>
+<script>
+  var T = window.Tandrix, h = React.createElement;
+  ReactDOM.createRoot(document.getElementById('root')).render(h(React.Fragment, null,
+    h(T.Tabs, {label:'Job', items:[{id:'steps', label:'Steps', count:12}, {id:'parts', label:'Parts', count:12}, {id:'evidence', label:'Evidence', count:18}, {id:'manual', label:'Manual'}]}),
+    h(T.Tabs, {label:'Phone view', size:'field', items:[{id:'task', label:'Task'}, {id:'evidence', label:'Evidence'}, {id:'assistant', label:'Assistant'}]})));
+</script>
+</body>
+</html>

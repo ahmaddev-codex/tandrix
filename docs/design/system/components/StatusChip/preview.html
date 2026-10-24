@@ -1,0 +1,19 @@
+<!-- @dsCard group="Status" height=120 -->
+<!doctype html>
+<html>
+<head><meta charset="utf-8"></head>
+<body>
+<div id="root" class="tx-row"></div>
+<script>
+  var T = window.Tandrix, h = React.createElement;
+  ReactDOM.createRoot(document.getElementById('root')).render(h(React.Fragment, null,
+    h(T.StatusChip, {status:'verified'}),
+    h(T.StatusChip, {status:'confirmed'}),
+    h(T.StatusChip, {status:'attention'}),
+    h(T.StatusChip, {status:'unverifiable'}),
+    h(T.StatusChip, {status:'blocked'}, 'Missing part 7'),
+    h(T.StatusChip, {status:'pending'}),
+    h(T.StatusChip, {status:'progress'})));
+</script>
+</body>
+</html>

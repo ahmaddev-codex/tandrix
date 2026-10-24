@@ -1,0 +1,15 @@
+<!-- @dsCard group="Continuity" height=420 -->
+<!doctype html>
+<html>
+<head><meta charset="utf-8"></head>
+<body>
+<div id="root" class="tx-col" style="max-width:520px"></div>
+<script>
+  var T = window.Tandrix, h = React.createElement;
+  ReactDOM.createRoot(document.getElementById('root')).render(h(React.Fragment, null,
+    h(T.HandoffBanner, {state:'offer', step:9, stepTitle:'Set the pressure limit in FlowSet Controller', device:'MacBook Pro'}),
+    h(T.HandoffBanner, {state:'waiting', step:9, device:'MacBook Pro', size:'lg'}),
+    h(T.HandoffBanner, {state:'incoming', job:'Pump P-100 assembly', step:9, device:'iPhone'})));
+</script>
+</body>
+</html>

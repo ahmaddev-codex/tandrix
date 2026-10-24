@@ -1,0 +1,15 @@
+<!-- @dsCard group="Forms" height=220 -->
+<!doctype html>
+<html>
+<head><meta charset="utf-8"></head>
+<body>
+<div id="root" class="tx-col" style="max-width:420px"></div>
+<script>
+  var T = window.Tandrix, h = React.createElement;
+  ReactDOM.createRoot(document.getElementById('root')).render(h(React.Fragment, null,
+    h(T.Toggle, {label:'Speak instructions', description:'Read each step aloud on the phone or glasses.', defaultChecked:true}),
+    h(T.Toggle, {label:'Sunlight theme outdoors', description:'Switch to high contrast in bright light.'}),
+    h(T.Toggle, {label:'Share reports with my team', disabled:true, description:'Ask your admin to turn on sharing.'})));
+</script>
+</body>
+</html>

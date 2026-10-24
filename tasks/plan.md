@@ -1,0 +1,404 @@
+# Implementation Plan: Tandrix Hackathon MVP
+
+**Build window:** Mon 26 Oct – Wed 4 Nov 2026 (submit by 3 PM ET on 4 Nov; hard deadline 9 PM ET)
+**Spec:** [PRD](../docs/product/PRD.md) · [User flows](../docs/product/User_Flows.md) · [Architecture](../docs/engineering/Architecture.md) · [Hackathon plan](../docs/engineering/Hackathon_Plan.md)
+
+## Overview
+
+Tandrix is one job session shared across three surfaces: a phone app (Expo) that identifies equipment, checks parts and guides assembly by highlighting real parts; Ray-Ban Meta glasses as a hands-free camera/mic/speaker for the phone app; and a desktop app (Electron) that teaches any screen by pointing (**Show me**) or, when the user opts in, by acting (**Do it for me**). A Hono API orchestrates Meta models (`muse-spark-1.3`, `sam-3.1`, `muse-voice-transcribe-1.0`) and persists everything in Supabase. The demo is a real pump job: nameplate → manual → parts check → guided steps (phone + glasses) → handoff to desktop → report.
+
+## Architecture decisions
+
+| Decision | Rationale |
+|---|---|
+| pnpm monorepo: `apps/{mobile,desktop,api}`, `packages/{contracts,core,ai}` | Three clients share one contract and one set of status/safety rules. |
+| `packages/contracts` (Zod) is the single source of truth for every payload and model output | Lets the three tracks work in parallel once the contract is fixed. |
+| Status, safety-gate and desktop action-guard rules live in `packages/core` as pure, deterministic functions | Model output can't bypass them; trivially unit-testable. |
+| One `PointerTarget` type for camera highlights and screen pointer | Same rendering contract on both surfaces; same audit trail. |
+| Supabase Realtime for cross-device sync | Handoff without building our own pub/sub. |
+| Voice: server WS proxy to Muse Voice Transcribe; TTS on device | Keeps the key server-side; Meta has no TTS. |
+| Expo dev client from day 2 | Glasses need a native module; avoid late native rebuild churn. |
+| Desktop "Do it for me" executes only through `core.actionGuard` + interrupt watcher | Opt-in control without giving the model unchecked input. |
+| Design system first: chosen (T0.5), documented (T0.6) and shipped as `packages/ui` tokens + core components (T0.7) before any UI task | Every surface builds on one system; no ad-hoc styling. |
+| Desktop targets macOS only for the MVP | Single permission model (Screen Recording, Accessibility), one signed/notarised build. |
+| Glasses on both iOS and Android | Wearables toolkit supports both; one Expo native module with Swift and Kotlin sides. |
+| Recorded model responses as test fixtures | Deterministic CI for AI pipelines; live calls only in spikes and rehearsals. |
+
+## Dependency graph
+
+```
+design direction ──► design system docs ──► ui (tokens + components) ──► every UI task
+contracts (Zod) ──► core (status, safety, action guard)
+     │                    │
+     ├──► Supabase schema + RLS ──► API (auth, jobs, evidence upload)
+     │                                  │
+     │       ai (Meta client, prompts) ─┤
+     │                                  ├──► identify / manual / procedure ──► mobile step list
+     │                                  ├──► highlight (SAM) ──► mobile step screen ──► glasses capture
+     │                                  ├──► check / parts-check ──► mobile statuses
+     │                                  ├──► voice WS proxy ──► mobile PTT ──► glasses audio
+     │                                  ├──► screen/ask ──► desktop Show me ──► desktop Do it for me
+     │                                  └──► realtime + report ──► handoff, share link
+     └──► fixtures/demo-pump (photos, manual, recorded responses) ──► tests + demo cache
+```
+
+## Parallel tracks (virtual team)
+
+Once Phase 1 is done (contracts + schema + API skeleton + `packages/ui`), three tracks run in parallel, with design reviewing every UI task:
+
+- **Track D — Design:** T0.5–T0.7, then design review on every UI task and extensions to the system as gaps appear
+- **Track A — Mobile & glasses:** T7, T11–T14 UI parts, T15–T17 UI, T25–T26
+- **Track B — API & AI pipelines:** T8–T10, T11 pipeline, T15–T16 pipelines, T23–T24, T27
+- **Track C — Desktop:** T18–T21
+
+Contract changes go through `packages/contracts` first and are reviewed by all tracks.
+
+## Phases and tasks
+
+Sizes: XS 1 file · S 1–2 · M 3–5 · L 5–8 (split if larger). Commands assume the root scripts from T0.4: `pnpm test`, `pnpm typecheck`, `pnpm lint`, `pnpm --filter <pkg> <script>`.
+
+---
+
+### Phase 0 — Prep (Sat 24 – Sun 25 Oct)
+
+#### T0.1 Meta API smoke script
+**Description:** A script that makes one real call each to `muse-spark-1.3` (text + image), `sam-3.1` (image + noun phrase) and `muse-voice-transcribe-1.0` (short audio file), and prints latency, token usage and rate-limit headers.
+**Acceptance:** all three calls succeed with our key; limits recorded in `docs/engineering/spikes.md`.
+**Verification:** `pnpm tsx scripts/smoke-meta.ts` prints three successful results.
+**Dependencies:** None. **Files:** `scripts/smoke-meta.ts`, `docs/engineering/spikes.md`. **Size:** S
+
+#### T0.2 Glasses toolkit sample
+**Description:** Get Wearables Developer Center access, pair glasses, run Meta's sample app on the target phone.
+**Acceptance:** sample app receives a photo and a camera stream from the glasses.
+**Verification:** manual; notes + SDK version in `spikes.md`.
+**Dependencies:** None. **Files:** `docs/engineering/spikes.md`. **Size:** XS
+
+#### T0.3 Demo fixtures
+**Description:** Photograph the demo pump: nameplate, all parts laid out (with one O-ring removed for the "missing" case), each assembly stage from 2–3 angles. Add manual PDF. Choose the desktop software for the handoff step.
+**Acceptance:** `fixtures/demo-pump/` contains labelled photos, manual, and `README.md` describing each file; desktop app choice recorded.
+**Verification:** manual review.
+**Dependencies:** None. **Files:** `fixtures/demo-pump/**`. **Size:** S
+
+#### T0.4 Monorepo skeleton + CI
+**Description:** pnpm workspace, shared tsconfig, ESLint, Prettier, Vitest; empty packages and apps that build; GitHub Actions running lint, typecheck, test.
+**Acceptance:** `pnpm install && pnpm typecheck && pnpm test` passes on a clean clone; CI green.
+**Verification:** CI run on first push.
+**Dependencies:** None. **Files:** `package.json`, `pnpm-workspace.yaml`, `tsconfig.base.json`, `.github/workflows/ci.yml`, package stubs. **Size:** M
+
+#### T0.5 Choose the design direction
+**Description:** Review the three candidate design systems (Callout, Signal, Viewfinder) applied to real Tandrix screens and pick one or a defined mix. Artifact: https://claude.ai/artifact/A1XC5MQ8tY7sRGhg4ojgXd
+**Acceptance:** a written decision naming the direction and any borrowed elements.
+**Verification:** decision recorded in `docs/design/decision.md`.
+**Dependencies:** None. **Files:** `docs/design/decision.md`. **Size:** XS
+
+#### T0.6 Document the Tandrix design system
+**Description:** Full reference for the chosen direction: colour tokens (light, dark, sunlight/high-contrast, glasses lens), type scale and fonts, spacing, radius, elevation, motion, iconography, highlight and pointer specs, status and safety semantics, voice and copy rules, and component guidelines with states.
+**Acceptance:** every component in Design Brief §5 has a spec with states; every status in Architecture §4 has a visual; token names are final.
+**Verification:** design review sign-off; published as the Tandrix design system reference.
+**Dependencies:** T0.5. **Files:** `docs/design/*`. **Size:** M
+
+#### T0.7 `packages/ui`: tokens and core components
+**Description:** Tokens as a single source (JSON) compiled to a React Native theme (mobile) and CSS variables (desktop renderer, web report); core components: Button, StatusChip, SourceChip, StepCard, SafetyGate, PartHighlight, PointerBuddy, ConfirmDialog, ControlIndicator.
+**Acceptance:** mobile and desktop render the same components from the same tokens; no hard-coded colours or sizes outside `packages/ui` (lint rule).
+**Verification:** `pnpm --filter @tandrix/ui test`; component gallery screen on phone and in Electron.
+**Dependencies:** T0.6, T0.4. **Files:** `packages/ui/{tokens,native,web}/*`, `eslint` rule. **Size:** M
+**Status (24 Oct):** Done, with one deliberate scope change. Shipped: the token compiler (TS for native, CSS for web, output identical to the design system's `tokens.css`); all 14 web components the Mac app and report need; the native foundation (ThemeProvider with Sunlight switching, Text, Icon, Button, StatusChip, SourceChip); the raw-colour lint rule; 22 tests covering contrast in every theme, generated-file freshness, token drift against the docs mirror, and component behaviour. The phone-only feature components are built natively inside T8, T12, T13, T15 and T16, and the gallery screens move to T7 (phone) and T18 (Mac), because those apps don't exist yet.
+
+---
+
+### Phase 1 — Foundation and spikes (Mon 26 Oct)
+
+#### T1 Contracts: core entities
+**Description:** Zod schemas + types for Asset, Manual, Procedure, ProcedureStep, PartSpec, Job, JobStep, Evidence, Detection, PointerTarget, Check, PartsCheck, SafetyConfirmation, Event, DesktopAction, ControlMode.
+**Acceptance:** schemas match Architecture §4; strict (unknown keys rejected, string length caps); exported types used by all packages.
+**Verification:** `pnpm --filter @tandrix/contracts test` (valid/invalid samples per schema).
+**Dependencies:** T0.4. **Files:** `packages/contracts/src/{entities,api,model-outputs}.ts`, tests. **Size:** M
+
+#### T2 Core rules: step status + safety gates
+**Description:** Pure functions: `transitionStep(step, event)`, `canStart(step, confirmations)`, `applyPartsCheck(steps, result)`.
+**Acceptance:** only a `pass` Check on evidence captured after step start yields `verified`; hazard-tagged steps can't start without matching confirmations; missing parts block dependent steps; model output can add but never remove hazard tags.
+**Verification:** `pnpm --filter @tandrix/core test` (table-driven tests covering every transition).
+**Dependencies:** T1. **Files:** `packages/core/src/{status,safety}.ts`, tests. **Size:** M
+
+#### T3 Spike: SAM highlighting
+**Description:** Run SAM 3.1 + Spark "pick the right box" on 10 fixture photos for the step parts.
+**Acceptance:** accuracy recorded; go/no-go on fallback (point prompts, box-only, numbered callouts).
+**Verification:** results table in `spikes.md` with annotated output images in `fixtures/demo-pump/spike-out/`.
+**Dependencies:** T0.1, T0.3. **Files:** `scripts/spike-sam.ts`, `spikes.md`. **Size:** S
+
+#### T4 Spike: screen pointing
+**Description:** 20 targets in the chosen desktop app; Spark computer-use `move` coordinates vs ground truth.
+**Acceptance:** hit rate recorded; ≥ 18/20 → go; else choose fallback (accessibility lookup or SAM snapping) and note it.
+**Verification:** results table + overlay images in `spikes.md`.
+**Dependencies:** T0.1, T0.3. **Files:** `scripts/spike-pointing.ts`, `spikes.md`. **Size:** S
+
+#### T5 Spike: nameplate → manual
+**Description:** Spark reads the nameplate; search grounding finds the manual.
+**Acceptance:** correct model and manual URL for the demo pump, or decision that upload is the demo path.
+**Verification:** result in `spikes.md`.
+**Dependencies:** T0.1, T0.3. **Files:** `scripts/spike-nameplate.ts`, `spikes.md`. **Size:** XS
+
+#### T6 Jobs API with auth, deployed
+**Description:** Supabase migrations for all tables in Architecture §4 with RLS by owner; Hono app with Supabase JWT middleware, `/health`, `POST/GET /jobs`, `GET /jobs/:id`; deploy to Fly.io/Railway.
+**Acceptance:** authenticated user can create and list only their own jobs; second user can't read them; `/health` live.
+**Verification:** `pnpm --filter @tandrix/api test` (integration tests against local Supabase), `curl` against deployed URL.
+**Dependencies:** T1. **Files:** `supabase/migrations/0001_init.sql`, `apps/api/src/{index,auth,routes/jobs}.ts`, tests, `fly.toml`. **Size:** M
+
+#### T7 Mobile shell: sign in, create and list jobs
+**Description:** Expo app with expo-router and dev client; Supabase auth (email magic link or OTP); Home screen listing jobs; New job.
+**Acceptance:** on a physical phone, sign in, create a job, see it after app restart.
+**Verification:** manual on device; `pnpm --filter @tandrix/mobile typecheck`.
+**Dependencies:** T6, T0.7. **Files:** `apps/mobile/app/{_layout,index,new-job}.tsx`, `apps/mobile/src/{api,auth}.ts`. **Size:** M
+
+### Checkpoint 1 — end of Mon 26 Oct
+- [ ] CI green; API deployed; phone app creates/lists jobs.
+- [ ] Spike results in `spikes.md`; fallback decisions made for SAM, pointing, manual.
+- [ ] Contracts reviewed by all tracks and frozen for Phase 2 (changes by PR only).
+- [ ] Design system documented; `packages/ui` gallery renders on phone and Mac.
+
+---
+
+### Phase 2 — Physical core (Tue 27 – Thu 29 Oct)
+
+#### T8 Capture photo as evidence
+**Description:** Capture screen (camera, retake, preview); signed upload URL from API; Evidence row; downscale on device.
+**Acceptance:** photo captured on the phone appears in Supabase Storage (private) linked to the job; permission denied falls back to photo picker.
+**Verification:** API test for upload handshake; manual on device.
+**Dependencies:** T7. **Files:** `apps/mobile/app/capture.tsx`, `apps/mobile/src/capture/*.ts`, `apps/api/src/routes/evidence.ts`. **Size:** M
+
+#### T9 Identify asset from nameplate
+**Description:** `/assets/identify` pipeline (Spark structured output) + Asset screen with editable make/model/serial and confidence.
+**Acceptance:** demo nameplate → correct make/model; low confidence shows "Possible match"; user edits persist.
+**Verification:** `pnpm --filter @tandrix/ai test` with recorded response; manual on device.
+**Dependencies:** T8, T5. **Files:** `packages/ai/src/identify.ts`, `apps/api/src/routes/assets.ts`, `apps/mobile/app/asset.tsx`. **Size:** M
+
+#### T10 Find or attach manual
+**Description:** `/assets/:id/manual`: search grounding → candidate URLs → fetch PDF (type/size limits) → store; upload fallback (photos/PDF) from phone.
+**Acceptance:** source URL shown; upload path works offline-to-online; manual cached by model key.
+**Verification:** API tests (allowlisted types, oversize rejected); manual.
+**Dependencies:** T9. **Files:** `packages/ai/src/manual-search.ts`, `apps/api/src/routes/manual.ts`, `apps/mobile/app/manual.tsx`. **Size:** M
+
+#### T11 Procedure from manual with citations
+**Description:** `/procedures/generate` (Spark + PDF) → PartSpecs + ProcedureSteps with citation and hazard tags; job steps instantiated; step list on phone with source chips. Generic path when no manual.
+**Acceptance:** each step has a citation or is labelled Generic; schema-invalid output repaired once then rejected; progress streamed.
+**Verification:** `pnpm --filter @tandrix/ai test` (recorded responses incl. malformed); manual.
+**Dependencies:** T10, T2. **Files:** `packages/ai/src/procedure.ts`, `apps/api/src/routes/procedures.ts`, `apps/mobile/app/job/[id]/index.tsx`. **Size:** M
+
+### Checkpoint 2 — end of Tue 27 Oct
+- [ ] Nameplate photo → procedure with cited steps on the phone, end to end on device.
+
+#### T12 Highlight parts on the step screen
+**Description:** `/steps/:id/highlight` (SAM per part phrase, Spark disambiguation) → PointerTargets; step screen renders mask/box with label and confidence via Skia; tap to correct; numbered-text fallback.
+**Acceptance:** spike-level accuracy on fixtures; correction stored on Detection; no-detection shows angle hint.
+**Verification:** `pnpm --filter @tandrix/ai test`; manual on the real pump.
+**Dependencies:** T11, T3. **Files:** `packages/ai/src/highlight.ts`, `apps/api/src/routes/steps.ts`, `apps/mobile/app/job/[id]/step.tsx`, `apps/mobile/src/overlay/PartHighlight.tsx`. **Size:** M
+
+#### T13 Safety gates on steps
+**Description:** SafetyGate UI on hazard-tagged steps using `core.canStart`; confirmations persisted.
+**Acceptance:** hazardous step can't start until confirmed; wiring/live-work requests refused with "qualified person" message.
+**Verification:** core tests; API test for refusal prompt; manual.
+**Dependencies:** T12, T2. **Files:** `apps/mobile/src/components/SafetyGate.tsx`, `apps/api/src/routes/steps.ts`, `packages/ai/src/policy.ts`. **Size:** S
+
+#### T14 Voice in and out on phone
+**Description:** `/voice/stream` WS proxy to Muse Voice Transcribe; push-to-talk on phone (PCM 16 kHz); voice commands (next, repeat, show me again, I'm stuck, skip, stop) mapped to step actions; free questions answered in step context; TTS via `expo-speech`.
+**Acceptance:** three real steps completed by voice only; transcript and reply text shown; key never reaches client.
+**Verification:** API WS test with recorded audio; manual on device in a noisy room.
+**Dependencies:** T12. **Files:** `apps/api/src/voice.ts`, `apps/mobile/src/voice/{ptt,commands,tts}.ts`, `packages/ai/src/step-chat.ts`. **Size:** M
+
+### Checkpoint 3 — end of Wed 28 Oct
+- [ ] Three real pump steps guided by voice with highlighted parts and safety gate.
+
+#### T15 Step check by photo
+**Description:** `/steps/:id/check` → Check (pass / fail / not_verifiable + reason); CheckResult UI with reference image; statuses via `core.transitionStep`.
+**Acceptance:** correct stage → verified; deliberately wrong stage → needs attention with a specific reason; torque-type step → not verifiable → user-confirmed.
+**Verification:** `pnpm --filter @tandrix/ai test` (fixtures for each outcome); manual.
+**Dependencies:** T12. **Files:** `packages/ai/src/check.ts`, `apps/api/src/routes/steps.ts`, `apps/mobile/src/components/CheckResult.tsx`. **Size:** M
+
+#### T16 Parts check
+**Description:** `/parts-check` (SAM all objects + Spark assignment to PartSpecs); PartsList UI with found/possible/missing; corrections; missing parts block dependent steps.
+**Acceptance:** demo layout: all present parts found, removed O-ring flagged missing; correction updates result.
+**Verification:** ai test with fixture; core test for blocking; manual.
+**Dependencies:** T11, T2. **Files:** `packages/ai/src/parts-check.ts`, `apps/api/src/routes/parts-check.ts`, `apps/mobile/app/job/[id]/parts.tsx`. **Size:** M
+
+#### T17 Offline cache and upload queue
+**Description:** Cache procedure, manual pages, reference images per job; queue evidence uploads and checks; "pending" state.
+**Acceptance:** airplane mode mid-job: steps still navigable, captures queued, synced on reconnect.
+**Verification:** unit tests for queue; manual airplane-mode run.
+**Dependencies:** T15. **Files:** `apps/mobile/src/offline/{cache,queue}.ts`. **Size:** S
+
+### Checkpoint 4 — end of Thu 29 Oct
+- [ ] Full phone path: identify → manual → parts check (missing flagged) → steps with highlights, voice, checks.
+- [ ] Recorded-response tests cover every AI pipeline; CI green.
+
+---
+
+### Phase 3 — Desktop (Fri 30 Oct; Track C can start after Checkpoint 1)
+
+#### T18 Electron shell with overlay and panel
+**Description:** macOS-only Electron app: main process, menu-bar panel window (job, steps, mic state, mode), transparent click-through always-on-top overlay per display, Screen Recording permission onboarding; sign-in. Built on `packages/ui`.
+**Acceptance:** overlay draws a test pointer on each monitor at a given coordinate; panel shows the signed-in user's active job.
+**Verification:** `pnpm --filter @tandrix/desktop test` (coordinate mapping unit tests); manual on macOS with two displays.
+**Dependencies:** T6, T0.7. **Files:** `apps/desktop/src/main/{index,windows,displays}.ts`, `apps/desktop/src/renderer/{panel,overlay}.tsx`. **Size:** M
+
+#### T19 Show me: ask → pointer + voice
+**Description:** Hold-to-talk hotkey; desktopCapturer screenshot with scale/origin; `/screen/ask` (Spark computer-use, render-only) → reply + PointerTarget; pointer flies with caption; TTS. Fallback from T4 if needed.
+**Acceptance:** ≥ 9/10 on target in the demo app; any non-`move` action rendered as instruction, never executed.
+**Verification:** api test with recorded responses; coordinate tests; manual.
+**Dependencies:** T18, T4, T14 (voice proxy). **Files:** `apps/desktop/src/main/{hotkey,capture}.ts`, `apps/api/src/routes/screen.ts`, `packages/ai/src/screen.ts`, `apps/desktop/src/renderer/PointerBuddy.tsx`. **Size:** M
+
+#### T20 Screen step verification
+**Description:** After the user acts, re-capture (hotkey or auto) and check expected screen state; set job step verified or user-confirmed.
+**Acceptance:** desktop step in the job turns verified on correct screen state, needs attention otherwise.
+**Verification:** ai test; manual.
+**Dependencies:** T19, T15. **Files:** `packages/ai/src/check.ts`, `apps/desktop/src/main/verify.ts`. **Size:** S
+
+### Checkpoint 5 — end of Fri 30 Oct
+- [ ] "Teach me this screen" works in the demo app with pointer + voice; screen step verifies.
+
+---
+
+### Phase 4 — Continuity (Sat 31 Oct)
+
+#### T21 Desktop pairing by QR
+**Description:** Desktop shows a short-lived pairing code/QR; phone scans and approves; desktop gets a session for the same user.
+**Acceptance:** pairing in under 20 s; code single-use and expires in 2 min.
+**Verification:** API tests for code lifecycle; manual.
+**Dependencies:** T18, T7. **Files:** `apps/api/src/routes/pairing.ts`, `apps/desktop/src/renderer/pair.tsx`, `apps/mobile/app/pair.tsx`. **Size:** M
+
+#### T22 Handoff between devices
+**Description:** `/jobs/:id/handoff`; Supabase Realtime subscription on both apps; desktop notification opens the job at the current step; phone shows "Waiting on desktop".
+**Acceptance:** desktop opens the step within 3 s; status changes on either device appear on the other.
+**Verification:** API test; manual 5/5 runs.
+**Dependencies:** T21, T20. **Files:** `apps/api/src/routes/handoff.ts`, `apps/mobile/src/realtime.ts`, `apps/desktop/src/main/realtime.ts`. **Size:** M
+
+#### T23 Job report and share link
+**Description:** `/jobs/:id/report` JSON from persisted facts; in-app report on phone and desktop; `/r/:token` read-only web page; share link create/revoke.
+**Acceptance:** report separates verified / user-confirmed / needs attention / unresolved with evidence and sources; token hashed, expiring, revocable.
+**Verification:** API tests (report composition, token lifecycle); Playwright smoke on `/r/:token`.
+**Dependencies:** T22. **Files:** `apps/api/src/routes/report.ts`, `apps/api/src/web/report.tsx`, `apps/mobile/app/job/[id]/report.tsx`. **Size:** M
+
+### Checkpoint 6 — end of Sat 31 Oct
+- [ ] Full demo spine on real hardware twice in a row: phone → desktop → report.
+- [ ] Human review: demo story and cut decisions for Phase 5–6.
+
+---
+
+### Phase 5 — Glasses (Sun 1 Nov)
+
+#### T24 Glasses module: shared interface + iOS
+**Description:** Expo native module with one TypeScript interface (connect, state events, capture photo) and the Swift implementation over the Wearables toolkit iOS SDK; capture screen can switch source to glasses; evidence `surface: glasses`.
+**Acceptance:** on iPhone, a step's highlight and check run on a photo taken by the glasses.
+**Verification:** interface unit tests with a mock module; manual on device.
+**Dependencies:** T12, T15, T0.2. **Files:** `apps/mobile/modules/glasses/{src,ios}/*`, `apps/mobile/src/capture/sources.ts`. **Size:** M
+
+#### T24b Glasses module: Android
+**Description:** Kotlin implementation of the same interface over the Wearables toolkit Android SDK.
+**Acceptance:** same acceptance as T24 on an Android phone, with no changes to the TypeScript side.
+**Verification:** manual on device; shared interface tests pass.
+**Dependencies:** T24. **Files:** `apps/mobile/modules/glasses/android/*`. **Size:** M
+
+#### T25 Glasses audio and voice capture trigger
+**Description:** Route PTT mic and TTS to the glasses (Bluetooth) on both platforms; voice command "capture" triggers a glasses photo.
+**Acceptance:** one full step done hands-free through the glasses on iOS and on Android.
+**Verification:** manual on both devices.
+**Dependencies:** T24, T24b, T14. **Files:** `apps/mobile/src/voice/audio-route.ts`, `apps/mobile/src/voice/commands.ts`. **Size:** S
+
+### Checkpoint 7 — end of Sun 1 Nov
+- [ ] One step fully through glasses on iOS and Android; phone path unaffected when glasses are disconnected.
+
+---
+
+### Phase 6 — Extend and harden (Mon 2 Nov)
+
+#### T26 Action guard (Do it for me rules)
+**Description:** `core.actionGuard(action, context)` → allow / confirm / deny: allowed action types, sensitive classes (pay, send, delete, password/secret fields, system/security settings, installs), drag and system key combos need confirm, per-request action cap and rate limit.
+**Acceptance:** table-driven tests for every class; model can't change mode or bypass.
+**Verification:** `pnpm --filter @tandrix/core test`.
+**Dependencies:** T1. (Can be done any time after Phase 1 by Track C.) **Files:** `packages/core/src/action-guard.ts`, tests. **Size:** S
+
+#### T27 Do it for me on desktop
+**Description:** Mode toggle in panel + voice ("just do it"); plain confirmation "Clicking this allows Tandrix to control your device."; macOS Accessibility permission flow; nut.js input driver; observe → act loop with announce + ~1 s cancel window; interrupt on Esc, hotkey, or real user input; persistent in-control indicator; before/after screenshot Events; mode resets per job.
+**Acceptance:** completes the demo screen task by itself; sensitive action stops for confirm; moving the mouse stops it immediately; every action in the job timeline.
+**Verification:** unit tests for loop + interrupt watcher with a fake driver; manual.
+**Dependencies:** T26, T19. **Files:** `apps/desktop/src/main/{control-loop,input-driver,interrupts}.ts`, `apps/desktop/src/renderer/{ControlIndicator,ModeToggle}.tsx`. **Size:** M
+
+#### T28 Record mode (time-boxed 6 h)
+**Description:** Record video on phone/glasses; `/procedures/from-recording` (Files API) → draft steps with timestamps; keyframes via ffmpeg; expert review/publish screen.
+**Acceptance:** 2-minute expert video → editable draft with keyframes; published procedure offered on next job for that model.
+**Verification:** ai test with recorded response; manual.
+**Dependencies:** T11. **Files:** `packages/ai/src/from-recording.ts`, `apps/api/src/routes/recording.ts`, `apps/mobile/app/record.tsx`. **Size:** M
+
+#### T29 Multilingual
+**Description:** Job language setting; passed to ASR and prompts; TTS voice per language.
+**Acceptance:** a step run end to end in a second language.
+**Verification:** manual.
+**Dependencies:** T14. **Files:** `apps/mobile/src/i18n.ts`, `packages/ai/src/prompts.ts`. **Size:** S
+
+#### T30 Hardening pass
+**Description:** Error states and negative tests from User Flows §9: permissions denied, blurry photo, part not found, no signal, model timeout/malformed output, pointer target not visible, prompt injection on a label and on screen, wiring request, delete job removes evidence.
+**Acceptance:** each case has a test or a scripted manual check with expected behaviour; none blocks the demo path.
+**Verification:** `pnpm test`; checklist in `docs/engineering/negative-tests.md` signed off.
+**Dependencies:** Checkpoint 6. **Files:** tests across packages, `docs/engineering/negative-tests.md`. **Size:** M
+
+### Checkpoint 8 — end of Mon 2 Nov
+- [ ] Feature set frozen; anything unfinished cut per §Cut order.
+- [ ] Negative-test checklist signed off.
+
+---
+
+### Phase 7 — Ship (Tue 3 – Wed 4 Nov)
+
+#### T31 Demo reliability
+**Description:** Cache manual/procedure/highlights for the demo pump; prefetch next-step highlights; demo runbook; five consecutive rehearsals on real hardware.
+**Acceptance:** 5/5 clean runs within 5 minutes.
+**Verification:** rehearsal log in `docs/engineering/rehearsals.md`.
+**Dependencies:** Checkpoint 8. **Files:** `apps/api/src/cache.ts`, `docs/engineering/{runbook,rehearsals}.md`. **Size:** S
+
+#### T32 Builds and README
+**Description:** iOS TestFlight build, Android APK, signed and notarised macOS desktop build, deployed API; README with setup, env vars, models used, limitations.
+**Acceptance:** fresh install on a second iPhone, an Android phone and a second Mac runs the demo.
+**Verification:** clean-install test.
+**Dependencies:** T31. **Files:** `README.md`, `apps/mobile/eas.json`, `apps/desktop/electron-builder.yml`. **Size:** M
+
+#### T33 Demo video and submission
+**Description:** Shoot from real captures; architecture diagram; project description naming each Meta model and why; submit.
+**Acceptance:** submitted by 3 PM ET 4 Nov with all required fields.
+**Verification:** submission confirmation saved.
+**Dependencies:** T32. **Files:** `docs/submission/*`. **Size:** S
+
+### Checkpoint 9 — Complete
+- [ ] PRD release definition met (§11).
+- [ ] Definition of done in Hackathon Plan §6 met.
+- [ ] Submitted.
+
+## Cut order (if behind, cut from the top)
+
+1. Ray-Ban Display lens output, asset QR history (already out of this plan)
+2. T29 Multilingual
+3. Share link web page in T23 (keep in-app report)
+4. T28 Record mode (pitch slide only)
+5. T27 Do it for me (keep T26 guard + a pitch mention)
+6. T24b Android glasses (keep iOS), then T24–T25 entirely (keep a short clip if anything works)
+7. T17 Offline cache
+
+**Never cut:** T9–T16 core phone path, T19–T20 Show me, T22 handoff, T23 report, safety gates.
+
+## Risks and mitigations
+
+| Risk | Impact | Mitigation |
+|---|---|---|
+| Model rate limits/quota in demo | High | Check limits in T0.1; demo cache in T31; recorded responses for tests. |
+| SAM or pointing accuracy below bar | High | Day-1 spikes T3/T4 with pre-chosen fallbacks. |
+| Glasses toolkit access/build issues | Medium | T0.2 in prep; single day; phone path independent. |
+| Expo native rebuild churn | Medium | Dev client from T7; no native changes after Checkpoint 7. |
+| "Do it for me" misfires | High | Deterministic guard, announce + cancel window, interrupt on user input, sensitive-action confirm; demo only on the chosen app. |
+| Contract drift across tracks | Medium | Contracts frozen at Checkpoint 1; PR-only changes. |
+| Design system decision slips and blocks UI | High | Decide T0.5 by 25 Oct; T0.6–T0.7 run in parallel with T1–T6; API and AI work never waits on UI. |
+| Two glasses platforms double native work | Medium | Shared TS interface first; Android after iOS works; Android is first glasses cut. |
+| macOS permissions (Screen Recording, Accessibility) in demo | Medium | Grant during clean-install test in T32; runbook step. |
+
+## Open questions
+
+1. Which desktop software is the handoff target (controller config, VFD tool, monitoring dashboard)? Blocks T4 and T19.
+2. ~~Design direction~~ Decided: Geist-style system, documented at https://claude.ai/artifact/JXT7ErJARYzNkiv8EQjpvp.
+3. Once the system is documented, `docs/product/Design_Brief.md` is reduced to product requirements and links to the design system.

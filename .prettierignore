@@ -1,0 +1,5 @@
+pnpm-lock.yaml
+docs/design/system/
+packages/ui/src/generated/
+docs/
+tasks/

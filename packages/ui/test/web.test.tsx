@@ -1,0 +1,151 @@
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+  Button,
+  CheckResult,
+  ConfirmDialog,
+  ControlIndicator,
+  doItForMeConfirmation,
+  HandoffBanner,
+  Input,
+  JobReport,
+  ModeToggle,
+  SourceChip,
+  StatusChip,
+  Tabs,
+  Toggle,
+} from "../src/web";
+
+afterEach(cleanup);
+
+describe("StatusChip", () => {
+  it("never labels user-confirmed as verified", () => {
+    render(<StatusChip status="confirmed" />);
+    expect(screen.getByText("You confirmed")).toBeTruthy();
+    expect(screen.queryByText("Verified")).toBeNull();
+  });
+});
+
+describe("SourceChip", () => {
+  it("labels generic steps by default", () => {
+    render(<SourceChip kind="generic" />);
+    expect(screen.getByText("Generic, not from the manufacturer")).toBeTruthy();
+  });
+});
+
+describe("Button", () => {
+  it("defaults to type=button and forwards clicks", () => {
+    const onClick = vi.fn();
+    render(<Button onClick={onClick}>Check my work</Button>);
+    const btn = screen.getByRole("button", { name: "Check my work" });
+    expect(btn.getAttribute("type")).toBe("button");
+    fireEvent.click(btn);
+    expect(onClick).toHaveBeenCalledOnce();
+  });
+});
+
+describe("ModeToggle", () => {
+  it("requests Do it for me without switching itself", () => {
+    const onChange = vi.fn();
+    render(<ModeToggle mode="show" onChange={onChange} />);
+    fireEvent.click(screen.getByRole("radio", { name: /Do it for me/ }));
+    expect(onChange).toHaveBeenCalledWith("do");
+    expect(screen.getByRole("radio", { name: /Show me/ }).getAttribute("aria-checked")).toBe(
+      "true",
+    );
+  });
+  it("ignores clicks on the current mode", () => {
+    const onChange = vi.fn();
+    render(<ModeToggle mode="show" onChange={onChange} />);
+    fireEvent.click(screen.getByRole("radio", { name: /Show me/ }));
+    expect(onChange).not.toHaveBeenCalled();
+  });
+});
+
+describe("Do it for me confirmation", () => {
+  it("uses the exact product copy", () => {
+    render(<ConfirmDialog {...doItForMeConfirmation} />);
+    expect(screen.getByRole("dialog", { name: "Let Tandrix click for you?" })).toBeTruthy();
+    expect(screen.getByText("Clicking this allows Tandrix to control your device.")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Turn on" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Keep pointing only" })).toBeTruthy();
+  });
+});
+
+describe("ControlIndicator", () => {
+  it("offers a stop control", () => {
+    const onStop = vi.fn();
+    render(<ControlIndicator onStop={onStop} />);
+    fireEvent.click(screen.getByRole("button", { name: "Stop (Esc)" }));
+    expect(onStop).toHaveBeenCalledOnce();
+  });
+});
+
+describe("Toggle", () => {
+  it("flips when uncontrolled and reports the new value", () => {
+    const onChange = vi.fn();
+    render(<Toggle label="Speak instructions" onChange={onChange} />);
+    const sw = screen.getByRole("switch", { name: "Speak instructions" });
+    fireEvent.click(sw);
+    expect(sw.getAttribute("aria-checked")).toBe("true");
+    expect(onChange).toHaveBeenCalledWith(true);
+  });
+  it("does nothing when disabled", () => {
+    const onChange = vi.fn();
+    render(<Toggle label="Share reports" disabled onChange={onChange} />);
+    fireEvent.click(screen.getByRole("switch", { name: "Share reports" }));
+    expect(onChange).not.toHaveBeenCalled();
+  });
+});
+
+describe("Tabs", () => {
+  it("moves selection with arrow keys and wraps", () => {
+    render(
+      <Tabs
+        label="Job"
+        items={[
+          { id: "steps", label: "Steps" },
+          { id: "parts", label: "Parts" },
+        ]}
+      />,
+    );
+    const steps = screen.getByRole("tab", { name: "Steps" });
+    fireEvent.keyDown(steps, { key: "ArrowLeft" });
+    expect(screen.getByRole("tab", { name: "Parts" }).getAttribute("aria-selected")).toBe("true");
+    expect(steps.getAttribute("tabindex")).toBe("-1");
+  });
+});
+
+describe("Input", () => {
+  it("links the error message to the field", () => {
+    render(
+      <Input label="Torque applied" error="The manual specifies 25 Nm." onChange={() => {}} />,
+    );
+    const field = screen.getByLabelText("Torque applied");
+    expect(field.getAttribute("aria-invalid")).toBe("true");
+    const describedBy = field.getAttribute("aria-describedby")!;
+    expect(document.getElementById(describedBy)?.textContent).toContain("25 Nm");
+  });
+});
+
+describe("CheckResult", () => {
+  it("states when a photo can't verify a step", () => {
+    render(<CheckResult result="not_verifiable" reason="Torque can't be seen in a photo." />);
+    expect(screen.getByText("Can't check this from a photo")).toBeTruthy();
+  });
+});
+
+describe("HandoffBanner", () => {
+  it("names the step on the Mac side", () => {
+    render(<HandoffBanner state="incoming" job="Pump P-100 assembly" step={9} device="iPhone" />);
+    expect(screen.getByText("Pump P-100 assembly: step 9 is ready")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Open step 9" })).toBeTruthy();
+  });
+});
+
+describe("JobReport", () => {
+  it("always carries the certification footnote", () => {
+    render(<JobReport title="Pump P-100 assembly" counts={{ verified: 9 }} steps={[]} />);
+    expect(screen.getByText(/does not certify the installation/)).toBeTruthy();
+  });
+});
