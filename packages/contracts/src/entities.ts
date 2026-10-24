@@ -132,6 +132,8 @@ export const Procedure = z.strictObject({
   status: z.enum(["draft", "published"]),
   version: z.number().int().min(1),
   title: text(160),
+  /** The manual it was generated from; null for generic procedures. */
+  manualId: Id.nullable(),
   createdAt: Timestamp,
 });
 export type Procedure = z.infer<typeof Procedure>;

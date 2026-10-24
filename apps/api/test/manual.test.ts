@@ -9,12 +9,14 @@ import { z } from "zod";
 import { describe, expect, it } from "vitest";
 import { createApp } from "../src/app";
 import type { ManualFinder } from "../src/manual-finder";
+import { noModelGenerator } from "../src/procedure-generator";
 import type { JobsRepo } from "../src/repos/jobs";
 import type { Transport } from "../src/safe-fetch";
 import {
   memoryAssets,
   memoryEvidence,
   memoryManuals,
+  memoryProcedures,
   memoryStorage,
   scriptedReader,
   TEST_TOKEN_SECRET,
@@ -111,6 +113,8 @@ async function setup(
         },
       } satisfies ManualFinder),
     tokenSecret: TEST_TOKEN_SECRET,
+    procedures: memoryProcedures(),
+    procedureGenerator: noModelGenerator,
     manualFetch: {
       resolve: async () => [{ address: "93.184.215.14", family: 4 }],
       transport: {

@@ -41,5 +41,9 @@ export function dbError(e: unknown): Error {
     return new HttpError(401, "unauthorized", "Your session has ended. Sign in again.");
   }
   if (o.code === "P0002") return new HttpError(404, "not_found", "Job not found.");
+  // Raised by save_procedure when a concurrent request already gave the job its steps.
+  if (o.code === "23505" && /already has a procedure/.test(message)) {
+    return new HttpError(409, "conflict", "This job already has its steps.");
+  }
   return e instanceof Error ? e : new DbError(message, o.code ?? null, o.details ?? null);
 }

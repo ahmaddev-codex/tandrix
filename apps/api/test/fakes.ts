@@ -1,6 +1,14 @@
 // In-memory evidence repo and storage for unit tests.
-import type { Asset, Evidence, IdentifyAssetResponse, Manual } from "@tandrix/contracts";
+import type {
+  Asset,
+  Evidence,
+  IdentifyAssetResponse,
+  Manual,
+  ProcedureDetail,
+} from "@tandrix/contracts";
 import { noModelFinder } from "../src/manual-finder";
+import { noModelGenerator } from "../src/procedure-generator";
+import type { ProceduresRepo, SaveProcedure } from "../src/repos/procedures";
 import type { NameplateReader } from "../src/nameplate";
 import type { AssetsRepo, SaveAsset } from "../src/repos/assets";
 import type { ManualsRepo, PendingUpload } from "../src/repos/manuals";
@@ -212,4 +220,64 @@ export const noManuals = () => ({
   manualStorage: memoryStorage(),
   manualFinder: noModelFinder,
   tokenSecret: TEST_TOKEN_SECRET,
+  procedures: memoryProcedures(),
+  procedureGenerator: noModelGenerator,
 });
+
+/** Stores saved procedures as details; `saves` records what the route asked to save. */
+export function memoryProcedures() {
+  const details = new Map<string, ProcedureDetail & { ownerId: string }>();
+  const repo: ProceduresRepo & { saves: SaveProcedure[]; details: typeof details } = {
+    saves: [],
+    details,
+    async save(input) {
+      repo.saves.push(input);
+      const { draft, partIds, stepIds, procedureId } = input;
+      details.set(procedureId, {
+        ownerId: input.ownerId,
+        procedure: {
+          id: procedureId,
+          assetModelKey: input.assetModelKey,
+          sourceType: input.manualId ? "manual" : "generic",
+          authorId: input.ownerId,
+          status: "draft",
+          version: 1,
+          title: draft.title,
+          manualId: input.manualId,
+          createdAt: "2026-10-26T10:00:00.000Z",
+        },
+        parts: draft.parts.map((p) => ({
+          id: partIds.get(p.ref)!,
+          procedureId,
+          ...(p.partNumber ? { partNumber: p.partNumber } : {}),
+          name: p.name,
+          qty: p.qty,
+        })),
+        steps: draft.steps.map((s, i) => ({
+          id: stepIds[i]!,
+          procedureId,
+          order: s.order,
+          surface: s.surface,
+          title: s.title,
+          instruction: s.instruction,
+          partSpecIds: s.partRefs.map((r) => partIds.get(r)!),
+          hazardTags: s.hazardTags,
+          verification: s.verification,
+          expectedState: s.expectedState,
+          ...(s.measurement ? { measurement: s.measurement } : {}),
+          citation:
+            s.citation.kind === "manual" && input.manualId
+              ? { kind: "manual" as const, manualId: input.manualId, page: s.citation.page }
+              : { kind: "generic" as const },
+        })),
+      });
+    },
+    async getDetail(ownerId, id) {
+      const d = details.get(id);
+      if (!d || d.ownerId !== ownerId) return null;
+      const { ownerId: _o, ...detail } = d;
+      return detail;
+    },
+  };
+  return repo;
+}

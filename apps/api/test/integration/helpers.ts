@@ -10,6 +10,8 @@ import { supabaseEvidenceRepo, supabaseEvidenceStorage } from "../../src/repos/e
 import { supabaseJobsRepo } from "../../src/repos/jobs";
 import type { ManualFinder } from "../../src/manual-finder";
 import { supabaseManualsRepo } from "../../src/repos/manuals";
+import type { ProcedureGenerator } from "../../src/procedure-generator";
+import { supabaseProceduresRepo } from "../../src/repos/procedures";
 import type { Transport } from "../../src/safe-fetch";
 
 export const config = loadApiConfig();
@@ -53,6 +55,14 @@ export const web: {
   },
 };
 
+/** Tests set `generator.impl` to script the drafted procedure. */
+export const generator: ProcedureGenerator & { impl: ProcedureGenerator["generate"] } = {
+  impl: async () => ({ status: "unavailable", message: "Model off in tests." }),
+  generate(input) {
+    return generator.impl(input);
+  },
+};
+
 export const app = createApp({
   verifyToken: supabaseVerifier(admin),
   jobs: supabaseJobsRepo(admin),
@@ -63,6 +73,8 @@ export const app = createApp({
   manuals: supabaseManualsRepo(admin),
   manualStorage: supabaseEvidenceStorage(admin, "manuals"),
   manualFinder: finder,
+  procedures: supabaseProceduresRepo(admin),
+  procedureGenerator: generator,
   tokenSecret: config.tokenSigningSecret,
   manualFetch: { resolve: (h) => web.resolve(h), transport: web.transport },
   corsOrigins: [],

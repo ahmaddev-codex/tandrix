@@ -10,6 +10,9 @@ import { supabaseEvidenceRepo, supabaseEvidenceStorage } from "./repos/evidence"
 import { supabaseJobsRepo } from "./repos/jobs";
 import { metaManualFinder, noModelFinder } from "./manual-finder";
 import { supabaseManualsRepo } from "./repos/manuals";
+import { fixtureProcedureGenerator } from "./fixtures/procedure";
+import { metaProcedureGenerator, noModelGenerator } from "./procedure-generator";
+import { supabaseProceduresRepo } from "./repos/procedures";
 
 const config = loadApiConfig();
 const admin = createClient(config.supabaseUrl, config.supabaseSecretKey, {
@@ -21,6 +24,12 @@ const log = (l: Record<string, unknown>) => console.log(JSON.stringify(l));
 const meta = process.env.META_API_KEY ? loadMetaConfig() : null;
 const nameplateReader = meta ? metaNameplateReader(meta, log) : noModelReader;
 const manualFinder = meta ? metaManualFinder(meta, log) : noModelFinder;
+const procedureGenerator = config.fixtureProcedure
+  ? fixtureProcedureGenerator
+  : meta
+    ? metaProcedureGenerator(meta, log)
+    : noModelGenerator;
+if (config.fixtureProcedure) log({ level: "warn", event: "fixture_procedure_on" });
 if (!process.env.META_API_KEY)
   log({ level: "warn", event: "models_disabled", reason: "META_API_KEY not set" });
 
@@ -34,6 +43,8 @@ const app = createApp({
   manuals: supabaseManualsRepo(admin),
   manualStorage: supabaseEvidenceStorage(admin, "manuals"),
   manualFinder,
+  procedures: supabaseProceduresRepo(admin),
+  procedureGenerator,
   tokenSecret: config.tokenSigningSecret,
   corsOrigins: config.corsOrigins,
   log,

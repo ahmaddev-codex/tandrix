@@ -8,6 +8,9 @@ import {
   Job,
   JobStep,
   Manual,
+  PartSpec,
+  Procedure,
+  ProcedureStep,
   SafetyGate,
 } from "./entities";
 import { ManualSearchOutput, NameplateReading } from "./model-outputs";
@@ -106,6 +109,14 @@ export const SaveAssetRequest = z.strictObject({
   confidence: z.number().min(0).max(1).optional(),
 });
 
+/** The job's procedure with its parts and steps, in step order. */
+export const ProcedureDetail = z.strictObject({
+  procedure: Procedure,
+  parts: z.array(PartSpec),
+  steps: z.array(ProcedureStep),
+});
+export type ProcedureDetail = z.infer<typeof ProcedureDetail>;
+
 /** GET /jobs/:id */
 export const JobDetailResponse = z.strictObject({
   job: Job,
@@ -113,7 +124,26 @@ export const JobDetailResponse = z.strictObject({
   asset: Asset.nullable(),
   /** The manual on file for this asset's model, if any. */
   manual: Manual.nullable(),
+  procedure: ProcedureDetail.nullable(),
 });
+
+/** POST /jobs/:id/procedure. The task defaults to the job title. */
+export const GenerateProcedureRequest = z.strictObject({
+  task: text(300).optional(),
+  /** True to proceed without a manual: every step is labelled Generic. */
+  allowGeneric: z.boolean().default(false),
+});
+
+export const GenerateProcedureResponse = z.discriminatedUnion("status", [
+  z.strictObject({
+    status: z.literal("created"),
+    detail: ProcedureDetail,
+    /** Steps cited from the manual; the rest are Generic. */
+    citedSteps: z.number().int().min(0),
+  }),
+  z.strictObject({ status: z.literal("unavailable"), message: text(300) }),
+]);
+export type GenerateProcedureResponse = z.infer<typeof GenerateProcedureResponse>;
 
 export const ManualSearchResponse = z.discriminatedUnion("status", [
   z.strictObject({
