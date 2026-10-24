@@ -20,6 +20,9 @@ export const NameplateReading = z.strictObject({
 });
 export type NameplateReading = z.infer<typeof NameplateReading>;
 
+/** Below this confidence a reading is shown as a "Possible match" for the user to check. */
+export const NAMEPLATE_CONFIDENT = 0.8;
+
 export const ModelCitation = z.discriminatedUnion("kind", [
   z.strictObject({
     kind: z.literal("manual"),

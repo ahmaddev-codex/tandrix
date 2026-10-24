@@ -2,7 +2,7 @@ import { CreateEvidenceResponse, EvidenceWithUrl } from "@tandrix/contracts";
 import { describe, expect, it } from "vitest";
 import { createApp } from "../src/app";
 import type { JobsRepo } from "../src/repos/jobs";
-import { memoryEvidence, memoryStorage } from "./fakes";
+import { memoryAssets, memoryEvidence, memoryStorage, scriptedReader } from "./fakes";
 
 const A = "00000000-0000-4000-8000-00000000000a";
 const B = "00000000-0000-4000-8000-00000000000b";
@@ -19,6 +19,8 @@ function setup() {
     jobs: {} as JobsRepo,
     evidence,
     storage,
+    assets: memoryAssets(),
+    nameplateReader: scriptedReader(),
     corsOrigins: [],
     log: () => {},
   });

@@ -4,6 +4,8 @@ import { randomUUID } from "node:crypto";
 import { createApp } from "../../src/app";
 import { supabaseVerifier } from "../../src/auth";
 import { loadApiConfig } from "../../src/config";
+import type { NameplateReader } from "../../src/nameplate";
+import { supabaseAssetsRepo } from "../../src/repos/assets";
 import { supabaseEvidenceRepo, supabaseEvidenceStorage } from "../../src/repos/evidence";
 import { supabaseJobsRepo } from "../../src/repos/jobs";
 
@@ -14,11 +16,25 @@ export const admin = createClient(config.supabaseUrl, config.supabaseSecretKey, 
   auth: { persistSession: false, autoRefreshToken: false },
 });
 
+/** Tests set `reader.impl` to script the model; real model calls never run in tests. */
+export const reader: NameplateReader & { impl: NameplateReader["read"] } = {
+  impl: async () => ({
+    status: "unavailable",
+    reason: "model_unavailable",
+    message: "Model off in tests.",
+  }),
+  read(image) {
+    return reader.impl(image);
+  },
+};
+
 export const app = createApp({
   verifyToken: supabaseVerifier(admin),
   jobs: supabaseJobsRepo(admin),
   evidence: supabaseEvidenceRepo(admin),
   storage: supabaseEvidenceStorage(admin),
+  assets: supabaseAssetsRepo(admin),
+  nameplateReader: reader,
   corsOrigins: [],
   log: () => {},
 });

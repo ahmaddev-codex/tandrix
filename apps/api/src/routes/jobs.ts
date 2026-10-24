@@ -3,6 +3,7 @@ import { Hono } from "hono";
 import { z } from "zod";
 import type { AuthEnv } from "../auth";
 import { invalid, notFound } from "../errors";
+import type { AssetsRepo } from "../repos/assets";
 import type { JobsRepo } from "../repos/jobs";
 
 const ListQuery = z.object({ limit: z.coerce.number().int().min(1).max(100).default(50) });
@@ -10,7 +11,7 @@ const ListQuery = z.object({ limit: z.coerce.number().int().min(1).max(100).defa
 const issues = (e: z.ZodError) =>
   e.issues.map((i) => `${i.path.join(".") || "body"}: ${i.message}`);
 
-export function jobsRoutes(repo: JobsRepo) {
+export function jobsRoutes(repo: JobsRepo, assets: AssetsRepo) {
   return new Hono<AuthEnv>()
     .post("/", async (c) => {
       const body = await c.req.json().catch(() => undefined);
@@ -38,8 +39,10 @@ export function jobsRoutes(repo: JobsRepo) {
     .get("/:id", async (c) => {
       const id = Id.safeParse(c.req.param("id"));
       if (!id.success) throw notFound("Job");
-      const found = await repo.getForOwner(c.get("user").id, id.data);
+      const user = c.get("user");
+      const found = await repo.getForOwner(user.id, id.data);
       if (!found) throw notFound("Job");
-      return c.json(found);
+      const asset = found.job.assetId ? await assets.getForOwner(user.id, found.job.assetId) : null;
+      return c.json({ ...found, asset });
     });
 }

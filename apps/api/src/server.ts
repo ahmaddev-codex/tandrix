@@ -3,6 +3,9 @@ import { createClient } from "@supabase/supabase-js";
 import { createApp } from "./app";
 import { supabaseVerifier } from "./auth";
 import { loadApiConfig } from "./config";
+import { loadMetaConfig } from "@tandrix/ai";
+import { metaNameplateReader, noModelReader } from "./nameplate";
+import { supabaseAssetsRepo } from "./repos/assets";
 import { supabaseEvidenceRepo, supabaseEvidenceStorage } from "./repos/evidence";
 import { supabaseJobsRepo } from "./repos/jobs";
 
@@ -11,12 +14,23 @@ const admin = createClient(config.supabaseUrl, config.supabaseSecretKey, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
 
+const log = (l: Record<string, unknown>) => console.log(JSON.stringify(l));
+// Models are optional: without a key, identification reports "unavailable" and users type details.
+const nameplateReader = process.env.META_API_KEY
+  ? metaNameplateReader(loadMetaConfig(), log)
+  : noModelReader;
+if (!process.env.META_API_KEY)
+  log({ level: "warn", event: "models_disabled", reason: "META_API_KEY not set" });
+
 const app = createApp({
   verifyToken: supabaseVerifier(admin),
   jobs: supabaseJobsRepo(admin),
   evidence: supabaseEvidenceRepo(admin),
   storage: supabaseEvidenceStorage(admin),
+  assets: supabaseAssetsRepo(admin),
+  nameplateReader,
   corsOrigins: config.corsOrigins,
+  log,
 });
 
 serve({ fetch: app.fetch, port: config.port }, (info) => {
