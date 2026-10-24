@@ -2,6 +2,7 @@ import { Job } from "@tandrix/contracts";
 import { describe, expect, it } from "vitest";
 import { createApp } from "../src/app";
 import type { JobsRepo, NewJob } from "../src/repos/jobs";
+import { memoryEvidence, memoryStorage } from "./fakes";
 
 const A = "00000000-0000-4000-8000-00000000000a";
 const B = "00000000-0000-4000-8000-00000000000b";
@@ -53,6 +54,8 @@ function setup() {
   const app = createApp({
     verifyToken: async (t) => (t === "token-a" ? { id: A } : t === "token-b" ? { id: B } : null),
     jobs: repo,
+    evidence: memoryEvidence(new Map()),
+    storage: memoryStorage(),
     corsOrigins: ["http://localhost:5173"],
     log: (l) => logs.push(l),
   });

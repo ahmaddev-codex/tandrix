@@ -199,6 +199,8 @@ export const Evidence = z.strictObject({
   width: z.number().int().min(1).optional(),
   height: z.number().int().min(1).optional(),
   capturedAt: Timestamp,
+  /** Set when the API has confirmed the file is in storage; clients only see uploaded evidence. */
+  uploadedAt: Timestamp.nullable(),
   deletedAt: Timestamp.nullable(),
 });
 export type Evidence = z.infer<typeof Evidence>;

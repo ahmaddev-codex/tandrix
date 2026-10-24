@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { createApp } from "./app";
 import { supabaseVerifier } from "./auth";
 import { loadApiConfig } from "./config";
+import { supabaseEvidenceRepo, supabaseEvidenceStorage } from "./repos/evidence";
 import { supabaseJobsRepo } from "./repos/jobs";
 
 const config = loadApiConfig();
@@ -13,6 +14,8 @@ const admin = createClient(config.supabaseUrl, config.supabaseSecretKey, {
 const app = createApp({
   verifyToken: supabaseVerifier(admin),
   jobs: supabaseJobsRepo(admin),
+  evidence: supabaseEvidenceRepo(admin),
+  storage: supabaseEvidenceStorage(admin),
   corsOrigins: config.corsOrigins,
 });
 

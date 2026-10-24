@@ -1,74 +1,25 @@
 // Runs against the local Supabase stack: `pnpm test:integration` (needs `pnpm setup:local`).
 // Covers T6 acceptance: users create and list only their own jobs, and no one can read or write
 // another user's data, through the API or directly against the database.
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { createClient } from "@supabase/supabase-js";
 import { Job } from "@tandrix/contracts";
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { createApp } from "../../src/app";
-import { supabaseVerifier } from "../../src/auth";
-import { loadApiConfig } from "../../src/config";
-import { supabaseJobsRepo } from "../../src/repos/jobs";
+import { admin, api, config, userFactory, type TestUser } from "./helpers";
 
-const config = loadApiConfig();
-if (config.env !== "local") throw new Error("Integration tests only run against the local stack.");
-
-const admin = createClient(config.supabaseUrl, config.supabaseSecretKey, {
-  auth: { persistSession: false, autoRefreshToken: false },
-});
-const app = createApp({
-  verifyToken: supabaseVerifier(admin),
-  jobs: supabaseJobsRepo(admin),
-  corsOrigins: [],
-  log: () => {},
-});
-
-interface TestUser {
-  id: string;
-  token: string;
-  /** Talks to the database directly as this user, the way a client app could. */
-  db: SupabaseClient;
-}
-
-const run = randomUUID().slice(0, 8);
-const users: TestUser[] = [];
-
-async function makeUser(name: string): Promise<TestUser> {
-  const email = `it-${run}-${name}@tandrix.local`;
-  const password = randomUUID();
-  const created = await admin.auth.admin.createUser({ email, password, email_confirm: true });
-  if (created.error) throw created.error;
-  const client = createClient(config.supabaseUrl, config.supabasePublishableKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-  const signed = await client.auth.signInWithPassword({ email, password });
-  if (signed.error) throw signed.error;
-  const u = { id: created.data.user.id, token: signed.data.session.access_token, db: client };
-  users.push(u);
-  return u;
-}
-
-const api = (path: string, user: TestUser | null, init: RequestInit = {}) =>
-  app.request(path, {
-    ...init,
-    headers: {
-      "content-type": "application/json",
-      ...(user ? { authorization: `Bearer ${user.token}` } : {}),
-    },
-  });
+const users = userFactory();
+const run = users.run;
 
 let alice: TestUser;
 let bob: TestUser;
 let aliceJob: Job;
 
 beforeAll(async () => {
-  alice = await makeUser("alice");
-  bob = await makeUser("bob");
+  alice = await users.make("alice");
+  bob = await users.make("bob");
 });
 
-afterAll(async () => {
-  for (const u of users) await admin.auth.admin.deleteUser(u.id);
-});
+afterAll(() => users.cleanup());
 
 describe("API", () => {
   it("creates a job for the signed-in user and records the event", async () => {

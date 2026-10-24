@@ -3,12 +3,16 @@ import { cors } from "hono/cors";
 import { requestId } from "hono/request-id";
 import { requireUser, type AuthEnv, type VerifyToken } from "./auth";
 import { HttpError } from "./errors";
+import type { EvidenceRepo, EvidenceStorage } from "./repos/evidence";
 import type { JobsRepo } from "./repos/jobs";
+import { evidenceRoutes } from "./routes/evidence";
 import { jobsRoutes } from "./routes/jobs";
 
 export interface AppDeps {
   verifyToken: VerifyToken;
   jobs: JobsRepo;
+  evidence: EvidenceRepo;
+  storage: EvidenceStorage;
   corsOrigins: string[];
   /** Logs one line per request. Never request bodies, tokens or media. */
   log?: (line: Record<string, unknown>) => void;
@@ -43,6 +47,8 @@ export function createApp(deps: AppDeps) {
 
   app.use("/jobs/*", requireUser(deps.verifyToken));
   app.use("/jobs", requireUser(deps.verifyToken));
+  // Evidence first: the more specific path must win over /jobs/:id.
+  app.route("/jobs/:id/evidence", evidenceRoutes(deps.evidence, deps.storage));
   app.route("/jobs", jobsRoutes(deps.jobs));
 
   app.notFound((c) => c.json({ error: { code: "not_found", message: "No such route." } }, 404));

@@ -1,8 +1,8 @@
 // Request bodies for the Tandrix API (Architecture §5). Responses are the entities.
 import { z } from "zod";
-import { EvidenceKind, SafetyGate } from "./entities";
+import { Evidence, EvidenceKind, SafetyGate } from "./entities";
 import { ScreenGeometry } from "./desktop";
-import { ControlMode, Id, Language, Surface, text } from "./primitives";
+import { ControlMode, Id, Language, Surface, Timestamp, text } from "./primitives";
 
 export const CreateJobRequest = z.strictObject({
   title: text(160),
@@ -31,6 +31,10 @@ export const CreateEvidenceRequest = z
     byteSize: z.number().int().min(1),
     surface: Surface,
     jobStepId: Id.optional(),
+    width: z.number().int().min(1).max(20_000).optional(),
+    height: z.number().int().min(1).max(20_000).optional(),
+    /** When the photo was taken on the device; defaults to now. */
+    capturedAt: Timestamp.optional(),
   })
   .superRefine((v, ctx) => {
     const limit = uploadLimits[v.kind];
@@ -45,6 +49,26 @@ export const CreateEvidenceRequest = z
       ctx.addIssue({ code: "custom", path: ["byteSize"], message: `Too large for ${v.kind}` });
     }
   });
+
+/** Returned by POST /jobs/:id/evidence: upload the file to `upload.signedUrl`, then confirm. */
+export const CreateEvidenceResponse = z.strictObject({
+  evidence: Evidence,
+  upload: z.strictObject({
+    bucket: z.literal("evidence"),
+    path: text(512),
+    token: z.string().min(1),
+    signedUrl: z.url(),
+  }),
+});
+export type CreateEvidenceResponse = z.infer<typeof CreateEvidenceResponse>;
+
+/** Uploaded evidence with a short-lived URL to show it. */
+export const EvidenceWithUrl = z.strictObject({
+  evidence: Evidence,
+  url: z.url(),
+  urlExpiresAt: Timestamp,
+});
+export type EvidenceWithUrl = z.infer<typeof EvidenceWithUrl>;
 
 /** What a user can do to a step. Status changes from checks come only from the check pipeline. */
 export const StepActionRequest = z.discriminatedUnion("action", [
