@@ -3,9 +3,10 @@ import {
   buildObjectPrompt,
   parseImageStream,
   recordsOfKind,
+  ResponsesStreamSourceError,
   type SegmentationMask,
 } from "@meta-sam/parser";
-import type { MetaClient } from "./client";
+import { MetaApiError, type MetaClient } from "./client";
 import type { InputPart } from "./content";
 
 export interface Segment {
@@ -59,7 +60,14 @@ export async function segment(client: MetaClient, req: SegmentRequest): Promise<
     },
     req.signal,
   );
-  const result = await parseImageStream(events).finalResult;
+  let result;
+  try {
+    result = await parseImageStream(events).finalResult;
+  } catch (e) {
+    // The parser wraps transport failures; surface the API error itself (billing, rate limit…).
+    if (e instanceof ResponsesStreamSourceError && e.cause instanceof MetaApiError) throw e.cause;
+    throw e;
+  }
 
   const masks = new Map(recordsOfKind(result.records, "mask").map((m) => [m.objectId, m]));
   const segments = recordsOfKind(result.records, "box").map((b) => {
