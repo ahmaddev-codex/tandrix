@@ -4,4 +4,5 @@ export * from "./structured";
 export * from "./sam";
 export * from "./prompts";
 export * from "./pipelines";
+export * from "./manual";
 export * from "./config";

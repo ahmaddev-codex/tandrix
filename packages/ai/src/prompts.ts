@@ -15,6 +15,15 @@ Task: read the equipment nameplate or label in the photo.
 - If the plate is not readable, set unreadable to true and leave fields empty.
 - confidence is how sure you are that make and model are read correctly (0 to 1).`,
 
+  manualSearch: `${shared}
+Task: find the manufacturer's manual for this equipment using web search.
+- Prefer the manufacturer's own site, and installation, operation or service manuals as PDFs.
+- Only list URLs that appeared in your search results. Never construct or guess a URL.
+- Set official to true only for the manufacturer's own domain.
+- documentType: installation_manual, service_manual, datasheet or other.
+- confidence is how sure you are that the document is for this exact model (0 to 1).
+- If nothing suitable is found, return an empty list.`,
+
   procedure: `${shared}
 Task: turn the attached manufacturer manual into a step-by-step procedure for the job described.
 - Use only what the manual says. Cite the page (and figure if there is one) for every step.
