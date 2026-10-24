@@ -157,3 +157,53 @@ describe("constructor", () => {
     expect(() => new MetaClient({ apiKey: "", sleep: noSleep })).toThrow(/API key/);
   });
 });
+
+describe("MetaClient files", () => {
+  it("uploads with purpose and expiry before the file, and returns the id", async () => {
+    const { client, calls } = make([json(200, { id: "file-123", object: "file" })]);
+    const r = await client.uploadFile(new Uint8Array([37, 80, 68, 70]), {
+      filename: "manual.pdf",
+      mimeType: "application/pdf",
+      expiresAfterSec: 3600,
+    });
+    expect(r).toEqual({ id: "file-123" });
+    expect(calls[0]!.url).toBe("https://api.meta.ai/v1/files");
+    const form = calls[0]!.form!;
+    expect([...form.keys()]).toEqual([
+      "purpose",
+      "expires_after[anchor]",
+      "expires_after[seconds]",
+      "file",
+    ]);
+    expect(form.get("purpose")).toBe("user_data");
+    expect(form.get("expires_after[seconds]")).toBe("3600");
+    expect((form.get("file") as File).name).toBe("manual.pdf");
+  });
+
+  it("sends a fresh form on retry", async () => {
+    const { client, calls } = make([
+      apiError(503, "server_error", null),
+      json(200, { id: "file-9" }),
+    ]);
+    await client.uploadFile(new Uint8Array([1]), {
+      filename: "a.pdf",
+      mimeType: "application/pdf",
+    });
+    expect(calls).toHaveLength(2);
+    expect(calls[0]!.form).not.toBe(calls[1]!.form);
+    expect(calls[1]!.form!.get("purpose")).toBe("user_data");
+  });
+
+  it("deletes a file, and treats an already-deleted one as done", async () => {
+    const { client, calls } = make([
+      json(200, { deleted: true }),
+      apiError(404, "not_found", null),
+    ]);
+    await client.deleteFile("file-1");
+    await client.deleteFile("file-2");
+    expect(calls.map((c) => [c.method, c.url])).toEqual([
+      ["DELETE", "https://api.meta.ai/v1/files/file-1"],
+      ["DELETE", "https://api.meta.ai/v1/files/file-2"],
+    ]);
+  });
+});

@@ -30,22 +30,35 @@ export function identifyNameplate(client: MetaClient, models: Models, photo: Inp
 }
 
 export interface ProcedureRequest {
-  manual: InputPart;
+  /** The manual PDF (inline or a Files API id). Omit for a generic procedure. */
+  manual?: InputPart;
+  /** Pages in the manual, so the model knows which page numbers exist. */
+  manualPages?: number;
   asset: { make: string; model: string };
   job: string;
   effort?: ReasoningEffort;
+  signal?: AbortSignal;
 }
 
 export function generateProcedure(client: MetaClient, models: Models, req: ProcedureRequest) {
+  const about = `Equipment: ${req.asset.make} ${req.asset.model}\nJob: ${req.job}`;
   return generateStructured(client, {
     model: models.reasoning,
     name: "procedure_draft",
     schema: ProcedureDraft,
-    instructions: prompts.procedure,
+    instructions: req.manual ? prompts.procedure : prompts.procedureGeneric,
     input: [
-      user(text(`Equipment: ${req.asset.make} ${req.asset.model}\nJob: ${req.job}`), req.manual),
+      req.manual
+        ? user(
+            text(
+              `${about}${req.manualPages ? `\nThe manual has ${req.manualPages} pages; cite page numbers as printed in the PDF viewer (1 to ${req.manualPages}).` : ""}`,
+            ),
+            req.manual,
+          )
+        : user(text(`${about}\nNo manual is available.`)),
     ],
     effort: req.effort ?? "medium",
+    ...(req.signal ? { signal: req.signal } : {}),
   });
 }
 

@@ -109,9 +109,56 @@ export class MetaClient {
     yield* parseSse(res.body);
   }
 
-  private async post(
+  /**
+   * POST /files (purpose user_data) for inputs too large to send inline. Set an expiry and delete
+   * after use: uploaded files otherwise persist and count against team storage.
+   */
+  async uploadFile(
+    bytes: Uint8Array,
+    opts: { filename: string; mimeType: string; expiresAfterSec?: number },
+    signal?: AbortSignal,
+  ): Promise<{ id: string }> {
+    const form = () => {
+      // purpose and expiry before the file part, as the API recommends.
+      const f = new FormData();
+      f.append("purpose", "user_data");
+      if (opts.expiresAfterSec) {
+        f.append("expires_after[anchor]", "created_at");
+        f.append("expires_after[seconds]", String(opts.expiresAfterSec));
+      }
+      f.append("file", new Blob([bytes as BlobPart], { type: opts.mimeType }), opts.filename);
+      return f;
+    };
+    const res = await this.send("/files", { method: "POST", body: form }, signal);
+    const json = (await res.json()) as { id?: unknown };
+    if (typeof json.id !== "string")
+      throw new MetaApiError("Upload returned no file id", res.status, null, null, false);
+    return { id: json.id };
+  }
+
+  /** DELETE /files/:id. A file that is already gone counts as deleted. */
+  async deleteFile(id: string, signal?: AbortSignal): Promise<void> {
+    try {
+      await this.send(`/files/${encodeURIComponent(id)}`, { method: "DELETE" }, signal);
+    } catch (e) {
+      if (e instanceof MetaApiError && e.status === 404) return;
+      throw e;
+    }
+  }
+
+  private post(path: string, body: unknown, signal?: AbortSignal, accept = "application/json") {
+    return this.send(
+      path,
+      { method: "POST", body: () => JSON.stringify(body), contentType: "application/json" },
+      signal,
+      accept,
+    );
+  }
+
+  /** One request with retries. `body` is a factory so each attempt sends a fresh body. */
+  private async send(
     path: string,
-    body: unknown,
+    req: { method: string; body?: () => BodyInit; contentType?: string },
     signal?: AbortSignal,
     accept = "application/json",
   ): Promise<Response> {
@@ -122,13 +169,13 @@ export class MetaClient {
       let res: Response;
       try {
         res = await this.fetchImpl(`${this.baseUrl}${path}`, {
-          method: "POST",
+          method: req.method,
           headers: {
             Authorization: `Bearer ${this.opts.apiKey}`,
-            "Content-Type": "application/json",
+            ...(req.contentType ? { "Content-Type": req.contentType } : {}),
             Accept: accept,
           },
-          body: JSON.stringify(body),
+          ...(req.body ? { body: req.body() } : {}),
           signal: combined,
         });
       } catch (e) {

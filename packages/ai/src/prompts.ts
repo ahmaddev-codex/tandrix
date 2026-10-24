@@ -35,6 +35,16 @@ Task: turn the attached manufacturer manual into a step-by-step procedure for th
 - surface is "desktop" for steps done in software on a computer, otherwise "physical".
 - List the parts the manual names, with ref P1, P2, … and refer to them from steps by ref.`,
 
+  procedureGeneric: `${shared}
+Task: no manual is available. Write a cautious, general procedure for the job described, based on common practice for this type of equipment.
+- Every step uses citation kind "generic". Never cite a page or invent a manual.
+- Never state specific values (torque, clearance, part numbers) unless they are universal; tell the user to check the nameplate or the manufacturer instead.
+- One action per step. Title: imperative, at most 8 words. Instruction: what to do. Reason: why, when it helps.
+- expectedState describes what a correct result looks like in a photo.
+- verification: "photo" when a photo can show the result, otherwise "user_confirm".
+- Tag hazards on every step where they apply: electrical_isolation, pressure, rotating_parts, hot_surface, heavy_lift, chemical. Tag live_electrical for any wiring or live work.
+- List the parts the job typically involves, with ref P1, P2, … and refer to them from steps by ref.`,
+
   highlight: `${shared}
 Task: for each part in this step, pick which candidate box in the photo is that part.
 - Candidate boxes are listed with index, source-pixel coordinates and the concept that found them.

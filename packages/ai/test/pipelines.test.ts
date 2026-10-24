@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   checkParts,
   checkStep,
+  generateProcedure,
   generateStructured,
   highlightParts,
   identifyNameplate,
@@ -10,6 +11,8 @@ import {
   loadMetaConfig,
   MetaClient,
   normalizeConcept,
+  pdfData,
+  prompts,
   segment,
   text,
   user,
@@ -101,6 +104,57 @@ describe("identifyNameplate", () => {
     ]);
     const r = await identifyNameplate(client, models, photo);
     expect(r.ok && r.data.model).toBe("CR 3-10");
+  });
+});
+
+describe("generateProcedure", () => {
+  const draft = {
+    title: "Assemble the pump",
+    parts: [{ ref: "P1", name: "Impeller", qty: 1 }],
+    steps: [
+      {
+        order: 1,
+        surface: "physical",
+        title: "Fit the impeller",
+        instruction: "Slide the impeller onto the shaft.",
+        partRefs: ["P1"],
+        hazardTags: [],
+        verification: "photo",
+        expectedState: "Impeller seated against the shoulder.",
+        citation: { kind: "manual", page: 7 },
+      },
+    ],
+  };
+
+  it("sends the manual and its page count with the manual prompt", async () => {
+    const { client, calls } = clientWith([responseWithText(JSON.stringify(draft))]);
+    const r = await generateProcedure(client, models, {
+      manual: pdfData(new Uint8Array([37, 80, 68, 70, 45]), "manual.pdf"),
+      manualPages: 12,
+      asset: { make: "FlowSet", model: "CR 3-10" },
+      job: "Assemble the pump",
+    });
+    expect(r.ok).toBe(true);
+    const body = calls[0]!.body as {
+      instructions: string;
+      input: Array<{ content: Array<Record<string, string>> }>;
+    };
+    expect(body.instructions).toBe(prompts.procedure);
+    const [about, file] = body.input[0]!.content;
+    expect(about!.text).toContain("12 pages");
+    expect(file).toMatchObject({ type: "input_file", filename: "manual.pdf" });
+    expect(file!.file_data).toMatch(/^data:application\/pdf;base64,/);
+  });
+
+  it("uses the generic prompt and sends no file without a manual", async () => {
+    const { client, calls } = clientWith([responseWithText(JSON.stringify(draft))]);
+    await generateProcedure(client, models, {
+      asset: { make: "FlowSet", model: "CR 3-10" },
+      job: "Assemble the pump",
+    });
+    const body = calls[0]!.body as { instructions: string; input: Array<{ content: unknown[] }> };
+    expect(body.instructions).toBe(prompts.procedureGeneric);
+    expect(body.input[0]!.content).toHaveLength(1);
   });
 });
 

@@ -2,9 +2,20 @@
 export type Reply = Response | Error;
 
 export function scriptedFetch(replies: Reply[]) {
-  const calls: Array<{ url: string; body: Record<string, unknown> }> = [];
+  const calls: Array<{
+    url: string;
+    method: string;
+    body: Record<string, unknown>;
+    form?: FormData;
+  }> = [];
   const fn = (async (url: string | URL | Request, init?: RequestInit) => {
-    calls.push({ url: String(url), body: JSON.parse(String(init?.body ?? "{}")) });
+    const form = init?.body instanceof FormData ? init.body : undefined;
+    calls.push({
+      url: String(url),
+      method: init?.method ?? "GET",
+      body: form ? {} : JSON.parse(String(init?.body ?? "{}")),
+      ...(form ? { form } : {}),
+    });
     const next = replies.shift();
     if (!next) throw new Error("No scripted reply left");
     if (next instanceof Error) throw next;
