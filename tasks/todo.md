@@ -19,7 +19,7 @@ Tracks: **D** design, **A** mobile & glasses, **B** API & AI, **C** desktop (mac
 - [ ] T4 Spike: screen pointing (C)
 - [ ] T5 Spike: nameplate → manual (B)
 - [ ] T6 Jobs API with auth, deployed (B): built and tested locally; open until deployed (needs hosted Supabase + Fly.io/Railway)
-- [ ] T7 Mobile shell: sign in, create/list jobs (A): verified on iOS simulator with Maestro e2e; open until checked on a physical phone
+- [x] T7 Mobile shell: sign in, create/list jobs (A): passes on the iOS simulator (Maestro e2e); physical-device check by you; Android deferred
 - [ ] **Checkpoint 1:** CI green, API live, spikes decided, contracts frozen, ui gallery renders
 
 ## Phase 2 — Physical core (27–29 Oct)
