@@ -1,0 +1,29 @@
+# Design-system gallery on the phone (T0.7 check, moved to T7): every component in each theme.
+# Runs after sign-in-create-job, which leaves the app signed in on the jobs list.
+appId: app.tandrix.mobile
+---
+- launchApp
+- openLink: exp+tandrix://?__expo_url=http%3A%2F%2F127.0.0.1%3A8081&__expo_disable_fab=1&__expo_disable_auto_launch=1&__expo_disable_onboarding=1
+- runFlow:
+    when:
+      visible: Open
+    commands:
+      - tapOn: Open
+# The header button's accessibility label is "Design system".
+- extendedWaitUntil:
+    visible: Design system
+    timeout: 30000
+- tapOn: Design system
+- extendedWaitUntil:
+    visible: Check my work
+    timeout: 10000
+- tapOn: light
+- takeScreenshot: gallery-light
+- tapOn: dark
+- takeScreenshot: gallery-dark
+- tapOn: sunlight
+- takeScreenshot: gallery-sunlight
+- scrollUntilVisible:
+    element: Torque applied
+    direction: DOWN
+- takeScreenshot: gallery-inputs-sunlight

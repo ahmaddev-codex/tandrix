@@ -187,6 +187,9 @@ Long calls (procedure generation, recording) return a job ID and stream progress
 ## 7. Clients
 
 ### Mobile (Expo)
+- Sign-in: Supabase email code (6 digits; custom email template) with the session in the Keychain/Keystore via `expo-secure-store`, chunked because sessions can exceed one entry. A password sign-in exists only on the local stack.
+- Routing: Expo Router with `Stack.Protected` for signed-in vs signed-out screens.
+- Monorepo: Metro resolves React, React Native and native UI libraries from the app only, so `@tandrix/ui` never brings a second copy.
 - `expo-camera` (or `react-native-vision-camera` if we need frame access) for capture.
 - Overlay masks drawn with `react-native-skia` on the captured frame.
 - Voice: record PCM 16 kHz chunks → `/voice/stream`; push-to-talk button and volume-key option.

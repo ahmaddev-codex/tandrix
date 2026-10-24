@@ -63,9 +63,34 @@ Every new table needs, in its migration: `enable row level security`, a read pol
 
 Production gets the same migrations through `supabase db push` against the linked project, run from CI or deliberately by hand, never from a dev script.
 
+## Phone app (iOS simulator)
+
+Needs Xcode with an iPhone simulator, CocoaPods and the API running.
+
+```bash
+pnpm --filter @tandrix/api dev        # API on :8787 (separate terminal)
+pnpm --filter @tandrix/mobile ios     # builds the dev client and opens the simulator
+```
+
+The first native build downloads and compiles every native module and takes a while; later runs are fast. `pnpm env:local` also writes `apps/mobile/.env.local` with the public `EXPO_PUBLIC_*` values only.
+
+Signing in locally:
+- **Email code:** enter any email; the 6-digit code arrives in Mailpit (http://127.0.0.1:54324). The template that shows the code is `supabase/templates/sign-in-code.html`.
+- **Local test sign-in:** only on the local stack, signs in `DEV_USER_EMAIL` / `DEV_USER_PASSWORD` from `.env.local`. It doesn't exist in production builds.
+
+End-to-end tests drive the simulator with [Maestro](https://maestro.mobile.dev) (`brew tap mobile-dev-inc/tap && brew install mobile-dev-inc/tap/maestro`; the npm package called `maestro` is unrelated):
+
+```bash
+pnpm --filter @tandrix/mobile e2e     # needs the simulator app and API running
+```
+
+It signs in, creates a uniquely named job, restarts the app and checks the session and job are still there, then screenshots the design-system gallery in every theme. Results and screenshots land in `.maestro/` (git-ignored).
+
+Release builds come from EAS, never from this machine: Expo loads `.env.local` for production builds too, so a local build would point at the local stack.
+
 ## Testing on a physical phone
 
-A phone can't reach `127.0.0.1` on your Mac. In `.env.local`, replace `127.0.0.1`/`localhost` in the `EXPO_PUBLIC_*` values with your Mac's LAN IP (System Settings > Wi-Fi > Details), and keep the phone on the same network. `pnpm env:local` resets these, so re-apply after running it.
+A phone can't reach `127.0.0.1` on your Mac. In `apps/mobile/.env.local`, replace `127.0.0.1`/`localhost` with your Mac's LAN IP (System Settings > Wi-Fi > Details), and keep the phone on the same network. `pnpm env:local` resets these, so re-apply after running it. Not yet verified: that the local Supabase ports accept connections from other devices; if the phone can't connect, check `docker ps` shows them published on `0.0.0.0`.
 
 ## Automated tests
 

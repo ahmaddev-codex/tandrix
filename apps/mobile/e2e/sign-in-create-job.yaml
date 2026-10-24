@@ -1,0 +1,73 @@
+# T7 end-to-end: sign in, create a job, restart the app, still signed in and the job is listed.
+# Local stack only (uses the seeded test user and the local password sign-in):
+#   pnpm --filter @tandrix/mobile e2e
+appId: app.tandrix.mobile
+env:
+  # Plain text only: Maestro matches visible text as a regular expression.
+  # RUN_ID (set by the e2e script) keeps the title unique, so leftovers from earlier runs
+  # can't satisfy the checks.
+  JOB_TITLE: Pump P-100 assembly e2e ${RUN_ID}
+---
+- launchApp:
+    clearState: true
+# Same link `expo run:ios` uses: loads the local bundle and skips the dev-menu onboarding and button.
+- openLink: exp+tandrix://?__expo_url=http%3A%2F%2F127.0.0.1%3A8081&__expo_disable_fab=1&__expo_disable_auto_launch=1&__expo_disable_onboarding=1
+# iOS asks before a link opens the app ("Open in Tandrix?").
+- runFlow:
+    when:
+      visible: Open
+    commands:
+      - tapOn: Open
+# The keychain can outlive clearState on iOS, so sign out first if a session survived.
+- runFlow:
+    when:
+      visible:
+        id: sign-out
+    commands:
+      - tapOn:
+          id: sign-out
+- extendedWaitUntil:
+    visible: Local test sign-in
+    timeout: 30000
+- tapOn: Local test sign-in
+- tapOn:
+    id: email
+- inputText: ${DEV_USER_EMAIL}
+- tapOn:
+    id: password
+- inputText: ${DEV_USER_PASSWORD}
+- tapOn:
+    id: password-sign-in
+- extendedWaitUntil:
+    visible:
+      id: new-job
+    timeout: 15000
+- tapOn:
+    id: new-job
+- tapOn:
+    id: job-title
+- inputText: ${JOB_TITLE}
+- tapOn:
+    id: create-job
+- extendedWaitUntil:
+    # Job rows expose one accessibility label: "<title>, <status>".
+    visible: ${JOB_TITLE},.*
+    timeout: 15000
+- takeScreenshot: jobs-after-create
+# Restart: the session comes back from the keychain and the job from the API.
+- stopApp
+- launchApp
+# Same link `expo run:ios` uses: loads the local bundle and skips the dev-menu onboarding and button.
+- openLink: exp+tandrix://?__expo_url=http%3A%2F%2F127.0.0.1%3A8081&__expo_disable_fab=1&__expo_disable_auto_launch=1&__expo_disable_onboarding=1
+# iOS asks before a link opens the app ("Open in Tandrix?").
+- runFlow:
+    when:
+      visible: Open
+    commands:
+      - tapOn: Open
+- extendedWaitUntil:
+    # Job rows expose one accessibility label: "<title>, <status>".
+    visible: ${JOB_TITLE},.*
+    timeout: 30000
+- assertNotVisible: Local test sign-in
+- takeScreenshot: jobs-after-restart

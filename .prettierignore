@@ -5,3 +5,8 @@ docs/
 tasks/
 supabase/.temp/
 supabase/.branches/
+apps/mobile/ios/
+apps/mobile/android/
+apps/mobile/expo-env.d.ts
+apps/mobile/.expo/
+.maestro/

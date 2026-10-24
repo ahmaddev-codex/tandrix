@@ -21,6 +21,10 @@ export default tseslint.config(
       "**/.expo/**",
       "docs/**",
       "packages/ui/src/generated/**",
+      "apps/mobile/ios/**",
+      "apps/mobile/android/**",
+      "apps/mobile/expo-env.d.ts",
+      ".maestro/**",
     ],
   },
   js.configs.recommended,
@@ -34,6 +38,15 @@ export default tseslint.config(
       ],
       "@typescript-eslint/consistent-type-imports": "error",
     },
+  },
+  {
+    // Node-run CommonJS config files (Metro).
+    files: ["**/metro.config.js"],
+    languageOptions: {
+      sourceType: "commonjs",
+      globals: { require: "readonly", module: "writable", __dirname: "readonly" },
+    },
+    rules: { "@typescript-eslint/no-require-imports": "off" },
   },
   {
     files: ["apps/**/*.{ts,tsx}", "packages/**/*.{ts,tsx}"],
