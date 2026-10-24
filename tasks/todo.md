@@ -24,7 +24,7 @@ Tracks: **D** design, **A** mobile & glasses, **B** API & AI, **C** desktop (mac
 
 ## Phase 2 — Physical core (27–29 Oct)
 - [x] T8 Capture photo as evidence (A): passes on the iOS simulator; camera shutter on a physical phone by you
-- [ ] T9 Identify asset from nameplate (B + A)
+- [ ] T9 Identify asset from nameplate (B + A): built, fallback verified on the simulator; open until Meta billing works and the demo nameplate reads correctly
 - [ ] T10 Find or attach manual (B + A)
 - [ ] T11 Procedure from manual with citations (B + A)
 - [ ] **Checkpoint 2:** nameplate → cited procedure on phone

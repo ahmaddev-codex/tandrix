@@ -47,6 +47,9 @@ importers:
       '@supabase/supabase-js':
         specifier: 2.117.3
         version: 2.117.3
+      '@tandrix/ai':
+        specifier: workspace:*
+        version: link:../../packages/ai
       '@tandrix/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts

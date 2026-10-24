@@ -1,0 +1,71 @@
+# T9: identify the equipment from a nameplate photo. Runs with camera access revoked (photo
+# picker). When the model can't help (no key, billing, rate limit), the app says so and the
+# user types the details; either way the confirmed equipment is saved on the job.
+appId: app.tandrix.mobile
+env:
+  JOB_TITLE: Identify job e2e ${RUN_ID}
+---
+- addMedia:
+    - assets/sample-part.jpg
+- launchApp
+- runFlow: subflows/open-app.yaml
+- tapOn:
+    id: new-job
+- extendedWaitUntil:
+    visible:
+      id: job-title
+    timeout: 30000
+- tapOn:
+    id: job-title
+- inputText: ${JOB_TITLE}
+- tapOn:
+    id: create-job
+- extendedWaitUntil:
+    visible: ${JOB_TITLE},.*
+    timeout: 15000
+- tapOn: ${JOB_TITLE},.*
+- extendedWaitUntil:
+    visible: Identify the equipment
+    timeout: 15000
+- tapOn:
+    id: photograph-nameplate
+- extendedWaitUntil:
+    visible:
+      id: choose-photo
+    timeout: 30000
+- tapOn:
+    id: choose-photo
+- extendedWaitUntil:
+    visible:
+      text: "Photo, .*"
+    timeout: 15000
+- tapOn:
+    text: "Photo, .*"
+    index: 0
+- tapOn:
+    id: use-photo
+# Reading the nameplate: a reading, or the plain-language fallback when the model can't help.
+- extendedWaitUntil:
+    visible:
+      id: identify-banner
+    timeout: 60000
+- takeScreenshot: identify-result
+- tapOn:
+    id: asset-make
+- eraseText: 120
+- inputText: FlowSet
+- tapOn:
+    id: asset-model
+- eraseText: 120
+- inputText: CR 3-10
+- tapOn:
+    id: asset-serial
+- eraseText: 120
+- inputText: 4521-0098
+- hideKeyboard
+- tapOn:
+    id: save-asset
+- extendedWaitUntil:
+    visible: "Equipment: FlowSet CR 3-10"
+    timeout: 15000
+- takeScreenshot: job-with-equipment

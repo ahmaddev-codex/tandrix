@@ -18,6 +18,11 @@ env:
       visible: Open
     commands:
       - tapOn: Open
+# Wait for the app to finish loading (signed in or not) before deciding anything.
+- extendedWaitUntil:
+    visible:
+      text: "(Local test sign-in|New job)"
+    timeout: 60000
 # The keychain can outlive clearState on iOS, so sign out first if a session survived.
 - runFlow:
     when:
@@ -44,6 +49,10 @@ env:
     timeout: 15000
 - tapOn:
     id: new-job
+- extendedWaitUntil:
+    visible:
+      id: job-title
+    timeout: 30000
 - tapOn:
     id: job-title
 - inputText: ${JOB_TITLE}

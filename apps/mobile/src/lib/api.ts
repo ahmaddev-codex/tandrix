@@ -1,11 +1,13 @@
 // Typed client for the Tandrix API. Responses are validated with the shared contracts.
-import type { CreateEvidenceRequest } from "@tandrix/contracts";
+import type { CreateEvidenceRequest, SaveAssetRequest } from "@tandrix/contracts";
 import {
+  Asset,
   CreateEvidenceResponse,
+  IdentifyAssetResponse,
+  JobDetailResponse,
   Evidence,
   EvidenceWithUrl,
   Job,
-  JobStep,
   type Surface,
 } from "@tandrix/contracts";
 import { z } from "zod";
@@ -43,6 +45,9 @@ async function request<T>(path: string, schema: z.ZodType<T>, init: RequestInit 
   }
   const body: unknown = await res.json().catch(() => null);
   if (!res.ok) {
+    // The API no longer accepts this session (expired, or the account is gone): sign out so the
+    // app returns to sign-in instead of failing on every request.
+    if (res.status === 401) await supabase.auth.signOut({ scope: "local" });
     const e = ErrorBody.safeParse(body);
     throw new ApiError(
       res.status,
@@ -55,7 +60,17 @@ async function request<T>(path: string, schema: z.ZodType<T>, init: RequestInit 
 
 export const api = {
   listJobs: () => request("/jobs", z.object({ jobs: z.array(Job) })).then((r) => r.jobs),
-  getJob: (id: string) => request(`/jobs/${id}`, z.object({ job: Job, steps: z.array(JobStep) })),
+  getJob: (id: string) => request(`/jobs/${id}`, JobDetailResponse),
+  identifyAsset: (jobId: string, evidenceId: string) =>
+    request(`/jobs/${jobId}/asset/identify`, IdentifyAssetResponse, {
+      method: "POST",
+      body: JSON.stringify({ evidenceId }),
+    }),
+  saveAsset: (jobId: string, body: z.input<typeof SaveAssetRequest>) =>
+    request(`/jobs/${jobId}/asset`, z.object({ asset: Asset }), {
+      method: "PUT",
+      body: JSON.stringify(body),
+    }).then((r) => r.asset),
   createEvidence: (jobId: string, body: z.input<typeof CreateEvidenceRequest>) =>
     request(`/jobs/${jobId}/evidence`, CreateEvidenceResponse, {
       method: "POST",

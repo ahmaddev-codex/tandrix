@@ -5,7 +5,7 @@ import { Link, router, Stack, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import { FlatList, Pressable, RefreshControl, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ApiError, api } from "@/lib/api";
+import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { isLocal } from "@/lib/env";
 
@@ -35,10 +35,9 @@ export default function Jobs() {
       setJobs(await api.listJobs());
       setError(undefined);
     } catch (e) {
-      if (e instanceof ApiError && e.status === 401) return signOut();
       setError((e as Error).message);
     }
-  }, [signOut]);
+  }, []);
 
   // Reload whenever the list comes back into view, e.g. after creating a job.
   useFocusEffect(

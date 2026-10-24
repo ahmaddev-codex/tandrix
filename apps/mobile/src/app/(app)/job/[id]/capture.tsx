@@ -12,7 +12,9 @@ import { preparePhoto, uploadPhoto, type PreparedPhoto } from "@/lib/evidence";
 type Phase = "live" | "preview" | "saving";
 
 export default function Capture() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  // purpose=nameplate: after saving, go straight to reading it.
+  const { id, purpose } = useLocalSearchParams<{ id: string; purpose?: "nameplate" }>();
+  const isNameplate = purpose === "nameplate";
   const t = useTheme();
   const camera = useRef<CameraView>(null);
   const [permission, requestPermission] = useCameraPermissions();
@@ -53,8 +55,12 @@ export default function Capture() {
     setPhase("saving");
     setError(undefined);
     try {
-      await uploadPhoto(id, photo);
-      router.back();
+      const evidence = await uploadPhoto(id, photo);
+      if (isNameplate) {
+        router.replace({ pathname: "/job/[id]/identify", params: { id, evidenceId: evidence.id } });
+      } else {
+        router.back();
+      }
     } catch (e) {
       setError((e as Error).message);
       setPhase("preview");
@@ -79,7 +85,7 @@ export default function Capture() {
           justifyContent: "center",
         }}
       >
-        <Stack.Screen options={{ title: "Add photo" }} />
+        <Stack.Screen options={{ title: isNameplate ? "Nameplate" : "Add photo" }} />
         <Text variant="heading-24">{cameraFailed ? "No camera available" : "Camera access"}</Text>
         <Text variant="field-body" color="text-secondary">
           {cameraFailed
@@ -124,10 +130,16 @@ export default function Capture() {
         backgroundColor: t.color["background-200"],
       }}
     >
-      <Stack.Screen options={{ title: "Add photo" }} />
+      <Stack.Screen options={{ title: isNameplate ? "Nameplate" : "Add photo" }} />
       <CaptureView
         state={phase === "saving" ? "analyzing" : phase}
-        hint={phase === "live" ? "Fill the frame with the nameplate or the part" : undefined}
+        hint={
+          phase === "live"
+            ? isNameplate
+              ? "Fill the frame with the nameplate, straight on"
+              : "Fill the frame with the part"
+            : undefined
+        }
         analyzingLabel="Saving the photo"
         useLabel="Use photo"
         canCapture={cameraReady}

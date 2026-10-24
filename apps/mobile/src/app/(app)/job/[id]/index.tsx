@@ -1,6 +1,6 @@
-import type { EvidenceWithUrl, Job } from "@tandrix/contracts";
+import type { Asset, EvidenceWithUrl, Job } from "@tandrix/contracts";
 import { radius, space } from "@tandrix/ui";
-import { Button, Text, useTheme } from "@tandrix/ui/native";
+import { Button, Icon, Text, useTheme } from "@tandrix/ui/native";
 import { Image } from "expo-image";
 import { router, Stack, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useState } from "react";
@@ -15,6 +15,7 @@ export default function JobScreen() {
   const t = useTheme();
   const { width } = useWindowDimensions();
   const [job, setJob] = useState<Job>();
+  const [asset, setAsset] = useState<Asset | null>();
   const [photos, setPhotos] = useState<EvidenceWithUrl[]>();
   const [error, setError] = useState<string>();
   const [refreshing, setRefreshing] = useState(false);
@@ -23,6 +24,7 @@ export default function JobScreen() {
     try {
       const [detail, items] = await Promise.all([api.getJob(id), api.listEvidence(id)]);
       setJob(detail.job);
+      setAsset(detail.asset);
       setPhotos(items);
       setError(undefined);
     } catch (e) {
@@ -74,6 +76,65 @@ export default function JobScreen() {
                 </Text>
               </View>
             ) : null}
+            {asset === undefined ? null : asset ? (
+              <View
+                testID="asset-card"
+                accessibilityLabel={`Equipment: ${asset.make} ${asset.model}`}
+                style={{
+                  padding: space["space-4"],
+                  borderRadius: radius["radius-lg"],
+                  backgroundColor: t.color["background-100"],
+                  borderWidth: 1,
+                  borderColor: t.color.border,
+                  gap: space["space-1"],
+                }}
+              >
+                <Text variant="label-14" color="text-secondary">
+                  Equipment
+                </Text>
+                <Text variant="heading-20">
+                  {asset.make} {asset.model}
+                </Text>
+                {asset.serial ? (
+                  <Text variant="mono-14" color="text-secondary">
+                    Serial {asset.serial}
+                  </Text>
+                ) : null}
+              </View>
+            ) : (
+              <View
+                style={{
+                  padding: space["space-4"],
+                  borderRadius: radius["radius-lg"],
+                  backgroundColor: t.color["blue-100"],
+                  gap: space["space-3"],
+                }}
+              >
+                <View style={{ flexDirection: "row", gap: space["space-2"], alignItems: "center" }}>
+                  <Icon name="camera" size={20} color="blue-900" />
+                  <Text variant="heading-20" color="blue-900">
+                    Identify the equipment
+                  </Text>
+                </View>
+                <Text variant="copy-16" color="text">
+                  Photograph the nameplate. Tandrix reads the make and model and uses them to find
+                  the manual.
+                </Text>
+                <Button
+                  variant="primary"
+                  block
+                  onPress={() =>
+                    router.push({
+                      pathname: "/job/[id]/capture",
+                      params: { id, purpose: "nameplate" },
+                    })
+                  }
+                  testID="photograph-nameplate"
+                >
+                  Photograph the nameplate
+                </Button>
+              </View>
+            )}
             <Text variant="label-16" color="text-secondary">
               {photos ? `${photos.length} ${photos.length === 1 ? "photo" : "photos"}` : " "}
             </Text>
@@ -91,7 +152,7 @@ export default function JobScreen() {
             >
               <Text variant="heading-24">No photos yet</Text>
               <Text variant="field-body" color="text-secondary">
-                Start with the nameplate. Tandrix uses it to find the right manual.
+                Photos you take for this job appear here.
               </Text>
             </View>
           ) : undefined

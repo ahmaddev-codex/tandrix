@@ -15,3 +15,4 @@ run sign-in-create-job.yaml design-gallery.yaml
 # Camera refused: the photo flow must still let the user choose a photo.
 xcrun simctl privacy booted revoke camera "$APP"
 run photo-evidence.yaml
+run identify-equipment.yaml

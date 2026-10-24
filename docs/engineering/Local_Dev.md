@@ -86,7 +86,11 @@ End-to-end tests drive the simulator with [Maestro](https://maestro.mobile.dev) 
 pnpm --filter @tandrix/mobile e2e     # runs apps/mobile/e2e/run.sh; needs the simulator app and API running
 ```
 
-It runs three flows: sign in → create a uniquely named job → restart → still signed in and the job listed; the design-system gallery in every theme; and, with camera access revoked first, add a photo to a job through the photo picker and see it in the job's photos. Results and screenshots land in `.maestro/` (git-ignored). The simulator has no camera, so taking a photo with the shutter is a physical-device check.
+It runs four flows: sign in → create a uniquely named job → restart → still signed in and the job listed; the design-system gallery in every theme; and, with camera access revoked first, add a photo to a job through the photo picker, then photograph a nameplate, confirm or type the equipment details and see them on the job. Results and screenshots land in `.maestro/` (git-ignored). The simulator has no camera, so taking a photo with the shutter is a physical-device check.
+
+If the simulator shows code you've already changed, Metro is serving a stale bundle: stop it and run `pnpm exec expo start --dev-client --clear` in `apps/mobile`. The first screens after a cache clear take a few seconds to build; the flows wait for each screen.
+
+After `pnpm db:reset`, the simulator may still hold a session for the old test user. The API answers its writes with 401 and the app signs out; sign in again.
 
 Run the API with `pnpm --filter @tandrix/api dev` (it reloads on change). An API started before new routes were added answers "No such route." until restarted.
 

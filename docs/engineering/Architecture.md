@@ -111,7 +111,8 @@ All routes authenticated (Supabase JWT), Zod-validated, and scoped to the owner.
 | `/jobs/:id/evidence` | POST | Create pending evidence (type/size checked) and return a signed upload URL for `<owner>/<job>/<id>.<ext>` in the private `evidence` bucket |
 | `/jobs/:id/evidence/:evidenceId/complete` | POST | Confirm the file arrived; checks the stored size and type, deletes and rejects a disallowed file, then sets `uploaded_at` |
 | `/jobs/:id/evidence` | GET | Confirmed evidence for the job, each with a 5-minute signed read URL |
-| `/assets/identify` | POST | Nameplate evidence → make/model/serial candidates |
+| `/jobs/:id/asset/identify` | POST | Nameplate photo (uploaded evidence on the job) → Spark reading, or `unavailable` (model down, billing, rate limit, unreadable plate) so the app falls back to typing |
+| `/jobs/:id/asset` | PUT | Save the confirmed equipment: creates the asset, links the job and records `asset_identified` with its source (`model`, `model_edited`, `manual`) in one transaction |
 | `/assets/:id/manual` | POST | Search for manual or attach upload |
 | `/procedures/generate` | POST | Manual (or nothing) → draft procedure with citations |
 | `/procedures/from-recording` | POST | Expert video → draft procedure (P1) |
@@ -124,6 +125,8 @@ All routes authenticated (Supabase JWT), Zod-validated, and scoped to the owner.
 | `/jobs/:id/report` | GET | Report JSON; `/r/:token` serves the web page |
 | `/voice/stream` | WS | Proxies client audio to Muse Voice Transcribe; key stays server-side |
 | `/health` | GET | No secrets |
+
+Errors: every database error is converted to an `Error` before it leaves a repo (Supabase returns plain objects, which Hono would not route to the error handler), and a safety net converts anything else thrown. A token whose account no longer exists gets 401 on writes; the phone signs out on any 401.
 
 Long calls (procedure generation, recording) return a job ID and stream progress over Supabase Realtime.
 

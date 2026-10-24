@@ -11,6 +11,10 @@ env:
 - runFlow: subflows/open-app.yaml
 - tapOn:
     id: new-job
+- extendedWaitUntil:
+    visible:
+      id: job-title
+    timeout: 30000
 - tapOn:
     id: job-title
 - inputText: ${JOB_TITLE}
@@ -25,6 +29,10 @@ env:
     timeout: 15000
 - tapOn:
     id: take-photo
+- extendedWaitUntil:
+    visible:
+      id: choose-photo
+    timeout: 30000
 - extendedWaitUntil:
     visible: Camera access is off for Tandrix.*
     timeout: 10000
