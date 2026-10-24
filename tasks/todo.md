@@ -56,7 +56,7 @@ Tracks: **D** design, **A** mobile & glasses, **B** API & AI, **C** desktop (mac
 - [ ] **Checkpoint 7:** one step fully through glasses on iOS and Android
 
 ## Phase 6 — Extend and harden (2 Nov)
-- [ ] T26 Action guard for Do it for me (C; can start after Phase 1)
+- [x] T26 Action guard for Do it for me (C; can start after Phase 1)
 - [ ] T27 Do it for me on desktop (C)
 - [ ] T28 Record mode, 6 h time-box (B + A)
 - [ ] T29 Multilingual (A)
