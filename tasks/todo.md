@@ -13,8 +13,8 @@ Tracks: **D** design, **A** mobile & glasses, **B** API & AI, **C** desktop (mac
 - [x] T0.7 `packages/ui`: tokens and core components (D + A + C): phone feature components land in their feature tasks; galleries in T7 and T18
 
 ## Phase 1 — Foundation and spikes (Mon 26 Oct)
-- [ ] T1 Contracts: core entities (B)
-- [ ] T2 Core rules: step status + safety gates (B)
+- [x] T1 Contracts: core entities (B)
+- [x] T2 Core rules: step status + safety gates (B)
 - [ ] T3 Spike: SAM highlighting (B)
 - [ ] T4 Spike: screen pointing (C)
 - [ ] T5 Spike: nameplate → manual (B)
