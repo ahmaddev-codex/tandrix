@@ -184,9 +184,9 @@ Sizes: XS 1 file · S 1–2 · M 3–5 · L 5–8 (split if larger). Commands as
 
 #### T11 Procedure from manual with citations
 **Description:** `/procedures/generate` (Spark + PDF) → PartSpecs + ProcedureSteps with citation and hazard tags; job steps instantiated; step list on phone with source chips. Generic path when no manual.
-**Acceptance:** each step has a citation or is labelled Generic; schema-invalid output repaired once then rejected; progress streamed.
+**Acceptance:** each step has a citation or is labelled Generic; schema-invalid output repaired once then rejected; progress shown while generating (time-based for now; async + Realtime in T30).
 **Verification:** `pnpm --filter @tandrix/ai test` (recorded responses incl. malformed); manual.
-**Dependencies:** T10, T2. **Files:** `packages/ai/src/procedure.ts`, `apps/api/src/routes/procedures.ts`, `apps/mobile/app/job/[id]/index.tsx`. **Size:** M
+**Dependencies:** T10, T2. **Files:** `packages/core/src/procedure.ts`, `packages/ai/src/pipelines.ts`, `apps/api/src/{procedure-generator,routes/procedure,repos/procedures}.ts`, `supabase/migrations/*_save_procedure.sql`, `apps/mobile/src/app/(app)/job/[id]/{index,procedure}.tsx`. **Size:** M
 
 ### Checkpoint 2 — end of Tue 27 Oct
 - [ ] Nameplate photo → procedure with cited steps on the phone, end to end on device.
@@ -339,7 +339,7 @@ Sizes: XS 1 file · S 1–2 · M 3–5 · L 5–8 (split if larger). Commands as
 **Dependencies:** T14. **Files:** `apps/mobile/src/i18n.ts`, `packages/ai/src/prompts.ts`. **Size:** S
 
 #### T30 Hardening pass
-**Description:** Error states and negative tests from User Flows §9: permissions denied, blurry photo, part not found, no signal, model timeout/malformed output, pointer target not visible, prompt injection on a label and on screen, wiring request, delete job removes evidence.
+**Description:** Error states and negative tests from User Flows §9: permissions denied, blurry photo, part not found, no signal, model timeout/malformed output, pointer target not visible, prompt injection on a label and on screen, wiring request, delete job removes evidence. Also: move procedure generation to the async pattern (job ID + Realtime progress, Architecture §5) so a dropped phone connection or a proxy timeout during a long manual can't lose the result.
 **Acceptance:** each case has a test or a scripted manual check with expected behaviour; none blocks the demo path.
 **Verification:** `pnpm test`; checklist in `docs/engineering/negative-tests.md` signed off.
 **Dependencies:** Checkpoint 6. **Files:** tests across packages, `docs/engineering/negative-tests.md`. **Size:** M

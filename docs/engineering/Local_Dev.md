@@ -50,6 +50,16 @@ Local tools:
 - Studio (tables, auth users, storage): http://127.0.0.1:54323
 - Mailpit (magic links and OTP codes sent to local users): http://127.0.0.1:54324
 
+## Working without the model
+
+Until Meta billing is set up, every model call reports "unavailable" and the app falls back. To build and test the step screens anyway, start the API with a canned procedure:
+
+```sh
+pnpm --filter @tandrix/api dev:fixture   # TANDRIX_FIXTURE_PROCEDURE=1; refused in production
+```
+
+The fixture is a four-step pump procedure that cites real pages of the attached manual (or is Generic without one), and goes through the same rules and transaction as a real draft. The e2e flows for steps need it.
+
 ## Database changes
 
 Schema lives in `supabase/migrations` and is applied in order. To add one:
@@ -86,7 +96,7 @@ End-to-end tests drive the simulator with [Maestro](https://maestro.mobile.dev) 
 pnpm --filter @tandrix/mobile e2e     # runs apps/mobile/e2e/run.sh; needs the simulator app and API running
 ```
 
-It runs five flows: sign in → create a uniquely named job → restart → still signed in and the job listed; the design-system gallery in every theme; and, with the camera denied at launch, add a photo to a job through the photo picker; photograph a nameplate, confirm or type the equipment details and see them on the job; and find the manual (search reports it can't run without the model), photograph its pages and see the private manual on the job. Results and screenshots land in `.maestro/` (git-ignored). The simulator has no camera, so taking a photo with the shutter is a physical-device check.
+It runs six flows (API started with `dev:fixture`): sign in → create a uniquely named job → restart → still signed in and the job listed; the design-system gallery in every theme; and, with the camera denied at launch, add a photo to a job through the photo picker; photograph a nameplate, confirm or type the equipment details and see them on the job; and find the manual (search reports it can't run without the model), photograph its pages, see the private manual on the job and write the steps from it with page citations; and choose general steps without a manual, every one labelled Generic. Results and screenshots land in `.maestro/` (git-ignored). The simulator has no camera, so taking a photo with the shutter is a physical-device check.
 
 If the simulator shows code you've already changed, Metro is serving a stale bundle: stop it and run `pnpm exec expo start --dev-client --clear` in `apps/mobile`. The first screens after a cache clear take a few seconds to build; the flows wait for each screen.
 

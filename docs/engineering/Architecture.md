@@ -118,7 +118,7 @@ All routes authenticated (Supabase JWT), Zod-validated, and scoped to the owner.
 | `/jobs/:id/manual/upload`, `…/upload/:uploadId/complete` | POST | Signed upload URL for a PDF, then the API checks it is a readable PDF (else removes it); private to the user |
 | `/jobs/:id/manual/from-photos` | POST | Combine uploaded page photos, in order, into a private PDF |
 | `/jobs/:id/manual/:manualId/url` | GET | Short-lived signed URL to open the manual |
-| `/procedures/generate` | POST | Manual (or nothing) → draft procedure with citations |
+| `/jobs/:id/procedure` | POST | The job's manual (or, with `allowGeneric`, nothing) → Spark draft → `normalizeDraft` rules → procedure, parts, steps and job steps saved by `save_procedure` in one transaction; 409 if the job already has steps |
 | `/procedures/from-recording` | POST | Expert video → draft procedure (P1) |
 | `/jobs/:id/parts-check` | POST | Photo(s) → found/possible/missing |
 | `/jobs/:id/steps/:stepId/highlight` | POST | Frame → `PointerTarget`s for the step's parts |
@@ -132,7 +132,7 @@ All routes authenticated (Supabase JWT), Zod-validated, and scoped to the owner.
 
 Errors: every database error is converted to an `Error` before it leaves a repo (Supabase returns plain objects, which Hono would not route to the error handler), and a safety net converts anything else thrown. A token whose account no longer exists gets 401 on writes; the phone signs out on any 401.
 
-Long calls (procedure generation, recording) return a job ID and stream progress over Supabase Realtime.
+Long calls (procedure generation, recording) should return a job ID and stream progress over Supabase Realtime. **Current state:** procedure generation is one synchronous request (up to ~3 min per model attempt) and the phone shows time-based progress. Moving it to the async pattern is tracked in T30; until then a dropped connection means the user retries.
 
 ## 6. AI pipelines
 
@@ -142,6 +142,10 @@ Long calls (procedure generation, recording) return a job ID and stream progress
 3. API downloads the PDF (allowlisted content types, size limit), stores it, records the source URL.
 
 ### 6.2 Procedure from manual
+Manuals up to 36 MB go inline (`input_file` with base64 `file_data`; the API caps inline files at 50 MB). Larger ones go through the Files API with a one-hour expiry and are deleted right after the call. The model reads text from the first 100 PDF pages and images from the first 50.
+
+Before saving, `normalizeDraft` (@tandrix/core) renumbers steps, drops unknown part refs, labels any citation to a page the manual doesn't have as Generic, turns a measurement step without a value into a user confirmation, and merges rule-detected hazard tags. Generated procedures are `draft` and private to their author.
+
 1. Send the manual (PDF via Files API, or page images) + asset + task ("assembly", "seal replacement") to Spark.
 2. Structured output: `PartSpec[]` and `ProcedureStep[]`, each step with `citation` (page, figure) and `hazard_tags`.
 3. Validate; reject steps without citation unless `source_type = generic`.
