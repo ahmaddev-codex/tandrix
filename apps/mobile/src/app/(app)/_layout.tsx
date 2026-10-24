@@ -16,6 +16,11 @@ export default function AppLayout() {
     >
       <Stack.Screen name="index" options={{ title: "Jobs" }} />
       <Stack.Screen name="new-job" options={{ title: "New job", presentation: "modal" }} />
+      <Stack.Screen name="job/[id]/index" options={{ title: "Job" }} />
+      <Stack.Screen
+        name="job/[id]/capture"
+        options={{ title: "Add photo", presentation: "fullScreenModal" }}
+      />
       <Stack.Protected guard={isLocal}>
         <Stack.Screen name="gallery" options={{ title: "Design system" }} />
       </Stack.Protected>

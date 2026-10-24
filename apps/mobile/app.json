@@ -28,7 +28,24 @@
       "expo-status-bar",
       "expo-secure-store",
       "expo-font",
-      "expo-splash-screen"
+      "expo-splash-screen",
+      "expo-image",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Tandrix uses the camera to photograph equipment and check each step.",
+          "microphonePermission": "Tandrix listens while you hold the talk button.",
+          "recordAudioAndroid": false
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Tandrix lets you choose photos of the equipment you have already taken.",
+          "cameraPermission": "Tandrix uses the camera to photograph equipment and check each step.",
+          "microphonePermission": false
+        }
+      ]
     ],
     "scheme": "tandrix",
     "experiments": {

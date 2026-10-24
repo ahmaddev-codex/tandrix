@@ -1,0 +1,31 @@
+# Opens the dev build on the local bundle and signs in with the local test user if needed.
+appId: app.tandrix.mobile
+---
+- openLink: exp+tandrix://?__expo_url=http%3A%2F%2F127.0.0.1%3A8081&__expo_disable_fab=1&__expo_disable_auto_launch=1&__expo_disable_onboarding=1
+# iOS asks before a link opens the app ("Open in Tandrix?").
+- runFlow:
+    when:
+      visible: Open
+    commands:
+      - tapOn: Open
+- extendedWaitUntil:
+    visible:
+      text: "(Local test sign-in|New job)"
+    timeout: 30000
+- runFlow:
+    when:
+      visible: Local test sign-in
+    commands:
+      - tapOn: Local test sign-in
+      - tapOn:
+          id: email
+      - inputText: ${DEV_USER_EMAIL}
+      - tapOn:
+          id: password
+      - inputText: ${DEV_USER_PASSWORD}
+      - tapOn:
+          id: password-sign-in
+- extendedWaitUntil:
+    visible:
+      id: new-job
+    timeout: 15000

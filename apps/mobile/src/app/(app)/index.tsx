@@ -121,6 +121,7 @@ export default function Jobs() {
         }
         renderItem={({ item }) => (
           <Pressable
+            onPress={() => router.push({ pathname: "/job/[id]", params: { id: item.id } })}
             accessibilityRole="button"
             accessibilityLabel={`${item.title}, ${statusLabel[item.status]}`}
             style={({ pressed }) => ({

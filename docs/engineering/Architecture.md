@@ -83,7 +83,7 @@ docs/
 | `PartSpec` | id, procedure_id, part_number, name, qty, description | Parts list for parts check. |
 | `Job` | id, owner_id, asset_id, procedure_id, title, status (`active` \| `completed` \| `stopped`), current_step_id, active_surface, control_mode (`show` \| `do`), language, created_at, updated_at | The session shared across devices. `control_mode` resets to `show` on every new job. |
 | `JobStep` | id, job_id, procedure_step_id, status, status_evidence_id, started_at, note? (skip/block reason), updated_at, updated_by_surface | Status: `todo`, `in_progress`, `needs_attention`, `user_confirmed`, `verified`, `blocked`, `skipped`. |
-| `Evidence` | id, job_id, job_step_id?, kind (`photo` \| `screenshot` \| `video` \| `audio` \| `document`), surface (`phone` \| `glasses` \| `desktop`), storage_key, mime_type, byte_size, width?, height?, captured_at, deleted_at? | Upload types and size limits per kind: `uploadLimits` in `@tandrix/contracts`. |
+| `Evidence` | id, job_id, job_step_id?, kind (`photo` \| `screenshot` \| `video` \| `audio` \| `document`), surface (`phone` \| `glasses` \| `desktop`), storage_key, mime_type, byte_size, width?, height?, captured_at, uploaded_at? (set when the API confirms the file), deleted_at? | Upload types and size limits per kind: `uploadLimits` in `@tandrix/contracts`. |
 | `Detection` | id, evidence_id, label, part_spec_id?, box, mask_key?, confidence, confirmed_by_user (null until reviewed), corrected_label? | SAM geometry + Spark labelling. |
 | `PointerTarget` | surface, evidence_id, kind (`point` \| `box` \| `mask`), geometry, label, confidence | One format for screen pointer and camera highlight. |
 | `Check` | id, job_step_id, evidence_id, result (`pass` \| `fail` \| `not_verifiable`), reason, what_to_show_next?, created_at | Only `pass` can set `verified`. |
@@ -108,7 +108,9 @@ All routes authenticated (Supabase JWT), Zod-validated, and scoped to the owner.
 |---|---|---|
 | `/jobs` | POST / GET | Create / list jobs |
 | `/jobs/:id` | GET | Job with steps, evidence metadata, current step |
-| `/jobs/:id/evidence` | POST | Upload-URL handshake for photo/screenshot/video |
+| `/jobs/:id/evidence` | POST | Create pending evidence (type/size checked) and return a signed upload URL for `<owner>/<job>/<id>.<ext>` in the private `evidence` bucket |
+| `/jobs/:id/evidence/:evidenceId/complete` | POST | Confirm the file arrived; checks the stored size and type, deletes and rejects a disallowed file, then sets `uploaded_at` |
+| `/jobs/:id/evidence` | GET | Confirmed evidence for the job, each with a 5-minute signed read URL |
 | `/assets/identify` | POST | Nameplate evidence → make/model/serial candidates |
 | `/assets/:id/manual` | POST | Search for manual or attach upload |
 | `/procedures/generate` | POST | Manual (or nothing) → draft procedure with citations |

@@ -1,5 +1,13 @@
 // Typed client for the Tandrix API. Responses are validated with the shared contracts.
-import { Job, JobStep, type Surface } from "@tandrix/contracts";
+import type { CreateEvidenceRequest } from "@tandrix/contracts";
+import {
+  CreateEvidenceResponse,
+  Evidence,
+  EvidenceWithUrl,
+  Job,
+  JobStep,
+  type Surface,
+} from "@tandrix/contracts";
 import { z } from "zod";
 import { env } from "./env";
 import { supabase } from "./supabase";
@@ -48,6 +56,19 @@ async function request<T>(path: string, schema: z.ZodType<T>, init: RequestInit 
 export const api = {
   listJobs: () => request("/jobs", z.object({ jobs: z.array(Job) })).then((r) => r.jobs),
   getJob: (id: string) => request(`/jobs/${id}`, z.object({ job: Job, steps: z.array(JobStep) })),
+  createEvidence: (jobId: string, body: z.input<typeof CreateEvidenceRequest>) =>
+    request(`/jobs/${jobId}/evidence`, CreateEvidenceResponse, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  completeEvidence: (jobId: string, evidenceId: string) =>
+    request(`/jobs/${jobId}/evidence/${evidenceId}/complete`, z.object({ evidence: Evidence }), {
+      method: "POST",
+    }).then((r) => r.evidence),
+  listEvidence: (jobId: string) =>
+    request(`/jobs/${jobId}/evidence`, z.object({ items: z.array(EvidenceWithUrl) })).then(
+      (r) => r.items,
+    ),
   createJob: (input: { title: string; surface: Surface }) =>
     request("/jobs", z.object({ job: Job }), { method: "POST", body: JSON.stringify(input) }).then(
       (r) => r.job,

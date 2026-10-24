@@ -23,7 +23,7 @@ Tracks: **D** design, **A** mobile & glasses, **B** API & AI, **C** desktop (mac
 - [ ] **Checkpoint 1:** CI green, API live, spikes decided, contracts frozen, ui gallery renders
 
 ## Phase 2 — Physical core (27–29 Oct)
-- [ ] T8 Capture photo as evidence (A)
+- [x] T8 Capture photo as evidence (A): passes on the iOS simulator; camera shutter on a physical phone by you
 - [ ] T9 Identify asset from nameplate (B + A)
 - [ ] T10 Find or attach manual (B + A)
 - [ ] T11 Procedure from manual with citations (B + A)

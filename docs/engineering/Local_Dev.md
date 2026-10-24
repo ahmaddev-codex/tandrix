@@ -59,6 +59,8 @@ supabase migration new <name>   # write SQL in the new file
 pnpm db:reset                   # apply from scratch locally
 ```
 
+In scripts or non-interactive shells, run `supabase migration new <name> < /dev/null`: without a terminal it waits for SQL on standard input and leaves the file empty.
+
 Every new table needs, in its migration: `enable row level security`, a read policy for its owner, and explicit grants (`select` to `authenticated`, read/write to `service_role`, nothing to `anon`). Supabase no longer adds these by default. The integration tests check this for `jobs` and `job_steps`; add the same "client can't write" check for any new table that holds user data.
 
 Production gets the same migrations through `supabase db push` against the linked project, run from CI or deliberately by hand, never from a dev script.
@@ -81,10 +83,12 @@ Signing in locally:
 End-to-end tests drive the simulator with [Maestro](https://maestro.mobile.dev) (`brew tap mobile-dev-inc/tap && brew install mobile-dev-inc/tap/maestro`; the npm package called `maestro` is unrelated):
 
 ```bash
-pnpm --filter @tandrix/mobile e2e     # needs the simulator app and API running
+pnpm --filter @tandrix/mobile e2e     # runs apps/mobile/e2e/run.sh; needs the simulator app and API running
 ```
 
-It signs in, creates a uniquely named job, restarts the app and checks the session and job are still there, then screenshots the design-system gallery in every theme. Results and screenshots land in `.maestro/` (git-ignored).
+It runs three flows: sign in → create a uniquely named job → restart → still signed in and the job listed; the design-system gallery in every theme; and, with camera access revoked first, add a photo to a job through the photo picker and see it in the job's photos. Results and screenshots land in `.maestro/` (git-ignored). The simulator has no camera, so taking a photo with the shutter is a physical-device check.
+
+Run the API with `pnpm --filter @tandrix/api dev` (it reloads on change). An API started before new routes were added answers "No such route." until restarted.
 
 Release builds come from EAS, never from this machine: Expo loads `.env.local` for production builds too, so a local build would point at the local stack.
 

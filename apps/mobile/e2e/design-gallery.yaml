@@ -1,14 +1,9 @@
 # Design-system gallery on the phone (T0.7 check, moved to T7): every component in each theme.
-# Runs after sign-in-create-job, which leaves the app signed in on the jobs list.
+# Signs in with the local test user if needed (subflows/open-app.yaml).
 appId: app.tandrix.mobile
 ---
 - launchApp
-- openLink: exp+tandrix://?__expo_url=http%3A%2F%2F127.0.0.1%3A8081&__expo_disable_fab=1&__expo_disable_auto_launch=1&__expo_disable_onboarding=1
-- runFlow:
-    when:
-      visible: Open
-    commands:
-      - tapOn: Open
+- runFlow: subflows/open-app.yaml
 # The header button's accessibility label is "Design system".
 - extendedWaitUntil:
     visible: Design system
