@@ -7,7 +7,7 @@ Tracks: **D** design, **A** mobile & glasses, **B** API & AI, **C** desktop (mac
 - [ ] T0.1 Meta API smoke script (B)
 - [ ] T0.2 Glasses toolkit sample running (A)
 - [ ] T0.3 Demo fixtures: pump photos, manual, desktop app choice (all)
-- [x] T0.4 Monorepo skeleton + CI (B): CI workflow written; first green run happens on first push
+- [ ] T0.4 Monorepo skeleton + CI (B): local lint, format, typecheck, test and build pass; open until CI runs green on the first push
 - [x] T0.5 Choose the design direction (D + you): Geist-style, see docs/design/decision.md
 - [x] T0.6 Document the Tandrix design system (D): https://claude.ai/artifact/JXT7ErJARYzNkiv8EQjpvp, mirrored in docs/design/system
 - [x] T0.7 `packages/ui`: tokens and core components (D + A + C): phone feature components land in their feature tasks; galleries in T7 and T18

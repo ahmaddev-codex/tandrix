@@ -18,8 +18,8 @@ Re-check the official rules and submission requirements: https://dev.meta.ai/eve
 - [ ] Wearables Developer Center access; glasses paired with the Meta AI app; toolkit sample app runs on the phone.
 - [ ] Demo pump on hand. Photograph: nameplate, every part laid out, each assembly stage, from 2–3 angles. Get the manual PDF.
 - [ ] Decide the **desktop software** for the handoff (pump controller config tool, VFD software, monitoring dashboard, or the vendor's web configurator).
-- [ ] Supabase project, Fly.io/Railway account, Apple developer account (for device builds), Expo account.
-- [ ] `git init`, empty monorepo skeleton.
+- [ ] Hosted Supabase project for production (local stack already runs), Fly.io/Railway account, Apple developer account (for device builds), Expo account.
+- [x] `git init`, monorepo skeleton, local dev stack (`pnpm setup:local`, see Local_Dev.md).
 
 ## 3. Day by day
 

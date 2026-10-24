@@ -40,7 +40,7 @@ flowchart LR
 | Glasses | Meta Wearables Device Access Toolkit wrapped as an Expo native module, iOS and Android | Native SDKs on both; no web path for the camera. |
 | Desktop | Electron + React + Vite, macOS only for the MVP | Transparent always-on-top click-through overlay, `globalShortcut`, `desktopCapturer`. |
 | Web report | Small React page served by the API (or Vite static) | Share link for managers/experts without install. |
-| API | Hono on Node 20, deployed to Fly.io or Railway | Light, TypeScript, supports WebSockets (needed for voice proxy). |
+| API | Hono on Node 22, deployed to Fly.io or Railway | Light, TypeScript, supports WebSockets (needed for voice proxy). |
 | Validation | Zod (shared `packages/contracts`) | Inputs, model output, tool arguments. |
 | Data | Supabase: Postgres, Storage (private buckets), Auth, Realtime | Realtime powers device handoff; storage for photos and manuals. |
 | Reasoning / vision | `muse-spark-1.3` via Responses API | Image, video, audio, PDF in; tool calling; structured output; search grounding; 1M context. |
@@ -76,21 +76,23 @@ docs/
 
 | Entity | Key fields | Notes |
 |---|---|---|
-| `Asset` | id, owner_id, make, model, serial, category, nameplate_evidence_id, manual_ids[] | A physical machine or a piece of software. |
-| `Manual` | id, asset_model_key, source_type (`search` \| `upload`), source_url, storage_key, page_count | Cached per model so the next job reuses it. |
-| `Procedure` | id, asset_model_key, source_type (`manual` \| `expert_recording` \| `generic`), author_id, status (`draft` \| `published`), version | Reusable template of steps. |
-| `ProcedureStep` | id, procedure_id, order, surface (`physical` \| `desktop`), title, instruction, reason, parts[], caution, hazard_tags[], verification (`photo` \| `screen` \| `user_confirm` \| `measurement`), expected_state, citation, reference_image_key | |
+| `Asset` | id, owner_id, category (`equipment` \| `software`), make, model, serial?, nameplate_evidence_id, created_at | A physical machine or a piece of software. Manuals attach by model key, not by asset. |
+| `Manual` | id, asset_model_key, source_type (`search` \| `upload`), source_url, storage_key, page_count, created_at | Cached per model so the next job reuses it. |
+| `Procedure` | id, asset_model_key, source_type (`manual` \| `expert_recording` \| `generic`), author_id, status (`draft` \| `published`), version, title, created_at | Reusable template of steps. |
+| `ProcedureStep` | id, procedure_id, order, surface (`physical` \| `desktop`), title, instruction, reason?, part_spec_ids[], caution?, hazard_tags[], verification (`photo` \| `screen` \| `user_confirm` \| `measurement`), expected_state, measurement? (quantity, unit, target, tolerance), citation (`manual` page/figure \| `expert_recording` timestamp \| `generic`), reference_image_key? | |
 | `PartSpec` | id, procedure_id, part_number, name, qty, description | Parts list for parts check. |
-| `Job` | id, owner_id, asset_id, procedure_id, title, status (`active` \| `completed` \| `stopped`), current_step_id, active_surface, language | The session shared across devices. |
-| `JobStep` | id, job_id, procedure_step_id, status, status_source_evidence_id, updated_by_surface | Status: `todo`, `in_progress`, `needs_attention`, `user_confirmed`, `verified`, `blocked`, `skipped`. |
-| `Evidence` | id, job_id, job_step_id?, kind (`photo` \| `screenshot` \| `video` \| `audio` \| `text`), surface (`phone` \| `glasses` \| `desktop`), storage_key, captured_at, deleted_at? | |
-| `Detection` | id, evidence_id, label, part_spec_id?, box, mask_key?, confidence, confirmed_by_user | SAM geometry + Spark labelling. |
+| `Job` | id, owner_id, asset_id, procedure_id, title, status (`active` \| `completed` \| `stopped`), current_step_id, active_surface, control_mode (`show` \| `do`), language, created_at, updated_at | The session shared across devices. `control_mode` resets to `show` on every new job. |
+| `JobStep` | id, job_id, procedure_step_id, status, status_evidence_id, started_at, note? (skip/block reason), updated_at, updated_by_surface | Status: `todo`, `in_progress`, `needs_attention`, `user_confirmed`, `verified`, `blocked`, `skipped`. |
+| `Evidence` | id, job_id, job_step_id?, kind (`photo` \| `screenshot` \| `video` \| `audio` \| `document`), surface (`phone` \| `glasses` \| `desktop`), storage_key, mime_type, byte_size, width?, height?, captured_at, deleted_at? | Upload types and size limits per kind: `uploadLimits` in `@tandrix/contracts`. |
+| `Detection` | id, evidence_id, label, part_spec_id?, box, mask_key?, confidence, confirmed_by_user (null until reviewed), corrected_label? | SAM geometry + Spark labelling. |
 | `PointerTarget` | surface, evidence_id, kind (`point` \| `box` \| `mask`), geometry, label, confidence | One format for screen pointer and camera highlight. |
-| `Check` | id, job_step_id, evidence_id, result (`pass` \| `fail` \| `not_verifiable`), reason, model_output_json | Only `pass` can set `verified`. |
-| `PartsCheck` | id, job_id, evidence_ids[], results[] (part_spec_id, status `found` \| `possible` \| `missing`, detection_id?) | |
-| `SafetyConfirmation` | id, job_step_id, gate, confirmed_at, surface | |
-| `ShareLink` | id, job_id, token_hash, expires_at | Read-only report. |
-| `Event` | id, job_id, type, payload_json, created_at | Audit trail and report timeline. |
+| `Check` | id, job_step_id, evidence_id, result (`pass` \| `fail` \| `not_verifiable`), reason, what_to_show_next?, created_at | Only `pass` can set `verified`. |
+| `PartsCheck` | id, job_id, evidence_ids[], results[] (part_spec_id, status `found` \| `possible` \| `missing`, detection_ids[]), created_at | |
+| `SafetyConfirmation` | id, job_step_id, gate, confirmed_by, surface, confirmed_at | Gates: `isolate_power`, `release_pressure`, `lock_rotation`, `cool_down`, `lifting_plan`, `chemical_ppe`. |
+| `ShareLink` | id, job_id, token_hash, expires_at | Read-only report. Not yet in contracts (T23). |
+| `Event` | id, job_id, type, surface?, payload (JSON), created_at | Audit trail and report timeline. Types: `EventType` in `@tandrix/contracts`. |
+
+The Zod schemas in `@tandrix/contracts` are the source of truth for these shapes; this table summarises them.
 
 ### Status rules (`packages/core`)
 - `verified` only from a `Check` with `pass` on evidence captured after the step started.

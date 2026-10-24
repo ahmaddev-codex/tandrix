@@ -64,7 +64,7 @@ Sizes: XS 1 file · S 1–2 · M 3–5 · L 5–8 (split if larger). Commands as
 #### T0.1 Meta API smoke script
 **Description:** A script that makes one real call each to `muse-spark-1.3` (text + image), `sam-3.1` (image + noun phrase) and `muse-voice-transcribe-1.0` (short audio file), and prints latency, token usage and rate-limit headers.
 **Acceptance:** all three calls succeed with our key; limits recorded in `docs/engineering/spikes.md`.
-**Verification:** `pnpm tsx scripts/smoke-meta.ts` prints three successful results.
+**Verification:** `pnpm smoke:meta` (reads `.env.local`) prints four passing checks: Spark text, Spark image + structured output, SAM, Voice Transcribe.
 **Dependencies:** None. **Files:** `scripts/smoke-meta.ts`, `docs/engineering/spikes.md`. **Size:** S
 
 #### T0.2 Glasses toolkit sample
@@ -93,7 +93,7 @@ Sizes: XS 1 file · S 1–2 · M 3–5 · L 5–8 (split if larger). Commands as
 
 #### T0.6 Document the Tandrix design system
 **Description:** Full reference for the chosen direction: colour tokens (light, dark, sunlight/high-contrast, glasses lens), type scale and fonts, spacing, radius, elevation, motion, iconography, highlight and pointer specs, status and safety semantics, voice and copy rules, and component guidelines with states.
-**Acceptance:** every component in Design Brief §5 has a spec with states; every status in Architecture §4 has a visual; token names are final.
+**Acceptance:** every component the product needs has a spec with states; every status in Architecture §4 has a visual; token names are final.
 **Verification:** design review sign-off; published as the Tandrix design system reference.
 **Dependencies:** T0.5. **Files:** `docs/design/*`. **Size:** M
 
@@ -102,7 +102,7 @@ Sizes: XS 1 file · S 1–2 · M 3–5 · L 5–8 (split if larger). Commands as
 **Acceptance:** mobile and desktop render the same components from the same tokens; no hard-coded colours or sizes outside `packages/ui` (lint rule).
 **Verification:** `pnpm --filter @tandrix/ui test`; component gallery screen on phone and in Electron.
 **Dependencies:** T0.6, T0.4. **Files:** `packages/ui/{tokens,native,web}/*`, `eslint` rule. **Size:** M
-**Status (24 Oct):** Done, with one deliberate scope change. Shipped: the token compiler (TS for native, CSS for web, output identical to the design system's `tokens.css`); all 14 web components the Mac app and report need; the native foundation (ThemeProvider with Sunlight switching, Text, Icon, Button, StatusChip, SourceChip); the raw-colour lint rule; 22 tests covering contrast in every theme, generated-file freshness, token drift against the docs mirror, and component behaviour. The phone-only feature components are built natively inside T8, T12, T13, T15 and T16, and the gallery screens move to T7 (phone) and T18 (Mac), because those apps don't exist yet.
+**Status (24 Oct):** Done, with one deliberate scope change. Shipped: the token compiler (TS for native, CSS for web, output identical to the design system's `tokens.css`); all 14 web components the Mac app and report need; the native foundation (ThemeProvider with Sunlight switching, Text, Icon, Button, StatusChip, SourceChip); the raw-colour lint rule (colours only: hard-coded sizes are not lint-enforced yet and are caught in design review); 22 tests covering contrast in every theme, generated-file freshness, token drift against the docs mirror, and component behaviour. The phone-only feature components are built natively inside T8, T12, T13, T15 and T16, and the gallery screens move to T7 (phone) and T18 (Mac), because those apps don't exist yet.
 
 ---
 
