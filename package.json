@@ -14,7 +14,14 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "smoke:meta": "tsx --env-file=.env scripts/smoke-meta.ts"
+    "smoke:meta": "tsx --env-file=.env.local scripts/smoke-meta.ts",
+    "setup:local": "pnpm db:start && pnpm env:local && pnpm db:seed",
+    "db:start": "supabase start",
+    "db:stop": "supabase stop",
+    "db:status": "supabase status",
+    "db:reset": "supabase db reset && pnpm db:seed",
+    "db:seed": "tsx --env-file=.env.local scripts/seed-local.ts",
+    "env:local": "tsx scripts/env-local.ts"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

@@ -3,3 +3,5 @@ docs/design/system/
 packages/ui/src/generated/
 docs/
 tasks/
+supabase/.temp/
+supabase/.branches/
