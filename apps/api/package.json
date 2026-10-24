@@ -1,0 +1,24 @@
+{
+  "name": "@tandrix/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch --env-file=../../.env.local src/server.ts",
+    "typecheck": "tsc -p tsconfig.json",
+    "test:integration": "vitest run -c vitest.integration.config.ts",
+    "build": "esbuild src/server.ts --bundle --platform=node --format=esm --target=node22 --outfile=dist/server.js --sourcemap --banner:js=\"import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);\"",
+    "start": "node --enable-source-maps dist/server.js"
+  },
+  "dependencies": {
+    "@hono/node-server": "2.1.5",
+    "@supabase/supabase-js": "2.117.3",
+    "@tandrix/contracts": "workspace:*",
+    "@tandrix/core": "workspace:*",
+    "hono": "4.13.13",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  }
+}

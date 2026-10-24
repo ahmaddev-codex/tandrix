@@ -43,6 +43,8 @@ pnpm smoke:meta
 | `pnpm db:seed` | Create the test user (`DEV_USER_EMAIL` / `DEV_USER_PASSWORD` in `.env.local`) |
 | `pnpm env:local` | Rewrite `.env.local` from the running stack; keeps your Meta key and secrets |
 | `pnpm smoke:meta` | One live call per Meta model, using `.env.local` |
+| `pnpm --filter @tandrix/api dev` | Run the API on http://localhost:8787 against the local stack (reloads on change) |
+| `pnpm test:integration` | API and database security tests against the local stack (two throwaway users, deleted afterwards) |
 
 Local tools:
 - Studio (tables, auth users, storage): http://127.0.0.1:54323
@@ -57,6 +59,8 @@ supabase migration new <name>   # write SQL in the new file
 pnpm db:reset                   # apply from scratch locally
 ```
 
+Every new table needs, in its migration: `enable row level security`, a read policy for its owner, and explicit grants (`select` to `authenticated`, read/write to `service_role`, nothing to `anon`). Supabase no longer adds these by default. The integration tests check this for `jobs` and `job_steps`; add the same "client can't write" check for any new table that holds user data.
+
 Production gets the same migrations through `supabase db push` against the linked project, run from CI or deliberately by hand, never from a dev script.
 
 ## Testing on a physical phone
@@ -65,4 +69,5 @@ A phone can't reach `127.0.0.1` on your Mac. In `.env.local`, replace `127.0.0.1
 
 ## Automated tests
 
-`pnpm test` needs no services: model calls and the database are faked. Tests that need the local stack will be marked and run separately once the API exists (T6).
+- `pnpm test` needs no services: model calls and the database are faked. This is what CI runs.
+- `pnpm test:integration` needs the local stack. It checks the API end to end and the database rules directly: users see only their own data, clients can't write anything, and a step can't be stored as verified without evidence.

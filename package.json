@@ -21,7 +21,8 @@
     "db:status": "supabase status",
     "db:reset": "supabase db reset && pnpm db:seed",
     "db:seed": "tsx --env-file=.env.local scripts/seed-local.ts",
-    "env:local": "tsx scripts/env-local.ts"
+    "env:local": "tsx scripts/env-local.ts",
+    "test:integration": "pnpm -r --if-present run test:integration"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

@@ -1,0 +1,31 @@
+# Fly.io config for the Tandrix API. Deploy from the repo root:
+#   fly deploy --config apps/api/fly.toml --dockerfile apps/api/Dockerfile
+# Secrets (never in this file):
+#   fly secrets set SUPABASE_URL=... SUPABASE_SECRET_KEY=... SUPABASE_PUBLISHABLE_KEY=... \
+#     META_API_KEY=... TOKEN_SIGNING_SECRET=... CORS_ORIGINS=...
+app = "tandrix-api"
+# Pick the region closest to the demo venue; `fly platform regions` lists them.
+primary_region = "iad"
+
+[env]
+  TANDRIX_ENV = "production"
+  API_PORT = "8787"
+
+[http_service]
+  internal_port = 8787
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  # Keep one machine warm so the demo never waits for a cold start.
+  min_machines_running = 1
+
+  [[http_service.checks]]
+    method = "GET"
+    path = "/health"
+    interval = "15s"
+    timeout = "2s"
+    grace_period = "10s"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"

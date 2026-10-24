@@ -18,7 +18,7 @@ Tracks: **D** design, **A** mobile & glasses, **B** API & AI, **C** desktop (mac
 - [ ] T3 Spike: SAM highlighting (B)
 - [ ] T4 Spike: screen pointing (C)
 - [ ] T5 Spike: nameplate → manual (B)
-- [ ] T6 Jobs API with auth, deployed (B)
+- [ ] T6 Jobs API with auth, deployed (B): built and tested locally; open until deployed (needs hosted Supabase + Fly.io/Railway)
 - [ ] T7 Mobile shell: sign in, create/list jobs (A)
 - [ ] **Checkpoint 1:** CI green, API live, spikes decided, contracts frozen, ui gallery renders
 

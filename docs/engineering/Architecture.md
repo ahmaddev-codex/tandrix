@@ -209,7 +209,8 @@ Long calls (procedure generation, recording) return a job ID and stream progress
 ## 8. Security and privacy
 
 - Meta API key, Supabase service key only on the API server.
-- Supabase RLS: users read/write only their jobs, assets, evidence.
+- Supabase access model: clients (`authenticated`) can only **read** their own rows (RLS) and get no write privileges at all; every write goes through the API with the secret key, which checks ownership and applies `@tandrix/core` rules. `anon` has no table access. Supabase no longer grants API roles anything on new tables, so each migration grants explicitly (see the init migration).
+- Multi-row writes run as one transaction in a database function callable only by `service_role` (e.g. `create_job` writes the job and its `job_created` event).
 - Private storage buckets, short-lived signed URLs.
 - File type and size limits on every upload; manual downloads only from search results, PDF/image only.
 - Share links: random token, hashed in DB, expiry, read-only, revocable.
