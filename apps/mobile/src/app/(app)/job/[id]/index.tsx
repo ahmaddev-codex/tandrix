@@ -1,12 +1,20 @@
-import type { Asset, EvidenceWithUrl, Job, Manual } from "@tandrix/contracts";
+import type {
+  Asset,
+  EvidenceWithUrl,
+  Job,
+  JobStep,
+  Manual,
+  ProcedureDetail,
+} from "@tandrix/contracts";
 import { radius, space } from "@tandrix/ui";
-import { Button, Icon, SourceChip, Text, useTheme } from "@tandrix/ui/native";
+import { Button, Icon, SourceChip, StatusChip, Text, useTheme } from "@tandrix/ui/native";
 import { Image } from "expo-image";
 import { router, Stack, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useState } from "react";
 import { FlatList, Linking, RefreshControl, useWindowDimensions, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "@/lib/api";
+import { citationLabel, stepChip } from "@/lib/steps";
 
 const COLUMNS = 3;
 
@@ -18,6 +26,8 @@ export default function JobScreen() {
   const [asset, setAsset] = useState<Asset | null>();
   const [manual, setManual] = useState<Manual | null>(null);
   const [opening, setOpening] = useState(false);
+  const [procedure, setProcedure] = useState<ProcedureDetail | null>(null);
+  const [jobSteps, setJobSteps] = useState<JobStep[]>([]);
   const [photos, setPhotos] = useState<EvidenceWithUrl[]>();
   const [error, setError] = useState<string>();
   const [refreshing, setRefreshing] = useState(false);
@@ -28,6 +38,8 @@ export default function JobScreen() {
       setJob(detail.job);
       setAsset(detail.asset);
       setManual(detail.manual);
+      setProcedure(detail.procedure);
+      setJobSteps(detail.steps);
       setPhotos(items);
       setError(undefined);
     } catch (e) {
@@ -186,7 +198,7 @@ export default function JobScreen() {
                   Open manual
                 </Button>
               </View>
-            ) : asset ? (
+            ) : asset && !procedure ? (
               <View
                 style={{
                   padding: space["space-4"],
@@ -217,6 +229,84 @@ export default function JobScreen() {
                   testID="find-manual"
                 >
                   Find the manual
+                </Button>
+                <Button
+                  variant="tertiary"
+                  block
+                  onPress={() =>
+                    router.push({ pathname: "/job/[id]/procedure", params: { id, generic: "1" } })
+                  }
+                  testID="generic-steps"
+                >
+                  Use general steps instead
+                </Button>
+              </View>
+            ) : null}
+            {procedure ? (
+              <View testID="step-list" style={{ gap: space["space-2"] }}>
+                <Text variant="label-16" color="text-secondary">
+                  {procedure.steps.length} {procedure.steps.length === 1 ? "step" : "steps"}
+                </Text>
+                {procedure.steps.map((step) => {
+                  const js = jobSteps.find((s) => s.procedureStepId === step.id);
+                  const chip = stepChip[js?.status ?? "todo"];
+                  const cite = citationLabel(step.citation);
+                  return (
+                    <View
+                      key={step.id}
+                      testID="step-row"
+                      style={{
+                        flexDirection: "row",
+                        gap: space["space-3"],
+                        padding: space["space-4"],
+                        borderRadius: radius["radius-lg"],
+                        borderWidth: 1,
+                        borderColor: t.color.border,
+                        backgroundColor: t.color["background-100"],
+                      }}
+                    >
+                      <Text variant="mono-16" color="text-secondary">
+                        {String(step.order)}
+                      </Text>
+                      <View style={{ flex: 1, gap: space["space-2"] }}>
+                        <Text variant="heading-16">{step.title}</Text>
+                        <StatusChip status={chip.status}>{chip.label}</StatusChip>
+                        {cite ? (
+                          <SourceChip kind="manual">{cite}</SourceChip>
+                        ) : (
+                          <SourceChip kind="generic" />
+                        )}
+                      </View>
+                    </View>
+                  );
+                })}
+              </View>
+            ) : asset && manual ? (
+              <View
+                style={{
+                  padding: space["space-4"],
+                  borderRadius: radius["radius-lg"],
+                  backgroundColor: t.color["blue-100"],
+                  gap: space["space-3"],
+                }}
+              >
+                <View style={{ flexDirection: "row", gap: space["space-2"], alignItems: "center" }}>
+                  <Icon name="progress" size={20} color="blue-900" />
+                  <Text variant="heading-20" color="blue-900">
+                    Write the steps
+                  </Text>
+                </View>
+                <Text variant="copy-16" color="text">
+                  Tandrix reads the manual and writes the steps for this job, each with the page it
+                  came from.
+                </Text>
+                <Button
+                  variant="primary"
+                  block
+                  onPress={() => router.push({ pathname: "/job/[id]/procedure", params: { id } })}
+                  testID="write-steps"
+                >
+                  Write the steps
                 </Button>
               </View>
             ) : null}

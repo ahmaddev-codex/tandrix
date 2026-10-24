@@ -4,6 +4,7 @@ import {
   Asset,
   CreateEvidenceResponse,
   CreateManualUploadResponse,
+  GenerateProcedureResponse,
   ManualResponse,
   ManualSearchResponse,
   IdentifyAssetResponse,
@@ -110,6 +111,11 @@ export const api = {
     }).then((r) => r.manual),
   manualUrl: (jobId: string, manualId: string) =>
     request(`/jobs/${jobId}/manual/${manualId}/url`, z.object({ url: z.url() })).then((r) => r.url),
+  generateProcedure: (jobId: string, body: { allowGeneric?: boolean } = {}) =>
+    request(`/jobs/${jobId}/procedure`, GenerateProcedureResponse, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
   createJob: (input: { title: string; surface: Surface }) =>
     request("/jobs", z.object({ job: Job }), { method: "POST", body: JSON.stringify(input) }).then(
       (r) => r.job,

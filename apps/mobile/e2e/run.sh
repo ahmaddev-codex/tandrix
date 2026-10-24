@@ -1,6 +1,7 @@
 #!/bin/sh
 # Runs the end-to-end flows on the booted iOS simulator against the local stack.
-# Needs: the dev build installed (pnpm ios), Metro on :8081, the API on :8787.
+# Needs: the dev build installed (pnpm ios), Metro on :8081, and the API on :8787 started with
+# `pnpm --filter @tandrix/api dev:fixture` (canned procedure until the model is live).
 set -eu
 cd "$(dirname "$0")"
 set -a; . ../../../.env.local; set +a
@@ -15,3 +16,4 @@ run sign-in-create-job.yaml design-gallery.yaml
 run photo-evidence.yaml
 run identify-equipment.yaml
 run manual-from-pages.yaml
+run generic-steps.yaml
