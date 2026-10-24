@@ -1,5 +1,6 @@
 // Evidence data access and storage. Runs with the secret key, so every query filters by owner.
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { dbError } from "../errors";
 import { Evidence, type EvidenceKind, type Surface } from "@tandrix/contracts";
 
 export interface NewEvidence {
@@ -35,6 +36,7 @@ export interface EvidenceStorage {
   stat(path: string): Promise<StoredObject | null>;
   signedReadUrls(paths: string[], expiresInSec: number): Promise<Map<string, string>>;
   remove(path: string): Promise<void>;
+  download(path: string): Promise<Uint8Array>;
 }
 
 type Row = Record<string, unknown>;
@@ -69,7 +71,7 @@ export function supabaseEvidenceRepo(db: SupabaseClient): EvidenceRepo {
         .eq("id", jobId)
         .eq("owner_id", ownerId)
         .maybeSingle();
-      if (error) throw error;
+      if (error) throw dbError(error);
       return data !== null;
     },
 
@@ -80,7 +82,7 @@ export function supabaseEvidenceRepo(db: SupabaseClient): EvidenceRepo {
         .eq("id", stepId)
         .eq("job_id", jobId)
         .maybeSingle();
-      if (error) throw error;
+      if (error) throw dbError(error);
       return data !== null;
     },
 
@@ -102,7 +104,7 @@ export function supabaseEvidenceRepo(db: SupabaseClient): EvidenceRepo {
         })
         .select(COLUMNS)
         .single();
-      if (error) throw error;
+      if (error) throw dbError(error);
       return toEvidence(data);
     },
 
@@ -115,7 +117,7 @@ export function supabaseEvidenceRepo(db: SupabaseClient): EvidenceRepo {
         .eq("jobs.owner_id", ownerId)
         .is("deleted_at", null)
         .maybeSingle();
-      if (error) throw error;
+      if (error) throw dbError(error);
       return data ? toEvidence(data as Row) : null;
     },
 
@@ -126,7 +128,7 @@ export function supabaseEvidenceRepo(db: SupabaseClient): EvidenceRepo {
         .eq("id", evidenceId)
         .select(COLUMNS)
         .single();
-      if (error) throw error;
+      if (error) throw dbError(error);
       return toEvidence(data);
     },
 
@@ -139,7 +141,7 @@ export function supabaseEvidenceRepo(db: SupabaseClient): EvidenceRepo {
         .is("deleted_at", null)
         .order("captured_at", { ascending: false })
         .limit(200);
-      if (error) throw error;
+      if (error) throw dbError(error);
       return data.map(toEvidence);
     },
   };
@@ -150,7 +152,7 @@ export function supabaseEvidenceStorage(db: SupabaseClient, bucket = "evidence")
   return {
     async createUploadUrl(path) {
       const { data, error } = await store().createSignedUploadUrl(path);
-      if (error) throw error;
+      if (error) throw dbError(error);
       return data;
     },
     async stat(path) {
@@ -163,21 +165,26 @@ export function supabaseEvidenceStorage(db: SupabaseClient, bucket = "evidence")
         ) {
           return null;
         }
-        throw error;
+        throw dbError(error);
       }
       return { size: Number(data.size ?? 0), contentType: data.contentType ?? null };
     },
     async signedReadUrls(paths, expiresInSec) {
       if (!paths.length) return new Map();
       const { data, error } = await store().createSignedUrls(paths, expiresInSec);
-      if (error) throw error;
+      if (error) throw dbError(error);
       return new Map(
         data.filter((d) => d.signedUrl && d.path).map((d) => [d.path as string, d.signedUrl]),
       );
     },
     async remove(path) {
       const { error } = await store().remove([path]);
-      if (error) throw error;
+      if (error) throw dbError(error);
+    },
+    async download(path) {
+      const { data, error } = await store().download(path);
+      if (error) throw dbError(error);
+      return new Uint8Array(await data.arrayBuffer());
     },
   };
 }

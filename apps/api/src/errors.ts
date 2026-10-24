@@ -18,3 +18,28 @@ export const unauthorized = () => new HttpError(401, "unauthorized", "Sign in to
 export const notFound = (what: string) => new HttpError(404, "not_found", `${what} not found.`);
 export const invalid = (details: string[]) =>
   new HttpError(400, "invalid_request", "The request isn't valid.", details);
+
+/** Supabase returns plain objects, not Errors; Hono only routes Errors to onError. */
+export class DbError extends Error {
+  constructor(
+    message: string,
+    readonly code: string | null,
+    readonly details: string | null,
+  ) {
+    super(message);
+    this.name = "DbError";
+  }
+}
+
+/** Converts a Supabase/Postgres error into an HttpError for known cases, else a DbError. */
+export function dbError(e: unknown): Error {
+  if (e instanceof HttpError) return e;
+  const o = (e ?? {}) as { message?: string; code?: string; details?: string };
+  const message = o.message ?? String(e);
+  // The signed-in user no longer exists (e.g. account deleted): their token outlives them.
+  if (o.code === "23503" && /owner_id|users/.test(`${message} ${o.details ?? ""}`)) {
+    return new HttpError(401, "unauthorized", "Your session has ended. Sign in again.");
+  }
+  if (o.code === "P0002") return new HttpError(404, "not_found", "Job not found.");
+  return e instanceof Error ? e : new DbError(message, o.code ?? null, o.details ?? null);
+}

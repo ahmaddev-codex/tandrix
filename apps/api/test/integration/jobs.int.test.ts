@@ -47,6 +47,17 @@ describe("API", () => {
     expect((await api(`/jobs/${aliceJob.id}`, bob)).status).toBe(404);
   });
 
+  it("a deleted account's still-valid token gets 401 with a body, not an empty 500", async () => {
+    const ghost = await users.make("ghost");
+    await admin.auth.admin.deleteUser(ghost.id);
+    const res = await api("/jobs", ghost, {
+      method: "POST",
+      body: JSON.stringify({ title: "Ghost", surface: "phone" }),
+    });
+    expect(res.status).toBe(401);
+    expect(await res.json()).toMatchObject({ error: { code: "unauthorized" } });
+  });
+
   it("rejects requests without a valid token", async () => {
     expect((await api("/jobs", null)).status).toBe(401);
     const forged = { ...alice, token: alice.token.slice(0, -4) + "AAAA" };

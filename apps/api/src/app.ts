@@ -2,9 +2,12 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { requestId } from "hono/request-id";
 import { requireUser, type AuthEnv, type VerifyToken } from "./auth";
-import { HttpError } from "./errors";
+import { DbError, HttpError } from "./errors";
+import type { NameplateReader } from "./nameplate";
+import type { AssetsRepo } from "./repos/assets";
 import type { EvidenceRepo, EvidenceStorage } from "./repos/evidence";
 import type { JobsRepo } from "./repos/jobs";
+import { assetRoutes } from "./routes/asset";
 import { evidenceRoutes } from "./routes/evidence";
 import { jobsRoutes } from "./routes/jobs";
 
@@ -13,6 +16,8 @@ export interface AppDeps {
   jobs: JobsRepo;
   evidence: EvidenceRepo;
   storage: EvidenceStorage;
+  assets: AssetsRepo;
+  nameplateReader: NameplateReader;
   corsOrigins: string[];
   /** Logs one line per request. Never request bodies, tokens or media. */
   log?: (line: Record<string, unknown>) => void;
@@ -34,6 +39,17 @@ export function createApp(deps: AppDeps) {
       ms: Math.round(performance.now() - start),
     });
   });
+  // Safety net (inside the request log, so the resulting 500 is logged): Hono only routes Error instances to onError. Anything else thrown (e.g. a plain
+  // object from a library) would become an empty 500 with no log, so turn it into an Error.
+  app.use(async (_c, next) => {
+    try {
+      await next();
+    } catch (e) {
+      throw e instanceof Error
+        ? e
+        : new Error(typeof e === "object" ? JSON.stringify(e) : String(e));
+    }
+  });
   app.use(
     cors({
       origin: (origin) => (deps.corsOrigins.includes(origin) ? origin : null),
@@ -49,7 +65,16 @@ export function createApp(deps: AppDeps) {
   app.use("/jobs", requireUser(deps.verifyToken));
   // Evidence first: the more specific path must win over /jobs/:id.
   app.route("/jobs/:id/evidence", evidenceRoutes(deps.evidence, deps.storage));
-  app.route("/jobs", jobsRoutes(deps.jobs));
+  app.route(
+    "/jobs/:id/asset",
+    assetRoutes({
+      evidence: deps.evidence,
+      storage: deps.storage,
+      assets: deps.assets,
+      reader: deps.nameplateReader,
+    }),
+  );
+  app.route("/jobs", jobsRoutes(deps.jobs, deps.assets));
 
   app.notFound((c) => c.json({ error: { code: "not_found", message: "No such route." } }, 404));
   app.onError((err, c) => {
@@ -65,7 +90,12 @@ export function createApp(deps: AppDeps) {
         err.status,
       );
     }
-    log({ id: c.get("requestId"), level: "error", error: err.message });
+    log({
+      id: c.get("requestId"),
+      level: "error",
+      error: err.message,
+      ...(err instanceof DbError ? { dbCode: err.code } : {}),
+    });
     return c.json(
       { error: { code: "internal", message: "Something went wrong. Try again." } },
       500,

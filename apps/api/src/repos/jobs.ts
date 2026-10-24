@@ -1,5 +1,6 @@
 // Job data access. Runs with the secret key (RLS bypassed), so every query filters by owner.
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { dbError } from "../errors";
 import { Job, JobStep, type Surface } from "@tandrix/contracts";
 
 export interface NewJob {
@@ -70,7 +71,7 @@ export function supabaseJobsRepo(db: SupabaseClient): JobsRepo {
           p_surface: input.surface,
         })
         .single();
-      if (error) throw error;
+      if (error) throw dbError(error);
       return toJob(data as Row);
     },
 
@@ -81,7 +82,7 @@ export function supabaseJobsRepo(db: SupabaseClient): JobsRepo {
         .eq("owner_id", ownerId)
         .order("created_at", { ascending: false })
         .limit(limit);
-      if (error) throw error;
+      if (error) throw dbError(error);
       return data.map(toJob);
     },
 
@@ -92,7 +93,7 @@ export function supabaseJobsRepo(db: SupabaseClient): JobsRepo {
         .eq("id", jobId)
         .eq("owner_id", ownerId)
         .maybeSingle();
-      if (error) throw error;
+      if (error) throw dbError(error);
       if (!data) return null;
       const steps = await db
         .from("job_steps")
@@ -100,7 +101,7 @@ export function supabaseJobsRepo(db: SupabaseClient): JobsRepo {
           "id, job_id, procedure_step_id, status, status_evidence_id, started_at, note, updated_at, updated_by_surface, procedure_steps!inner(order)",
         )
         .eq("job_id", jobId);
-      if (steps.error) throw steps.error;
+      if (steps.error) throw dbError(steps.error);
       // Order by the procedure step's position; PostgREST's referencedTable ordering would only
       // sort inside the embedded rows.
       const ordered = [...(steps.data as Row[])].sort((a, b) => stepOrder(a) - stepOrder(b));
@@ -114,7 +115,7 @@ export function supabaseJobsRepo(db: SupabaseClient): JobsRepo {
         .eq("id", assetId)
         .eq("owner_id", ownerId)
         .maybeSingle();
-      if (error) throw error;
+      if (error) throw dbError(error);
       return data !== null;
     },
   };

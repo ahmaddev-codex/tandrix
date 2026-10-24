@@ -14,7 +14,14 @@ import {
   text,
   user,
 } from "../src";
-import { apiError, DOC_SAM_LINE, noSleep, responseWithText, samStream, scriptedFetch } from "./helpers";
+import {
+  apiError,
+  DOC_SAM_LINE,
+  noSleep,
+  responseWithText,
+  samStream,
+  scriptedFetch,
+} from "./helpers";
 
 const models = { reasoning: "muse-spark-1.3", segmentation: "sam-3.1" };
 const photo = imageUrl("https://example.com/frame.jpg");
@@ -145,7 +152,9 @@ describe("segment (SAM 3.1)", () => {
 
   it("surfaces the API error instead of the parser's wrapper", async () => {
     const { client } = clientWith([apiError(402, "billing_error", "billing_not_configured")]);
-    await expect(segment(client, { model: "sam-3.1", image: photo, concept: "impeller" })).rejects.toMatchObject({
+    await expect(
+      segment(client, { model: "sam-3.1", image: photo, concept: "impeller" }),
+    ).rejects.toMatchObject({
       name: "MetaApiError",
       status: 402,
       code: "billing_not_configured",

@@ -1,8 +1,9 @@
 import { Job } from "@tandrix/contracts";
 import { describe, expect, it } from "vitest";
 import { createApp } from "../src/app";
+import { dbError } from "../src/errors";
 import type { JobsRepo, NewJob } from "../src/repos/jobs";
-import { memoryEvidence, memoryStorage } from "./fakes";
+import { memoryAssets, memoryEvidence, memoryStorage, scriptedReader } from "./fakes";
 
 const A = "00000000-0000-4000-8000-00000000000a";
 const B = "00000000-0000-4000-8000-00000000000b";
@@ -56,6 +57,8 @@ function setup() {
     jobs: repo,
     evidence: memoryEvidence(new Map()),
     storage: memoryStorage(),
+    assets: memoryAssets(),
+    nameplateReader: scriptedReader(),
     corsOrigins: ["http://localhost:5173"],
     log: (l) => logs.push(l),
   });
@@ -203,6 +206,38 @@ describe("GET /jobs and /jobs/:id", () => {
 });
 
 describe("errors and logging", () => {
+  it("turns a plain-object error (as Supabase throws) into a logged JSON 500", async () => {
+    const s = setup();
+    s.repo.listForOwner = async () => {
+      throw { message: "boom", code: "XX000", details: null };
+    };
+    const res = await s.app.request("/jobs", { headers: { authorization: "Bearer token-a" } });
+    expect(res.status).toBe(500);
+    expect(await res.json()).toEqual({
+      error: { code: "internal", message: "Something went wrong. Try again." },
+    });
+    expect(s.logs.some((l) => l.level === "error")).toBe(true);
+    expect(s.logs.at(-1)).toMatchObject({ method: "GET", path: "/jobs", status: 500 });
+  });
+
+  it("maps a missing owner (deleted account, live token) to 401", async () => {
+    const s = setup();
+    s.repo.create = async () => {
+      throw dbError({
+        code: "23503",
+        message:
+          'insert or update on table "jobs" violates foreign key constraint "jobs_owner_id_fkey"',
+      });
+    };
+    const res = await s.call("/jobs", {
+      method: "POST",
+      token: "token-a",
+      body: JSON.stringify(create),
+    });
+    expect(res.status).toBe(401);
+    expect(await res.json()).toMatchObject({ error: { code: "unauthorized" } });
+  });
+
   it("hides internal errors and logs without bodies or tokens", async () => {
     const { app, logs } = (() => {
       const s = setup();
