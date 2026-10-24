@@ -2,6 +2,7 @@
 // PartsList, HandoffBanner, StepCard, SafetyGate) are built on these in their feature tasks.
 import { useState, type ReactNode } from "react";
 import {
+  ActivityIndicator,
   Pressable,
   Text as RNText,
   TextInput,
@@ -340,6 +341,177 @@ export function Input({
           </Text>
         </View>
       ) : null}
+    </View>
+  );
+}
+
+export type CaptureState = "live" | "preview" | "analyzing";
+
+export interface CaptureViewProps {
+  /** Camera preview or the captured photo, filling the frame. */
+  children: ReactNode;
+  state: CaptureState;
+  source?: "phone" | "glasses";
+  /** One line of framing guidance, e.g. "Show the open housing from the front". */
+  hint?: string;
+  /** What Tandrix is looking for while analysing, e.g. "Finding the impeller". */
+  analyzingLabel?: string;
+  useLabel?: string;
+  /** Live: false while the camera isn't ready, which disables the shutter. */
+  canCapture?: boolean;
+  onCapture?: () => void;
+  onRetake?: () => void;
+  onUse?: () => void;
+  /** Shown beside the shutter; omit to hide. */
+  secondaryAction?: ReactNode;
+  testID?: string;
+}
+
+/** The phone camera surface: live view, captured photo, and the wait while Tandrix analyses it. */
+export function CaptureView({
+  children,
+  state,
+  source = "phone",
+  hint,
+  analyzingLabel = "Looking at the photo",
+  useLabel = "Use photo",
+  canCapture = true,
+  onCapture,
+  onRetake,
+  onUse,
+  secondaryAction,
+  testID,
+}: CaptureViewProps) {
+  const t = useTheme();
+  const overlayText = { color: t.color["overlay-ink"] };
+  const shutter = sizes["control-shutter"];
+  const shutterDisabled = !canCapture || state === "analyzing";
+  return (
+    <View style={{ flex: 1, gap: space["space-3"] }} testID={testID}>
+      <View
+        style={{
+          flex: 1,
+          borderRadius: radius["radius-lg"],
+          overflow: "hidden",
+          backgroundColor: t.color["highlight-keyline"],
+        }}
+      >
+        {children}
+        {state === "live" ? (
+          <View
+            accessibilityRole="text"
+            style={{
+              position: "absolute",
+              top: space["space-3"],
+              left: space["space-3"],
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 6,
+              paddingHorizontal: 10,
+              height: 28,
+              borderRadius: radius["radius-full"],
+              backgroundColor: t.color["overlay-ground"],
+              boxShadow: t.shadow["shadow-overlay"],
+            }}
+          >
+            <View
+              style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: t.color["red-700"] }}
+            />
+            <RNText style={[nativeTextStyle("label-13"), overlayText]}>
+              {source === "glasses" ? "Glasses camera on" : "Camera on"}
+            </RNText>
+          </View>
+        ) : null}
+        {hint && state !== "analyzing" ? (
+          <View
+            style={{
+              position: "absolute",
+              bottom: space["space-3"],
+              left: space["space-3"],
+              right: space["space-3"],
+              alignItems: "center",
+            }}
+          >
+            <RNText
+              style={[
+                nativeTextStyle("field-caption"),
+                overlayText,
+                {
+                  textAlign: "center",
+                  paddingHorizontal: space["space-3"],
+                  paddingVertical: 6,
+                  borderRadius: radius["radius-md"],
+                  backgroundColor: t.color["overlay-ground"],
+                  overflow: "hidden",
+                },
+              ]}
+            >
+              {hint}
+            </RNText>
+          </View>
+        ) : null}
+        {state === "analyzing" ? (
+          <View
+            accessibilityRole="progressbar"
+            accessibilityLabel={analyzingLabel}
+            style={{
+              position: "absolute",
+              top: 0,
+              right: 0,
+              bottom: 0,
+              left: 0,
+              alignItems: "center",
+              justifyContent: "center",
+              gap: space["space-2"],
+              backgroundColor: t.color["overlay-scrim"],
+            }}
+          >
+            <ActivityIndicator color={t.color["overlay-ink"]} />
+            <RNText style={[nativeTextStyle("field-caption"), overlayText]}>
+              {analyzingLabel}
+            </RNText>
+          </View>
+        ) : null}
+      </View>
+
+      {state === "preview" ? (
+        <View style={{ flexDirection: "row", gap: space["space-2"] }}>
+          <Button
+            variant="secondary"
+            icon="retake"
+            onPress={onRetake}
+            style={{ flex: 1 }}
+            testID="retake"
+          >
+            Retake
+          </Button>
+          <Button variant="primary" onPress={onUse} style={{ flex: 1 }} testID="use-photo">
+            {useLabel}
+          </Button>
+        </View>
+      ) : (
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
+          <View style={{ flex: 1 }} />
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Take photo"
+            accessibilityState={{ disabled: shutterDisabled }}
+            disabled={shutterDisabled}
+            onPress={onCapture}
+            testID="shutter"
+            style={({ pressed }) => ({
+              width: shutter,
+              height: shutter,
+              borderRadius: shutter / 2,
+              borderWidth: 4,
+              borderColor: t.color["gray-1000"],
+              backgroundColor: pressed ? t.color["gray-300"] : t.color["background-100"],
+              opacity: shutterDisabled ? 0.4 : 1,
+            })}
+          />
+          <View style={{ flex: 1, alignItems: "flex-end" }}>{secondaryAction}</View>
+        </View>
+      )}
     </View>
   );
 }
