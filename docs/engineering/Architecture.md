@@ -113,7 +113,11 @@ All routes authenticated (Supabase JWT), Zod-validated, and scoped to the owner.
 | `/jobs/:id/evidence` | GET | Confirmed evidence for the job, each with a 5-minute signed read URL |
 | `/jobs/:id/asset/identify` | POST | Nameplate photo (uploaded evidence on the job) → Spark reading, or `unavailable` (model down, billing, rate limit, unreadable plate) so the app falls back to typing |
 | `/jobs/:id/asset` | PUT | Save the confirmed equipment: creates the asset, links the job and records `asset_identified` with its source (`model`, `model_edited`, `manual`) in one transaction |
-| `/assets/:id/manual` | POST | Search for manual or attach upload |
+| `/jobs/:id/manual/search` | POST | The cached manual for the job's make and model, or search candidates, each with a short-lived token signed to the user, URL and model |
+| `/jobs/:id/manual/fetch` | POST | Download a searched candidate (token required) through the SSRF-safe fetcher; stored as a shared manual |
+| `/jobs/:id/manual/upload`, `…/upload/:uploadId/complete` | POST | Signed upload URL for a PDF, then the API checks it is a readable PDF (else removes it); private to the user |
+| `/jobs/:id/manual/from-photos` | POST | Combine uploaded page photos, in order, into a private PDF |
+| `/jobs/:id/manual/:manualId/url` | GET | Short-lived signed URL to open the manual |
 | `/procedures/generate` | POST | Manual (or nothing) → draft procedure with citations |
 | `/procedures/from-recording` | POST | Expert video → draft procedure (P1) |
 | `/jobs/:id/parts-check` | POST | Photo(s) → found/possible/missing |
@@ -221,6 +225,7 @@ Long calls (procedure generation, recording) return a job ID and stream progress
 - Multi-row writes run as one transaction in a database function callable only by `service_role` (e.g. `create_job` writes the job and its `job_created` event).
 - Private storage buckets, short-lived signed URLs.
 - File type and size limits on every upload; manual downloads only from search results, PDF/image only.
+- Manual fetch (SSRF): https on port 443 only, no credentials in URLs; every hop's DNS answers checked against private, loopback, link-local (incl. 169.254.169.254), CGNAT, multicast and IPv6 ULA ranges; the connection pinned to the checked address; redirects re-checked (max 3); 60 MB and 20 s total caps; `%PDF-` and a full parse required. Clients can only submit URLs carrying an HMAC token from their own recent search (`TOKEN_SIGNING_SECRET`).
 - Share links: random token, hashed in DB, expiry, read-only, revocable.
 - No raw media in logs. Delete job deletes evidence objects.
 - Desktop executes model-proposed actions only in user-enabled **Do it for me** mode, and only after the deterministic action guard (§6.6a); otherwise it renders pointer targets only.

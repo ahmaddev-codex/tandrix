@@ -177,10 +177,10 @@ Sizes: XS 1 file · S 1–2 · M 3–5 · L 5–8 (split if larger). Commands as
 **Status (24 Oct):** Built and verified on the iOS simulator; open until the live model reads the demo nameplate. Flow: photograph the nameplate (camera or picker) → `POST /jobs/:id/asset/identify` (Spark via `@tandrix/ai`) → editable make/model/serial with "Possible match" below `NAMEPLATE_CONFIDENT` (0.8) → `PUT /jobs/:id/asset` saves, links the job and records the source. Any model failure becomes a plain-language fallback to typing. Verified: 11 API unit tests (reader: reading, unreadable, 402/429/503, invalid output, no image or key in logs), 5 integration tests (exact bytes to the reader, save + event, ownership, client can't call the save function); Maestro flow through the real fallback (Spark answered 402 billing) and screenshots reviewed. Open: Meta billing (T0.1) and the demo nameplate photo (T0.3) to verify a real reading, the "Possible match" banner on device, and T5. Found and fixed on the way: database errors bypassed the API error handler (empty 500, no log); stale sessions after a database reset now sign out on 401.
 
 #### T10 Find or attach manual
-**Description:** `/assets/:id/manual`: search grounding → candidate URLs → fetch PDF (type/size limits) → store; upload fallback (photos/PDF) from phone.
-**Acceptance:** source URL shown; upload path works offline-to-online; manual cached by model key.
-**Verification:** API tests (allowlisted types, oversize rejected); manual.
-**Dependencies:** T9. **Files:** `packages/ai/src/manual-search.ts`, `apps/api/src/routes/manual.ts`, `apps/mobile/app/manual.tsx`. **Size:** M
+**Description:** `/jobs/:id/manual`: search grounding → candidate URLs (signed per user, URL and model) → SSRF-safe PDF fetch → shared store; upload fallback (PDF, or photographed pages combined into a PDF) from the phone, private to the user.
+**Acceptance:** source shown; manual cached by model key; only URLs the search returned can be fetched; uploaded manuals stay private. Queuing an upload while offline is part of T17.
+**Verification:** API unit tests (SSRF refusals, tokens, non-PDF and broken PDF rejected) and integration tests against local Supabase; Maestro `manual-from-pages.yaml`; live search once billing works.
+**Dependencies:** T9. **Files:** `packages/ai/src/manual.ts`, `apps/api/src/{safe-fetch,signed-token,pdf,manual-finder}.ts`, `apps/api/src/routes/manual.ts`, `apps/mobile/src/app/(app)/job/[id]/{manual,pages}.tsx`. **Size:** M
 
 #### T11 Procedure from manual with citations
 **Description:** `/procedures/generate` (Spark + PDF) → PartSpecs + ProcedureSteps with citation and hazard tags; job steps instantiated; step list on phone with source chips. Generic path when no manual.

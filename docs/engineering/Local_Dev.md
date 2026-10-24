@@ -86,7 +86,7 @@ End-to-end tests drive the simulator with [Maestro](https://maestro.mobile.dev) 
 pnpm --filter @tandrix/mobile e2e     # runs apps/mobile/e2e/run.sh; needs the simulator app and API running
 ```
 
-It runs four flows: sign in → create a uniquely named job → restart → still signed in and the job listed; the design-system gallery in every theme; and, with camera access revoked first, add a photo to a job through the photo picker, then photograph a nameplate, confirm or type the equipment details and see them on the job. Results and screenshots land in `.maestro/` (git-ignored). The simulator has no camera, so taking a photo with the shutter is a physical-device check.
+It runs five flows: sign in → create a uniquely named job → restart → still signed in and the job listed; the design-system gallery in every theme; and, with the camera denied at launch, add a photo to a job through the photo picker; photograph a nameplate, confirm or type the equipment details and see them on the job; and find the manual (search reports it can't run without the model), photograph its pages and see the private manual on the job. Results and screenshots land in `.maestro/` (git-ignored). The simulator has no camera, so taking a photo with the shutter is a physical-device check.
 
 If the simulator shows code you've already changed, Metro is serving a stale bundle: stop it and run `pnpm exec expo start --dev-client --clear` in `apps/mobile`. The first screens after a cache clear take a few seconds to build; the flows wait for each screen.
 
