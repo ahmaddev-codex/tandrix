@@ -5,13 +5,14 @@ import type { AuthEnv } from "../auth";
 import { invalid, notFound } from "../errors";
 import type { AssetsRepo } from "../repos/assets";
 import type { JobsRepo } from "../repos/jobs";
+import { assetModelKey, type ManualsRepo } from "../repos/manuals";
 
 const ListQuery = z.object({ limit: z.coerce.number().int().min(1).max(100).default(50) });
 
 const issues = (e: z.ZodError) =>
   e.issues.map((i) => `${i.path.join(".") || "body"}: ${i.message}`);
 
-export function jobsRoutes(repo: JobsRepo, assets: AssetsRepo) {
+export function jobsRoutes(repo: JobsRepo, assets: AssetsRepo, manuals: ManualsRepo) {
   return new Hono<AuthEnv>()
     .post("/", async (c) => {
       const body = await c.req.json().catch(() => undefined);
@@ -43,6 +44,9 @@ export function jobsRoutes(repo: JobsRepo, assets: AssetsRepo) {
       const found = await repo.getForOwner(user.id, id.data);
       if (!found) throw notFound("Job");
       const asset = found.job.assetId ? await assets.getForOwner(user.id, found.job.assetId) : null;
-      return c.json({ ...found, asset });
+      const manual = asset
+        ? await manuals.findForModel(user.id, assetModelKey(asset.make, asset.model))
+        : null;
+      return c.json({ ...found, asset, manual });
     });
 }

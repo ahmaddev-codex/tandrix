@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createApp } from "../src/app";
 import type { JobsRepo } from "../src/repos/jobs";
-import { memoryAssets, memoryEvidence, memoryStorage, scriptedReader } from "./fakes";
+import { memoryAssets, memoryEvidence, memoryStorage, scriptedReader, noManuals } from "./fakes";
 
 const A = "00000000-0000-4000-8000-00000000000a";
 const B = "00000000-0000-4000-8000-00000000000b";
@@ -25,6 +25,7 @@ async function setup(answers: Parameters<typeof scriptedReader>[0] = []) {
     storage,
     assets,
     nameplateReader: reader,
+    ...noManuals(),
     corsOrigins: [],
     log: () => {},
   });

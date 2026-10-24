@@ -8,6 +8,8 @@ import { metaNameplateReader, noModelReader } from "./nameplate";
 import { supabaseAssetsRepo } from "./repos/assets";
 import { supabaseEvidenceRepo, supabaseEvidenceStorage } from "./repos/evidence";
 import { supabaseJobsRepo } from "./repos/jobs";
+import { metaManualFinder, noModelFinder } from "./manual-finder";
+import { supabaseManualsRepo } from "./repos/manuals";
 
 const config = loadApiConfig();
 const admin = createClient(config.supabaseUrl, config.supabaseSecretKey, {
@@ -16,9 +18,9 @@ const admin = createClient(config.supabaseUrl, config.supabaseSecretKey, {
 
 const log = (l: Record<string, unknown>) => console.log(JSON.stringify(l));
 // Models are optional: without a key, identification reports "unavailable" and users type details.
-const nameplateReader = process.env.META_API_KEY
-  ? metaNameplateReader(loadMetaConfig(), log)
-  : noModelReader;
+const meta = process.env.META_API_KEY ? loadMetaConfig() : null;
+const nameplateReader = meta ? metaNameplateReader(meta, log) : noModelReader;
+const manualFinder = meta ? metaManualFinder(meta, log) : noModelFinder;
 if (!process.env.META_API_KEY)
   log({ level: "warn", event: "models_disabled", reason: "META_API_KEY not set" });
 
@@ -29,6 +31,10 @@ const app = createApp({
   storage: supabaseEvidenceStorage(admin),
   assets: supabaseAssetsRepo(admin),
   nameplateReader,
+  manuals: supabaseManualsRepo(admin),
+  manualStorage: supabaseEvidenceStorage(admin, "manuals"),
+  manualFinder,
+  tokenSecret: config.tokenSigningSecret,
   corsOrigins: config.corsOrigins,
   log,
 });

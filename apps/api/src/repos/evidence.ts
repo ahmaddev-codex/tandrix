@@ -37,6 +37,8 @@ export interface EvidenceStorage {
   signedReadUrls(paths: string[], expiresInSec: number): Promise<Map<string, string>>;
   remove(path: string): Promise<void>;
   download(path: string): Promise<Uint8Array>;
+  /** Server-side write (manuals fetched or built by the API). */
+  put(path: string, bytes: Uint8Array, contentType: string): Promise<void>;
 }
 
 type Row = Record<string, unknown>;
@@ -179,6 +181,10 @@ export function supabaseEvidenceStorage(db: SupabaseClient, bucket = "evidence")
     },
     async remove(path) {
       const { error } = await store().remove([path]);
+      if (error) throw dbError(error);
+    },
+    async put(path, bytes, contentType) {
+      const { error } = await store().upload(path, bytes, { contentType, upsert: false });
       if (error) throw dbError(error);
     },
     async download(path) {

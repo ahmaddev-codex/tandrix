@@ -8,6 +8,9 @@ import type { NameplateReader } from "../../src/nameplate";
 import { supabaseAssetsRepo } from "../../src/repos/assets";
 import { supabaseEvidenceRepo, supabaseEvidenceStorage } from "../../src/repos/evidence";
 import { supabaseJobsRepo } from "../../src/repos/jobs";
+import type { ManualFinder } from "../../src/manual-finder";
+import { supabaseManualsRepo } from "../../src/repos/manuals";
+import type { Transport } from "../../src/safe-fetch";
 
 export const config = loadApiConfig();
 if (config.env !== "local") throw new Error("Integration tests only run against the local stack.");
@@ -28,6 +31,28 @@ export const reader: NameplateReader & { impl: NameplateReader["read"] } = {
   },
 };
 
+/** Tests set `finder.impl` to script the manual search. */
+export const finder: ManualFinder & { impl: ManualFinder["find"] } = {
+  impl: async () => ({ status: "unavailable", message: "Search off in tests." }),
+  find(asset) {
+    return finder.impl(asset);
+  },
+};
+
+/** Manual downloads: public DNS answers and a scripted transport; nothing leaves the machine. */
+export const web: {
+  resolve: (h: string) => Promise<Array<{ address: string; family: number }>>;
+  transport: Transport & { impl: Transport["get"] };
+} = {
+  resolve: async () => [{ address: "93.184.215.14", family: 4 }],
+  transport: {
+    impl: async () => ({ status: 404 }),
+    get(url, address, opts) {
+      return web.transport.impl(url, address, opts);
+    },
+  },
+};
+
 export const app = createApp({
   verifyToken: supabaseVerifier(admin),
   jobs: supabaseJobsRepo(admin),
@@ -35,6 +60,11 @@ export const app = createApp({
   storage: supabaseEvidenceStorage(admin),
   assets: supabaseAssetsRepo(admin),
   nameplateReader: reader,
+  manuals: supabaseManualsRepo(admin),
+  manualStorage: supabaseEvidenceStorage(admin, "manuals"),
+  manualFinder: finder,
+  tokenSecret: config.tokenSigningSecret,
+  manualFetch: { resolve: (h) => web.resolve(h), transport: web.transport },
   corsOrigins: [],
   log: () => {},
 });

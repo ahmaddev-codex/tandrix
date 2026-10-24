@@ -1,7 +1,9 @@
 // In-memory evidence repo and storage for unit tests.
-import type { Asset, Evidence, IdentifyAssetResponse } from "@tandrix/contracts";
+import type { Asset, Evidence, IdentifyAssetResponse, Manual } from "@tandrix/contracts";
+import { noModelFinder } from "../src/manual-finder";
 import type { NameplateReader } from "../src/nameplate";
 import type { AssetsRepo, SaveAsset } from "../src/repos/assets";
+import type { ManualsRepo, PendingUpload } from "../src/repos/manuals";
 import type {
   EvidenceRepo,
   EvidenceStorage,
@@ -78,6 +80,10 @@ export function memoryStorage() {
       objects.delete(path);
       storage.removed.push(path);
     },
+    async put(path, data, contentType) {
+      objects.set(path, { size: data.length, contentType });
+      bytes.set(path, data);
+    },
     async download(path) {
       if (!objects.has(path)) throw new Error("not found");
       return bytes.get(path) ?? new Uint8Array([0xff, 0xd8, 0xff]);
@@ -135,3 +141,75 @@ export function scriptedReader(answers: IdentifyAssetResponse[] = []) {
   };
   return reader;
 }
+
+export function memoryManuals() {
+  const manuals: Array<Manual & { ownerId: string | null }> = [];
+  const uploads = new Map<string, PendingUpload>();
+  let n = 0;
+  const repo: ManualsRepo & {
+    manuals: typeof manuals;
+    uploads: typeof uploads;
+    events: Array<{ jobId: string; manualId: string; how: string }>;
+  } = {
+    manuals,
+    uploads,
+    events: [],
+    async findForModel(ownerId, key) {
+      const newest = [...manuals].reverse();
+      const own = newest.find((m) => m.assetModelKey === key && m.ownerId === ownerId);
+      return strip(own ?? newest.find((m) => m.assetModelKey === key && m.ownerId === null));
+    },
+    async getForOwner(ownerId, id) {
+      return strip(
+        manuals.find((m) => m.id === id && (m.ownerId === null || m.ownerId === ownerId)),
+      );
+    },
+    async insert(m) {
+      const row = {
+        id: `00000000-0000-4000-8000-0000000b${String(++n).padStart(4, "0")}`,
+        assetModelKey: m.assetModelKey,
+        title: m.title,
+        sourceType: m.sourceType,
+        sourceUrl: m.sourceUrl,
+        storageKey: m.storageKey,
+        pageCount: m.pageCount,
+        createdAt: "2026-10-26T10:00:00.000Z",
+        ownerId: m.ownerId,
+      };
+      manuals.push(row);
+      return strip(row)!;
+    },
+    async createUpload(u) {
+      const up = { ...u, completedAt: null };
+      uploads.set(u.id, up);
+      return up;
+    },
+    async getUpload(ownerId, jobId, id) {
+      const up = uploads.get(id);
+      return up && up.ownerId === ownerId && up.jobId === jobId ? up : null;
+    },
+    async completeUpload(id) {
+      uploads.set(id, { ...uploads.get(id)!, completedAt: "2026-10-26T10:00:10.000Z" });
+    },
+    async recordAttached(jobId, manualId, how) {
+      repo.events.push({ jobId, manualId, how });
+    },
+  };
+  return repo;
+}
+
+const strip = (m: (Manual & { ownerId: string | null }) | undefined): Manual | null => {
+  if (!m) return null;
+  const { ownerId: _owner, ...manual } = m;
+  return manual;
+};
+
+export const TEST_TOKEN_SECRET = "test-secret-test-secret-test-secret!";
+
+/** Manual deps for tests that don't exercise manuals. */
+export const noManuals = () => ({
+  manuals: memoryManuals(),
+  manualStorage: memoryStorage(),
+  manualFinder: noModelFinder,
+  tokenSecret: TEST_TOKEN_SECRET,
+});

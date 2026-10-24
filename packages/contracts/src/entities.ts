@@ -57,6 +57,7 @@ export const Manual = z.strictObject({
   id: Id,
   /** Normalised "make|model" so a manual is reused across jobs. */
   assetModelKey: text(260),
+  title: text(200),
   sourceType: z.enum(["search", "upload"]),
   sourceUrl: z.url().max(2000).nullable(),
   storageKey: text(512),

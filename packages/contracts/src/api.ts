@@ -1,7 +1,16 @@
 // Request bodies for the Tandrix API (Architecture §5). Responses are the entities.
 import { z } from "zod";
-import { Asset, AssetCategory, Evidence, EvidenceKind, Job, JobStep, SafetyGate } from "./entities";
-import { NameplateReading } from "./model-outputs";
+import {
+  Asset,
+  AssetCategory,
+  Evidence,
+  EvidenceKind,
+  Job,
+  JobStep,
+  Manual,
+  SafetyGate,
+} from "./entities";
+import { ManualSearchOutput, NameplateReading } from "./model-outputs";
 import { ScreenGeometry } from "./desktop";
 import { ControlMode, Id, Language, Surface, Timestamp, text } from "./primitives";
 
@@ -102,7 +111,60 @@ export const JobDetailResponse = z.strictObject({
   job: Job,
   steps: z.array(JobStep),
   asset: Asset.nullable(),
+  /** The manual on file for this asset's model, if any. */
+  manual: Manual.nullable(),
 });
+
+export const ManualSearchResponse = z.discriminatedUnion("status", [
+  z.strictObject({
+    status: z.literal("found"),
+    /** Each candidate carries a server-signed token; fetch only accepts URLs the search returned. */
+    candidates: z.array(
+      ManualSearchOutput.shape.candidates.element.extend({ token: z.string().min(1).max(200) }),
+    ),
+  }),
+  z.strictObject({ status: z.literal("cached"), manual: Manual }),
+  z.strictObject({ status: z.literal("unavailable"), message: text(300) }),
+]);
+export type ManualSearchResponse = z.infer<typeof ManualSearchResponse>;
+
+/** Attach a manual found by search: the server downloads and checks it. */
+export const FetchManualRequest = z.strictObject({
+  url: z
+    .url()
+    .max(2000)
+    .refine((u) => u.startsWith("https://"), "Only https links"),
+  title: text(200),
+  /** The token that came with this candidate from the search. */
+  token: z.string().min(1).max(200),
+});
+
+/** Attach a manual PDF the user uploads (signed upload, then complete). */
+export const CreateManualUploadRequest = z.strictObject({
+  byteSize: z
+    .number()
+    .int()
+    .min(1)
+    .max(60 * 1024 * 1024),
+  title: text(200),
+});
+export const CreateManualUploadResponse = z.strictObject({
+  uploadId: Id,
+  upload: z.strictObject({
+    bucket: z.literal("manuals"),
+    path: text(512),
+    token: z.string().min(1),
+    signedUrl: z.url(),
+  }),
+});
+
+/** Build a manual from photographed pages (uploaded photo evidence, in page order). */
+export const ManualFromPhotosRequest = z.strictObject({
+  evidenceIds: z.array(Id).min(1).max(60),
+  title: text(200),
+});
+
+export const ManualResponse = z.strictObject({ manual: Manual });
 export type JobDetailResponse = z.infer<typeof JobDetailResponse>;
 
 /** What a user can do to a step. Status changes from checks come only from the check pipeline. */

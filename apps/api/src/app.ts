@@ -7,9 +7,13 @@ import type { NameplateReader } from "./nameplate";
 import type { AssetsRepo } from "./repos/assets";
 import type { EvidenceRepo, EvidenceStorage } from "./repos/evidence";
 import type { JobsRepo } from "./repos/jobs";
+import type { ManualFinder } from "./manual-finder";
+import type { ManualsRepo } from "./repos/manuals";
+import type { SafeFetchOptions } from "./safe-fetch";
 import { assetRoutes } from "./routes/asset";
 import { evidenceRoutes } from "./routes/evidence";
 import { jobsRoutes } from "./routes/jobs";
+import { manualRoutes } from "./routes/manual";
 
 export interface AppDeps {
   verifyToken: VerifyToken;
@@ -18,6 +22,15 @@ export interface AppDeps {
   storage: EvidenceStorage;
   assets: AssetsRepo;
   nameplateReader: NameplateReader;
+  manuals: ManualsRepo;
+  manualStorage: EvidenceStorage;
+  manualFinder: ManualFinder;
+  /** Signs manual search candidates (TOKEN_SIGNING_SECRET). */
+  tokenSecret: string;
+  /** Tests only: swap DNS and transport for the manual download. */
+  manualFetch?: Partial<SafeFetchOptions>;
+  /** Tests only: a controllable clock for token expiry. */
+  now?: () => number;
   corsOrigins: string[];
   /** Logs one line per request. Never request bodies, tokens or media. */
   log?: (line: Record<string, unknown>) => void;
@@ -74,7 +87,22 @@ export function createApp(deps: AppDeps) {
       reader: deps.nameplateReader,
     }),
   );
-  app.route("/jobs", jobsRoutes(deps.jobs, deps.assets));
+  app.route(
+    "/jobs/:id/manual",
+    manualRoutes({
+      jobs: deps.jobs,
+      assets: deps.assets,
+      evidence: deps.evidence,
+      evidenceStorage: deps.storage,
+      manuals: deps.manuals,
+      manualStorage: deps.manualStorage,
+      finder: deps.manualFinder,
+      tokenSecret: deps.tokenSecret,
+      ...(deps.manualFetch ? { fetchOptions: deps.manualFetch } : {}),
+      ...(deps.now ? { now: deps.now } : {}),
+    }),
+  );
+  app.route("/jobs", jobsRoutes(deps.jobs, deps.assets, deps.manuals));
 
   app.notFound((c) => c.json({ error: { code: "not_found", message: "No such route." } }, 404));
   app.onError((err, c) => {

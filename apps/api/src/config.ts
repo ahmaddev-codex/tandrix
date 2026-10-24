@@ -12,6 +12,7 @@ const Env = z
     SUPABASE_PUBLISHABLE_KEY: z.string().min(1),
     API_PORT: z.coerce.number().int().min(1).max(65535).default(8787),
     CORS_ORIGINS: z.string().default(""),
+    TOKEN_SIGNING_SECRET: z.string().min(32, "TOKEN_SIGNING_SECRET must be at least 32 characters"),
   })
   .superRefine((e, ctx) => {
     // Never let a local run touch a hosted project, or production point at a laptop.
@@ -42,6 +43,7 @@ export interface ApiConfig {
   supabasePublishableKey: string;
   port: number;
   corsOrigins: string[];
+  tokenSigningSecret: string;
 }
 
 export function loadApiConfig(env: Record<string, string | undefined> = process.env): ApiConfig {
@@ -58,6 +60,7 @@ export function loadApiConfig(env: Record<string, string | undefined> = process.
     supabaseSecretKey: e.SUPABASE_SECRET_KEY,
     supabasePublishableKey: e.SUPABASE_PUBLISHABLE_KEY,
     port: e.API_PORT,
+    tokenSigningSecret: e.TOKEN_SIGNING_SECRET,
     corsOrigins: e.CORS_ORIGINS.split(",")
       .map((s) => s.trim())
       .filter(Boolean),

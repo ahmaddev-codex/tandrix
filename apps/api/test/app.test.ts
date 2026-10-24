@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { createApp } from "../src/app";
 import { dbError } from "../src/errors";
 import type { JobsRepo, NewJob } from "../src/repos/jobs";
-import { memoryAssets, memoryEvidence, memoryStorage, scriptedReader } from "./fakes";
+import { memoryAssets, memoryEvidence, memoryStorage, scriptedReader, noManuals } from "./fakes";
 
 const A = "00000000-0000-4000-8000-00000000000a";
 const B = "00000000-0000-4000-8000-00000000000b";
@@ -59,6 +59,7 @@ function setup() {
     storage: memoryStorage(),
     assets: memoryAssets(),
     nameplateReader: scriptedReader(),
+    ...noManuals(),
     corsOrigins: ["http://localhost:5173"],
     log: (l) => logs.push(l),
   });

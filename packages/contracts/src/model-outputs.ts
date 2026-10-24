@@ -23,6 +23,24 @@ export type NameplateReading = z.infer<typeof NameplateReading>;
 /** Below this confidence a reading is shown as a "Possible match" for the user to check. */
 export const NAMEPLATE_CONFIDENT = 0.8;
 
+/** Manual candidates picked from web search results. URLs are checked against the search hits. */
+export const ManualSearchOutput = z.strictObject({
+  candidates: z
+    .array(
+      z.strictObject({
+        url: z.url().max(2000),
+        title: text(200),
+        publisher: optionalText(120),
+        /** True when the page is on the manufacturer's own site. */
+        official: z.boolean(),
+        documentType: z.enum(["installation_manual", "service_manual", "datasheet", "other"]),
+        confidence: Confidence,
+      }),
+    )
+    .max(8),
+});
+export type ManualSearchOutput = z.infer<typeof ManualSearchOutput>;
+
 export const ModelCitation = z.discriminatedUnion("kind", [
   z.strictObject({
     kind: z.literal("manual"),
