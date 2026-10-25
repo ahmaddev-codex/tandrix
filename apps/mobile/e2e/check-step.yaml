@@ -1,0 +1,140 @@
+# T15: check a step by photo. Needs the API with TANDRIX_FIXTURE_MODELS=1: the fixture finds a
+# problem with a step's first check and passes the next, so both outcomes are seen.
+appId: app.tandrix.mobile
+env:
+  JOB_TITLE: Check job e2e ${RUN_ID}
+---
+- addMedia:
+    - assets/sample-part.jpg
+- launchApp:
+    permissions:
+      all: allow
+      camera: deny
+- runFlow: subflows/open-app.yaml
+- tapOn:
+    id: new-job
+- extendedWaitUntil:
+    visible:
+      id: job-title
+    timeout: 30000
+- tapOn:
+    id: job-title
+- inputText: ${JOB_TITLE}
+- tapOn:
+    id: create-job
+- extendedWaitUntil:
+    visible: ${JOB_TITLE},.*
+    timeout: 15000
+- tapOn: ${JOB_TITLE},.*
+- extendedWaitUntil:
+    visible:
+      id: photograph-nameplate
+    timeout: 15000
+- tapOn:
+    id: photograph-nameplate
+- extendedWaitUntil:
+    visible:
+      id: choose-photo
+    timeout: 30000
+- tapOn:
+    id: choose-photo
+- extendedWaitUntil:
+    visible:
+      text: "Photo, .*"
+    timeout: 15000
+- tapOn:
+    text: "Photo, .*"
+    index: 0
+- tapOn:
+    id: use-photo
+- extendedWaitUntil:
+    visible:
+      id: identify-banner
+    timeout: 60000
+- tapOn:
+    id: asset-make
+- eraseText: 120
+- inputText: FlowSet
+- tapOn:
+    id: asset-model
+- eraseText: 120
+- inputText: CHK-${RUN_ID}
+- hideKeyboard
+- tapOn:
+    id: save-asset
+- extendedWaitUntil:
+    visible:
+      id: generic-steps
+    timeout: 15000
+- tapOn:
+    id: generic-steps
+- extendedWaitUntil:
+    visible:
+      id: step-list
+    timeout: 60000
+- scrollUntilVisible:
+    element: "Step 3: Fit the impeller,.*"
+    direction: DOWN
+- tapOn: "Step 3: Fit the impeller,.*"
+- extendedWaitUntil:
+    visible:
+      id: step-card
+    timeout: 15000
+- scrollUntilVisible:
+    element:
+      id: start-step
+    direction: DOWN
+    timeout: 20000
+- tapOn:
+    id: start-step
+- scrollUntilVisible:
+    element:
+      id: check-work
+    direction: DOWN
+    timeout: 20000
+- tapOn:
+    id: check-work
+# Camera denied: choose the photo of the finished step.
+- extendedWaitUntil:
+    visible: "Check your work: take or choose a photo of the finished step."
+    timeout: 15000
+- tapOn:
+    id: choose-photo
+- extendedWaitUntil:
+    visible:
+      text: "Photo, .*"
+    timeout: 15000
+- tapOn:
+    text: "Photo, .*"
+    index: 0
+- tapOn: Check this photo
+- extendedWaitUntil:
+    visible:
+      id: check-result
+    timeout: 60000
+- assertVisible: Needs attention
+- assertVisible: ".*gap at the shoulder.*"
+- takeScreenshot: check-needs-attention
+- scrollUntilVisible:
+    element: Check again
+    direction: DOWN
+    timeout: 20000
+- tapOn: Check again
+- tapOn:
+    id: choose-photo
+- extendedWaitUntil:
+    visible:
+      text: "Photo, .*"
+    timeout: 15000
+- tapOn:
+    text: "Photo, .*"
+    index: 0
+- tapOn: Check this photo
+- extendedWaitUntil:
+    visible: Looks right
+    timeout: 60000
+- scrollUntilVisible:
+    element: Verified
+    direction: DOWN
+    timeout: 20000
+- takeScreenshot: check-verified

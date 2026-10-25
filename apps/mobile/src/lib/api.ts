@@ -12,6 +12,7 @@ import {
   GenerateProcedureResponse,
   HighlightResponse,
   StepActionResponse,
+  CheckStepResponse,
   AskStepResponse,
   TranscribeResponse,
   Detection,
@@ -155,6 +156,11 @@ export const api = {
     form.append("keywords", JSON.stringify(keywords.slice(0, 20)));
     return request("/voice/transcribe", TranscribeResponse, { method: "POST", body: form }, false);
   },
+  checkStep: (jobId: string, jobStepId: string, evidenceId: string) =>
+    request(`/jobs/${jobId}/steps/${jobStepId}/check`, CheckStepResponse, {
+      method: "POST",
+      body: JSON.stringify({ evidenceId }),
+    }),
   askStep: (jobId: string, jobStepId: string, body: { text: string; stuck?: boolean }) =>
     request(`/jobs/${jobId}/steps/${jobStepId}/ask`, AskStepResponse, {
       method: "POST",

@@ -4,6 +4,7 @@
 // repeat, start, done…) act here, questions are answered in the step's context and spoken back.
 import { gateCopy, refusalFor, requiredGates } from "@tandrix/core";
 import type {
+  CheckResult,
   JobStep,
   ProcedureStep,
   SafetyConfirmation,
@@ -57,6 +58,10 @@ export interface StepWorkInput {
   /** Part names and the equipment, to bias recognition. */
   keywords: string[];
   language: string;
+  /** "Check my work": open the camera to photograph the result. */
+  onCheck: () => void;
+  /** The latest check on this step since it started, if any. */
+  lastCheck: CheckResult | null;
 }
 
 /** Null until the step has loaded; then nothing renders. */
@@ -125,8 +130,11 @@ export function useStepWork(input: StepWorkInput | null): StepWork {
       case "done": {
         if (cur.step.verification === "measurement")
           return say("Enter the value you measured, then save it.");
-        if (cur.step.verification !== "user_confirm")
-          return say("Take a photo of the result so Tandrix can check it.");
+        // Photo steps: check the photo first, unless a check already said a photo can't show it.
+        if (cur.step.verification !== "user_confirm" && cur.lastCheck !== "not_verifiable") {
+          cur.onCheck();
+          return say("Show me the finished step, then take the photo.");
+        }
         const r = await send({ action: "confirm_done" });
         return say(
           r?.status === "applied"
@@ -224,7 +232,14 @@ export function useStepWork(input: StepWorkInput | null): StepWork {
         Start step
       </Button>
     )
-  ) : active.includes(status) && step.verification === "user_confirm" ? (
+  ) : active.includes(status) &&
+    (step.verification === "photo" || step.verification === "screen") &&
+    input.lastCheck !== "not_verifiable" ? (
+    <Button variant="primary" block disabled={busy} onPress={input.onCheck} testID="check-work">
+      {/* After a check found a problem, the one action is to check again. */}
+      {status === "needs_attention" ? "Check again" : "Check my work"}
+    </Button>
+  ) : active.includes(status) && step.verification !== "measurement" ? (
     <Button
       variant="primary"
       block

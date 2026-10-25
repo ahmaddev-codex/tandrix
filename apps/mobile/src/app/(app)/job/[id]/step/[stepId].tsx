@@ -2,6 +2,7 @@
 // Show Tandrix the parts and it highlights them on the photo; tap a label to confirm or correct
 // it. When highlighting can't run, the step's parts are listed by number instead.
 import type {
+  Check,
   HighlightResponse,
   HighlightTarget,
   JobStep,
@@ -13,6 +14,7 @@ import { space } from "@tandrix/ui";
 import {
   Button,
   CaptureView,
+  CheckResult,
   HighlightCorrection,
   Notice,
   PartHighlight,
@@ -60,6 +62,9 @@ export default function StepScreen() {
   const [result, setResult] = useState<HighlightResponse>();
   const [targets, setTargets] = useState<HighlightTarget[]>([]);
   const [correcting, setCorrecting] = useState<HighlightTarget>();
+  // A photo either finds the step's parts or checks the finished work.
+  const [purpose, setPurpose] = useState<"find" | "check">("find");
+  const [check, setCheck] = useState<Check | null>(null);
   const camera = useRef<CameraView>(null);
   const [permission, requestPermission] = useCameraPermissions();
   const [cameraReady, setCameraReady] = useState(false);
@@ -116,6 +121,7 @@ export default function StepScreen() {
             return true;
           },
           onShow: () => {
+            setPurpose("find");
             setPhoto(undefined);
             setResult(undefined);
             setTargets([]);
@@ -124,6 +130,17 @@ export default function StepScreen() {
           },
           keywords: data.keywords,
           language: data.language,
+          onCheck: () => {
+            setPurpose("check");
+            setCheck(null);
+            setPhoto(undefined);
+            setResult(undefined);
+            setTargets([]);
+            setCorrecting(undefined);
+            setPhase("live");
+            scroll.current?.scrollTo({ y: 0, animated: true });
+          },
+          lastCheck: check?.result ?? null,
         }
       : null,
   );
@@ -161,6 +178,18 @@ export default function StepScreen() {
     setError(undefined);
     try {
       const evidence = await uploadPhoto(id, photo, stepId);
+      if (purpose === "check") {
+        const r = await api.checkStep(id, stepId, evidence.id);
+        if (r.status !== "checked") {
+          setError(r.message);
+          setPhase("preview");
+          return;
+        }
+        setCheck(r.check);
+        setData((d) => (d ? { ...d, jobStep: r.step } : d));
+        setPhase("result");
+        return;
+      }
       const r = await api.highlight(id, stepId, evidence.id);
       setResult(r);
       setTargets(r.status === "found" ? r.targets : []);
@@ -169,7 +198,7 @@ export default function StepScreen() {
       setError((e as Error).message);
       setPhase("preview");
     }
-  }, [photo, data, id, stepId]);
+  }, [photo, data, id, stepId, purpose]);
 
   const retake = () => {
     setPhoto(undefined);
@@ -233,7 +262,23 @@ export default function StepScreen() {
       : [];
 
   const frame =
-    phase === "result" && photo ? (
+    purpose === "check" && phase === "result" && photo && check ? (
+      // Design system: CheckResult, with the photo it judged.
+      <CheckResult
+        testID="check-result"
+        result={check.result}
+        reason={check.whatToShowNext ? `${check.reason} ${check.whatToShowNext}` : check.reason}
+        evidence={`Photo ${new Date(photo.capturedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`}
+        thumbnail={
+          <Image
+            source={{ uri: photo.uri }}
+            style={{ width: 88, aspectRatio: photo.width / photo.height }}
+            contentFit="cover"
+            accessibilityLabel="The photo Tandrix checked"
+          />
+        }
+      />
+    ) : phase === "result" && photo ? (
       <View style={{ flex: 1, minHeight: 280 }}>
         <PartHighlight
           testID="part-highlight"
@@ -265,9 +310,15 @@ export default function StepScreen() {
       <View style={{ height: 360 }}>
         <CaptureView
           state={phase === "result" ? "preview" : phase}
-          hint={phase === "live" ? `Show the ${partWord} in the frame` : undefined}
-          analyzingLabel={`Finding the ${partWord}`}
-          useLabel="Find the parts"
+          hint={
+            phase !== "live"
+              ? undefined
+              : purpose === "check"
+                ? "Show the finished step, close and in good light"
+                : `Show the ${partWord} in the frame`
+          }
+          analyzingLabel={purpose === "check" ? "Checking your work" : `Finding the ${partWord}`}
+          useLabel={purpose === "check" ? "Check this photo" : "Find the parts"}
           canCapture={cameraReady}
           onCapture={take}
           onRetake={retake}
@@ -308,9 +359,11 @@ export default function StepScreen() {
           )
         }
       >
-        {`Show Tandrix the parts: take or choose a photo and it highlights the ${partWord}${
-          parts.length > 1 ? " and the other parts" : ""
-        } for this step.`}
+        {purpose === "check"
+          ? "Check your work: take or choose a photo of the finished step."
+          : `Show Tandrix the parts: take or choose a photo and it highlights the ${partWord}${
+              parts.length > 1 ? " and the other parts" : ""
+            } for this step.`}
       </Notice>
     );
 
@@ -331,9 +384,9 @@ export default function StepScreen() {
         {/* Design system: a SafetyGate stands before a hazardous step. */}
         {work.gates}
         {/* Photos are for finding parts; a step that names none has no frame. */}
-        {parts.length ? frame : null}
+        {parts.length || purpose === "check" ? frame : null}
 
-        {phase === "result" ? (
+        {phase === "result" && purpose === "find" ? (
           <View style={{ gap: space["space-2"] }}>
             {correcting ? (
               <HighlightCorrection

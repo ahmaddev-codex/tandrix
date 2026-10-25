@@ -21,3 +21,4 @@ run generic-steps.yaml
 run highlight-step.yaml
 run safety-steps.yaml
 run voice-step.yaml
+run check-step.yaml
