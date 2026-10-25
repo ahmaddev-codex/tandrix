@@ -126,7 +126,7 @@ All routes authenticated (Supabase JWT), Zod-validated, and scoped to the owner.
 | `/jobs/:id/detections/:detectionId` | PATCH | The user's verdict on a highlight: `confirmed`, `wrong`, or `other_part` (relabelled to another part of the procedure) |
 | `/jobs/:id/steps/:stepId/check` | POST | An uploaded photo of the finished step → Spark judges it against the expected state → `core.transitionStep` (`check`): pass → verified on that photo, fail → needs attention with the reason, not verifiable → stays in progress and the user may confirm it. The rules run first (step active, photo taken after the step started, a photo/screen step), so a call that can only be turned down never reaches the model. `record_check` saves the check and the status together |
 | `/jobs/:id/steps/:stepId/actions` | POST | `start`, `confirm_safety`, `confirm_done` (with a measured value for measurement steps), `skip` (with a reason) or `reopen`. The API applies `@tandrix/core` `transitionStep` and saves through `confirm_safety_gate` / `apply_step_transition` (one transaction each, with an event). A rule saying no is a `rejected` answer with its code and, for gates, the gates still to confirm; a step changed on another device meanwhile is a 409 |
-| `/jobs/:id/screen/ask` | POST | Desktop: screenshot + question → reply text + `PointerTarget` |
+| `/jobs/:id/screen/ask` | POST | Desktop: screenshot evidence + question → reply text + `PointerTarget` + the model's proposed actions (drawn only) |
 | `/jobs/:id/handoff` | POST | Set active surface; realtime notifies devices |
 | `/jobs/:id/report` | GET | Report JSON; `/r/:token` serves the web page |
 | `/voice/transcribe` | POST | One push-to-talk turn (multipart WAV, mono 16-bit, 16 or 24 kHz, under a minute; optional keywords) → Muse Voice Transcribe file endpoint in `PUSH_TO_TALK` mode. The WAV is checked before any model call; a tap without speech is `unclear` without one. Key stays server-side |
@@ -171,8 +171,8 @@ Before saving, `normalizeDraft` (@tandrix/core) renumbers steps, drops unknown p
 - Prompt rule: `not_verifiable` for anything a photo can't show (torque, internal fit, electrical).
 
 ### 6.6 Teach me this screen (desktop)
-1. Electron captures the display under the cursor at native resolution, downsizes to a fixed width, keeps the scale factor.
-2. Send screenshot + transcript + job step to Spark with the computer-use tool enabled; instruct it to use only `move` for pointing, plus a structured reply text.
+1. Electron captures the display under the cursor at native resolution, downsizes to 1280 px wide (JPEG), keeps the geometry (`ScreenGeometry`: image size, display origin and size in points). On the hotkey it captures before the panel appears; a typed question puts the panel away first. The screenshot is uploaded as job evidence (`screenshot`, `desktop`) while the question is transcribed.
+2. `POST /jobs/:id/screen/ask` sends the screenshot + transcript + the job's current step to Spark with the computer-use tool (`tools: [{type: "computer"}]`, one turn, `store: false`). The prompt asks for one action at the control's centre plus one or two spoken sentences. Actions are validated against `DesktopAction` (coordinates rounded); the first action with a position becomes the `PointerTarget` (point geometry, labelled "Click here", "Scroll here"…), and points outside the screenshot are dropped. Safety checks are logged, never acknowledged. Model failures answer `unavailable`.
 3. **Show me** mode: any `click`/`type`/other action is not executed; it is rendered as a pointer target with the instruction ("Click here"). **Do it for me** mode: see §6.6a.
 4. Map coordinates back with the scale factor and the display's origin (multi-monitor).
 5. Fallback if accuracy is poor (decided by the day-1 spike): model names the control → OS accessibility API (macOS AX / Windows UIA) finds its frame; or SAM on the screenshot to snap to the nearest element box.
@@ -223,7 +223,7 @@ Before saving, `normalizeDraft` (@tandrix/core) renumbers steps, drops unknown p
 - Panel: frameless menu-bar window with the signed-in user's active job (most recently updated `active` job) and its steps; mic state, mode and stop arrive with T19 and T27.
 - Renderer security: `contextIsolation`, `sandbox`, no Node; the preload exposes only `window.tandrix` (`src/shared/bridge.ts`), and the main process answers IPC only from its own windows, with argument checks. No new windows or navigation. Built apps load pages from `app://tandrix` (a privileged scheme confined to the renderer folder), so the API allows that origin by name and the CSP (`connect-src` only the API and Supabase) means something.
 - Sign-in: Supabase email code as on the phone; the session is stored by the main process, encrypted with `safeStorage` (Keychain key), never in `localStorage`.
-- Hotkey: hold-to-talk via `globalShortcut` (plus a native key-up helper if needed).
+- Hotkey: ⌃⌥Space via `globalShortcut`, which reports presses but not releases, so it is tap to listen and tap again to ask; Esc (taken only while listening) cancels. The panel's mic button is hold to talk. The panel records 16 kHz mono WAV with an AudioWorklet (`/voice/transcribe`, as on the phone) and speaks replies with the Web Speech API. Pages get the microphone only (no camera or other permissions), and only Tandrix's own windows.
 - Capture: `desktopCapturer`; macOS Screen Recording permission flow.
 - Subscribes to job realtime for handoff.
 

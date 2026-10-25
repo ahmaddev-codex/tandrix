@@ -129,6 +129,7 @@ pnpm --filter @tandrix/desktop start  # runs the built app
 
 - Tandrix lives in the menu bar (a "Tandrix" title, no Dock icon). Click it to open the panel; it closes when it loses focus. Right-click for Quit. The panel opens by itself on launch.
 - Sign in as on the phone: an email code from Mailpit, or "Local test sign-in" on the local stack. The session is encrypted with `safeStorage` (Keychain) under the app's userData folder and survives restarts.
+- **Show me:** type a question in the panel, or press ⌃⌥Space, ask out loud and press it again. With `dev:fixtures` the API "clicks" a third of the way into the screenshot and says so, so the pointer can be checked without the model; screenshots are saved as job evidence. In dev, macOS asks about the microphone for the app that launched Electron.
 - "Test the pointer" draws the pointer at the centre of every display for four seconds. Checking it on two displays is a manual check.
 - Screen Recording: in dev, macOS asks about (and lists) the app that launched Electron, usually your terminal or editor, not Tandrix.
 - Editors built on Electron export `ELECTRON_RUN_AS_NODE` to their terminals; the dev script removes it. Run the built app with `env -u ELECTRON_RUN_AS_NODE pnpm --filter @tandrix/desktop start` from such a terminal.
