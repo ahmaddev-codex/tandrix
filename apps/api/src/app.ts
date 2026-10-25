@@ -13,6 +13,7 @@ import type { ProcedureGenerator } from "./procedure-generator";
 import type { ProceduresRepo } from "./repos/procedures";
 import type { Highlighter } from "./highlighter";
 import type { DetectionsRepo } from "./repos/detections";
+import type { StepStateRepo } from "./repos/step-state";
 import type { SafeFetchOptions } from "./safe-fetch";
 import { assetRoutes } from "./routes/asset";
 import { evidenceRoutes } from "./routes/evidence";
@@ -35,6 +36,7 @@ export interface AppDeps {
   procedureGenerator: ProcedureGenerator;
   detections: DetectionsRepo;
   highlighter: Highlighter;
+  stepState: StepStateRepo;
   /** Signs manual search candidates (TOKEN_SIGNING_SECRET). */
   tokenSecret: string;
   /** Tests only: swap DNS and transport for the manual download. */
@@ -131,10 +133,15 @@ export function createApp(deps: AppDeps) {
     storage: deps.storage,
     detections: deps.detections,
     highlighter: deps.highlighter,
+    stepState: deps.stepState,
+    ...(deps.now ? { now: deps.now } : {}),
   };
   app.route("/jobs/:id/steps", stepRoutes(stepDeps));
   app.route("/jobs/:id/detections", detectionRoutes(stepDeps));
-  app.route("/jobs", jobsRoutes(deps.jobs, deps.assets, deps.manuals, deps.procedures));
+  app.route(
+    "/jobs",
+    jobsRoutes(deps.jobs, deps.assets, deps.manuals, deps.procedures, deps.stepState),
+  );
 
   app.notFound((c) => c.json({ error: { code: "not_found", message: "No such route." } }, 404));
   app.onError((err, c) => {

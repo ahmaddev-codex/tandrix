@@ -41,6 +41,11 @@ export function dbError(e: unknown): Error {
     return new HttpError(401, "unauthorized", "Your session has ended. Sign in again.");
   }
   if (o.code === "P0002") return new HttpError(404, "not_found", "Job not found.");
+  // Raised by apply_step_transition when another device changed the step first. (A custom code:
+  // SQLSTATE 40001 makes PostgREST retry the call, which loops on a lost race.)
+  if (o.code === "P0003") {
+    return new HttpError(409, "conflict", "This step changed on another device. Try again.");
+  }
   // Raised by save_procedure when a concurrent request already gave the job its steps.
   if (o.code === "23505" && /already has a procedure/.test(message)) {
     return new HttpError(409, "conflict", "This job already has its steps.");

@@ -7,6 +7,7 @@ import type { AssetsRepo } from "../repos/assets";
 import type { JobsRepo } from "../repos/jobs";
 import { assetModelKey, type ManualsRepo } from "../repos/manuals";
 import type { ProceduresRepo } from "../repos/procedures";
+import type { StepStateRepo } from "../repos/step-state";
 
 const ListQuery = z.object({ limit: z.coerce.number().int().min(1).max(100).default(50) });
 
@@ -18,6 +19,7 @@ export function jobsRoutes(
   assets: AssetsRepo,
   manuals: ManualsRepo,
   procedures: ProceduresRepo,
+  stepState: StepStateRepo,
 ) {
   return new Hono<AuthEnv>()
     .post("/", async (c) => {
@@ -56,6 +58,7 @@ export function jobsRoutes(
       const procedure = found.job.procedureId
         ? await procedures.getDetail(user.id, found.job.procedureId)
         : null;
-      return c.json({ ...found, asset, manual, procedure });
+      const safetyConfirmations = procedure ? await stepState.confirmations(found.job.id) : [];
+      return c.json({ ...found, asset, manual, procedure, safetyConfirmations });
     });
 }

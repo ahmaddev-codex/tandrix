@@ -1,5 +1,8 @@
 // In-memory evidence repo and storage for unit tests.
 import type {
+  CheckResult,
+  JobStep,
+  SafetyConfirmation,
   Asset,
   Detection,
   Evidence,
@@ -7,10 +10,12 @@ import type {
   Manual,
   ProcedureDetail,
 } from "@tandrix/contracts";
+import { HttpError } from "../src/errors";
 import { noModelFinder } from "../src/manual-finder";
 import { noModelGenerator } from "../src/procedure-generator";
 import { noModelHighlighter } from "../src/highlighter";
 import type { DetectionsRepo } from "../src/repos/detections";
+import type { StepStateRepo, StepTransition } from "../src/repos/step-state";
 import type { ProceduresRepo, SaveProcedure } from "../src/repos/procedures";
 import type { NameplateReader } from "../src/nameplate";
 import type { AssetsRepo, SaveAsset } from "../src/repos/assets";
@@ -227,6 +232,7 @@ export const noManuals = () => ({
   procedureGenerator: noModelGenerator,
   detections: memoryDetections(),
   highlighter: noModelHighlighter,
+  stepState: memoryStepState(),
 });
 
 /** Stores saved procedures as details; `saves` records what the route asked to save. */
@@ -320,6 +326,64 @@ export function memoryDetections() {
       };
       rows.set(id, d);
       return d;
+    },
+  };
+  return repo;
+}
+
+/** Confirmations, checks and transitions in memory; `steps` holds each step's current row. */
+export function memoryStepState(jobOf: (jobStepId: string) => string = () => "") {
+  const confirmations: SafetyConfirmation[] = [];
+  const checks: Array<{ jobStepId: string; result: CheckResult; at: string }> = [];
+  const steps = new Map<string, JobStep>();
+  let n = 0;
+  const repo: StepStateRepo & {
+    confirmationsList: typeof confirmations;
+    checks: typeof checks;
+    steps: typeof steps;
+    transitions: StepTransition[];
+  } = {
+    confirmationsList: confirmations,
+    checks,
+    steps,
+    transitions: [],
+    async confirmations(jobId) {
+      return confirmations.filter((x) => jobOf(x.jobStepId) === jobId);
+    },
+    async lastCheckSince(jobStepId, since) {
+      const hits = checks.filter((x) => x.jobStepId === jobStepId && x.at >= since);
+      return hits.at(-1)?.result ?? null;
+    },
+    async confirmGate(ownerId, jobStepId, gate, surface) {
+      const existing = confirmations.find((x) => x.jobStepId === jobStepId && x.gate === gate);
+      if (existing) return existing;
+      const c: SafetyConfirmation = {
+        id: `00000000-0000-4000-8000-0000000c${String(++n).padStart(4, "0")}`,
+        jobStepId,
+        gate,
+        confirmedBy: ownerId,
+        surface,
+        confirmedAt: "2026-10-26T10:00:00.000Z",
+      };
+      confirmations.push(c);
+      return c;
+    },
+    async applyTransition(t) {
+      repo.transitions.push(t);
+      const prev = steps.get(t.jobStepId)!;
+      if (prev.status !== t.fromStatus) {
+        throw new HttpError(409, "conflict", "This step changed on another device. Try again.");
+      }
+      const next: JobStep = {
+        ...prev,
+        status: t.to.status,
+        startedAt: t.to.startedAt,
+        statusEvidenceId: t.to.statusEvidenceId,
+        ...(t.to.note ? { note: t.to.note } : {}),
+        updatedBySurface: t.surface,
+      };
+      steps.set(t.jobStepId, next);
+      return next;
     },
   };
   return repo;

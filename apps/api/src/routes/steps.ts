@@ -1,7 +1,10 @@
 // Step work: highlight the step's parts in a photo, and record the user's verdict on a
 // highlight. Everything is scoped to the caller's job.
+import { refusalFor, requiredGates, transitionStep, type StepEvent } from "@tandrix/core";
 import {
   CorrectDetectionRequest,
+  StepActionRequest,
+  type StepActionResponse,
   HIGHLIGHT_CONFIDENT,
   HighlightRequest,
   Id,
@@ -16,6 +19,7 @@ import type { DetectionsRepo } from "../repos/detections";
 import type { EvidenceRepo, EvidenceStorage } from "../repos/evidence";
 import type { JobsRepo } from "../repos/jobs";
 import type { ProceduresRepo } from "../repos/procedures";
+import type { StepStateRepo } from "../repos/step-state";
 
 /** The design system highlights at most three parts at once. */
 export const MAX_HIGHLIGHTS = 3;
@@ -30,6 +34,8 @@ export interface StepDeps {
   storage: EvidenceStorage;
   detections: DetectionsRepo;
   highlighter: Highlighter;
+  stepState: StepStateRepo;
+  now?: () => number;
 }
 
 /** The caller's job step with its procedure step and the parts that step names. */
@@ -48,85 +54,176 @@ async function stepFor(d: StepDeps, ownerId: string, rawJobId?: string, rawStepI
   const parts = step.partSpecIds
     .map((id) => detail.parts.find((p) => p.id === id))
     .filter((p) => p !== undefined);
-  return { jobId: jobId.data, step, parts };
+  return { jobId: jobId.data, jobStep, step, parts };
 }
 
 export function stepRoutes(d: StepDeps) {
-  return new Hono<AuthEnv>().post("/:stepId/highlight", async (c) => {
-    const user = c.get("user");
-    const { jobId, step, parts } = await stepFor(
-      d,
-      user.id,
-      c.req.param("id"),
-      c.req.param("stepId"),
-    );
-    const parsed = HighlightRequest.safeParse(await c.req.json().catch(() => undefined));
-    if (!parsed.success) throw invalid(issues(parsed.error));
-
-    const ev = await d.evidence.getForOwner(user.id, jobId, parsed.data.evidenceId);
-    if (!ev || !ev.uploadedAt || ev.kind !== "photo") throw notFound("Photo");
-    if (!ev.width || !ev.height) {
-      throw new HttpError(
-        422,
-        "invalid_request",
-        "This photo has no size recorded. Take it again.",
+  const now = d.now ?? Date.now;
+  return new Hono<AuthEnv>()
+    .post("/:stepId/actions", async (c) => {
+      const user = c.get("user");
+      const { jobId, jobStep, step } = await stepFor(
+        d,
+        user.id,
+        c.req.param("id"),
+        c.req.param("stepId"),
       );
-    }
-    if (!parts.length) return c.json({ status: "no_parts" as const });
+      const parsed = StepActionRequest.safeParse(await c.req.json().catch(() => undefined));
+      if (!parsed.success) throw invalid(issues(parsed.error));
+      const action = parsed.data;
+      const reply = (r: StepActionResponse) => c.json(r);
+      const forStep = async () =>
+        (await d.stepState.confirmations(jobId)).filter((x) => x.jobStepId === jobStep.id);
 
-    const wanted = parts.slice(0, MAX_HIGHLIGHTS);
-    const size = { width: ev.width, height: ev.height };
-    const result = await d.highlighter.find({
-      photo: { bytes: await d.storage.download(ev.storageKey), mimeType: ev.mimeType },
-      size,
-      instruction: step.instruction,
-      parts: wanted.map((p) => ({ id: p.id, name: p.name })),
-    });
-    if (result.status === "unavailable") return c.json(result);
+      if (action.action === "confirm_safety") {
+        // A refused step has nothing to confirm: Tandrix doesn't guide it at all.
+        const refusal = refusalFor(step.hazardTags);
+        if (refusal) return reply({ status: "rejected", code: "refused", message: refusal.reason });
+        if (!requiredGates(step.hazardTags).includes(action.gate)) {
+          throw invalid([`gate: this step doesn't need ${action.gate}`]);
+        }
+        await d.stepState.confirmGate(user.id, jobStep.id, action.gate, "phone");
+        return reply({ status: "applied", step: jobStep, confirmations: await forStep() });
+      }
 
-    // One highlight per part; ignore anything for a part that wasn't asked about.
-    const picks = wanted
-      .map((p) => ({ part: p, pick: result.picks.find((x) => x.partSpecId === p.id) }))
-      .filter((x) => x.pick !== undefined);
-    const saved = await d.detections.insertMany(
-      picks.map(({ part, pick }) => ({
+      const confirmations = await forStep();
+      const at = new Date(now()).toISOString();
+      const event: StepEvent =
+        action.action === "start"
+          ? { type: "start", at }
+          : action.action === "confirm_done"
+            ? {
+                type: "confirm_done",
+                at,
+                ...(action.measuredValue !== undefined
+                  ? { measuredValue: action.measuredValue }
+                  : {}),
+              }
+            : action.action === "skip"
+              ? { type: "skip", reason: action.reason, at }
+              : { type: "reopen", at };
+      const result = transitionStep(
+        {
+          status: jobStep.status,
+          startedAt: jobStep.startedAt,
+          statusEvidenceId: jobStep.statusEvidenceId,
+          lastCheck: jobStep.startedAt
+            ? await d.stepState.lastCheckSince(jobStep.id, jobStep.startedAt)
+            : null,
+          ...(jobStep.note ? { note: jobStep.note } : {}),
+        },
+        event,
+        {
+          verification: step.verification,
+          hazardTags: step.hazardTags,
+          confirmedGates: confirmations.map((x) => x.gate),
+          ...(step.measurement ? { measurement: step.measurement } : {}),
+        },
+      );
+      if (!result.ok) {
+        return reply({
+          status: "rejected",
+          code: result.code,
+          message: result.message,
+          ...(result.gates ? { gates: result.gates } : {}),
+        });
+      }
+      const saved = await d.stepState.applyTransition({
+        ownerId: user.id,
+        jobStepId: jobStep.id,
+        fromStatus: jobStep.status,
+        to: {
+          status: result.state.status,
+          startedAt: result.state.startedAt,
+          statusEvidenceId: result.state.statusEvidenceId,
+          ...(result.state.note ? { note: result.state.note } : {}),
+        },
+        surface: "phone",
+        event: {
+          action: action.action,
+          ...(action.action === "confirm_done" && action.measuredValue !== undefined
+            ? { measured_value: action.measuredValue }
+            : {}),
+          ...(action.action === "skip" ? { reason: action.reason } : {}),
+        },
+      });
+      return reply({ status: "applied", step: saved, confirmations });
+    })
+    .post("/:stepId/highlight", async (c) => {
+      const user = c.get("user");
+      const { jobId, step, parts } = await stepFor(
+        d,
+        user.id,
+        c.req.param("id"),
+        c.req.param("stepId"),
+      );
+      const parsed = HighlightRequest.safeParse(await c.req.json().catch(() => undefined));
+      if (!parsed.success) throw invalid(issues(parsed.error));
+
+      const ev = await d.evidence.getForOwner(user.id, jobId, parsed.data.evidenceId);
+      if (!ev || !ev.uploadedAt || ev.kind !== "photo") throw notFound("Photo");
+      if (!ev.width || !ev.height) {
+        throw new HttpError(
+          422,
+          "invalid_request",
+          "This photo has no size recorded. Take it again.",
+        );
+      }
+      if (!parts.length) return c.json({ status: "no_parts" as const });
+
+      const wanted = parts.slice(0, MAX_HIGHLIGHTS);
+      const size = { width: ev.width, height: ev.height };
+      const result = await d.highlighter.find({
+        photo: { bytes: await d.storage.download(ev.storageKey), mimeType: ev.mimeType },
+        size,
+        instruction: step.instruction,
+        parts: wanted.map((p) => ({ id: p.id, name: p.name })),
+      });
+      if (result.status === "unavailable") return c.json(result);
+
+      // One highlight per part; ignore anything for a part that wasn't asked about.
+      const picks = wanted
+        .map((p) => ({ part: p, pick: result.picks.find((x) => x.partSpecId === p.id) }))
+        .filter((x) => x.pick !== undefined);
+      const saved = await d.detections.insertMany(
+        picks.map(({ part, pick }) => ({
+          evidenceId: ev.id,
+          label: part.name,
+          partSpecId: part.id,
+          box: pick!.box,
+          mask: pick!.mask,
+          confidence: pick!.confidence,
+        })),
+      );
+      const targets: HighlightTarget[] = saved.map((det) => {
+        // Match by part, not position: one detection per part.
+        const part = wanted.find((p) => p.id === det.partSpecId)!;
+        return {
+          surface: "camera",
+          evidenceId: ev.id,
+          label: part.name,
+          confidence: det.confidence,
+          geometry: det.mask
+            ? { kind: "mask", box: det.box, mask: det.mask }
+            : { kind: "box", box: det.box },
+          detectionId: det.id,
+          partSpecId: part.id,
+          ...(part.partNumber ? { partNumber: part.partNumber } : {}),
+          possible: det.confidence < HIGHLIGHT_CONFIDENT,
+        };
+      });
+      const found = new Set(targets.map((t) => t.partSpecId));
+      return c.json({
+        status: "found" as const,
         evidenceId: ev.id,
-        label: part.name,
-        partSpecId: part.id,
-        box: pick!.box,
-        mask: pick!.mask,
-        confidence: pick!.confidence,
-      })),
-    );
-    const targets: HighlightTarget[] = saved.map((det) => {
-      // Match by part, not position: one detection per part.
-      const part = wanted.find((p) => p.id === det.partSpecId)!;
-      return {
-        surface: "camera",
-        evidenceId: ev.id,
-        label: part.name,
-        confidence: det.confidence,
-        geometry: det.mask
-          ? { kind: "mask", box: det.box, mask: det.mask }
-          : { kind: "box", box: det.box },
-        detectionId: det.id,
-        partSpecId: part.id,
-        ...(part.partNumber ? { partNumber: part.partNumber } : {}),
-        possible: det.confidence < HIGHLIGHT_CONFIDENT,
-      };
+        size,
+        targets,
+        missing: wanted
+          .filter((p) => !found.has(p.id))
+          .map((p) => ({ partSpecId: p.id, name: p.name })),
+        ...(result.hint ? { hint: result.hint } : {}),
+      });
     });
-    const found = new Set(targets.map((t) => t.partSpecId));
-    return c.json({
-      status: "found" as const,
-      evidenceId: ev.id,
-      size,
-      targets,
-      missing: wanted
-        .filter((p) => !found.has(p.id))
-        .map((p) => ({ partSpecId: p.id, name: p.name })),
-      ...(result.hint ? { hint: result.hint } : {}),
-    });
-  });
 }
 
 export function detectionRoutes(d: StepDeps) {

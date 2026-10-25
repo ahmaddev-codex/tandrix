@@ -16,6 +16,7 @@ import { metaHighlighter, noModelHighlighter } from "./highlighter";
 import { metaProcedureGenerator, noModelGenerator } from "./procedure-generator";
 import { supabaseProceduresRepo } from "./repos/procedures";
 import { supabaseDetectionsRepo } from "./repos/detections";
+import { supabaseStepStateRepo } from "./repos/step-state";
 
 const config = loadApiConfig();
 const admin = createClient(config.supabaseUrl, config.supabaseSecretKey, {
@@ -55,6 +56,7 @@ const app = createApp({
   procedureGenerator,
   detections: supabaseDetectionsRepo(admin),
   highlighter,
+  stepState: supabaseStepStateRepo(admin),
   tokenSecret: config.tokenSigningSecret,
   corsOrigins: config.corsOrigins,
   log,

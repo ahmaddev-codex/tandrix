@@ -37,7 +37,7 @@ const toJob = (r: Row): Job =>
     updatedAt: iso(r.updated_at),
   });
 
-const toJobStep = (r: Row): JobStep =>
+export const toJobStep = (r: Row): JobStep =>
   JobStep.parse({
     id: r.id,
     jobId: r.job_id,

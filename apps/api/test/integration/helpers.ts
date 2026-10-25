@@ -14,6 +14,7 @@ import type { ProcedureGenerator } from "../../src/procedure-generator";
 import { supabaseProceduresRepo } from "../../src/repos/procedures";
 import type { Highlighter } from "../../src/highlighter";
 import { supabaseDetectionsRepo } from "../../src/repos/detections";
+import { supabaseStepStateRepo } from "../../src/repos/step-state";
 import type { Transport } from "../../src/safe-fetch";
 
 export const config = loadApiConfig();
@@ -87,6 +88,7 @@ export const app = createApp({
   procedureGenerator: generator,
   detections: supabaseDetectionsRepo(admin),
   highlighter,
+  stepState: supabaseStepStateRepo(admin),
   tokenSecret: config.tokenSigningSecret,
   manualFetch: { resolve: (h) => web.resolve(h), transport: web.transport },
   corsOrigins: [],
