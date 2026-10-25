@@ -1,7 +1,7 @@
 import type { ReactNode, MouseEventHandler } from "react";
 
 export type IconName =
-  | "check" | "user" | "alert" | "eyeOff" | "stop" | "clock" | "progress" | "book" | "video"
+  | "check" | "user" | "alert" | "info" | "eyeOff" | "stop" | "clock" | "progress" | "book" | "video"
   | "camera" | "monitor" | "file" | "mic" | "power" | "gauge" | "arrowRight"
   | "retake" | "glasses" | "laptop" | "phone" | "x" | "pointer" | "hand";
 
@@ -239,4 +239,72 @@ export interface TabsProps {
   label?: string;
   size?: "md" | "field";
   onChange?: (id: string) => void;
+}
+
+export interface NoticeProps {
+  /** neutral (default), info, attention, error. There is no success tone: green means verified. */
+  tone?: "neutral" | "info" | "attention" | "error";
+  title?: string;
+  children: ReactNode;
+  /** Overrides the tone's icon. */
+  icon?: IconName;
+  /** At most one Button, e.g. "Try again". */
+  action?: ReactNode;
+}
+
+export interface ActionCardProps {
+  title: string;
+  body?: string;
+  icon?: IconName;
+  /** The one primary action, named for what happens: "Find the manual". */
+  actionLabel: string;
+  onAction?: MouseEventHandler<HTMLButtonElement>;
+  /** An optional quieter alternative: "Use general steps instead". */
+  secondaryLabel?: string;
+  onSecondary?: MouseEventHandler<HTMLButtonElement>;
+  size?: ButtonProps["size"];
+}
+
+export interface SummaryCardProps {
+  /** What it is: "Equipment", "Manual". */
+  label: string;
+  title: string;
+  /** Short facts; set mono for serials, part numbers and values. */
+  facts?: Array<{ text: string; mono?: boolean }>;
+  source?: string;
+  sourceKind?: SourceChipProps["kind"];
+  /** At most one secondary Button: "Open manual". */
+  action?: ReactNode;
+}
+
+export interface StepRowProps {
+  index: number;
+  title: string;
+  status?: StepStatus;
+  statusLabel?: string;
+  /** The citation; omit for a generic step. */
+  source?: string;
+  sourceKind?: SourceChipProps["kind"];
+  onSelect?: MouseEventHandler<HTMLButtonElement>;
+}
+
+export interface HighlightCorrectionProps {
+  /** The highlighted part's name. */
+  label: string;
+  /** The step's other parts, offered as "It's the …". */
+  otherParts?: Array<{ name: string }>;
+  onConfirm?: MouseEventHandler<HTMLButtonElement>;
+  onReject?: MouseEventHandler<HTMLButtonElement>;
+  onOtherPart?: (part: { name: string }, index: number) => void;
+}
+
+export interface ProgressStateProps {
+  /** What is happening now: "Reading the manual". Change it as time passes. */
+  label: string;
+  /** Set when the work stopped: why, in plain words. Shows the retry. */
+  failed?: string;
+  retryLabel?: string;
+  onRetry?: MouseEventHandler<HTMLButtonElement>;
+  backLabel?: string;
+  onBack?: MouseEventHandler<HTMLButtonElement>;
 }

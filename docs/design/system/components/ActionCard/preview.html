@@ -1,0 +1,16 @@
+<!-- @dsCard group="Field" height=300 -->
+<!doctype html>
+<html>
+<head><meta charset="utf-8"></head>
+<body>
+<div id="root" style="max-width:420px;padding:16px;background:var(--background-200)"></div>
+<script>
+  var T = window.Tandrix, h = React.createElement;
+  ReactDOM.createRoot(document.getElementById('root')).render(h(T.ActionCard, {
+    icon: 'book', title: 'Add the manual',
+    body: 'Tandrix builds the steps from the manufacturer\u2019s manual, so every step cites a page.',
+    actionLabel: 'Find the manual', secondaryLabel: 'Use general steps instead'
+  }));
+</script>
+</body>
+</html>

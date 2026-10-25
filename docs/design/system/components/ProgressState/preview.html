@@ -1,0 +1,14 @@
+<!-- @dsCard group="Status" height=360 -->
+<!doctype html>
+<html>
+<head><meta charset="utf-8"></head>
+<body>
+<div id="root" style="max-width:420px;padding:16px;display:grid;gap:16px"></div>
+<script>
+  var T = window.Tandrix, h = React.createElement;
+  ReactDOM.createRoot(document.getElementById('root')).render(h(React.Fragment, null,
+    h(T.ProgressState, { label: 'Reading the manual' }),
+    h(T.ProgressState, { label: 'Writing the steps', failed: 'Tandrix can\u2019t write the steps right now. Try again in a minute.', backLabel: 'Back to the job' })));
+</script>
+</body>
+</html>

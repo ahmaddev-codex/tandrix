@@ -24,7 +24,7 @@ Tandrix is one AI engineer for the physical and digital worlds. It runs on the p
 - **Lines:** `border` (`gray-400`) for decorative hairlines only. The edge of any control uses `border-control` (`gray-600`), at 3:1 or more.
 - **Primary:** `primary` fill (`gray-1000`) with `on-primary` text. Blue is never the primary button colour.
 - **Blue** (`blue-700`, `blue-900`, `blue-100`): focus, links, selection, in-progress and mandatory actions (ISO 7010 blue). Text on `blue-700` uses `on-blue`.
-- **Green:** only `verified`. **Amber:** needs attention, cautions, generic sources. **Red:** stop, errors, refusals, destructive actions. Each always comes with an icon and a word.
+- **Green:** only `verified` (and a confirmed `SafetyGate`). Never for a reading, a found manual or any other success message. **Amber:** needs attention, cautions, generic sources. **Red:** stop, errors, refusals, destructive actions. Each always comes with an icon and a word.
 - **Themes:** `light` is the default on Mac and web. `dark` follows the system. `sunlight` is an added high-contrast theme (7:1 text, 3:1 borders) that the phone offers outdoors and switches to automatically above a light-sensor threshold.
 
 ## Field tokens
@@ -65,7 +65,7 @@ These sit on photos and over other apps, not on Tandrix surfaces, so they are th
 
 ## Iconography
 
-- Line icons on a 24-unit grid, 1.5 stroke, round caps and joins, in `currentColor`. The bundle's `Icon` covers status, source, capture and safety glyphs. For anything else use Lucide (`lucide-react`, `lucide-react-native`) at the same stroke.
+- Line icons on a 24-unit grid, 1.5 stroke, round caps and joins, in `currentColor`. The bundle's `Icon` covers status, source, capture, safety and notice glyphs (`info` for an info `Notice`; never `progress`, which reads as loading). For anything else use Lucide (`lucide-react`, `lucide-react-native`) at the same stroke.
 - Use 16px in chips and small buttons, 20px in cards, 24px in field buttons.
 - Icons always sit next to a word, except icon-only buttons, which need an `aria-label`.
 - The safety discs in `SafetyGate` follow ISO 7010 shapes: a blue disc for mandatory, a red slashed disc for stop.
@@ -76,7 +76,8 @@ There is no Tandrix logo yet. Set the name in Geist at weight 600 with `heading-
 
 ## Surfaces
 
-- **Phone:** `CaptureView` on top, `StepCard` below with one `field` primary action plus the mic; `CheckResult` after "Check my work"; `PartsList` for the parts check; `HandoffBanner` when the next step is on the Mac; `Tabs` (Task, Evidence, Assistant) at `field` size. Use the `sunlight` theme outdoors.
+- **Phone, job:** `SummaryCard`s for what the job has (equipment, manual), one `ActionCard` for what it's waiting on (identify the equipment, add the manual, write the steps), then the steps as `StepRow`s. A `Notice` explains when a service can't help; `ProgressState` covers long waits such as reading the manual.
+- **Phone, step:** `CaptureView` on top, `StepCard` below with one `field` primary action plus the mic. After a photo, `PartHighlight` marks the step's parts and `HighlightCorrection` confirms or corrects one; without highlights, list the step's parts by number. `SafetyGate` before a hazardous step; `CheckResult` after "Check my work"; `PartsList` for the parts check; `HandoffBanner` when the next step is on the Mac; `Tabs` (Task, Evidence, Assistant) at `field` size. Use the `sunlight` theme outdoors.
 - **Glasses:** speech carries the instruction and `LensCard` shows the step. Highlights stay on the phone.
 - **Mac:** a menu-bar panel (`shadow-md`, `copy-14`) with `ModeToggle`, the job's steps and `HandoffBanner` (`incoming`); the transparent overlay with `PointerBuddy`, and `ControlIndicator` while in Do it for me mode. Switching to Do it for me always goes through `ConfirmDialog`. Settings use `Toggle` and `Input`.
 - **Web report:** `JobReport`, with evidence thumbnails in `radius-lg`.

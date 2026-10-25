@@ -278,3 +278,52 @@ body { margin: 0; background: var(--background-100); color: var(--text); font-fa
 .tx-tab:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: -2px; border-radius: var(--radius-sm); }
 .tx-tab-count { min-width: 20px; height: 20px; padding: 0 6px; border-radius: var(--radius-full); background: var(--gray-100); color: var(--text-secondary); font-size: 12px; line-height: 20px; text-align: center; font-variant-numeric: tabular-nums; }
 .tx-tabs-lg .tx-tab { height: var(--control-lg); font-size: 16px; }
+
+/* Notice: inline message with a tone. No success tone; green is verified only. */
+.tx-notice { display: flex; gap: var(--space-2); align-items: flex-start; padding: var(--space-4); border-radius: var(--radius-lg); font-size: 16px; line-height: 24px; }
+.tx-notice-main { display: grid; gap: var(--space-1); min-width: 0; }
+.tx-notice-title { font-weight: 600; }
+.tx-notice-act { margin-top: var(--space-2); display: flex; }
+.tx-notice-neutral { background: var(--gray-100); color: var(--text); }
+.tx-notice-info { background: var(--blue-100); color: var(--blue-900); }
+.tx-notice-attention { background: var(--amber-100); color: var(--amber-900); }
+.tx-notice-error { background: var(--red-100); color: var(--red-900); }
+.tx-notice .tx-ico { margin-top: 2px; }
+
+/* ActionCard: the screen's next thing to do. Monochrome; the primary button carries it. */
+.tx-action { display: grid; gap: var(--space-3); padding: var(--space-5); border-radius: var(--radius-lg); background: var(--background-100); box-shadow: var(--shadow-sm); }
+.tx-action-head { display: flex; gap: var(--space-2); align-items: center; }
+.tx-action-title { margin: 0; font-size: 20px; line-height: 26px; font-weight: 600; letter-spacing: -0.4px; }
+.tx-action-body { margin: 0; font-size: 16px; line-height: 24px; color: var(--text-secondary); }
+.tx-action-acts { display: grid; gap: var(--space-2); }
+
+/* SummaryCard: something the job already has. */
+.tx-summary { display: grid; gap: var(--space-1); justify-items: start; padding: var(--space-5); border-radius: var(--radius-lg); background: var(--background-100); box-shadow: var(--shadow-sm); }
+.tx-summary-label { font-size: 14px; line-height: 20px; font-weight: 500; color: var(--text-secondary); }
+.tx-summary-title { margin: 0; font-size: 20px; line-height: 26px; font-weight: 600; letter-spacing: -0.4px; }
+.tx-summary-fact { font-size: 14px; line-height: 20px; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+.tx-summary-fact.is-mono { font-family: var(--font-mono); }
+.tx-summary > .tx-source { margin-top: var(--space-2); }
+.tx-summary > .tx-btn { margin-top: var(--space-2); justify-self: stretch; }
+
+/* StepRow: one step in the job's list; the whole row opens it. */
+.tx-steprow { display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: var(--space-3); width: 100%; min-height: var(--control-field); padding: var(--space-4); border: 0; border-radius: var(--radius-lg); background: var(--background-100); box-shadow: var(--shadow-sm); color: var(--text); text-align: left; font-family: var(--font-sans); cursor: pointer; transition: background-color 150ms ease; }
+.tx-steprow:hover { background: var(--gray-100); }
+.tx-steprow:active { background: var(--gray-200); }
+.tx-steprow:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+.tx-steprow-num { font-family: var(--font-mono); font-size: 16px; line-height: 24px; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+.tx-steprow-main { display: grid; gap: var(--space-2); min-width: 0; }
+.tx-steprow-title { font-size: 16px; line-height: 24px; font-weight: 600; letter-spacing: -0.32px; }
+.tx-steprow-chips { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+
+/* HighlightCorrection: confirm or correct one highlight. */
+.tx-correct { display: grid; gap: var(--space-2); padding: var(--space-4); border-radius: var(--radius-lg); background: var(--background-100); box-shadow: var(--shadow-md); }
+.tx-correct-q { margin: 0 0 var(--space-1); font-size: 16px; line-height: 24px; font-weight: 600; }
+
+/* ProgressState: a long wait, or why it stopped. */
+.tx-wait { display: grid; gap: var(--space-3); }
+.tx-wait-busy { justify-items: center; padding: var(--space-8) var(--space-4); }
+.tx-wait-label { font-size: 18px; line-height: 26px; color: var(--text-secondary); text-align: center; text-wrap: balance; }
+.tx-spinner { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--gray-300); border-top-color: var(--text-secondary); animation: tx-spin 800ms linear infinite; }
+@keyframes tx-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .tx-spinner { animation-duration: 2400ms; } }

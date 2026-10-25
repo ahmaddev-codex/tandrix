@@ -1,0 +1,17 @@
+<!-- @dsCard group="Status" height=360 -->
+<!doctype html>
+<html>
+<head><meta charset="utf-8"></head>
+<body>
+<div id="root" style="max-width:420px;padding:16px;display:grid;gap:12px"></div>
+<script>
+  var T = window.Tandrix, h = React.createElement;
+  ReactDOM.createRoot(document.getElementById('root')).render(h(React.Fragment, null,
+    h(T.Notice, null, 'Tandrix can\u2019t search for the manual right now. Upload it, or photograph the pages.'),
+    h(T.Notice, { tone: 'info' }, 'Read from the nameplate. Check the details, then save.'),
+    h(T.Notice, { tone: 'attention' }, 'Possible match. Check these against the nameplate.'),
+    h(T.Notice, { tone: 'error', title: 'The photo didn\u2019t upload', action: h(T.Button, { variant: 'secondary' }, 'Try again') },
+      'Check your connection, then try again.')));
+</script>
+</body>
+</html>

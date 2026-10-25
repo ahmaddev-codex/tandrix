@@ -1,4 +1,4 @@
-/* @ds-bundle: {"format":4,"namespace":"Tandrix","components":[{"name":"Button"},{"name":"StatusChip"},{"name":"SourceChip"},{"name":"StepCard"},{"name":"SafetyGate"},{"name":"PartHighlight"},{"name":"PointerBuddy"},{"name":"ControlIndicator"},{"name":"ConfirmDialog"},{"name":"LensCard"},{"name":"CaptureView"},{"name":"PartsList"},{"name":"CheckResult"},{"name":"HandoffBanner"},{"name":"ModeToggle"},{"name":"JobReport"},{"name":"Input"},{"name":"Toggle"},{"name":"Tabs"},{"name":"Icon"}]} */
+/* @ds-bundle: {"format":4,"namespace":"Tandrix","components":[{"name":"Button"},{"name":"StatusChip"},{"name":"SourceChip"},{"name":"StepCard"},{"name":"SafetyGate"},{"name":"PartHighlight"},{"name":"PointerBuddy"},{"name":"ControlIndicator"},{"name":"ConfirmDialog"},{"name":"LensCard"},{"name":"CaptureView"},{"name":"PartsList"},{"name":"CheckResult"},{"name":"HandoffBanner"},{"name":"ModeToggle"},{"name":"JobReport"},{"name":"Input"},{"name":"Toggle"},{"name":"Tabs"},{"name":"Icon"},{"name":"Notice"},{"name":"ActionCard"},{"name":"SummaryCard"},{"name":"StepRow"},{"name":"HighlightCorrection"},{"name":"ProgressState"}]} */
 (function () {
   var React = window.React;
   var h = React.createElement;
@@ -18,6 +18,7 @@
     stop: ["M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z", "M5.6 5.6l12.8 12.8"],
     clock: ["M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z", "M12 7.5V12l3 2"],
     progress: ["M12 3a9 9 0 1 1-9 9"],
+    info: ["M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z", "M12 11v5", "M12 7.8v.1"],
     book: ["M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z", "M4 20.5A2.5 2.5 0 0 0 6.5 21H20v-3"],
     video: ["M3 7h12v10H3z", "M15 10.5l6-3.5v10l-6-3.5"],
     camera: ["M4 8h3l2-3h6l2 3h3v11H4z", "M12 16.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z"],
@@ -367,11 +368,93 @@
       }));
   }
 
+
+  // ---- Added 25 Oct 2026: patterns the phone app shipped (manual, procedure, highlight) ----
+
+  var NOTICE_ICON = { neutral: "file", info: "info", attention: "alert", error: "stop" };
+
+  // tone: "neutral" | "info" | "attention" | "error". No success tone: green means verified only.
+  function Notice(props) {
+    var tone = props.tone || "neutral";
+    return h("div", { className: cx("tx-notice", "tx-notice-" + tone), role: tone === "error" ? "alert" : "status" },
+      h(Icon, { name: props.icon || NOTICE_ICON[tone] || "file", size: 20 }),
+      h("div", { className: "tx-notice-main" },
+        props.title ? h("strong", { className: "tx-notice-title" }, props.title) : null,
+        h("span", null, props.children),
+        props.action ? h("div", { className: "tx-notice-act" }, props.action) : null));
+  }
+
+  // The one next thing to do on a screen: what, why, and a single primary action.
+  function ActionCard(props) {
+    return h("section", { className: "tx-action", "aria-label": props.title },
+      h("div", { className: "tx-action-head" }, props.icon ? h(Icon, { name: props.icon, size: 20 }) : null,
+        h("h3", { className: "tx-action-title" }, props.title)),
+      props.body ? h("p", { className: "tx-action-body" }, props.body) : null,
+      h("div", { className: "tx-action-acts" },
+        h(Button, { variant: "primary", size: props.size || "field", block: true, onClick: props.onAction }, props.actionLabel),
+        props.secondaryLabel ? h(Button, { variant: "tertiary", size: props.size || "field", block: true, onClick: props.onSecondary }, props.secondaryLabel) : null));
+  }
+
+  // A thing the job already has (equipment, manual): label, name, facts, source, one action.
+  function SummaryCard(props) {
+    return h("section", { className: "tx-summary", "aria-label": props.label },
+      h("span", { className: "tx-summary-label" }, props.label),
+      h("h3", { className: "tx-summary-title" }, props.title),
+      (props.facts || []).map(function (f, i) {
+        return h("span", { key: i, className: cx("tx-summary-fact", f.mono && "is-mono") }, f.text);
+      }),
+      props.source ? h(SourceChip, { kind: props.sourceKind || "manual" }, props.source) : null,
+      props.action || null);
+  }
+
+  // One step in a job's list. The whole row opens the step; its label carries status and source.
+  function StepRow(props) {
+    var s = STATUS[props.status] || STATUS.pending;
+    var source = props.source || "Generic, not from the manufacturer";
+    return h("button", {
+      type: "button", className: "tx-steprow", onClick: props.onSelect,
+      "aria-label": "Step " + props.index + ": " + props.title + ", " + (props.statusLabel || s.label) + ", " + source
+    },
+      h("span", { className: "tx-steprow-num" }, props.index),
+      h("span", { className: "tx-steprow-main" },
+        h("span", { className: "tx-steprow-title" }, props.title),
+        h("span", { className: "tx-steprow-chips" },
+          h(StatusChip, { status: props.status || "pending" }, props.statusLabel),
+          h(SourceChip, { kind: props.source ? props.sourceKind || "manual" : "generic" }, props.source))));
+  }
+
+  // Confirm or correct one highlight: "This looks like the impeller. Is that right?"
+  function HighlightCorrection(props) {
+    var name = (props.label || "").toLowerCase();
+    return h("section", { className: "tx-correct", "aria-label": "Check this highlight" },
+      h("h3", { className: "tx-correct-q" }, "This looks like the " + name + ". Is that right?"),
+      h(Button, { variant: "primary", size: "lg", block: true, onClick: props.onConfirm }, "Yes, that's the " + name),
+      h(Button, { variant: "secondary", size: "lg", block: true, onClick: props.onReject }, "No, that's not it"),
+      (props.otherParts || []).map(function (p, i) {
+        return h(Button, { key: i, variant: "tertiary", size: "lg", block: true, onClick: function () { if (props.onOtherPart) props.onOtherPart(p, i); } }, "It's the " + String(p.name || p).toLowerCase());
+      }));
+  }
+
+  // A wait that can take a while (reading a manual). Says what is happening; on failure, why and a retry.
+  function ProgressState(props) {
+    if (props.failed) {
+      return h("section", { className: "tx-wait" },
+        h(Notice, { tone: "neutral", icon: "alert" }, props.failed),
+        h(Button, { variant: "primary", size: "field", block: true, onClick: props.onRetry }, props.retryLabel || "Try again"),
+        props.backLabel ? h(Button, { variant: "secondary", size: "field", block: true, onClick: props.onBack }, props.backLabel) : null);
+    }
+    return h("div", { className: "tx-wait tx-wait-busy", role: "progressbar", "aria-label": props.label, "aria-busy": true },
+      h("span", { className: "tx-spinner", "aria-hidden": true }),
+      h("span", { className: "tx-wait-label" }, props.label));
+  }
+
   window.Tandrix = {
     Button: Button, StatusChip: StatusChip, SourceChip: SourceChip, StepCard: StepCard, SafetyGate: SafetyGate,
     PartHighlight: PartHighlight, PointerBuddy: PointerBuddy, ControlIndicator: ControlIndicator,
     ConfirmDialog: ConfirmDialog, LensCard: LensCard, CaptureView: CaptureView, PartsList: PartsList,
     CheckResult: CheckResult, HandoffBanner: HandoffBanner, ModeToggle: ModeToggle, JobReport: JobReport,
-    Input: Input, Toggle: Toggle, Tabs: Tabs, Icon: Icon
+    Input: Input, Toggle: Toggle, Tabs: Tabs, Icon: Icon,
+    Notice: Notice, ActionCard: ActionCard, SummaryCard: SummaryCard, StepRow: StepRow,
+    HighlightCorrection: HighlightCorrection, ProgressState: ProgressState
   };
 })();
