@@ -84,8 +84,8 @@ docs/
 | `Job` | id, owner_id, asset_id, procedure_id, title, status (`active` \| `completed` \| `stopped`), current_step_id, active_surface, control_mode (`show` \| `do`), language, created_at, updated_at | The session shared across devices. `control_mode` resets to `show` on every new job. |
 | `JobStep` | id, job_id, procedure_step_id, status, status_evidence_id, started_at, note? (skip/block reason), updated_at, updated_by_surface | Status: `todo`, `in_progress`, `needs_attention`, `user_confirmed`, `verified`, `blocked`, `skipped`. |
 | `Evidence` | id, job_id, job_step_id?, kind (`photo` \| `screenshot` \| `video` \| `audio` \| `document`), surface (`phone` \| `glasses` \| `desktop`), storage_key, mime_type, byte_size, width?, height?, captured_at, uploaded_at? (set when the API confirms the file), deleted_at? | Upload types and size limits per kind: `uploadLimits` in `@tandrix/contracts`. |
-| `Detection` | id, evidence_id, label, part_spec_id?, box, mask_key?, confidence, confirmed_by_user (null until reviewed), corrected_label? | SAM geometry + Spark labelling. |
-| `PointerTarget` | surface, evidence_id, kind (`point` \| `box` \| `mask`), geometry, label, confidence | One format for screen pointer and camera highlight. |
+| `Detection` | id, evidence_id, label, part_spec_id?, box, mask? (SVG outline + raster size), confidence, confirmed_by_user (null until reviewed), corrected_label? (only with confirmed_by_user true) | SAM geometry + Spark labelling. |
+| `PointerTarget` | surface, evidence_id, kind (`point` \| `box` \| `mask`), geometry, label, confidence | One format for screen pointer and camera highlight. A mask is the SAM raster traced to an SVG path (`decodeMaskToSVGPath`) in raster pixels, drawn scaled onto its box. |
 | `Check` | id, job_step_id, evidence_id, result (`pass` \| `fail` \| `not_verifiable`), reason, what_to_show_next?, created_at | Only `pass` can set `verified`. |
 | `PartsCheck` | id, job_id, evidence_ids[], results[] (part_spec_id, status `found` \| `possible` \| `missing`, detection_ids[]), created_at | |
 | `SafetyConfirmation` | id, job_step_id, gate, confirmed_by, surface, confirmed_at | Gates: `isolate_power`, `release_pressure`, `lock_rotation`, `cool_down`, `lifting_plan`, `chemical_ppe`. |
@@ -121,7 +121,8 @@ All routes authenticated (Supabase JWT), Zod-validated, and scoped to the owner.
 | `/jobs/:id/procedure` | POST | The job's manual (or, with `allowGeneric`, nothing) → Spark draft → `normalizeDraft` rules → procedure, parts, steps and job steps saved by `save_procedure` in one transaction; 409 if the job already has steps |
 | `/procedures/from-recording` | POST | Expert video → draft procedure (P1) |
 | `/jobs/:id/parts-check` | POST | Photo(s) → found/possible/missing |
-| `/jobs/:id/steps/:stepId/highlight` | POST | Frame → `PointerTarget`s for the step's parts |
+| `/jobs/:id/steps/:stepId/highlight` | POST | An uploaded photo on the job → highlights for up to three of the step's parts (each saved as a `Detection`), the parts not found, and a framing hint; `unavailable` when the model can't help (the app lists the parts by number) |
+| `/jobs/:id/detections/:detectionId` | PATCH | The user's verdict on a highlight: `confirmed`, `wrong`, or `other_part` (relabelled to another part of the procedure) |
 | `/jobs/:id/steps/:stepId/check` | POST | Check photo/screenshot → `Check` |
 | `/jobs/:id/steps/:stepId` | PATCH | User status changes (confirm, skip, safety gate) |
 | `/jobs/:id/screen/ask` | POST | Desktop: screenshot + question → reply text + `PointerTarget` |

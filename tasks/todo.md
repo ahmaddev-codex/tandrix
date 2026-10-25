@@ -28,7 +28,7 @@ Tracks: **D** design, **A** mobile & glasses, **B** API & AI, **C** desktop (mac
 - [ ] T10 Find or attach manual (B + A): built; upload and photographed pages pass on the iOS simulator, search fallback verified through a real 402; open until search finds the demo pump manual live (billing). Offline upload queue moves to T17
 - [ ] T11 Procedure from manual with citations (B + A): built; rules, transaction and race tested; steps and Generic path pass on the iOS simulator with the local fixture; open until Spark drafts the demo pump procedure live (billing)
 - [ ] **Checkpoint 2:** nameplate → cited procedure on phone
-- [ ] T12 Highlight parts on the step screen (B + A)
+- [ ] T12 Highlight parts on the step screen (B + A): built; highlight, corrections and fallback pass on the iOS simulator with the local fixture; open until spike-level accuracy on the real pump photos (billing + T0.3 photos)
 - [ ] T13 Safety gates on steps (A)
 - [ ] T14 Voice in and out on phone (B + A)
 - [ ] **Checkpoint 3:** three steps by voice with highlights

@@ -192,10 +192,10 @@ Sizes: XS 1 file · S 1–2 · M 3–5 · L 5–8 (split if larger). Commands as
 - [ ] Nameplate photo → procedure with cited steps on the phone, end to end on device.
 
 #### T12 Highlight parts on the step screen
-**Description:** `/steps/:id/highlight` (SAM per part phrase, Spark disambiguation) → PointerTargets; step screen renders mask/box with label and confidence via Skia; tap to correct; numbered-text fallback.
+**Description:** `/jobs/:id/steps/:stepId/highlight` (SAM per part phrase, Spark disambiguation) → PointerTargets; step screen renders mask/box with label and confidence (react-native-svg; SAM masks traced to SVG paths, so no Skia); tap to correct; numbered-text fallback.
 **Acceptance:** spike-level accuracy on fixtures; correction stored on Detection; no-detection shows angle hint.
 **Verification:** `pnpm --filter @tandrix/ai test`; manual on the real pump.
-**Dependencies:** T11, T3. **Files:** `packages/ai/src/highlight.ts`, `apps/api/src/routes/steps.ts`, `apps/mobile/app/job/[id]/step.tsx`, `apps/mobile/src/overlay/PartHighlight.tsx`. **Size:** M
+**Dependencies:** T11, T3. **Files:** `packages/ai/src/{sam,pipelines}.ts`, `apps/api/src/{highlighter,routes/steps,repos/detections}.ts`, `packages/ui/src/native/{highlight,step,label-layout}.tsx`, `apps/mobile/src/app/(app)/job/[id]/step/[stepId].tsx`. **Size:** M
 
 #### T13 Safety gates on steps
 **Description:** SafetyGate UI on hazard-tagged steps using `core.canStart`; confirmations persisted.
