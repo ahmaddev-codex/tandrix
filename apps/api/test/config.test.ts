@@ -20,10 +20,10 @@ describe("loadApiConfig", () => {
   });
 
   it("allows the fixture procedure locally and refuses it in production", () => {
-    expect(loadApiConfig({ ...local, TANDRIX_FIXTURE_PROCEDURE: "1" }).fixtureProcedure).toBe(true);
-    expect(loadApiConfig(local).fixtureProcedure).toBe(false);
-    expect(() => loadApiConfig({ ...prod, TANDRIX_FIXTURE_PROCEDURE: "1" })).toThrow(
-      /TANDRIX_FIXTURE_PROCEDURE/,
+    expect(loadApiConfig({ ...local, TANDRIX_FIXTURE_MODELS: "1" }).fixtureModels).toBe(true);
+    expect(loadApiConfig(local).fixtureModels).toBe(false);
+    expect(() => loadApiConfig({ ...prod, TANDRIX_FIXTURE_MODELS: "1" })).toThrow(
+      /TANDRIX_FIXTURE_MODELS/,
     );
   });
 

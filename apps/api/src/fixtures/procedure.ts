@@ -1,4 +1,4 @@
-// Local development only (TANDRIX_FIXTURE_PROCEDURE=1, refused in production): a canned pump
+// Local development only (TANDRIX_FIXTURE_MODELS=1, refused in production): a canned pump
 // procedure so the step screens can be built and tested without the model. It goes through the
 // same rules and transaction as a real draft.
 import type { ProcedureGenerator } from "../procedure-generator";
@@ -18,6 +18,7 @@ export const fixtureProcedureGenerator: ProcedureGenerator = {
           { ref: "P1", name: "Impeller", qty: 1 },
           { ref: "P2", name: "Mechanical seal", qty: 1 },
           { ref: "P3", name: "Casing bolt", qty: 8 },
+          { ref: "P4", name: "Impeller nut", qty: 1 },
         ],
         steps: [
           {
@@ -47,8 +48,9 @@ export const fixtureProcedureGenerator: ProcedureGenerator = {
             order: 3,
             surface: "physical",
             title: "Fit the impeller",
-            instruction: "Slide the impeller onto the shaft with the vanes facing the inlet.",
-            partRefs: ["P1"],
+            instruction:
+              "Slide the impeller onto the shaft with the vanes facing the inlet, then fit the nut.",
+            partRefs: ["P1", "P4"],
             hazardTags: [],
             verification: "photo",
             expectedState: "Impeller seated on the shaft, vanes towards the inlet.",

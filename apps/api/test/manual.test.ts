@@ -9,11 +9,13 @@ import { z } from "zod";
 import { describe, expect, it } from "vitest";
 import { createApp } from "../src/app";
 import type { ManualFinder } from "../src/manual-finder";
+import { noModelHighlighter } from "../src/highlighter";
 import { noModelGenerator } from "../src/procedure-generator";
 import type { JobsRepo } from "../src/repos/jobs";
 import type { Transport } from "../src/safe-fetch";
 import {
   memoryAssets,
+  memoryDetections,
   memoryEvidence,
   memoryManuals,
   memoryProcedures,
@@ -115,6 +117,8 @@ async function setup(
     tokenSecret: TEST_TOKEN_SECRET,
     procedures: memoryProcedures(),
     procedureGenerator: noModelGenerator,
+    detections: memoryDetections(),
+    highlighter: noModelHighlighter,
     manualFetch: {
       resolve: async () => [{ address: "93.184.215.14", family: 4 }],
       transport: {

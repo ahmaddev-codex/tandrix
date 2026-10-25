@@ -11,12 +11,15 @@ import type { ManualFinder } from "./manual-finder";
 import type { ManualsRepo } from "./repos/manuals";
 import type { ProcedureGenerator } from "./procedure-generator";
 import type { ProceduresRepo } from "./repos/procedures";
+import type { Highlighter } from "./highlighter";
+import type { DetectionsRepo } from "./repos/detections";
 import type { SafeFetchOptions } from "./safe-fetch";
 import { assetRoutes } from "./routes/asset";
 import { evidenceRoutes } from "./routes/evidence";
 import { jobsRoutes } from "./routes/jobs";
 import { manualRoutes } from "./routes/manual";
 import { procedureRoutes } from "./routes/procedure";
+import { detectionRoutes, stepRoutes } from "./routes/steps";
 
 export interface AppDeps {
   verifyToken: VerifyToken;
@@ -30,6 +33,8 @@ export interface AppDeps {
   manualFinder: ManualFinder;
   procedures: ProceduresRepo;
   procedureGenerator: ProcedureGenerator;
+  detections: DetectionsRepo;
+  highlighter: Highlighter;
   /** Signs manual search candidates (TOKEN_SIGNING_SECRET). */
   tokenSecret: string;
   /** Tests only: swap DNS and transport for the manual download. */
@@ -119,6 +124,16 @@ export function createApp(deps: AppDeps) {
       log,
     }),
   );
+  const stepDeps = {
+    jobs: deps.jobs,
+    procedures: deps.procedures,
+    evidence: deps.evidence,
+    storage: deps.storage,
+    detections: deps.detections,
+    highlighter: deps.highlighter,
+  };
+  app.route("/jobs/:id/steps", stepRoutes(stepDeps));
+  app.route("/jobs/:id/detections", detectionRoutes(stepDeps));
   app.route("/jobs", jobsRoutes(deps.jobs, deps.assets, deps.manuals, deps.procedures));
 
   app.notFound((c) => c.json({ error: { code: "not_found", message: "No such route." } }, 404));

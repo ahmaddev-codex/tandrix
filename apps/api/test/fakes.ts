@@ -1,6 +1,7 @@
 // In-memory evidence repo and storage for unit tests.
 import type {
   Asset,
+  Detection,
   Evidence,
   IdentifyAssetResponse,
   Manual,
@@ -8,6 +9,8 @@ import type {
 } from "@tandrix/contracts";
 import { noModelFinder } from "../src/manual-finder";
 import { noModelGenerator } from "../src/procedure-generator";
+import { noModelHighlighter } from "../src/highlighter";
+import type { DetectionsRepo } from "../src/repos/detections";
 import type { ProceduresRepo, SaveProcedure } from "../src/repos/procedures";
 import type { NameplateReader } from "../src/nameplate";
 import type { AssetsRepo, SaveAsset } from "../src/repos/assets";
@@ -222,6 +225,8 @@ export const noManuals = () => ({
   tokenSecret: TEST_TOKEN_SECRET,
   procedures: memoryProcedures(),
   procedureGenerator: noModelGenerator,
+  detections: memoryDetections(),
+  highlighter: noModelHighlighter,
 });
 
 /** Stores saved procedures as details; `saves` records what the route asked to save. */
@@ -277,6 +282,44 @@ export function memoryProcedures() {
       if (!d || d.ownerId !== ownerId) return null;
       const { ownerId: _o, ...detail } = d;
       return detail;
+    },
+  };
+  return repo;
+}
+
+export function memoryDetections() {
+  const rows = new Map<string, Detection>();
+  let n = 0;
+  const repo: DetectionsRepo & { rows: typeof rows } = {
+    rows,
+    async insertMany(input) {
+      return input.map((r) => {
+        const d: Detection = {
+          id: `00000000-0000-4000-8000-0000000d${String(++n).padStart(4, "0")}`,
+          evidenceId: r.evidenceId,
+          label: r.label,
+          partSpecId: r.partSpecId,
+          box: r.box,
+          mask: r.mask,
+          confidence: r.confidence,
+          confirmedByUser: null,
+        };
+        rows.set(d.id, d);
+        return d;
+      });
+    },
+    async get(id) {
+      return rows.get(id) ?? null;
+    },
+    async setVerdict(id, v) {
+      const d: Detection = {
+        ...rows.get(id)!,
+        confirmedByUser: v.confirmedByUser,
+        ...(v.correctedLabel ? { correctedLabel: v.correctedLabel } : {}),
+        ...(v.partSpecId ? { partSpecId: v.partSpecId } : {}),
+      };
+      rows.set(id, d);
+      return d;
     },
   };
   return repo;

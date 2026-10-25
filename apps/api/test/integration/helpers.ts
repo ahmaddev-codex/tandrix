@@ -12,6 +12,8 @@ import type { ManualFinder } from "../../src/manual-finder";
 import { supabaseManualsRepo } from "../../src/repos/manuals";
 import type { ProcedureGenerator } from "../../src/procedure-generator";
 import { supabaseProceduresRepo } from "../../src/repos/procedures";
+import type { Highlighter } from "../../src/highlighter";
+import { supabaseDetectionsRepo } from "../../src/repos/detections";
 import type { Transport } from "../../src/safe-fetch";
 
 export const config = loadApiConfig();
@@ -63,6 +65,14 @@ export const generator: ProcedureGenerator & { impl: ProcedureGenerator["generat
   },
 };
 
+/** Tests set `highlighter.impl` to script what's found in the photo. */
+export const highlighter: Highlighter & { impl: Highlighter["find"] } = {
+  impl: async () => ({ status: "unavailable", message: "Model off in tests." }),
+  find(input) {
+    return highlighter.impl(input);
+  },
+};
+
 export const app = createApp({
   verifyToken: supabaseVerifier(admin),
   jobs: supabaseJobsRepo(admin),
@@ -75,6 +85,8 @@ export const app = createApp({
   manualFinder: finder,
   procedures: supabaseProceduresRepo(admin),
   procedureGenerator: generator,
+  detections: supabaseDetectionsRepo(admin),
+  highlighter,
   tokenSecret: config.tokenSigningSecret,
   manualFetch: { resolve: (h) => web.resolve(h), transport: web.transport },
   corsOrigins: [],
