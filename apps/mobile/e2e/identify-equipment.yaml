@@ -70,6 +70,6 @@ env:
 - tapOn:
     id: save-asset
 - extendedWaitUntil:
-    visible: "Equipment: FlowSet CR 3-10"
+    visible: "Equipment: FlowSet CR 3-10.*"
     timeout: 15000
 - takeScreenshot: job-with-equipment

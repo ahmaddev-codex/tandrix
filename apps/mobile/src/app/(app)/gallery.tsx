@@ -3,8 +3,18 @@ import { radius, space, themeNames, type ThemeName } from "@tandrix/ui";
 import {
   Button,
   Icon,
+  ActionCard,
+  CheckResult,
+  HandoffBanner,
+  HighlightCorrection,
   Input,
+  Notice,
   PartHighlight,
+  PartsList,
+  ProgressState,
+  SafetyGate,
+  StepRow,
+  SummaryCard,
   SourceChip,
   StatusChip,
   StepCard,
@@ -160,6 +170,153 @@ function Sheet({ theme, onTheme }: { theme: ThemeName; onTheme: (t: ThemeName) =
         </View>,
       )}
       {section(
+        "Highlight correction",
+        <HighlightCorrection
+          label="Impeller"
+          otherParts={[
+            { id: "nut", name: "Impeller nut" },
+            { id: "key", name: "Shaft key" },
+          ]}
+        />,
+      )}
+      {section(
+        "Notices",
+        <View style={{ gap: space["space-2"] }}>
+          <Notice>
+            Tandrix can't search for the manual right now. Upload it, or photograph the pages.
+          </Notice>
+          <Notice tone="info">Read from the nameplate. Check the details, then save.</Notice>
+          <Notice tone="attention">Possible match. Check these against the nameplate.</Notice>
+          <Notice tone="error">
+            The photo didn't upload. Check your connection and try again.
+          </Notice>
+        </View>,
+      )}
+      {section(
+        "Action and summary cards",
+        <View style={{ gap: space["space-3"] }}>
+          <ActionCard
+            icon="book"
+            title="Add the manual"
+            body="Tandrix builds the steps from the manufacturer's manual, so every step cites a page."
+            actionLabel="Find the manual"
+            secondaryLabel="Use general steps instead"
+          />
+          <SummaryCard
+            label="Equipment"
+            title="FlowSet CR 3-10"
+            facts={[{ text: "Serial 4521-0098", mono: true }]}
+          />
+          <SummaryCard
+            label="Manual"
+            title="CR 3-10 installation and operating instructions"
+            facts={[{ text: "48 pages" }]}
+            source="flowset.example"
+            action={
+              <Button variant="secondary" size="lg" block icon="book">
+                Open manual
+              </Button>
+            }
+          />
+        </View>,
+      )}
+      {section(
+        "Step rows",
+        <View style={{ gap: space["space-2"] }}>
+          <StepRow
+            index={1}
+            title="Isolate and drain the pump"
+            status="verified"
+            source="Manual p.2"
+          />
+          <StepRow
+            index={2}
+            title="Fit the mechanical seal"
+            status="progress"
+            source="Manual p.3, fig. 2"
+          />
+          <StepRow index={3} title="Fit the impeller" status="pending" statusLabel="To do" />
+        </View>,
+      )}
+      {section(
+        "Progress",
+        <View style={{ gap: space["space-3"] }}>
+          <ProgressState label="Reading the manual" />
+          <ProgressState
+            label="Writing the steps"
+            failed="Tandrix can't write the steps right now. Try again in a minute."
+            backLabel="Back to the job"
+          />
+        </View>,
+      )}
+      {section(
+        "Safety gates",
+        <View style={{ gap: space["space-3"] }}>
+          <SafetyGate
+            title="Isolate the pump"
+            body="Switch off and lock out the supply at the panel, then release line pressure."
+            actionLabel="Confirm isolated"
+          />
+          <SafetyGate
+            title="Isolate the pump"
+            body="Switch off and lock out the supply at the panel, then release line pressure."
+            confirmed
+            confirmedLabel="Confirmed at 10:42"
+          />
+          <SafetyGate
+            tone="stop"
+            title="Tandrix won't guide this step"
+            body="Electrical wiring and live work need a qualified electrician. Tandrix will continue with the other steps."
+          />
+        </View>,
+      )}
+      {section(
+        "Check results",
+        <View style={{ gap: space["space-3"] }}>
+          <CheckResult
+            result="pass"
+            reason="The impeller is seated against the shaft shoulder."
+            evidence="Photo 10:42"
+          />
+          <CheckResult
+            result="fail"
+            reason="The vanes face away from the inlet. Turn the impeller round and refit it."
+            actions={
+              <Button variant="secondary" size="lg">
+                Check again
+              </Button>
+            }
+          />
+          <CheckResult
+            result="not_verifiable"
+            reason="Tandrix can't check torque from a photo. Confirm you tightened to 25 Nm."
+          />
+        </View>,
+      )}
+      {section(
+        "Parts list",
+        <PartsList
+          parts={[
+            { part: "96-01", name: "Impeller", qty: 1, status: "found" },
+            {
+              part: "96-07",
+              name: "Mechanical seal",
+              qty: 1,
+              status: "possible",
+              note: "Check the spring",
+            },
+            { part: "96-12", name: "Casing bolt", qty: 8, status: "missing" },
+          ]}
+        />,
+      )}
+      {section(
+        "Handoff",
+        <View style={{ gap: space["space-3"] }}>
+          <HandoffBanner state="offer" step={9} stepTitle="Set the motor speed in the drive app" />
+          <HandoffBanner state="waiting" step={9} device="Studio Mac" />
+        </View>,
+      )}
+      {section(
         "Inputs",
         <View style={{ gap: space["space-4"] }}>
           <Input
@@ -197,6 +354,7 @@ function Sheet({ theme, onTheme }: { theme: ThemeName; onTheme: (t: ThemeName) =
               "check",
               "user",
               "alert",
+              "info",
               "eyeOff",
               "stop",
               "camera",

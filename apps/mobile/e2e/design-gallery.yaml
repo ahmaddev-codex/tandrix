@@ -21,21 +21,62 @@ appId: app.tandrix.mobile
 - scrollUntilVisible:
     element: "Step 3 of 9"
     direction: DOWN
+    timeout: 60000
 - takeScreenshot: gallery-step-sunlight
 - scrollUntilVisible:
     element: "Seal, possible match"
     direction: DOWN
+    timeout: 60000
 - takeScreenshot: gallery-highlight-sunlight
+- scrollUntilVisible:
+    element: "Read from the nameplate. Check the details, then save."
+    direction: DOWN
+    timeout: 60000
+- takeScreenshot: gallery-notices-sunlight
+- scrollUntilVisible:
+    element: "Step 3: Fit the impeller,.*"
+    direction: DOWN
+    timeout: 60000
+- takeScreenshot: gallery-cards-sunlight
+- scrollUntilVisible:
+    element: "Tandrix won.t guide this step"
+    direction: DOWN
+    timeout: 60000
+- takeScreenshot: gallery-safety-sunlight
+- scrollUntilVisible:
+    element: Check again
+    direction: DOWN
+    timeout: 60000
+- takeScreenshot: gallery-checks-sunlight
+- scrollUntilVisible:
+    element: Continue on Mac
+    direction: DOWN
+    timeout: 60000
+- takeScreenshot: gallery-parts-handoff-sunlight
 - scrollUntilVisible:
     element: Torque applied
     direction: DOWN
+    timeout: 60000
 - takeScreenshot: gallery-inputs-sunlight
 # The highlight must read on the dark theme too.
+# The gallery is long; scrolling back to the theme buttons takes a while.
 - scrollUntilVisible:
     element: dark
     direction: UP
+    timeout: 90000
 - tapOn: dark
 - scrollUntilVisible:
     element: "Seal, possible match"
     direction: DOWN
+    timeout: 60000
 - takeScreenshot: gallery-highlight-dark
+- scrollUntilVisible:
+    element: "Tandrix won.t guide this step"
+    direction: DOWN
+    timeout: 60000
+- takeScreenshot: gallery-safety-dark
+- scrollUntilVisible:
+    element: Check again
+    direction: DOWN
+    timeout: 60000
+- takeScreenshot: gallery-checks-dark

@@ -1,11 +1,11 @@
 // Find the job's manual: search results first, and always the option to upload a PDF or
 // photograph the pages, so a failed search never blocks the job.
 import type { ManualSearchResponse } from "@tandrix/contracts";
-import { radius, space } from "@tandrix/ui";
-import { Button, Icon, SourceChip, Text, useTheme } from "@tandrix/ui/native";
+import { space } from "@tandrix/ui";
+import { Button, Notice, ProgressState, SummaryCard, Text } from "@tandrix/ui/native";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, ScrollView, View } from "react-native";
+import { ScrollView, View } from "react-native";
 import { api } from "@/lib/api";
 import { pickPdf, titleFromFileName, uploadManualPdf } from "@/lib/manual";
 
@@ -22,7 +22,6 @@ const host = (url: string) => new URL(url).hostname.replace(/^www\./, "");
 
 export default function ManualScreen() {
   const { id, equipment } = useLocalSearchParams<{ id: string; equipment?: string }>();
-  const t = useTheme();
   const [search, setSearch] = useState<ManualSearchResponse>();
   const [busy, setBusy] = useState<string>();
   const [error, setError] = useState<string>();
@@ -71,14 +70,9 @@ export default function ManualScreen() {
 
   if (busy) {
     return (
-      <View
-        style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: space["space-3"] }}
-      >
+      <View style={{ flex: 1, justifyContent: "center", padding: space["space-6"] }}>
         <Stack.Screen options={{ title: "Manual" }} />
-        <ActivityIndicator color={t.color["text-secondary"]} />
-        <Text variant="field-body" color="text-secondary">
-          {busy}
-        </Text>
+        <ProgressState label={busy} testID="manual-busy" />
       </View>
     );
   }
@@ -87,72 +81,44 @@ export default function ManualScreen() {
     <ScrollView contentContainerStyle={{ padding: space["space-6"], gap: space["space-4"] }}>
       <Stack.Screen options={{ title: "Manual" }} />
       {!search ? (
-        <View
+        <ProgressState
           testID="manual-searching"
-          style={{ flexDirection: "row", gap: space["space-3"], alignItems: "center" }}
-        >
-          <ActivityIndicator color={t.color["text-secondary"]} />
-          <Text variant="field-body" color="text-secondary">
-            {equipment ? `Searching for the ${equipment} manual` : "Searching for the manual"}
-          </Text>
-        </View>
+          label={equipment ? `Searching for the ${equipment} manual` : "Searching for the manual"}
+        />
       ) : search.status === "unavailable" ? (
-        <View
-          testID="manual-search-unavailable"
-          style={{
-            flexDirection: "row",
-            gap: space["space-2"],
-            alignItems: "flex-start",
-            padding: space["space-4"],
-            borderRadius: radius["radius-lg"],
-            backgroundColor: t.color["gray-100"],
-          }}
-        >
-          <Icon name="book" size={20} />
-          <View style={{ flex: 1 }}>
-            <Text variant="copy-16">{search.message}</Text>
-          </View>
-        </View>
+        <Notice icon="book" testID="manual-search-unavailable">
+          {search.message}
+        </Notice>
       ) : search.status === "found" && search.candidates.length === 0 ? (
-        <View testID="manual-search-empty">
-          <Text variant="field-body" color="text-secondary">
-            No manual turned up online. Upload it, or photograph the pages.
-          </Text>
-        </View>
+        <Notice icon="book" testID="manual-search-empty">
+          No manual turned up online. Upload it, or photograph the pages.
+        </Notice>
       ) : search.status === "found" ? (
         <View style={{ gap: space["space-3"] }}>
           <Text variant="label-16" color="text-secondary">
             Found online
           </Text>
           {search.candidates.map((c) => (
-            <View
+            <SummaryCard
               key={c.url}
               testID="manual-candidate"
-              style={{
-                padding: space["space-4"],
-                gap: space["space-3"],
-                borderRadius: radius["radius-lg"],
-                borderWidth: 1,
-                borderColor: t.color.border,
-                backgroundColor: t.color["background-100"],
-              }}
-            >
-              <View style={{ gap: space["space-1"] }}>
-                <Text variant="heading-16">{c.title}</Text>
-                <Text variant="copy-14" color="text-secondary">
-                  {documentLabel[c.documentType]}
-                  {c.official
-                    ? ", from the manufacturer"
-                    : c.publisher
-                      ? `, from ${c.publisher}`
-                      : ""}
-                </Text>
-              </View>
-              <SourceChip kind="manual">{host(c.url)}</SourceChip>
-              <Button variant="primary" block onPress={() => attachCandidate(c)}>
-                Use this manual
-              </Button>
-            </View>
+              label={documentLabel[c.documentType]}
+              title={c.title}
+              facts={
+                c.official
+                  ? [{ text: "From the manufacturer" }]
+                  : c.publisher
+                    ? [{ text: `From ${c.publisher}` }]
+                    : []
+              }
+              source={host(c.url)}
+              action={
+                // Several results, so none is the screen's primary action.
+                <Button variant="secondary" size="lg" block onPress={() => attachCandidate(c)}>
+                  Use this manual
+                </Button>
+              }
+            />
           ))}
         </View>
       ) : null}
@@ -186,11 +152,9 @@ export default function ManualScreen() {
       </View>
 
       {error ? (
-        <View testID="manual-error">
-          <Text variant="copy-16" color="red-900">
-            {error}
-          </Text>
-        </View>
+        <Notice tone="error" testID="manual-error">
+          {error}
+        </Notice>
       ) : null}
     </ScrollView>
   );

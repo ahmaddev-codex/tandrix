@@ -6,19 +6,21 @@ import type {
   Manual,
   ProcedureDetail,
 } from "@tandrix/contracts";
-import { genericSourceLabel, radius, space, statusMeta } from "@tandrix/ui";
-import { Button, Icon, SourceChip, StatusChip, Text, useTheme } from "@tandrix/ui/native";
+import { radius, space } from "@tandrix/ui";
+import {
+  ActionCard,
+  Button,
+  Notice,
+  StepRow,
+  SummaryCard,
+  Text,
+  useTheme,
+  type ActionCardProps,
+} from "@tandrix/ui/native";
 import { Image } from "expo-image";
 import { router, Stack, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useState } from "react";
-import {
-  FlatList,
-  Linking,
-  Pressable,
-  RefreshControl,
-  useWindowDimensions,
-  View,
-} from "react-native";
+import { FlatList, Linking, RefreshControl, useWindowDimensions, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "@/lib/api";
 import { citationLabel, stepChip } from "@/lib/steps";
@@ -71,6 +73,46 @@ export default function JobScreen() {
     }
   };
 
+  // The one thing the job is waiting on, if any (design system: one ActionCard per screen).
+  const next: ActionCardProps | null =
+    asset === null
+      ? {
+          icon: "camera",
+          title: "Identify the equipment",
+          body: "Photograph the nameplate. Tandrix reads the make and model and uses them to find the manual.",
+          actionLabel: "Photograph the nameplate",
+          actionTestID: "photograph-nameplate",
+          onAction: () =>
+            router.push({ pathname: "/job/[id]/capture", params: { id, purpose: "nameplate" } }),
+        }
+      : asset && !manual && !procedure
+        ? {
+            icon: "book",
+            title: "Add the manual",
+            body: "Tandrix builds the steps from the manufacturer's manual, so every step cites a page.",
+            actionLabel: "Find the manual",
+            actionTestID: "find-manual",
+            onAction: () =>
+              router.push({
+                pathname: "/job/[id]/manual",
+                params: { id, equipment: `${asset.make} ${asset.model}` },
+              }),
+            secondaryLabel: "Use general steps instead",
+            secondaryTestID: "generic-steps",
+            onSecondary: () =>
+              router.push({ pathname: "/job/[id]/procedure", params: { id, generic: "1" } }),
+          }
+        : asset && manual && !procedure
+          ? {
+              icon: "progress",
+              title: "Write the steps",
+              body: "Tandrix reads the manual and writes the steps for this job, each with the page it came from.",
+              actionLabel: "Write the steps",
+              actionTestID: "write-steps",
+              onAction: () => router.push({ pathname: "/job/[id]/procedure", params: { id } }),
+            }
+          : null;
+
   const gap = space["space-2"];
   const tile = (width - space["space-4"] * 2 - gap * (COLUMNS - 1)) / COLUMNS;
 
@@ -95,160 +137,49 @@ export default function JobScreen() {
           />
         }
         ListHeaderComponent={
-          <View style={{ gap: space["space-2"], marginBottom: space["space-2"] }}>
+          <View style={{ gap: space["space-3"], marginBottom: space["space-2"] }}>
             {error ? (
-              <View
-                style={{
-                  padding: space["space-4"],
-                  borderRadius: radius["radius-lg"],
-                  backgroundColor: t.color["red-100"],
-                }}
-              >
-                <Text variant="copy-16" color="red-900">
-                  {error}
-                </Text>
-              </View>
+              <Notice tone="error" testID="job-error">
+                {error}
+              </Notice>
             ) : null}
-            {asset === undefined ? null : asset ? (
-              <View
+            {asset ? (
+              <SummaryCard
                 testID="asset-card"
-                accessibilityLabel={`Equipment: ${asset.make} ${asset.model}`}
-                style={{
-                  padding: space["space-4"],
-                  borderRadius: radius["radius-lg"],
-                  backgroundColor: t.color["background-100"],
-                  borderWidth: 1,
-                  borderColor: t.color.border,
-                  gap: space["space-1"],
-                }}
-              >
-                <Text variant="label-14" color="text-secondary">
-                  Equipment
-                </Text>
-                <Text variant="heading-20">
-                  {asset.make} {asset.model}
-                </Text>
-                {asset.serial ? (
-                  <Text variant="mono-14" color="text-secondary">
-                    Serial {asset.serial}
-                  </Text>
-                ) : null}
-              </View>
-            ) : (
-              <View
-                style={{
-                  padding: space["space-4"],
-                  borderRadius: radius["radius-lg"],
-                  backgroundColor: t.color["blue-100"],
-                  gap: space["space-3"],
-                }}
-              >
-                <View style={{ flexDirection: "row", gap: space["space-2"], alignItems: "center" }}>
-                  <Icon name="camera" size={20} color="blue-900" />
-                  <Text variant="heading-20" color="blue-900">
-                    Identify the equipment
-                  </Text>
-                </View>
-                <Text variant="copy-16" color="text">
-                  Photograph the nameplate. Tandrix reads the make and model and uses them to find
-                  the manual.
-                </Text>
-                <Button
-                  variant="primary"
-                  block
-                  onPress={() =>
-                    router.push({
-                      pathname: "/job/[id]/capture",
-                      params: { id, purpose: "nameplate" },
-                    })
-                  }
-                  testID="photograph-nameplate"
-                >
-                  Photograph the nameplate
-                </Button>
-              </View>
-            )}
-            {asset && manual ? (
-              <View
-                testID="manual-card"
-                style={{
-                  padding: space["space-4"],
-                  borderRadius: radius["radius-lg"],
-                  backgroundColor: t.color["background-100"],
-                  borderWidth: 1,
-                  borderColor: t.color.border,
-                  gap: space["space-3"],
-                }}
-              >
-                <View style={{ gap: space["space-1"] }}>
-                  <Text variant="label-14" color="text-secondary">
-                    Manual
-                  </Text>
-                  <Text variant="heading-16">{manual.title}</Text>
-                  <Text variant="copy-14" color="text-secondary">
-                    {manual.pageCount} {manual.pageCount === 1 ? "page" : "pages"}
-                  </Text>
-                </View>
-                <SourceChip kind="manual">
-                  {manual.sourceUrl
-                    ? new URL(manual.sourceUrl).hostname.replace(/^www\./, "")
-                    : "Your copy"}
-                </SourceChip>
-                <Button
-                  variant="secondary"
-                  block
-                  icon="book"
-                  disabled={opening}
-                  onPress={() => openManual(manual)}
-                  testID="open-manual"
-                >
-                  Open manual
-                </Button>
-              </View>
-            ) : asset && !procedure ? (
-              <View
-                style={{
-                  padding: space["space-4"],
-                  borderRadius: radius["radius-lg"],
-                  backgroundColor: t.color["blue-100"],
-                  gap: space["space-3"],
-                }}
-              >
-                <View style={{ flexDirection: "row", gap: space["space-2"], alignItems: "center" }}>
-                  <Icon name="book" size={20} color="blue-900" />
-                  <Text variant="heading-20" color="blue-900">
-                    Add the manual
-                  </Text>
-                </View>
-                <Text variant="copy-16" color="text">
-                  Tandrix builds the steps from the manufacturer's manual, so every step cites a
-                  page.
-                </Text>
-                <Button
-                  variant="primary"
-                  block
-                  onPress={() =>
-                    router.push({
-                      pathname: "/job/[id]/manual",
-                      params: { id, equipment: `${asset.make} ${asset.model}` },
-                    })
-                  }
-                  testID="find-manual"
-                >
-                  Find the manual
-                </Button>
-                <Button
-                  variant="tertiary"
-                  block
-                  onPress={() =>
-                    router.push({ pathname: "/job/[id]/procedure", params: { id, generic: "1" } })
-                  }
-                  testID="generic-steps"
-                >
-                  Use general steps instead
-                </Button>
-              </View>
+                label="Equipment"
+                title={`${asset.make} ${asset.model}`}
+                facts={asset.serial ? [{ text: `Serial ${asset.serial}`, mono: true }] : []}
+              />
             ) : null}
+            {asset && manual ? (
+              <SummaryCard
+                testID="manual-card"
+                label="Manual"
+                title={manual.title}
+                facts={[
+                  { text: `${manual.pageCount} ${manual.pageCount === 1 ? "page" : "pages"}` },
+                ]}
+                source={
+                  manual.sourceUrl
+                    ? new URL(manual.sourceUrl).hostname.replace(/^www\./, "")
+                    : "Your copy"
+                }
+                action={
+                  <Button
+                    variant="secondary"
+                    size="lg"
+                    block
+                    icon="book"
+                    disabled={opening}
+                    onPress={() => openManual(manual)}
+                    testID="open-manual"
+                  >
+                    Open manual
+                  </Button>
+                }
+              />
+            ) : null}
+            {next ? <ActionCard {...next} /> : null}
             {procedure ? (
               <View testID="step-list" style={{ gap: space["space-2"] }}>
                 <Text variant="label-16" color="text-secondary">
@@ -259,75 +190,25 @@ export default function JobScreen() {
                   const chip = stepChip[js?.status ?? "todo"];
                   const cite = citationLabel(step.citation);
                   return (
-                    <Pressable
+                    <StepRow
                       key={step.id}
                       testID="step-row"
-                      accessibilityRole="button"
-                      // The whole row is one button, so its label carries the status and source too.
-                      accessibilityLabel={`Step ${step.order}: ${step.title}, ${
-                        chip.label ?? statusMeta[chip.status].label
-                      }, ${cite ?? genericSourceLabel}`}
+                      index={step.order}
+                      title={step.title}
+                      status={chip.status}
+                      {...(chip.label ? { statusLabel: chip.label } : {})}
+                      {...(cite ? { source: cite } : {})}
                       disabled={!js}
-                      onPress={() =>
+                      onSelect={() =>
                         js &&
                         router.push({
                           pathname: "/job/[id]/step/[stepId]",
                           params: { id, stepId: js.id },
                         })
                       }
-                      style={({ pressed }) => ({
-                        flexDirection: "row",
-                        gap: space["space-3"],
-                        padding: space["space-4"],
-                        borderRadius: radius["radius-lg"],
-                        borderWidth: 1,
-                        borderColor: t.color.border,
-                        backgroundColor: pressed ? t.color["gray-100"] : t.color["background-100"],
-                      })}
-                    >
-                      <Text variant="mono-16" color="text-secondary">
-                        {String(step.order)}
-                      </Text>
-                      <View style={{ flex: 1, gap: space["space-2"] }}>
-                        <Text variant="heading-16">{step.title}</Text>
-                        <StatusChip status={chip.status}>{chip.label}</StatusChip>
-                        {cite ? (
-                          <SourceChip kind="manual">{cite}</SourceChip>
-                        ) : (
-                          <SourceChip kind="generic" />
-                        )}
-                      </View>
-                    </Pressable>
+                    />
                   );
                 })}
-              </View>
-            ) : asset && manual ? (
-              <View
-                style={{
-                  padding: space["space-4"],
-                  borderRadius: radius["radius-lg"],
-                  backgroundColor: t.color["blue-100"],
-                  gap: space["space-3"],
-                }}
-              >
-                <View style={{ flexDirection: "row", gap: space["space-2"], alignItems: "center" }}>
-                  <Icon name="progress" size={20} color="blue-900" />
-                  <Text variant="heading-20" color="blue-900">
-                    Write the steps
-                  </Text>
-                </View>
-                <Text variant="copy-16" color="text">
-                  Tandrix reads the manual and writes the steps for this job, each with the page it
-                  came from.
-                </Text>
-                <Button
-                  variant="primary"
-                  block
-                  onPress={() => router.push({ pathname: "/job/[id]/procedure", params: { id } })}
-                  testID="write-steps"
-                >
-                  Write the steps
-                </Button>
               </View>
             ) : null}
             <Text variant="label-16" color="text-secondary">
@@ -376,7 +257,8 @@ export default function JobScreen() {
         }}
       >
         <Button
-          variant="primary"
+          // One primary per view: the ActionCard's, when there is one.
+          variant={next ? "secondary" : "primary"}
           block
           icon="camera"
           onPress={() => router.push({ pathname: "/job/[id]/capture", params: { id } })}

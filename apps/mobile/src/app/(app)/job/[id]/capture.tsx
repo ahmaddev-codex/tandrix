@@ -1,5 +1,5 @@
 import { space } from "@tandrix/ui";
-import { Button, CaptureView, Text, useTheme } from "@tandrix/ui/native";
+import { Button, CaptureView, Text, useTheme, Notice } from "@tandrix/ui/native";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
@@ -112,11 +112,7 @@ export default function Capture() {
         >
           Choose photo
         </Button>
-        {error ? (
-          <Text variant="copy-16" color="red-900">
-            {error}
-          </Text>
-        ) : null}
+        {error ? <Notice tone="error">{error}</Notice> : null}
       </SafeAreaView>
     );
   }
@@ -170,11 +166,7 @@ export default function Capture() {
           <View style={{ flex: 1 }} />
         )}
       </CaptureView>
-      {error ? (
-        <Text variant="copy-16" color="red-900">
-          {error}
-        </Text>
-      ) : null}
+      {error ? <Notice tone="error">{error}</Notice> : null}
     </SafeAreaView>
   );
 }

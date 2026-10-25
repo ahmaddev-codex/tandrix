@@ -8,10 +8,13 @@ import type {
   PartSpec,
   ProcedureStep,
 } from "@tandrix/contracts";
-import { radius, space } from "@tandrix/ui";
+import { space } from "@tandrix/ui";
 import {
+  ActionCard,
   Button,
   CaptureView,
+  HighlightCorrection,
+  Notice,
   PartHighlight,
   StepCard,
   Text,
@@ -168,6 +171,7 @@ export default function StepScreen() {
   const chip = stepChip[jobStep.status];
   const cite = citationLabel(step.citation);
   const usable = permission?.granted && !cameraFailed;
+  const canAskCamera = permission?.canAskAgain !== false && !cameraFailed;
   const partWord = parts[0]?.name.toLowerCase() ?? "the parts";
   const unavailable = result?.status === "unavailable" ? result.message : undefined;
   const missing =
@@ -235,31 +239,25 @@ export default function StepScreen() {
         </CaptureView>
       </View>
     ) : (
-      <View
-        style={{
-          gap: space["space-3"],
-          padding: space["space-4"],
-          borderRadius: radius["radius-lg"],
-          backgroundColor: t.color["background-100"],
-          borderWidth: 1,
-          borderColor: t.color.border,
-        }}
-      >
-        <Text variant="heading-20">Show Tandrix the parts</Text>
-        <Text variant="field-body" color="text-secondary">
-          {parts.length
+      <ActionCard
+        icon="camera"
+        title="Show Tandrix the parts"
+        body={
+          parts.length
             ? `Take or choose a photo and Tandrix highlights the ${partWord}${parts.length > 1 ? " and the other parts" : ""} for this step.`
-            : "This step doesn't name any parts."}
-        </Text>
-        {permission?.canAskAgain !== false && !cameraFailed ? (
-          <Button variant="primary" block onPress={requestPermission} testID="allow-camera">
-            Allow camera
-          </Button>
-        ) : null}
-        <Button variant="secondary" block onPress={choose} testID="choose-photo">
-          Choose photo
-        </Button>
-      </View>
+            : "This step doesn't name any parts."
+        }
+        {...(canAskCamera
+          ? {
+              actionLabel: "Allow camera",
+              actionTestID: "allow-camera",
+              onAction: requestPermission,
+              secondaryLabel: "Choose photo",
+              secondaryTestID: "choose-photo",
+              onSecondary: choose,
+            }
+          : { actionLabel: "Choose photo", actionTestID: "choose-photo", onAction: choose })}
+      />
     );
 
   return (
@@ -274,67 +272,32 @@ export default function StepScreen() {
         {phase === "result" ? (
           <View style={{ gap: space["space-2"] }}>
             {correcting ? (
-              <View
+              <HighlightCorrection
                 testID="correct-panel"
-                style={{
-                  gap: space["space-2"],
-                  padding: space["space-4"],
-                  borderRadius: radius["radius-lg"],
-                  backgroundColor: t.color["background-100"],
-                  borderWidth: 1,
-                  borderColor: t.color.border,
-                }}
-              >
-                <Text variant="heading-16">{`Is this the ${correcting.label.toLowerCase()}?`}</Text>
-                <Button
-                  variant="primary"
-                  block
-                  onPress={() => verdict(correcting, { verdict: "confirmed" })}
-                  testID="confirm-highlight"
-                >
-                  {`Yes, that's the ${correcting.label.toLowerCase()}`}
-                </Button>
-                <Button
-                  variant="secondary"
-                  block
-                  onPress={() => verdict(correcting, { verdict: "wrong" })}
-                  testID="reject-highlight"
-                >
-                  No, that's not it
-                </Button>
-                {parts
+                label={correcting.label}
+                otherParts={parts
                   .filter((p) => p.id !== correcting.partSpecId)
-                  .map((p) => (
-                    <Button
-                      key={p.id}
-                      variant="tertiary"
-                      block
-                      onPress={() =>
-                        verdict(correcting, { verdict: "other_part", partSpecId: p.id })
-                      }
-                    >
-                      {`It's the ${p.name.toLowerCase()}`}
-                    </Button>
-                  ))}
-              </View>
+                  .map((p) => ({ id: p.id, name: p.name }))}
+                onConfirm={() => verdict(correcting, { verdict: "confirmed" })}
+                onReject={() => verdict(correcting, { verdict: "wrong" })}
+                onOtherPart={(p) =>
+                  verdict(correcting, { verdict: "other_part", partSpecId: p.id })
+                }
+              />
             ) : null}
             {result?.status === "found" && (missing.length || result.hint) ? (
-              <View testID="highlight-missing" style={{ gap: space["space-1"] }}>
-                {missing.length ? (
-                  <Text variant="copy-16">{`Not found in this photo: ${missing.map((p) => p.name).join(", ")}.`}</Text>
-                ) : null}
-                {result.hint ? (
-                  <Text variant="copy-16" color="text-secondary">
-                    {result.hint}.
-                  </Text>
-                ) : null}
-              </View>
+              <Notice icon="camera" testID="highlight-missing">
+                {[
+                  missing.length
+                    ? `Not found in this photo: ${missing.map((p) => p.name).join(", ")}.`
+                    : "",
+                  result.hint ? `${result.hint}.` : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+              </Notice>
             ) : null}
-            {unavailable ? (
-              <View testID="highlight-unavailable" style={{ gap: space["space-2"] }}>
-                <Text variant="copy-16">{unavailable}</Text>
-              </View>
-            ) : null}
+            {unavailable ? <Notice testID="highlight-unavailable">{unavailable}</Notice> : null}
             <Button variant="secondary" block icon="retake" onPress={retake} testID="retake-photo">
               Retake
             </Button>
@@ -358,9 +321,9 @@ export default function StepScreen() {
         ) : null}
 
         {error ? (
-          <Text variant="copy-16" color="red-900">
+          <Notice tone="error" testID="step-error">
             {error}
-          </Text>
+          </Notice>
         ) : null}
 
         <StepCard

@@ -1,7 +1,7 @@
 // Photograph a paper manual page by page. Each page uploads as it's taken; "Make manual" combines
 // them, in order, into a private PDF.
 import { radius, space } from "@tandrix/ui";
-import { Button, CaptureView, Icon, Text, useTheme } from "@tandrix/ui/native";
+import { Button, CaptureView, Icon, Text, useTheme, Notice } from "@tandrix/ui/native";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import * as ImagePicker from "expo-image-picker";
 import { router, Stack, useLocalSearchParams } from "expo-router";
@@ -166,11 +166,7 @@ export default function Pages() {
             : `${pages.length} ${pages.length === 1 ? "page" : "pages"}`}
         </Text>
       </View>
-      {error ? (
-        <Text variant="copy-16" color="red-900">
-          {error}
-        </Text>
-      ) : null}
+      {error ? <Notice tone="error">{error}</Notice> : null}
       <Button
         variant="primary"
         block

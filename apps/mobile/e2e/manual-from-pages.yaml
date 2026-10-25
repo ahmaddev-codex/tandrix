@@ -108,7 +108,7 @@ env:
     visible:
       id: manual-card
     timeout: 30000
-- assertVisible: FlowSet E2E-${RUN_ID} manual \(photographed\)
+- assertVisible: "Manual: FlowSet E2E-${RUN_ID} manual \\(photographed\\).*"
 - assertVisible: Your copy
 - assertVisible:
     id: open-manual

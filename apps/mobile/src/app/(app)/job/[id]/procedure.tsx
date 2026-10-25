@@ -1,10 +1,10 @@
 // Write the job's steps. Reading a whole manual takes a while, so the screen says what is
 // happening as time passes, and offers a retry when the model can't help.
-import { radius, space } from "@tandrix/ui";
-import { Button, Icon, Text, useTheme } from "@tandrix/ui/native";
+import { space } from "@tandrix/ui";
+import { ProgressState } from "@tandrix/ui/native";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, View } from "react-native";
+import { View } from "react-native";
 import { api } from "@/lib/api";
 
 /** What the user sees while waiting, by seconds elapsed. */
@@ -21,7 +21,6 @@ const genericStages: Array<[number, string]> = [
 export default function ProcedureScreen() {
   const { id, generic } = useLocalSearchParams<{ id: string; generic?: string }>();
   const allowGeneric = generic === "1";
-  const t = useTheme();
   const [elapsed, setElapsed] = useState(0);
   const [failure, setFailure] = useState<string>();
   const [attempt, setAttempt] = useState(0);
@@ -52,58 +51,16 @@ export default function ProcedureScreen() {
   const message = [...list].reverse().find(([at]) => elapsed >= at)![1];
 
   return (
-    <View
-      style={{
-        flex: 1,
-        justifyContent: "center",
-        padding: space["space-6"],
-        gap: space["space-4"],
-      }}
-    >
+    <View style={{ flex: 1, justifyContent: "center", padding: space["space-6"] }}>
       <Stack.Screen options={{ title: "Steps" }} />
-      {failure ? (
-        <>
-          <View
-            testID="procedure-unavailable"
-            style={{
-              flexDirection: "row",
-              gap: space["space-2"],
-              alignItems: "flex-start",
-              padding: space["space-4"],
-              borderRadius: radius["radius-lg"],
-              backgroundColor: t.color["gray-100"],
-            }}
-          >
-            <Icon name="alert" size={20} />
-            <View style={{ flex: 1 }}>
-              <Text variant="copy-16">{failure}</Text>
-            </View>
-          </View>
-          <Button
-            variant="primary"
-            block
-            onPress={() => setAttempt((n) => n + 1)}
-            testID="retry-procedure"
-          >
-            Try again
-          </Button>
-          <Button variant="secondary" block onPress={() => router.back()}>
-            Back to the job
-          </Button>
-        </>
-      ) : (
-        <View
-          testID="procedure-progress"
-          accessibilityRole="progressbar"
-          accessibilityLabel={message}
-          style={{ alignItems: "center", gap: space["space-3"] }}
-        >
-          <ActivityIndicator color={t.color["text-secondary"]} />
-          <Text variant="field-body" color="text-secondary">
-            {message}
-          </Text>
-        </View>
-      )}
+      <ProgressState
+        testID="procedure"
+        label={message}
+        {...(failure ? { failed: failure } : {})}
+        onRetry={() => setAttempt((n) => n + 1)}
+        backLabel="Back to the job"
+        onBack={() => router.back()}
+      />
     </View>
   );
 }

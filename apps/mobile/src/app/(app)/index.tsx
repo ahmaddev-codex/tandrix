@@ -1,6 +1,6 @@
 import type { Job } from "@tandrix/contracts";
 import { radius, space } from "@tandrix/ui";
-import { Button, Icon, Text, useTheme } from "@tandrix/ui/native";
+import { Button, Icon, Text, useTheme, Notice } from "@tandrix/ui/native";
 import { Link, router, Stack, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import { FlatList, Pressable, RefreshControl, View } from "react-native";
@@ -83,21 +83,16 @@ export default function Jobs() {
         }
         ListHeaderComponent={
           error ? (
-            <View
-              style={{
-                padding: space["space-4"],
-                borderRadius: radius["radius-lg"],
-                backgroundColor: t.color["red-100"],
-                gap: space["space-3"],
-              }}
+            <Notice
+              tone="error"
+              action={
+                <Button variant="secondary" size="lg" onPress={load}>
+                  Try again
+                </Button>
+              }
             >
-              <Text variant="copy-16" color="red-900">
-                {error}
-              </Text>
-              <Button variant="secondary" size="lg" onPress={load}>
-                Try again
-              </Button>
-            </View>
+              {error}
+            </Notice>
           ) : undefined
         }
         ListEmptyComponent={
