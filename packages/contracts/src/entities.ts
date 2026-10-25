@@ -242,7 +242,8 @@ export const PointerTarget = z.strictObject({
   surface: z.enum(["camera", "screen"]),
   evidenceId: Id,
   label: text(120),
-  confidence: Confidence,
+  /** Absent when the model gives none, as computer-use pointing doesn't. */
+  confidence: Confidence.optional(),
   geometry: z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("point"), point: Point }),
     z.strictObject({ kind: z.literal("box"), box: Box }),

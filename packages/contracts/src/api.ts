@@ -20,7 +20,7 @@ import {
   SafetyGate,
 } from "./entities";
 import { ManualSearchOutput, NameplateReading } from "./model-outputs";
-import { ScreenGeometry } from "./desktop";
+import { DesktopAction, ScreenGeometry } from "./desktop";
 import { ControlMode, Id, Language, Surface, Timestamp, text } from "./primitives";
 
 export const CreateJobRequest = z.strictObject({
@@ -261,12 +261,32 @@ export const HandoffRequest = z.strictObject({ to: Surface, stepId: Id.optional(
 
 export const ControlModeRequest = z.strictObject({ mode: ControlMode });
 
+/**
+ * POST /jobs/:id/screen/ask: a question about an uploaded screenshot (evidence kind
+ * "screenshot"). The job's current step, if any, is the context.
+ */
 export const ScreenAskRequest = z.strictObject({
   evidenceId: Id,
   transcript: text(2000),
   geometry: ScreenGeometry,
   mode: ControlMode,
 });
+
+export const ScreenAskResponse = z.discriminatedUnion("status", [
+  z.strictObject({
+    status: z.literal("answered"),
+    reply: text(600),
+    /** Where to look, in screenshot pixels (point geometry); null when Tandrix can't point. */
+    target: PointerTarget.nullable(),
+    /**
+     * What the model would do, in screenshot pixels. Show me only draws it; Do it for me runs it
+     * only after the action guard in @tandrix/core.
+     */
+    proposed: z.array(DesktopAction).max(16),
+  }),
+  z.strictObject({ status: z.literal("unavailable"), message: text(300) }),
+]);
+export type ScreenAskResponse = z.infer<typeof ScreenAskResponse>;
 
 /** POST /jobs/:id/steps/:stepId/highlight: find the step's parts in an uploaded photo. */
 export const HighlightRequest = z.strictObject({ evidenceId: Id });
