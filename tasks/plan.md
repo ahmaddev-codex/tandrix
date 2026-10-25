@@ -295,7 +295,7 @@ The apps worked end to end but read as a pump-job tool: both opened on a jobs li
 **Files:** `apps/mobile/src/app/{welcome,(app)/index,(app)/new-job}.tsx`. **Size:** M
 
 #### P5 Website: landing page and job reports (includes T23)
-**Description:** `apps/web` (Vite + React on `@tandrix/ui`): a landing page that shows the two apps and how a job flows, honest about what's built; and the shareable job report (T23).
+**Description:** `apps/web`, a Next.js app on `@tandrix/ui` and the design system, as polished as Vercel's own pages and with no filler: a landing page that shows the two apps and how a job flows, pages for the phone and the Mac, and the shareable job report (T23). Honest about what's built.
 **Acceptance:** the landing page explains phone and Mac in one screen each; a report link opens read-only, expires and can be revoked.
 **Verification:** component and API tests; rendered and reviewed in light and dark.
 **Files:** `apps/web/*`, `apps/api/src/routes/{report,share}.ts`. **Size:** L (split: P5a landing, P5b report = T23)
