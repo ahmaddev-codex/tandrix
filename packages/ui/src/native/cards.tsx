@@ -60,11 +60,11 @@ export function Notice({ tone = "neutral", title, children, icon, action, testID
       <Icon name={icon ?? c.icon} size={20} color={c.fg} />
       <View style={{ flex: 1, gap: space["space-1"] }}>
         {title ? (
-          <Text variant="heading-16" color={c.fg}>
+          <Text variant="heading-14" color={c.fg}>
             {title}
           </Text>
         ) : null}
-        <Text variant="copy-16" color={c.fg}>
+        <Text variant="copy-14" color={c.fg}>
           {children}
         </Text>
         {action ? <View style={{ marginTop: space["space-2"] }}>{action}</View> : null}
@@ -109,10 +109,10 @@ export function ActionCard({
     >
       <View style={{ flexDirection: "row", gap: space["space-2"], alignItems: "center" }}>
         {icon ? <Icon name={icon} size={20} /> : null}
-        <Text variant="heading-20">{title}</Text>
+        <Text variant="heading-16">{title}</Text>
       </View>
       {body ? (
-        <Text variant="copy-16" color="text-secondary">
+        <Text variant="copy-14" color="text-secondary">
           {body}
         </Text>
       ) : null}
@@ -165,14 +165,14 @@ export function SummaryCard({
         accessibilityLabel={[`${label}: ${title}`, ...facts.map((f) => f.text)].join(", ")}
         style={{ gap: space["space-1"] }}
       >
-        <Text variant="label-14" color="text-secondary">
+        <Text variant="label-13" color="text-secondary">
           {label}
         </Text>
-        <Text variant="heading-20">{title}</Text>
+        <Text variant="heading-16">{title}</Text>
         {facts.map((f) => (
           <Text
             key={f.text}
-            variant={f.mono ? "mono-14" : "copy-14"}
+            variant={f.mono ? "mono-12" : "copy-13"}
             color="text-secondary"
             style={{ fontVariant: ["tabular-nums"] }}
           >
@@ -238,14 +238,14 @@ export function StepRow({
       })}
     >
       <Text
-        variant="mono-16"
+        variant="mono-13"
         color="text-secondary"
         style={{ width: 24, fontVariant: ["tabular-nums"] }}
       >
         {String(index)}
       </Text>
       <View style={{ flex: 1, gap: space["space-2"] }}>
-        <Text variant="heading-16">{title}</Text>
+        <Text variant="heading-14">{title}</Text>
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space["space-2"] }}>
           <StatusChip status={status}>{statusLabel}</StatusChip>
           {source ? (

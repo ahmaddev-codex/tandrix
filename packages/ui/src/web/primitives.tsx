@@ -7,10 +7,11 @@ import {
 } from "react";
 import {
   genericSourceLabel,
-  iconPaths,
+  iconPathsFor,
   sourceIcon,
   statusMeta,
   type IconName,
+  type IconWeight,
   type SourceKind,
   type StepStatus,
 } from "../shared";
@@ -19,27 +20,25 @@ import { cx } from "./cx";
 export interface IconProps {
   name: IconName;
   size?: 16 | 20 | 24;
+  /** Defaults to the design system's rule: solid (fill) below 20 px, outline at 20 px and up. */
+  weight?: IconWeight;
   /** Accessible name; omit for decorative icons. */
   label?: string;
   className?: string;
 }
 
-export function Icon({ name, size = 16, label, className }: IconProps) {
+export function Icon({ name, size = 16, weight, label, className }: IconProps) {
   return (
     <svg
       className={cx("tx-ico", size === 20 && "tx-ico-20", size === 24 && "tx-ico-24", className)}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={1.5}
-      strokeLinecap="round"
-      strokeLinejoin="round"
+      viewBox="0 0 256 256"
+      fill="currentColor"
       aria-hidden={label ? undefined : true}
       role={label ? "img" : undefined}
       aria-label={label}
     >
-      {iconPaths[name].map((d) => (
-        <path key={d} d={d} />
+      {iconPathsFor(name, size, weight).map((p) => (
+        <path key={p.d} d={p.d} opacity={p.o} />
       ))}
     </svg>
   );

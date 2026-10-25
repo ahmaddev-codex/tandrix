@@ -67,12 +67,12 @@ export function SafetyGate({
       <View style={{ flexDirection: "row", gap: space["space-3"], alignItems: "center" }}>
         <SafetyDisc stop={stop} />
         <View style={{ flex: 1 }}>
-          <Text variant="heading-20" color={stop ? "red-900" : "text"}>
+          <Text variant="heading-16" color={stop ? "red-900" : "text"}>
             {title}
           </Text>
         </View>
       </View>
-      <Text variant="copy-16" color="text-secondary">
+      <Text variant="copy-14" color="text-secondary">
         {body}
       </Text>
       {stop ? null : confirmed ? (
@@ -81,7 +81,7 @@ export function SafetyGate({
           style={{ flexDirection: "row", gap: space["space-2"], alignItems: "center" }}
         >
           <Icon name="check" size={20} color="green-900" />
-          <Text variant="label-16" color="green-900">
+          <Text variant="label-14" color="green-900">
             {confirmedLabel}
           </Text>
         </View>
@@ -154,11 +154,11 @@ export function CheckResult({
       <View style={{ flex: 1, gap: space["space-2"], alignItems: "flex-start" }}>
         <View style={{ flexDirection: "row", gap: space["space-2"], alignItems: "center" }}>
           <Icon name={meta.icon} size={20} color={c.fg} />
-          <Text variant="heading-20" color={c.fg}>
+          <Text variant="heading-16" color={c.fg}>
             {title ?? meta.title}
           </Text>
         </View>
-        <Text variant="copy-16">{reason}</Text>
+        <Text variant="copy-14">{reason}</Text>
         {evidence ? <SourceChip kind="photo">{evidence}</SourceChip> : null}
         {actions ? (
           <View
@@ -207,8 +207,8 @@ export function PartsList({ parts, onSelect, testID }: PartsListProps) {
   return (
     <View testID={testID} style={{ gap: space["space-3"] }}>
       <View style={{ gap: 2 }}>
-        <Text variant="heading-24">{`${found} of ${parts.length} parts found`}</Text>
-        <Text variant="copy-16" color="text-secondary">
+        <Text variant="heading-18">{`${found} of ${parts.length} parts found`}</Text>
+        <Text variant="copy-14" color="text-secondary">
           {sub}
         </Text>
       </View>
@@ -243,7 +243,7 @@ export function PartsList({ parts, onSelect, testID }: PartsListProps) {
             >
               {p.part ? (
                 <Text
-                  variant="mono-14"
+                  variant="mono-12"
                   color="text-tertiary"
                   style={{ fontVariant: ["tabular-nums"] }}
                 >
@@ -252,15 +252,15 @@ export function PartsList({ parts, onSelect, testID }: PartsListProps) {
               ) : null}
               {/* On a phone the status sits under the name, so long names don't wrap early. */}
               <View style={{ flex: 1, gap: space["space-1"], alignItems: "flex-start" }}>
-                <Text variant="label-16">{p.name}</Text>
+                <Text variant="label-14">{p.name}</Text>
                 {p.note ? (
-                  <Text variant="copy-13" color="text-secondary">
+                  <Text variant="copy-12" color="text-secondary">
                     {p.note}
                   </Text>
                 ) : null}
                 <StatusChip status={s.chip}>{s.label}</StatusChip>
               </View>
-              <Text variant="mono-14" color="text-secondary">{`×${p.qty}`}</Text>
+              <Text variant="mono-12" color="text-secondary">{`×${p.qty}`}</Text>
             </Pressable>
           );
         })}
@@ -333,8 +333,8 @@ export function HandoffBanner({
           <Icon name={state === "incoming" ? "phone" : "laptop"} size={20} color="blue-900" />
         </View>
         <View style={{ flex: 1, gap: 2 }}>
-          <Text variant="heading-16">{title}</Text>
-          <Text variant="copy-14" color="text-secondary">
+          <Text variant="heading-14">{title}</Text>
+          <Text variant="copy-13" color="text-secondary">
             {body}
           </Text>
         </View>

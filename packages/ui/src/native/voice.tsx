@@ -39,20 +39,20 @@ export function VoiceTranscript({ state = "idle", turns, testID }: VoiceTranscri
     >
       {turns.slice(-SHOWN).map((turn, i) => (
         <View key={i} style={{ gap: space["space-1"] }}>
-          <Text variant="label-13" color="text-secondary">
+          <Text variant="label-12" color="text-secondary">
             {turn.speaker === "you" ? "You" : "Tandrix"}
           </Text>
           {turn.kind === "refusal" ? (
             <View style={{ flexDirection: "row", gap: space["space-2"], alignItems: "flex-start" }}>
               <Icon name="stop" size={20} color="red-900" />
               <View style={{ flex: 1 }}>
-                <Text variant="copy-16" color="red-900">
+                <Text variant="copy-14" color="red-900">
                   {turn.text}
                 </Text>
               </View>
             </View>
           ) : (
-            <Text variant="copy-16">{turn.text}</Text>
+            <Text variant="copy-14">{turn.text}</Text>
           )}
           {turn.kind === "general" ? <SourceChip kind="generic" /> : null}
         </View>
@@ -64,14 +64,14 @@ export function VoiceTranscript({ state = "idle", turns, testID }: VoiceTranscri
           style={{ flexDirection: "row", gap: space["space-2"], alignItems: "center" }}
         >
           <ListeningDot />
-          <Text variant="label-14" color="text-secondary">
+          <Text variant="label-13" color="text-secondary">
             Listening. Let go to send.
           </Text>
         </View>
       ) : state === "working" ? (
         <View style={{ flexDirection: "row", gap: space["space-2"], alignItems: "center" }}>
           <ActivityIndicator color={t.color["text-secondary"]} />
-          <Text variant="label-14" color="text-secondary">
+          <Text variant="label-13" color="text-secondary">
             Working it out
           </Text>
         </View>

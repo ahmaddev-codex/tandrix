@@ -300,13 +300,6 @@ export interface TextStyleSpec {
 }
 
 export const textStyles = {
-  "heading-48": {
-    "family": "sans",
-    "fontSize": 48,
-    "lineHeight": 56,
-    "fontWeight": 600,
-    "letterSpacing": -2.4
-  },
   "heading-32": {
     "family": "sans",
     "fontSize": 32,
@@ -321,40 +314,47 @@ export const textStyles = {
     "fontWeight": 600,
     "letterSpacing": -0.96
   },
-  "heading-20": {
+  "heading-18": {
+    "family": "sans",
+    "fontSize": 18,
+    "lineHeight": 24,
+    "fontWeight": 600,
+    "letterSpacing": -0.36
+  },
+  "heading-16": {
+    "family": "sans",
+    "fontSize": 16,
+    "lineHeight": 22,
+    "fontWeight": 600,
+    "letterSpacing": -0.32
+  },
+  "heading-14": {
+    "family": "sans",
+    "fontSize": 14,
+    "lineHeight": 20,
+    "fontWeight": 600,
+    "letterSpacing": -0.28
+  },
+  "field-instruction": {
     "family": "sans",
     "fontSize": 20,
     "lineHeight": 26,
     "fontWeight": 600,
     "letterSpacing": -0.4
   },
-  "heading-16": {
-    "family": "sans",
-    "fontSize": 16,
-    "lineHeight": 24,
-    "fontWeight": 600,
-    "letterSpacing": -0.32
-  },
-  "field-instruction": {
-    "family": "sans",
-    "fontSize": 26,
-    "lineHeight": 32,
-    "fontWeight": 600,
-    "letterSpacing": -0.78
-  },
   "field-body": {
     "family": "sans",
-    "fontSize": 18,
-    "lineHeight": 26,
+    "fontSize": 15,
+    "lineHeight": 22,
     "fontWeight": 400,
     "letterSpacing": 0
   },
   "field-caption": {
     "family": "sans",
-    "fontSize": 17,
-    "lineHeight": 22,
+    "fontSize": 14,
+    "lineHeight": 18,
     "fontWeight": 500,
-    "letterSpacing": -0.17
+    "letterSpacing": -0.14
   },
   "lens-20": {
     "family": "sans",
@@ -363,16 +363,9 @@ export const textStyles = {
     "fontWeight": 600,
     "letterSpacing": 0
   },
-  "copy-18": {
+  "copy-15": {
     "family": "sans",
-    "fontSize": 18,
-    "lineHeight": 28,
-    "fontWeight": 400,
-    "letterSpacing": 0
-  },
-  "copy-16": {
-    "family": "sans",
-    "fontSize": 16,
+    "fontSize": 15,
     "lineHeight": 24,
     "fontWeight": 400,
     "letterSpacing": 0
@@ -391,24 +384,24 @@ export const textStyles = {
     "fontWeight": 400,
     "letterSpacing": 0
   },
-  "label-16": {
+  "copy-12": {
     "family": "sans",
-    "fontSize": 16,
-    "lineHeight": 20,
-    "fontWeight": 500,
+    "fontSize": 12,
+    "lineHeight": 16,
+    "fontWeight": 400,
     "letterSpacing": 0
   },
   "label-14": {
     "family": "sans",
     "fontSize": 14,
-    "lineHeight": 20,
+    "lineHeight": 18,
     "fontWeight": 500,
     "letterSpacing": 0
   },
   "label-13": {
     "family": "sans",
     "fontSize": 13,
-    "lineHeight": 16,
+    "lineHeight": 18,
     "fontWeight": 500,
     "letterSpacing": 0
   },
@@ -419,39 +412,25 @@ export const textStyles = {
     "fontWeight": 500,
     "letterSpacing": 0
   },
-  "button-18": {
+  "button-15": {
     "family": "sans",
-    "fontSize": 18,
-    "lineHeight": 24,
-    "fontWeight": 600,
-    "letterSpacing": 0
-  },
-  "button-16": {
-    "family": "sans",
-    "fontSize": 16,
+    "fontSize": 15,
     "lineHeight": 20,
-    "fontWeight": 500,
+    "fontWeight": 600,
     "letterSpacing": 0
   },
   "button-14": {
     "family": "sans",
     "fontSize": 14,
-    "lineHeight": 20,
+    "lineHeight": 18,
     "fontWeight": 500,
     "letterSpacing": 0
   },
-  "mono-16": {
-    "family": "mono",
-    "fontSize": 16,
-    "lineHeight": 24,
-    "fontWeight": 400,
-    "letterSpacing": 0
-  },
-  "mono-14": {
-    "family": "mono",
-    "fontSize": 14,
-    "lineHeight": 20,
-    "fontWeight": 400,
+  "button-13": {
+    "family": "sans",
+    "fontSize": 13,
+    "lineHeight": 18,
+    "fontWeight": 500,
     "letterSpacing": 0
   },
   "mono-13": {

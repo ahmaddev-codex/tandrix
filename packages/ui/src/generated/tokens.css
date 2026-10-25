@@ -201,27 +201,24 @@
   --font-sans: "Geist", -apple-system, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
   --font-mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
 }
-.heading-48 { font-family: var(--font-sans); font-size: 48px; line-height: 56px; font-weight: 600; letter-spacing: -2.4px; }
 .heading-32 { font-family: var(--font-sans); font-size: 32px; line-height: 40px; font-weight: 600; letter-spacing: -1.28px; }
 .heading-24 { font-family: var(--font-sans); font-size: 24px; line-height: 32px; font-weight: 600; letter-spacing: -0.96px; }
-.heading-20 { font-family: var(--font-sans); font-size: 20px; line-height: 26px; font-weight: 600; letter-spacing: -0.4px; }
-.heading-16 { font-family: var(--font-sans); font-size: 16px; line-height: 24px; font-weight: 600; letter-spacing: -0.32px; }
-.field-instruction { font-family: var(--font-sans); font-size: 26px; line-height: 32px; font-weight: 600; letter-spacing: -0.78px; }
-.field-body { font-family: var(--font-sans); font-size: 18px; line-height: 26px; font-weight: 400; }
-.field-caption { font-family: var(--font-sans); font-size: 17px; line-height: 22px; font-weight: 500; letter-spacing: -0.17px; }
+.heading-18 { font-family: var(--font-sans); font-size: 18px; line-height: 24px; font-weight: 600; letter-spacing: -0.36px; }
+.heading-16 { font-family: var(--font-sans); font-size: 16px; line-height: 22px; font-weight: 600; letter-spacing: -0.32px; }
+.heading-14 { font-family: var(--font-sans); font-size: 14px; line-height: 20px; font-weight: 600; letter-spacing: -0.28px; }
+.field-instruction { font-family: var(--font-sans); font-size: 20px; line-height: 26px; font-weight: 600; letter-spacing: -0.4px; }
+.field-body { font-family: var(--font-sans); font-size: 15px; line-height: 22px; font-weight: 400; }
+.field-caption { font-family: var(--font-sans); font-size: 14px; line-height: 18px; font-weight: 500; letter-spacing: -0.14px; }
 .lens-20 { font-family: var(--font-sans); font-size: 20px; line-height: 26px; font-weight: 600; }
-.copy-18 { font-family: var(--font-sans); font-size: 18px; line-height: 28px; font-weight: 400; }
-.copy-16 { font-family: var(--font-sans); font-size: 16px; line-height: 24px; font-weight: 400; }
+.copy-15 { font-family: var(--font-sans); font-size: 15px; line-height: 24px; font-weight: 400; }
 .copy-14 { font-family: var(--font-sans); font-size: 14px; line-height: 20px; font-weight: 400; }
 .copy-13 { font-family: var(--font-sans); font-size: 13px; line-height: 18px; font-weight: 400; }
-.label-16 { font-family: var(--font-sans); font-size: 16px; line-height: 20px; font-weight: 500; }
-.label-14 { font-family: var(--font-sans); font-size: 14px; line-height: 20px; font-weight: 500; }
-.label-13 { font-family: var(--font-sans); font-size: 13px; line-height: 16px; font-weight: 500; }
+.copy-12 { font-family: var(--font-sans); font-size: 12px; line-height: 16px; font-weight: 400; }
+.label-14 { font-family: var(--font-sans); font-size: 14px; line-height: 18px; font-weight: 500; }
+.label-13 { font-family: var(--font-sans); font-size: 13px; line-height: 18px; font-weight: 500; }
 .label-12 { font-family: var(--font-sans); font-size: 12px; line-height: 16px; font-weight: 500; }
-.button-18 { font-family: var(--font-sans); font-size: 18px; line-height: 24px; font-weight: 600; }
-.button-16 { font-family: var(--font-sans); font-size: 16px; line-height: 20px; font-weight: 500; }
-.button-14 { font-family: var(--font-sans); font-size: 14px; line-height: 20px; font-weight: 500; }
-.mono-16 { font-family: var(--font-mono); font-size: 16px; line-height: 24px; font-weight: 400; }
-.mono-14 { font-family: var(--font-mono); font-size: 14px; line-height: 20px; font-weight: 400; }
+.button-15 { font-family: var(--font-sans); font-size: 15px; line-height: 20px; font-weight: 600; }
+.button-14 { font-family: var(--font-sans); font-size: 14px; line-height: 18px; font-weight: 500; }
+.button-13 { font-family: var(--font-sans); font-size: 13px; line-height: 18px; font-weight: 500; }
 .mono-13 { font-family: var(--font-mono); font-size: 13px; line-height: 18px; font-weight: 400; }
 .mono-12 { font-family: var(--font-mono); font-size: 12px; line-height: 16px; font-weight: 400; }

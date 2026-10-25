@@ -60,7 +60,7 @@ export function StepCard({
           justifyContent: "space-between",
         }}
       >
-        <Text variant="label-14" color="text-secondary" style={{ fontVariant: ["tabular-nums"] }}>
+        <Text variant="label-13" color="text-secondary" style={{ fontVariant: ["tabular-nums"] }}>
           {`Step ${index} of ${total}`}
         </Text>
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space["space-2"] }}>
@@ -90,7 +90,7 @@ export function StepCard({
         >
           <Icon name="alert" size={20} color="amber-900" />
           <View style={{ flex: 1 }}>
-            <Text variant="copy-16" color="amber-900">
+            <Text variant="copy-14" color="amber-900">
               {caution}
             </Text>
           </View>

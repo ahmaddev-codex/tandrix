@@ -25,10 +25,11 @@ import {
 } from "../generated/tokens";
 import {
   genericSourceLabel,
-  iconPaths,
+  iconPathsFor,
   sourceIcon,
   statusMeta,
   type IconName,
+  type IconWeight,
   type SourceKind,
   type StepStatus,
 } from "../shared";
@@ -43,7 +44,7 @@ export interface TextProps {
 }
 
 export function Text({
-  variant = "copy-16",
+  variant = "copy-14",
   color = "text",
   children,
   style,
@@ -64,26 +65,24 @@ export interface IconProps {
   name: IconName;
   size?: 16 | 20 | 24;
   color?: ColorToken;
+  /** Defaults to the design system's rule: solid (fill) below 20 px, outline at 20 px and up. */
+  weight?: IconWeight;
   label?: string;
 }
 
-export function Icon({ name, size = 16, color = "text", label }: IconProps) {
+export function Icon({ name, size = 16, color = "text", weight, label }: IconProps) {
   const t = useTheme();
   return (
     <Svg
       width={size}
       height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke={t.color[color]}
-      strokeWidth={1.5}
-      strokeLinecap="round"
-      strokeLinejoin="round"
+      viewBox="0 0 256 256"
+      fill={t.color[color]}
       accessible={!!label}
       accessibilityLabel={label}
     >
-      {iconPaths[name].map((d) => (
-        <Path key={d} d={d} />
+      {iconPathsFor(name, size, weight).map((p) => (
+        <Path key={p.d} d={p.d} {...(p.o !== undefined ? { opacity: p.o } : {})} />
       ))}
     </Svg>
   );
@@ -136,7 +135,7 @@ export function Button({
         : sizes["control-md"];
   const fg: ColorToken = disabled ? "gray-700" : c.fg;
   const label: TextStyleName =
-    size === "field" ? "button-18" : size === "lg" ? "button-16" : "button-14";
+    size === "field" ? "button-15" : size === "lg" ? "button-14" : "button-13";
   return (
     <Pressable
       accessibilityRole="button"
@@ -216,7 +215,7 @@ export function StatusChip({ status, children }: StatusChipProps) {
       }}
     >
       <Icon name={meta.icon} color={c.fg} />
-      <Text variant="label-14" color={c.fg}>
+      <Text variant="label-13" color={c.fg}>
         {children ?? meta.label}
       </Text>
     </View>
@@ -248,7 +247,7 @@ export function SourceChip({ kind = "manual", children }: SourceChipProps) {
       }}
     >
       <Icon name={sourceIcon[kind]} color={fg} />
-      <Text variant="mono-13" color={fg}>
+      <Text variant="mono-12" color={fg}>
         {children ?? (generic ? genericSourceLabel : "")}
       </Text>
     </View>
@@ -302,7 +301,7 @@ export function Input({
       : t.color["border-control"];
   return (
     <View style={{ gap: 6 }}>
-      <Text variant="label-16">{label}</Text>
+      <Text variant="label-14">{label}</Text>
       <View
         style={{
           flexDirection: "row",
@@ -325,12 +324,12 @@ export function Input({
           onBlur={() => setFocused(false)}
           placeholderTextColor={t.color["gray-700"]}
           style={[
-            nativeTextStyle(mono ? "mono-16" : "field-body"),
+            nativeTextStyle(mono ? "mono-13" : "field-body"),
             { flex: 1, color: editable ? t.color.text : t.color["gray-700"] },
           ]}
         />
         {suffix ? (
-          <Text variant="mono-14" color="text-secondary">
+          <Text variant="mono-12" color="text-secondary">
             {suffix}
           </Text>
         ) : null}
@@ -338,7 +337,7 @@ export function Input({
       {message ? (
         <View style={{ flexDirection: "row", gap: 6, alignItems: "center" }}>
           {error ? <Icon name="alert" color="red-900" /> : null}
-          <Text variant="copy-14" color={error ? "red-900" : "text-secondary"}>
+          <Text variant="copy-13" color={error ? "red-900" : "text-secondary"}>
             {message}
           </Text>
         </View>
@@ -419,7 +418,7 @@ export function CaptureView({
             <View
               style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: t.color["red-700"] }}
             />
-            <RNText style={[nativeTextStyle("label-13"), overlayText]}>
+            <RNText style={[nativeTextStyle("label-12"), overlayText]}>
               {source === "glasses" ? "Glasses camera on" : "Camera on"}
             </RNText>
           </View>

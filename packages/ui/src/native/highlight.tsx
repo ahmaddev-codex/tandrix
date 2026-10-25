@@ -254,14 +254,14 @@ function Label({
       <RNText numberOfLines={1} style={[nativeTextStyle("field-caption"), ink]}>
         {target.label}
         {target.partNumber ? (
-          <RNText style={[nativeTextStyle("mono-13"), ink, { opacity: 0.8 }]}>
+          <RNText style={[nativeTextStyle("mono-12"), ink, { opacity: 0.8 }]}>
             {"  "}
             {target.partNumber}
           </RNText>
         ) : null}
       </RNText>
       {target.possible ? (
-        <RNText style={[nativeTextStyle("label-13"), { color: t.color["overlay-warn"] }]}>
+        <RNText style={[nativeTextStyle("label-12"), { color: t.color["overlay-warn"] }]}>
           Possible match
         </RNText>
       ) : null}
@@ -302,7 +302,7 @@ export function HighlightCorrection({
         boxShadow: t.shadow["shadow-md"],
       }}
     >
-      <Text variant="heading-16" style={{ marginBottom: space["space-1"] }}>
+      <Text variant="heading-14" style={{ marginBottom: space["space-1"] }}>
         {`This looks like the ${name}. Is that right?`}
       </Text>
       <Button variant="primary" size="lg" block onPress={onConfirm} testID="confirm-highlight">

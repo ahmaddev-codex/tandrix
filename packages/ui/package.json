@@ -11,9 +11,10 @@
     "./native": "./src/native/index.ts"
   },
   "scripts": {
-    "build": "tsx scripts/build-tokens.ts",
-    "tokens:check": "tsx scripts/build-tokens.ts --check",
-    "typecheck": "tsc -p tsconfig.web.json && tsc -p tsconfig.native.json"
+    "build": "tsx scripts/build-tokens.ts && tsx scripts/build-icons.ts",
+    "tokens:check": "tsx scripts/build-tokens.ts --check && tsx scripts/build-icons.ts --check",
+    "typecheck": "tsc -p tsconfig.web.json && tsc -p tsconfig.native.json",
+    "build:icons": "tsx scripts/build-icons.ts"
   },
   "peerDependencies": {
     "react": "^19.3.0",
@@ -33,6 +34,7 @@
     }
   },
   "devDependencies": {
+    "@phosphor-icons/core": "2.1.1",
     "@testing-library/react": "^16.3.3",
     "@types/react": "19.3.0",
     "@types/react-dom": "^19.3.0",
