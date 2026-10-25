@@ -18,6 +18,7 @@ import { supabaseStepStateRepo } from "../../src/repos/step-state";
 import { noModelVoice } from "../../src/voice";
 import type { StepChecker } from "../../src/step-checker";
 import type { PartsChecker } from "../../src/parts-checker";
+import { noModelScreenGuide } from "../../src/screen-guide";
 import { supabasePartsChecksRepo } from "../../src/repos/parts-checks";
 import type { Transport } from "../../src/safe-fetch";
 
@@ -114,6 +115,7 @@ export const app = createApp({
   checker: stepChecker,
   partsChecks: supabasePartsChecksRepo(admin),
   partsChecker,
+  screenGuide: noModelScreenGuide,
   tokenSecret: config.tokenSigningSecret,
   manualFetch: { resolve: (h) => web.resolve(h), transport: web.transport },
   corsOrigins: [],

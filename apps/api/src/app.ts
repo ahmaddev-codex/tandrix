@@ -25,7 +25,9 @@ import { evidenceRoutes } from "./routes/evidence";
 import { jobsRoutes } from "./routes/jobs";
 import { manualRoutes } from "./routes/manual";
 import { procedureRoutes } from "./routes/procedure";
+import { screenRoutes } from "./routes/screen";
 import { detectionRoutes, stepRoutes } from "./routes/steps";
+import type { ScreenGuide } from "./screen-guide";
 
 export interface AppDeps {
   verifyToken: VerifyToken;
@@ -47,6 +49,7 @@ export interface AppDeps {
   checker: StepChecker;
   partsChecks: PartsChecksRepo;
   partsChecker: PartsChecker;
+  screenGuide: ScreenGuide;
   /** Signs manual search candidates (TOKEN_SIGNING_SECRET). */
   tokenSecret: string;
   /** Tests only: swap DNS and transport for the manual download. */
@@ -164,6 +167,17 @@ export function createApp(deps: AppDeps) {
     }),
   );
   app.route("/jobs/:id/detections", detectionRoutes(stepDeps));
+  app.route(
+    "/jobs/:id/screen",
+    screenRoutes({
+      jobs: deps.jobs,
+      assets: deps.assets,
+      procedures: deps.procedures,
+      evidence: deps.evidence,
+      storage: deps.storage,
+      guide: deps.screenGuide,
+    }),
+  );
   app.route(
     "/jobs",
     jobsRoutes(

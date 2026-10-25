@@ -1,4 +1,5 @@
 // In-memory evidence repo and storage for unit tests.
+import { noModelScreenGuide } from "../src/screen-guide";
 import type {
   PartsCheck,
   CheckResult,
@@ -243,6 +244,7 @@ export const noManuals = () => ({
   checker: noModelChecker,
   partsChecks: memoryPartsChecks(),
   partsChecker: noModelPartsChecker,
+  screenGuide: noModelScreenGuide,
 });
 
 /** Stores saved procedures as details; `saves` records what the route asked to save. */
