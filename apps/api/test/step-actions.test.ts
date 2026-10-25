@@ -6,6 +6,7 @@ import {
 } from "@tandrix/contracts";
 import { describe, expect, it } from "vitest";
 import { createApp } from "../src/app";
+import { actionTime } from "../src/routes/steps";
 import type { JobsRepo } from "../src/repos/jobs";
 import {
   memoryAssets,
@@ -249,5 +250,24 @@ describe("finishing steps", () => {
   it("hides other users' steps", async () => {
     const s = await setup();
     expect((await s.act(1, { action: "start" }, "b")).res.status).toBe(404);
+  });
+});
+
+describe("actions replayed from the offline queue", () => {
+  it("keep when they happened, within a day and never in the future", () => {
+    const now = Date.UTC(2026, 9, 26, 12);
+    expect(actionTime("2026-10-26T11:30:00.000Z", now)).toBe("2026-10-26T11:30:00.000Z");
+    expect(actionTime("2026-10-26T13:00:00.000Z", now)).toBe("2026-10-26T12:00:00.000Z");
+    expect(actionTime("2026-10-24T11:00:00.000Z", now)).toBe("2026-10-26T12:00:00.000Z");
+    expect(actionTime(undefined, now)).toBe("2026-10-26T12:00:00.000Z");
+  });
+
+  it("start a step at the time it was started offline", async () => {
+    const s = await setup();
+    const r = await s.act(3, { action: "start", occurredAt: "2026-10-26T09:59:30.000Z" });
+    expect(r.body).toMatchObject({
+      status: "applied",
+      step: { startedAt: "2026-10-26T09:59:30.000Z" },
+    });
   });
 });

@@ -35,6 +35,17 @@ import type { AssetsRepo } from "../repos/assets";
 import type { StepAnswerer } from "../voice";
 import type { StepChecker } from "../step-checker";
 
+/** Offline actions may be replayed up to a day later. */
+export const MAX_ACTION_AGE_MS = 24 * 60 * 60 * 1000;
+
+/** The action's time: the client's, when plausible (not future, under a day old), else now. */
+export function actionTime(occurredAt: string | undefined, nowMs: number): string {
+  const t = occurredAt ? Date.parse(occurredAt) : NaN;
+  return new Date(
+    Number.isFinite(t) && t <= nowMs && nowMs - t <= MAX_ACTION_AGE_MS ? t : nowMs,
+  ).toISOString();
+}
+
 /** The design system highlights at most three parts at once. */
 export const MAX_HIGHLIGHTS = 3;
 
@@ -227,7 +238,8 @@ export function stepRoutes(d: StepDeps) {
       }
 
       const confirmations = await forStep();
-      const at = new Date(now()).toISOString();
+      // An action replayed from the offline queue keeps when it happened, within limits.
+      const at = actionTime(action.occurredAt, now());
       const event: StepEvent =
         action.action === "start"
           ? { type: "start", at }
