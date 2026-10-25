@@ -99,3 +99,26 @@ input {
   font-size: 12px;
   white-space: nowrap;
 }
+
+/* Sign in with the phone */
+.pair {
+  justify-items: center;
+}
+.pair-qr {
+  padding: var(--space-3);
+  border-radius: var(--radius-lg);
+  background: var(--background-100);
+  box-shadow: var(--shadow-sm);
+}
+.pair-qr svg {
+  display: block;
+  width: 200px;
+  height: 200px;
+  fill: var(--text);
+}
+.pair-code {
+  justify-items: center;
+}
+.pair-code-text {
+  letter-spacing: 0.08em;
+}

@@ -10,6 +10,7 @@ export const channels = {
   screenSettings: "screen:settings",
   screenCapture: "screen:capture",
   panelShow: "panel:show",
+  deviceName: "device:name",
   testPointer: "overlay:test-pointer",
   pointAt: "overlay:point-at",
   clearPointer: "overlay:clear",
@@ -56,6 +57,10 @@ export interface TandrixBridge {
      * fresh capture (with the panel put away first).
      */
     capture(): Promise<ScreenCapture>;
+  };
+  device: {
+    /** This Mac's name as people know it ("Ahmad's MacBook Pro"), shown when pairing. */
+    name(): Promise<string>;
   };
   panel: {
     /** Brings the panel back, e.g. after it was put away for a screenshot. */

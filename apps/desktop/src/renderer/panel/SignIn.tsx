@@ -1,14 +1,15 @@
 import { Button, Input } from "@tandrix/ui/web";
 import { useState, type FormEvent } from "react";
 import { useAuth } from "../lib/auth";
+import { PairWithPhone } from "./PairWithPhone";
 
-type Step = "email" | "code" | "password";
+type Step = "phone" | "email" | "code" | "password";
 
 const looksLikeEmail = (s: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s.trim());
 
 export function SignIn() {
   const auth = useAuth();
-  const [step, setStep] = useState<Step>("email");
+  const [step, setStep] = useState<Step>("phone");
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [password, setPassword] = useState("");
@@ -51,13 +52,24 @@ export function SignIn() {
       <header className="panel-stack-2">
         <h1 className="heading-24">Tandrix</h1>
         <p className="copy-14 panel-muted">
-          {step === "code"
-            ? `We sent a 6-digit code to ${email.trim()}.`
-            : step === "password"
-              ? "Local test sign-in."
-              : "Sign in with your email. We'll send you a code."}
+          {step === "phone"
+            ? "Scan this with your phone's camera, or open Tandrix on your phone and choose Sign in a Mac."
+            : step === "code"
+              ? `We sent a 6-digit code to ${email.trim()}.`
+              : step === "password"
+                ? "Local test sign-in."
+                : "Sign in with your email. We'll send you a code."}
         </p>
       </header>
+
+      {step === "phone" ? (
+        <div className="panel-stack-4">
+          <PairWithPhone />
+          <Button variant="tertiary" onClick={goTo("email")}>
+            Sign in with email instead
+          </Button>
+        </div>
+      ) : null}
 
       {step === "email" ? (
         <form className="panel-stack-4" onSubmit={submit(sendCode)} noValidate>
@@ -73,6 +85,9 @@ export function SignIn() {
           />
           <Button type="submit" variant="primary" block disabled={busy}>
             {busy ? "Sending…" : "Send code"}
+          </Button>
+          <Button variant="tertiary" onClick={goTo("phone")}>
+            Sign in with your phone instead
           </Button>
           {auth.signInWithPassword ? (
             <Button variant="tertiary" onClick={goTo("password")}>

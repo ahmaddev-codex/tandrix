@@ -1,4 +1,6 @@
 // Tandrix for Mac: a menu-bar panel plus a pointer overlay on every display.
+import { execFileSync } from "node:child_process";
+import os from "node:os";
 import {
   app,
   BrowserWindow,
@@ -49,6 +51,23 @@ const flag = (a: unknown[]): a is [boolean] => a.length === 1 && typeof a[0] ===
 /** Checked in detail by the handler itself. */
 const three = (a: unknown[]): a is [unknown, unknown, unknown] => a.length === 3;
 
+/** The name set in System Settings > General > About, else the host name tidied up. */
+function deviceName(): string {
+  let name = "";
+  if (process.platform === "darwin") {
+    try {
+      name = execFileSync("scutil", ["--get", "ComputerName"], { encoding: "utf8" }).trim();
+    } catch {
+      // Fall back to the host name below.
+    }
+  }
+  name ||= os
+    .hostname()
+    .replace(/\.local$/, "")
+    .replace(/-/g, " ");
+  return name.trim().slice(0, 80) || "Mac";
+}
+
 async function micAccess(): Promise<boolean> {
   if (process.platform !== "darwin") return true;
   if (systemPreferences.getMediaAccessStatus("microphone") === "granted") return true;
@@ -88,6 +107,7 @@ function registerIpc() {
   handle(channels.screenCapture, captureForQuestion, none);
   handle(channels.pointAt, pointAtCapture, three);
   handle(channels.clearPointer, clearPointer, none);
+  handle(channels.deviceName, deviceName, none);
   handle(channels.panelShow, () => tray && showPanel(tray.getBounds()), none);
   handle(channels.micAccess, micAccess, none);
   handle(channels.listening, setListening, flag);
