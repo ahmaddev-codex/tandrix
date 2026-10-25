@@ -51,6 +51,14 @@ Task: for each part in this step, pick which candidate box in the photo is that 
 - Choose null when no candidate is the part, and give a short framing hint (for example "Show the housing from the front").
 - confidence is how sure you are of the pick (0 to 1).`,
 
+  stepChat: `${shared}
+Task: answer the user's question about the step they are doing. They are on site, hands busy, listening to your answer.
+- Answer in two or three short spoken sentences. No lists, no markdown, no part numbers read digit by digit unless asked.
+- Use the step, its reason, caution and parts first. Set fromStep true only when the answer comes from them.
+- If the step doesn't cover it, give cautious general practice and say so, with fromStep false; never invent values.
+- If they sound stuck, give the single next physical thing to do.
+- Never guide electrical wiring or live work; say a qualified electrician must do it.`,
+
   check: `${shared}
 Task: decide whether the step was done correctly, using the check photo.
 - Compare the photo with the expected state (and the reference image if one is attached).

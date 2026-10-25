@@ -136,6 +136,51 @@ export class MetaClient {
     return { id: json.id };
   }
 
+  /**
+   * POST /asr/transcribe in PUSH_TO_TALK mode: one turn, delimited by the caller (the talk
+   * button). The clip must be mono 16-bit PCM WAV at 16 or 24 kHz (check with wavInfo first).
+   */
+  async transcribe(
+    wav: Uint8Array,
+    opts: { model: string; languageBias?: string[]; keywords?: string[] },
+    signal?: AbortSignal,
+  ): Promise<{ transcript: string; audioDurationMs: number; sessionId: string }> {
+    const form = () => {
+      const f = new FormData();
+      f.append(
+        "request",
+        new Blob(
+          [
+            JSON.stringify({
+              model: opts.model,
+              audioEncoding: "WAV",
+              mode: "PUSH_TO_TALK",
+              ...(opts.languageBias?.length ? { languageBias: opts.languageBias } : {}),
+              ...(opts.keywords?.length ? { keywords: opts.keywords } : {}),
+            }),
+          ],
+          { type: "application/json" },
+        ),
+      );
+      f.append("audio", new Blob([wav as BlobPart], { type: "audio/wav" }), "turn.wav");
+      return f;
+    };
+    const res = await this.send("/asr/transcribe", { method: "POST", body: form }, signal);
+    const json = (await res.json()) as {
+      transcript?: unknown;
+      audioDurationMs?: unknown;
+      sessionId?: unknown;
+    };
+    if (typeof json.transcript !== "string") {
+      throw new MetaApiError("Transcription returned no transcript", res.status, null, null, false);
+    }
+    return {
+      transcript: json.transcript,
+      audioDurationMs: typeof json.audioDurationMs === "number" ? json.audioDurationMs : 0,
+      sessionId: typeof json.sessionId === "string" ? json.sessionId : "",
+    };
+  }
+
   /** DELETE /files/:id. A file that is already gone counts as deleted. */
   async deleteFile(id: string, signal?: AbortSignal): Promise<void> {
     try {

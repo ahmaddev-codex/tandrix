@@ -292,3 +292,52 @@ export const CorrectDetectionRequest = z.discriminatedUnion("verdict", [
   z.strictObject({ verdict: z.literal("other_part"), partSpecId: Id }),
 ]);
 export type CorrectDetectionRequest = z.infer<typeof CorrectDetectionRequest>;
+
+/** A spoken command on a step (@tandrix/core parseVoiceCommand). */
+export const VoiceCommand = z.discriminatedUnion("kind", [
+  z.strictObject({ kind: z.literal("next") }),
+  z.strictObject({ kind: z.literal("previous") }),
+  z.strictObject({ kind: z.literal("repeat") }),
+  z.strictObject({ kind: z.literal("show") }),
+  z.strictObject({ kind: z.literal("stuck"), detail: z.string().max(200).optional() }),
+  z.strictObject({ kind: z.literal("skip"), reason: z.string().max(400).optional() }),
+  z.strictObject({ kind: z.literal("stop") }),
+  z.strictObject({ kind: z.literal("start") }),
+  z.strictObject({ kind: z.literal("done") }),
+]);
+export type VoiceCommand = z.infer<typeof VoiceCommand>;
+
+/** POST /voice/transcribe (multipart: `audio` WAV, optional `keywords` JSON array). */
+export const TranscribeResponse = z.discriminatedUnion("status", [
+  z.strictObject({
+    status: z.literal("heard"),
+    transcript: text(2000),
+    durationMs: z.number().int().min(0),
+  }),
+  /** Nothing intelligible: ask the user to try again. */
+  z.strictObject({ status: z.literal("unclear"), message: text(300) }),
+  z.strictObject({ status: z.literal("unavailable"), message: text(300) }),
+]);
+export type TranscribeResponse = z.infer<typeof TranscribeResponse>;
+
+/** POST /jobs/:id/steps/:stepId/ask: what the user said or typed on a step. */
+export const AskStepRequest = z.strictObject({
+  text: text(1000),
+  /** From the "I'm stuck" command: ask for the next physical thing to do. */
+  stuck: z.boolean().default(false),
+});
+
+export const AskStepResponse = z.discriminatedUnion("status", [
+  /** A command the app carries out (next, repeat, start…). */
+  z.strictObject({ status: z.literal("command"), command: VoiceCommand }),
+  z.strictObject({
+    status: z.literal("answer"),
+    answer: text(600),
+    /** From the step and its manual (true) or general practice (false). */
+    fromStep: z.boolean(),
+  }),
+  /** Work Tandrix won't guide (wiring, live work): the reason, said plainly. */
+  z.strictObject({ status: z.literal("refused"), message: text(300) }),
+  z.strictObject({ status: z.literal("unavailable"), message: text(300) }),
+]);
+export type AskStepResponse = z.infer<typeof AskStepResponse>;

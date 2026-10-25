@@ -6,3 +6,4 @@ export * from "./prompts";
 export * from "./pipelines";
 export * from "./manual";
 export * from "./config";
+export * from "./audio";

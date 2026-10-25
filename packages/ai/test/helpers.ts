@@ -102,3 +102,51 @@ export const DOC_SAM_LINE =
   "<0f>0<|box;x1=211;y1=228;x2=270;y2=254;w=320;h=334|><|mask;x=0;y=0;data=27,60,~!!!!M!0c[0o91w?q1!pIH4pPRVp2B3'7`e.ioeAf6-k/#Xd8%dX9x(|>,1<|box;x1=155;y1=228;x2=202;y2=254;w=320;h=334|><|mask;x=0;y=0;data=27,48,~!!!!J!0c[q=Pj_zs=*4C4(/./x#:/`S_GnD`=o3?X{emCgO$y@|>";
 
 export const noSleep = async () => {};
+
+/** A real PCM WAV: `ms` of silence, with an extra chunk before data the way iOS writes one. */
+export function makeWav(
+  opts: {
+    ms?: number;
+    sampleRate?: number;
+    channels?: number;
+    bits?: number;
+    format?: number;
+    extraChunk?: boolean;
+  } = {},
+): Uint8Array {
+  const {
+    ms = 500,
+    sampleRate = 16000,
+    channels = 1,
+    bits = 16,
+    format = 1,
+    extraChunk = true,
+  } = opts;
+  const blockAlign = (channels * bits) / 8;
+  const dataBytes = Math.round((sampleRate * ms) / 1000) * blockAlign;
+  const extra = extraChunk ? 8 + 4 : 0;
+  const buf = new ArrayBuffer(44 + extra + dataBytes);
+  const v = new DataView(buf);
+  const str = (at: number, s: string) =>
+    [...s].forEach((c, i) => v.setUint8(at + i, c.charCodeAt(0)));
+  str(0, "RIFF");
+  v.setUint32(4, 36 + extra + dataBytes, true);
+  str(8, "WAVE");
+  str(12, "fmt ");
+  v.setUint32(16, 16, true);
+  v.setUint16(20, format, true);
+  v.setUint16(22, channels, true);
+  v.setUint32(24, sampleRate, true);
+  v.setUint32(28, sampleRate * blockAlign, true);
+  v.setUint16(32, blockAlign, true);
+  v.setUint16(34, bits, true);
+  let at = 36;
+  if (extraChunk) {
+    str(at, "FLLR");
+    v.setUint32(at + 4, 4, true);
+    at += 12;
+  }
+  str(at, "data");
+  v.setUint32(at + 4, dataBytes, true);
+  return new Uint8Array(buf);
+}

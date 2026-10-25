@@ -103,6 +103,16 @@ export const HighlightPick = z.strictObject({
 });
 export type HighlightPick = z.infer<typeof HighlightPick>;
 
+/** A spoken or typed question about the current step, answered in its context. */
+export const StepAnswer = z.strictObject({
+  /** Two or three short sentences, read aloud. */
+  answer: text(600),
+  /** True when the answer comes from the step and its manual; false for general knowledge. */
+  fromStep: z.boolean(),
+  confidence: Confidence,
+});
+export type StepAnswer = z.infer<typeof StepAnswer>;
+
 export const StepCheckOutput = z.strictObject({
   result: CheckResult,
   reason: text(600),

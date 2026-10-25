@@ -5,6 +5,7 @@ import {
   NameplateReading,
   PartsAssignment,
   ProcedureDraft,
+  StepAnswer,
   StepCheckOutput,
 } from "@tandrix/contracts";
 import type { MetaClient } from "./client";
@@ -59,6 +60,52 @@ export function generateProcedure(client: MetaClient, models: Models, req: Proce
     ],
     effort: req.effort ?? "medium",
     ...(req.signal ? { signal: req.signal } : {}),
+  });
+}
+
+export interface StepQuestion {
+  step: {
+    title: string;
+    instruction: string;
+    reason?: string;
+    caution?: string;
+    parts: string[];
+    hazards: string[];
+  };
+  equipment?: string;
+  question: string;
+  /** "I'm stuck": ask for the next physical thing to do. */
+  stuck?: boolean;
+  signal?: AbortSignal;
+}
+
+export function answerStepQuestion(client: MetaClient, models: Models, q: StepQuestion) {
+  const s = q.step;
+  const context = [
+    q.equipment ? `Equipment: ${q.equipment}` : "",
+    `Step: ${s.title}`,
+    `Instruction: ${s.instruction}`,
+    s.reason ? `Why: ${s.reason}` : "",
+    s.caution ? `Caution: ${s.caution}` : "",
+    s.parts.length ? `Parts: ${s.parts.join(", ")}` : "",
+    s.hazards.length ? `Hazards: ${s.hazards.join(", ")}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
+  return generateStructured(client, {
+    model: models.reasoning,
+    name: "step_answer",
+    schema: StepAnswer,
+    instructions: prompts.stepChat,
+    input: [
+      user(
+        text(
+          `${context}\n\n${q.stuck ? "The user says they are stuck." : "The user asks:"} ${q.question}`,
+        ),
+      ),
+    ],
+    effort: "low",
+    ...(q.signal ? { signal: q.signal } : {}),
   });
 }
 
