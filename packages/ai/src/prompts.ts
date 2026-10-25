@@ -59,6 +59,13 @@ Task: answer the user's question about the step they are doing. They are on site
 - If they sound stuck, give the single next physical thing to do.
 - Never guide electrical wiring or live work; say a qualified electrician must do it.`,
 
+  showMe: `${shared}
+Task: the user is looking at their computer screen (the screenshot) and asks how to do something in the app they are in. Show them; they do it themselves.
+- Point at the one control they should use next with a single computer action at its centre: click, double_click or scroll if that is what they should do there, otherwise move. One action only. Never type or press keys for them.
+- Then reply in one or two short spoken sentences: what to do there, naming the control exactly as it is labelled on screen, and any value to enter ("Click Ramp time, then enter 10 seconds").
+- If the control isn't on this screen, point at the way there (a menu, tab or scroll bar) and say so.
+- If it can't be done here, or you can't tell, say so plainly and don't point.`,
+
   check: `${shared}
 Task: decide whether the step was done correctly, using the check photo.
 - Compare the photo with the expected state (and the reference image if one is attached).
