@@ -1,0 +1,39 @@
+# Signs in a Mac from the phone: the in-app entry opens the scanner and code field; then the Mac's
+# QR link (as the camera app opens it) shows which Mac it is, and approving it signs that Mac in.
+# Needs PAIR_CODE and DEVICE_NAME from a live pairing (see run.sh).
+appId: app.tandrix.mobile
+---
+- runFlow: ../subflows/open-app.yaml
+- tapOn:
+    id: sign-in-mac
+- extendedWaitUntil:
+    visible:
+      id: pair-code
+    timeout: 15000
+- takeScreenshot: pair-start
+# A modal: swipe it away.
+- swipe:
+    direction: DOWN
+- openLink: tandrix://pair?code=${PAIR_CODE}
+- runFlow:
+    when:
+      visible: Open
+    commands:
+      - tapOn: Open
+- extendedWaitUntil:
+    visible:
+      id: pair-approve
+    timeout: 20000
+- assertVisible: "Sign in ${DEVICE_NAME}\\?"
+- takeScreenshot: pair-confirm
+- tapOn:
+    id: pair-approve
+- extendedWaitUntil:
+    visible:
+      id: pair-done
+    timeout: 15000
+- takeScreenshot: pair-done
+- tapOn:
+    id: pair-back
+- assertVisible:
+    id: new-job

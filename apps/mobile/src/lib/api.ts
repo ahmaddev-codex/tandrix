@@ -25,6 +25,8 @@ import {
   Evidence,
   EvidenceWithUrl,
   Job,
+  PairingApproveResponse,
+  PairingLookupResponse,
   type Surface,
 } from "@tandrix/contracts";
 import { z } from "zod";
@@ -83,6 +85,17 @@ async function request<T>(
 }
 
 export const api = {
+  /** What a Mac's sign-in code would sign in, before approving it. */
+  lookupPairing: (code: string) =>
+    request("/pairing/lookup", PairingLookupResponse, {
+      method: "POST",
+      body: JSON.stringify({ code }),
+    }),
+  approvePairing: (code: string) =>
+    request("/pairing/approve", PairingApproveResponse, {
+      method: "POST",
+      body: JSON.stringify({ code }),
+    }),
   listJobs: () => request("/jobs", z.object({ jobs: z.array(Job) })).then((r) => r.jobs),
   getJob: (id: string) => request(`/jobs/${id}`, JobDetailResponse),
   identifyAsset: (jobId: string, evidenceId: string) =>

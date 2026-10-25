@@ -19,6 +19,7 @@ export default function AppLayout() {
     >
       <Stack.Screen name="index" options={{ title: "Jobs" }} />
       <Stack.Screen name="new-job" options={{ title: "New job", presentation: "modal" }} />
+      <Stack.Screen name="pair" options={{ title: "Sign in a Mac", presentation: "modal" }} />
       <Stack.Screen name="job/[id]/index" options={{ title: "Job" }} />
       <Stack.Screen name="job/[id]/identify" options={{ title: "Equipment" }} />
       <Stack.Screen

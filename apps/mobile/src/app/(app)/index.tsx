@@ -59,6 +59,16 @@ export default function Jobs() {
                   </Button>
                 </Link>
               ) : null}
+              <Link href="/pair" asChild>
+                <Button
+                  variant="tertiary"
+                  size="md"
+                  icon="laptop"
+                  iconOnly
+                  accessibilityLabel="Sign in a Mac"
+                  testID="sign-in-mac"
+                />
+              </Link>
               <Button variant="tertiary" size="md" onPress={signOut} testID="sign-out">
                 Sign out
               </Button>
