@@ -45,7 +45,7 @@ Tracks: **D** design, **A** mobile & glasses, **B** API & AI, **C** desktop (mac
 
 ## Phase 4 — Continuity (31 Oct)
 - [x] T21 Desktop pairing by QR (C): the Mac's live code approved on the simulator signs the panel in; pair-mac e2e passes; scanning with a physical iPhone is a manual check
-- [ ] T22 Handoff between devices (all)
+- [x] T22 Handoff between devices (A + C): phone → Mac and Mac → phone live on the simulator and this Mac; 5/5 handoffs under 0.6 s locally; handoff e2e passes; hosted latency at T32
 - [ ] T23 Job report and share link (B)
 - [ ] **Checkpoint 6:** full spine twice; human review
 

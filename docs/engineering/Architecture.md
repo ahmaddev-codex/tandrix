@@ -130,7 +130,7 @@ All routes authenticated (Supabase JWT), Zod-validated, and scoped to the owner.
 | `/pairing` | POST | Signed out (the Mac): `{deviceName}` → an 8-character code (Crockford base32, 40 bits) for the QR, a poll token only the Mac keeps, and the expiry (2 min) |
 | `/pairing/lookup`, `/pairing/approve` | POST | Signed in (the phone): `{code}` → which Mac it is; approving ties the pairing to the user, once |
 | `/pairing/:id` | GET | The Mac, with `X-Pairing-Token`: `pending`, `expired` (also once used), or `approved` with a one-time sign-in token hash, minted by the admin API (`generateLink` magic link, no email sent) and exchanged by the Mac with `verifyOtp`; the pairing is used up as it's handed over |
-| `/jobs/:id/handoff` | POST | Set active surface; realtime notifies devices |
+| `/jobs/:id/handoff` | POST | `{to, stepId?}`: sets the job's active device and current step and records a `handoff` event (who sent it, to where, which step) in one transaction (`hand_off_job`). The Mac hears the event over Realtime; both apps hear job and step changes |
 | `/jobs/:id/report` | GET | Report JSON; `/r/:token` serves the web page |
 | `/voice/transcribe` | POST | One push-to-talk turn (multipart WAV, mono 16-bit, 16 or 24 kHz, under a minute; optional keywords) → Muse Voice Transcribe file endpoint in `PUSH_TO_TALK` mode. The WAV is checked before any model call; a tap without speech is `unclear` without one. Key stays server-side |
 | `/jobs/:id/steps/:stepId/ask` | POST | What was said or typed on a step: wiring and live work refused first (`core.refusalForRequest`), then commands (`core.parseVoiceCommand`: next, back, repeat, show me again, start, done, skip [because …], stop) returned for the app to carry out, then questions answered by Spark in the step's context |
@@ -229,7 +229,7 @@ Before saving, `normalizeDraft` (@tandrix/core) renumbers steps, drops unknown p
 - Sign-in: Supabase email code as on the phone; the session is stored by the main process, encrypted with `safeStorage` (Keychain key), never in `localStorage`.
 - Hotkey: ⌃⌥Space via `globalShortcut`, which reports presses but not releases, so it is tap to listen and tap again to ask; Esc (taken only while listening) cancels. The panel's mic button is hold to talk. The panel records 16 kHz mono WAV with an AudioWorklet (`/voice/transcribe`, as on the phone) and speaks replies with the Web Speech API. Pages get the microphone only (no camera or other permissions), and only Tandrix's own windows.
 - Capture: `desktopCapturer`; macOS Screen Recording permission flow.
-- Subscribes to job realtime for handoff.
+- Realtime (Supabase, RLS applies): the panel listens for new `handoff` events sent to the desktop (not for `jobs.active_surface`, which also changes when the Mac starts a step) and opens the job, posts a macOS notification ("{Job}: step N is ready", click opens the panel) and shows the incoming `HandoffBanner` until the step is opened or finished. Both apps reload the open job on `jobs`/`job_steps` changes (bursts folded, and once on subscribe to catch up). The phone offers "Continue on Mac" on steps done on a computer (they have no phone primary action) and shows "Waiting on your Mac" on the step and the job until the user takes it back. Realtime reports SUBSCRIBED slightly before its change feed is live; the catch-up reload covers that gap.
 
 ## 8. Security and privacy
 

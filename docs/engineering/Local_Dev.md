@@ -116,6 +116,8 @@ Release builds come from EAS, never from this machine: Expo loads `.env.local` f
 
 Signing in a Mac from the phone is checked by `sh apps/mobile/e2e/pair-mac/run.sh`: the script plays the Mac (asks the API for a code), the flow opens the Mac's link on the phone, checks the Mac's name and approves it, and the script then checks the Mac's poll gets its sign-in.
 
+Handoff is checked by `sh apps/mobile/e2e/handoff/run.sh`: `handoff/mac.mjs` creates a job with the fixture steps and later plays the Mac through the API; the phone opens step 5 and taps Continue on Mac; the Mac starts and checks it; the phone's open step turns Verified without a refresh.
+
 Going offline mid-job is checked by `sh apps/mobile/e2e/offline/run.sh`: it opens a step, stops the local API, starts the step (kept, shown as Pending, the job says it's offline), restarts the API with `dev:fixtures`, and waits for the queued start to be sent.
 
 ## Mac app
