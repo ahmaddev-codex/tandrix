@@ -10,7 +10,7 @@ import type {
   PartSpec,
   ProcedureStep,
 } from "@tandrix/contracts";
-import { space } from "@tandrix/ui";
+import { citationLabel, space, stepChip } from "@tandrix/ui";
 import {
   Button,
   CaptureView,
@@ -34,7 +34,6 @@ import { api } from "@/lib/api";
 import { isOffline, keepPhoto, loadJob, offlineQueue } from "@/offline";
 import { preparePhoto, uploadPhoto, type PreparedPhoto } from "@/lib/evidence";
 import { useStepWork } from "@/components/step-work";
-import { citationLabel, stepChip } from "@/lib/steps";
 
 type Phase = "live" | "preview" | "analyzing" | "result";
 

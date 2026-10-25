@@ -1,6 +1,6 @@
 // How job steps read on screen: status chip and source chip text, per the design system.
 import type { Citation, JobStepStatus } from "@tandrix/contracts";
-import type { StepStatus } from "@tandrix/ui";
+import type { StepStatus } from "./shared";
 
 /** The design system's chip for each job step status. "Verified" is only ever from a check. */
 export const stepChip: Record<JobStepStatus, { status: StepStatus; label?: string }> = {

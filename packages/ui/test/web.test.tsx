@@ -10,8 +10,10 @@ import {
   Input,
   JobReport,
   ModeToggle,
+  Notice,
   SourceChip,
   StatusChip,
+  StepRow,
   Tabs,
   Toggle,
 } from "../src/web";
@@ -147,5 +149,29 @@ describe("JobReport", () => {
   it("always carries the certification footnote", () => {
     render(<JobReport title="Pump P-100 assembly" counts={{ verified: 9 }} steps={[]} />);
     expect(screen.getByText(/does not certify the installation/)).toBeTruthy();
+  });
+});
+
+describe("Notice", () => {
+  it("announces errors as alerts and everything else as status", () => {
+    render(<Notice tone="error">Couldn't sign in.</Notice>);
+    expect(screen.getByRole("alert").textContent).toContain("Couldn't sign in.");
+    cleanup();
+    render(<Notice tone="info">Read from the nameplate.</Notice>);
+    expect(screen.getByRole("status")).toBeTruthy();
+  });
+});
+
+describe("StepRow", () => {
+  it("carries status and source in its label", () => {
+    const onSelect = vi.fn();
+    render(
+      <StepRow index={2} title="Fit the mechanical seal" statusLabel="To do" onSelect={onSelect} />,
+    );
+    const row = screen.getByRole("button", {
+      name: "Step 2: Fit the mechanical seal, To do, Generic, not from the manufacturer",
+    });
+    fireEvent.click(row);
+    expect(onSelect).toHaveBeenCalledOnce();
   });
 });

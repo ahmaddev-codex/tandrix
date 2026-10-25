@@ -145,6 +145,9 @@ export interface InputProps {
   mono?: boolean;
   size?: "md" | "field";
   inputMode?: "text" | "decimal" | "numeric";
+  type?: "text" | "email" | "password";
+  autoComplete?: string;
+  autoFocus?: boolean;
   disabled?: boolean;
   onChange?: (value: string) => void;
 }
@@ -161,6 +164,9 @@ export function Input({
   mono,
   size = "md",
   inputMode,
+  type = "text",
+  autoComplete,
+  autoFocus,
   disabled,
   onChange,
 }: InputProps) {
@@ -181,6 +187,9 @@ export function Input({
           defaultValue={defaultValue}
           placeholder={placeholder}
           inputMode={inputMode}
+          type={type}
+          autoComplete={autoComplete}
+          autoFocus={autoFocus}
           disabled={disabled}
           aria-invalid={error ? true : undefined}
           aria-describedby={message ? hintId : undefined}

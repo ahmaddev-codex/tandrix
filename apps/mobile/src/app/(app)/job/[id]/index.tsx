@@ -7,7 +7,7 @@ import type {
   PartsCheck,
   ProcedureDetail,
 } from "@tandrix/contracts";
-import { radius, space } from "@tandrix/ui";
+import { citationLabel, radius, space, stepChip } from "@tandrix/ui";
 import {
   ActionCard,
   Button,
@@ -25,7 +25,6 @@ import { FlatList, Linking, RefreshControl, useWindowDimensions, View } from "re
 import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "@/lib/api";
 import { loadJob, offlineQueue, useOfflineStatus } from "@/offline";
-import { citationLabel, stepChip } from "@/lib/steps";
 
 const COLUMNS = 3;
 
