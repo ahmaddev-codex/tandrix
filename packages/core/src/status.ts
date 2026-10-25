@@ -5,6 +5,7 @@ import type {
   HazardTag,
   JobStepStatus,
   SafetyGate,
+  StepRejectionCode,
   Verification,
 } from "@tandrix/contracts";
 import { missingGates, refusalFor } from "./safety";
@@ -40,15 +41,8 @@ export type StepEvent =
   | { type: "unblock"; at: string }
   | { type: "reopen"; at: string };
 
-export type TransitionErrorCode =
-  | "invalid_transition"
-  | "refused"
-  | "safety_gate_required"
-  | "stale_evidence"
-  | "check_not_applicable"
-  | "confirmation_not_allowed"
-  | "measurement_required"
-  | "measurement_out_of_range";
+/** The rejection codes are part of the API contract. */
+export type TransitionErrorCode = StepRejectionCode;
 
 export type TransitionResult =
   | { ok: true; state: StepState }

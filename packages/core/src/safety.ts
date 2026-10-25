@@ -105,6 +105,14 @@ export function refusalFor(tags: readonly HazardTag[]): Refusal | null {
   return null;
 }
 
+/**
+ * A free-text request (a question to the assistant, a spoken command) that asks for work Tandrix
+ * won't guide. Checked before any model call, so the answer never depends on the model.
+ */
+export function refusalForRequest(text: string): Refusal | null {
+  return refusalFor(detectHazards(text));
+}
+
 /** Copy for each gate's SafetyGate panel. */
 export const gateCopy: Record<SafetyGate, { title: string; body: string; action: string }> = {
   isolate_power: {

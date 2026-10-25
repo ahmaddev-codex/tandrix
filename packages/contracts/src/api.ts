@@ -12,6 +12,7 @@ import {
   PartSpec,
   Procedure,
   ProcedureStep,
+  SafetyConfirmation,
   SafetyGate,
 } from "./entities";
 import { ManualSearchOutput, NameplateReading } from "./model-outputs";
@@ -126,6 +127,8 @@ export const JobDetailResponse = z.strictObject({
   /** The manual on file for this asset's model, if any. */
   manual: Manual.nullable(),
   procedure: ProcedureDetail.nullable(),
+  /** Safety gates confirmed on this job's steps. */
+  safetyConfirmations: z.array(SafetyConfirmation),
 });
 
 /** POST /jobs/:id/procedure. The task defaults to the job title. */
@@ -207,6 +210,36 @@ export const StepActionRequest = z.discriminatedUnion("action", [
   z.strictObject({ action: z.literal("reopen") }),
 ]);
 export type StepActionRequest = z.infer<typeof StepActionRequest>;
+
+/** Why the step rules (@tandrix/core transitionStep) turned an action down. */
+export const StepRejectionCode = z.enum([
+  "invalid_transition",
+  "refused",
+  "safety_gate_required",
+  "stale_evidence",
+  "check_not_applicable",
+  "confirmation_not_allowed",
+  "measurement_required",
+  "measurement_out_of_range",
+]);
+export type StepRejectionCode = z.infer<typeof StepRejectionCode>;
+
+/** POST /jobs/:id/steps/:stepId/actions. A rule saying no is an answer, not an error. */
+export const StepActionResponse = z.discriminatedUnion("status", [
+  z.strictObject({
+    status: z.literal("applied"),
+    step: JobStep,
+    confirmations: z.array(SafetyConfirmation),
+  }),
+  z.strictObject({
+    status: z.literal("rejected"),
+    code: StepRejectionCode,
+    message: text(300),
+    /** The gates still to confirm, for safety_gate_required. */
+    gates: z.array(SafetyGate).optional(),
+  }),
+]);
+export type StepActionResponse = z.infer<typeof StepActionResponse>;
 
 export const HandoffRequest = z.strictObject({ to: Surface, stepId: Id.optional() });
 

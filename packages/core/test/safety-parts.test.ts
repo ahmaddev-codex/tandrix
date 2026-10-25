@@ -7,6 +7,7 @@ import {
   mergeHazardTags,
   missingGates,
   refusalFor,
+  refusalForRequest,
   requiredGates,
   summarizeSteps,
 } from "../src";
@@ -100,5 +101,22 @@ describe("summarizeSteps", () => {
         "skipped",
       ]),
     ).toEqual({ verified: 2, confirmed: 1, attention: 1, unresolved: 2, skipped: 1 });
+  });
+});
+
+describe("refusalForRequest", () => {
+  it("refuses requests for wiring or live work, whatever the wording", () => {
+    for (const q of [
+      "How do I connect the motor leads to the supply?",
+      "Walk me through rewire the starter",
+      "Can I check the terminals while it is energised?",
+    ]) {
+      expect(refusalForRequest(q)?.reason).toMatch(/qualified electrician/);
+    }
+  });
+
+  it("answers ordinary questions", () => {
+    expect(refusalForRequest("Which way do the impeller vanes face?")).toBeNull();
+    expect(refusalForRequest("Isolate the power first, then what?")).toBeNull();
   });
 });
