@@ -67,7 +67,7 @@ These sit on photos and over other apps, not on Tandrix surfaces, so they are th
 ## Iconography
 
 - Icons are [Phosphor](https://phosphoricons.com) (MIT), in two styles only, both in `currentColor`: **solid** (Phosphor Fill) and **outline** (Phosphor Regular). Never mix in another set or another weight.
-- **The rule:** solid for small inline icons (16px: in chips, buttons and inputs, next to a word); outline for standalone icons at 20px and up (in cards, banners, notices, gates and field buttons). `Icon` applies it from `size`; set `weight` only to break it on purpose (for example a selected state in solid). One exception: `check` is always outline; its solid form reads too heavy next to text.
+- **The rule:** solid for small inline icons (16px: in chips, buttons and inputs, next to a word); outline for standalone icons at 20px and up (in cards, banners, notices, gates and field buttons). `Icon` applies it from `size`; set `weight` only to break it on purpose (for example a selected state in solid). Two exceptions: `check` and `progress` are always outline; their solid forms read too heavy next to text.
 - The bundle's `Icon` covers status, source, capture, safety and notice glyphs (`info` for an info `Notice`; never `progress`, which reads as loading). For anything else take the same Phosphor icon in the same style: `@phosphor-icons/react` on the Mac and web, `phosphor-react-native` on the phone, with `weight="fill"` or `weight="regular"`.
 - Icons always sit next to a word, except icon-only buttons, which need an `aria-label`.
 - The safety discs in `SafetyGate` follow ISO 7010 shapes: a blue disc for mandatory, a red slashed disc for stop.
