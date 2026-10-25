@@ -43,6 +43,15 @@ Tracks: **D** design, **A** mobile & glasses, **B** API & AI, **C** desktop (mac
 - [ ] T20 Screen step verification (C): built; start → check → needs attention → verified on this Mac with fixtures, recorded as desktop; open until a live check (billing); phone Maestro flows not rerun
 - [ ] **Checkpoint 5:** teach-me-this-screen works
 
+## Phase 4a — Product surfaces (added 25 Oct)
+- [ ] P1 Positioning and copy: phone = physical projects, Mac = software, Clicky-style
+- [ ] P2 Goal-first projects: steps from a goal; equipment and manual optional
+- [ ] P3 Mac: Show me without a job; Clicky-first panel; first-run setup
+- [ ] P4 Phone: intro, permissions, home ("What are you building or fixing?")
+- [ ] P5 Website: landing page + job report and share link (T23)
+- [ ] P6 Known gaps: offline manual/reference caching, deploy readiness, Mac icons and packaging, design system additions
+- [ ] **Checkpoint 4a:** clear what each app does; project from a sentence; Mac teaches with no job
+
 ## Phase 4 — Continuity (31 Oct)
 - [x] T21 Desktop pairing by QR (C): the Mac's live code approved on the simulator signs the panel in; pair-mac e2e passes; scanning with a physical iPhone is a manual check
 - [x] T22 Handoff between devices (A + C): phone → Mac and Mac → phone live on the simulator and this Mac; 5/5 handoffs under 0.6 s locally; handoff e2e passes; hosted latency at T32

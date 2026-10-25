@@ -1,6 +1,13 @@
 # Tandrix — User Flows
 
+## 0. First run and home
+
+- **Phone:** three short cards (what Tandrix does on site; it checks your work with photos; it talks you through hands-free), why it needs the camera and microphone, then sign in. Home asks **"What are you building or fixing?"** with examples ("Assemble a home server rack", "Replace a pump seal", "Mount a TV on drywall"), offers **Scan a nameplate** for equipment, and lists recent projects.
+- **Mac:** sign in with the phone's QR (or email), then setup: allow Screen Recording, allow the microphone, try the hotkey on any app ("How do I …?"). The panel's home is asking: a question box, the mic, the hotkey reminder and the last answers. A job card appears only when the phone hands one over.
+
 ## 1. End-to-end job (demo spine)
+
+A phone project can also start from a goal with no equipment: the goal goes straight to "Build procedure" (Generic unless a manual is added).
 
 ```mermaid
 flowchart TD

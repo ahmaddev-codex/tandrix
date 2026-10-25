@@ -6,7 +6,7 @@
 
 ## 1. Summary
 
-Tandrix turns any manual, and any expert's experience, into step-by-step visual guidance on whatever surface the person is using:
+Tandrix turns any manual, and any expert's experience, into step-by-step visual guidance on whatever surface the person is using. **The phone handles the physical world** (build, install, assemble, repair: "assemble an in-home server rack", "replace the seal on this pump"). **The Mac handles the digital world** (learn and do anything in software: "teach me how to use Photoshop", "set up this router's admin page"), with no job needed. A job spans both only when a physical project has a software part.
 
 - **Phone, on site:** point the camera at equipment. Tandrix identifies the machine, checks the parts, and guides assembly or service one step at a time by highlighting the real component in the camera view.
 - **Glasses, hands busy:** the same guidance through Ray-Ban Meta glasses. The glasses camera sees what the worker sees, and instructions are spoken.
@@ -14,7 +14,9 @@ Tandrix turns any manual, and any expert's experience, into step-by-step visual 
 
 All three surfaces share **one job session**. A job can start at the machine on the phone and continue on the laptop (for example, configuring the controller or monitoring software for the equipment) without repeating context.
 
-Tandrix is general-purpose for mechanical assembly and digital setup. The hackathon demo hero is a **pump assembly**, chosen because it is real, physical, has a manual, and has a natural digital follow-up.
+Tandrix is general-purpose: a phone project starts from one sentence about the goal, with equipment and a manual optional (a nameplate scan finds both when there is equipment); the Mac answers "teach me" questions about whatever is on screen. The hackathon demo hero is a **pump assembly**, chosen because it is real, physical, has a manual, and has a natural digital follow-up; the product and its copy must never read as pump-only.
+
+People should be able to tell what Tandrix does before they sign in: a website explains both apps, the phone opens on a short introduction, and the Mac's first run sets up screen access, the microphone and the hotkey.
 
 ## 2. Problem
 

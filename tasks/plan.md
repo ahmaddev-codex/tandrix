@@ -267,6 +267,48 @@ Sizes: XS 1 file · S 1–2 · M 3–5 · L 5–8 (split if larger). Commands as
 
 ---
 
+### Phase 4a — Product surfaces (added 25 Oct, before the rest of Phase 4)
+
+The apps worked end to end but read as a pump-job tool: both opened on a jobs list, the phone needed equipment before it could write steps, and Show me needed a job. Product owner's direction: the phone handles the physical world ("assemble an in-home server rack"), the Mac handles the digital world ("teach me how to use Photoshop"), and people should be able to tell what Tandrix does before they sign in.
+
+#### P1 Positioning and copy
+**Description:** Phone = physical projects (build, install, assemble, repair) with camera, voice and evidence; Mac = learn and do anything in software, Clicky-style, no job needed; a job spans both only when a physical project has a software part. PRD, user flows and store/site copy say so.
+**Acceptance:** PRD §1 and user flows describe both surfaces this way; no copy implies Tandrix is only for pumps.
+**Files:** `docs/product/{PRD,User_Flows}.md`. **Size:** S
+
+#### P2 Goal-first projects
+**Description:** A job starts from a goal ("Assemble a 12U home server rack"). Equipment and a manual are optional: steps come from the goal, plus the equipment and manual when there are any; without a manual every step stays labelled Generic.
+**Acceptance:** a job with no equipment gets cited-or-Generic steps from its goal; the nameplate path still works; procedures for the same equipment model are still reused.
+**Verification:** API and integration tests; phone e2e (goal → steps).
+**Files:** `packages/contracts`, `apps/api/src/routes/procedure.ts`, `packages/ai/src/{pipelines,prompts}.ts`, `apps/api/src/fixtures/procedure.ts`, migration if `asset_model_key` needs a project form. **Size:** M
+
+#### P3 Mac: Show me without a job, Clicky-first panel
+**Description:** `POST /screen/ask` without a job (screenshot sent inline, never stored, rate-limited); the panel's home is asking (type, mic, hotkey) with the recent answers; first-run setup walks through Screen Recording, microphone and the hotkey; a job card appears only when the phone hands one over or a desktop step is open.
+**Acceptance:** signed in with no job, "How do I add a layer mask in Photoshop?" points and speaks; setup completes in under a minute; nothing is stored for job-less asks.
+**Verification:** API tests; on this Mac with fixtures.
+**Files:** `apps/api/src/routes/screen.ts`, `apps/desktop/src/renderer/panel/*`. **Size:** M
+
+#### P4 Phone: intro, permissions, home
+**Description:** First run: what Tandrix does (three short cards), why it needs the camera and mic, then sign in. Home: "What are you building or fixing?" with examples, "Scan a nameplate" as the equipment path, recent projects below, and "Sign in a Mac".
+**Acceptance:** a new user understands the phone's job before signing in; a project starts from one sentence.
+**Verification:** Maestro e2e on the iOS simulator.
+**Files:** `apps/mobile/src/app/{welcome,(app)/index,(app)/new-job}.tsx`. **Size:** M
+
+#### P5 Website: landing page and job reports (includes T23)
+**Description:** `apps/web` (Vite + React on `@tandrix/ui`): a landing page that shows the two apps and how a job flows, honest about what's built; and the shareable job report (T23).
+**Acceptance:** the landing page explains phone and Mac in one screen each; a report link opens read-only, expires and can be revoked.
+**Verification:** component and API tests; rendered and reviewed in light and dark.
+**Files:** `apps/web/*`, `apps/api/src/routes/{report,share}.ts`. **Size:** L (split: P5a landing, P5b report = T23)
+
+#### P6 Known gaps
+- Offline: cache manual PDFs and reference images for a job's steps (T17's remainder).
+- Deploy readiness: API container and platform config, production env checklist, client-IP header for rate limits (T6's remainder; the deploy itself needs the hosted accounts).
+- Mac: a real menu-bar icon and app icon; packaged build (electron-builder) with the entitlements and usage strings for Screen Recording and the microphone.
+- Design system: publish the additions made in code (web `StepCard`, `VoiceTranscript` `listeningLabel`, `CheckResult` `evidenceKind`, the pulse keyframe clash).
+
+### Checkpoint 4a
+- [ ] A new user can tell what each app does before signing in; the phone starts a project from a sentence; the Mac answers "teach me" questions with no job.
+
 ### Phase 4 — Continuity (Sat 31 Oct)
 
 #### T21 Desktop pairing by QR
