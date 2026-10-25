@@ -1,4 +1,4 @@
-/* @ds-bundle: {"format":4,"namespace":"Tandrix","components":[{"name":"Button"},{"name":"StatusChip"},{"name":"SourceChip"},{"name":"StepCard"},{"name":"SafetyGate"},{"name":"PartHighlight"},{"name":"PointerBuddy"},{"name":"ControlIndicator"},{"name":"ConfirmDialog"},{"name":"LensCard"},{"name":"CaptureView"},{"name":"PartsList"},{"name":"CheckResult"},{"name":"HandoffBanner"},{"name":"ModeToggle"},{"name":"JobReport"},{"name":"Input"},{"name":"Toggle"},{"name":"Tabs"},{"name":"Icon"},{"name":"Notice"},{"name":"ActionCard"},{"name":"SummaryCard"},{"name":"StepRow"},{"name":"HighlightCorrection"},{"name":"ProgressState"}]} */
+/* @ds-bundle: {"format":4,"namespace":"Tandrix","components":[{"name":"Button"},{"name":"StatusChip"},{"name":"SourceChip"},{"name":"StepCard"},{"name":"SafetyGate"},{"name":"PartHighlight"},{"name":"PointerBuddy"},{"name":"ControlIndicator"},{"name":"ConfirmDialog"},{"name":"LensCard"},{"name":"CaptureView"},{"name":"PartsList"},{"name":"CheckResult"},{"name":"HandoffBanner"},{"name":"ModeToggle"},{"name":"JobReport"},{"name":"Input"},{"name":"Toggle"},{"name":"Tabs"},{"name":"Icon"},{"name":"Notice"},{"name":"ActionCard"},{"name":"SummaryCard"},{"name":"StepRow"},{"name":"HighlightCorrection"},{"name":"ProgressState"},{"name":"VoiceTranscript"}]} */
 (function () {
   var React = window.React;
   var h = React.createElement;
@@ -448,6 +448,28 @@
       h("span", { className: "tx-wait-label" }, props.label));
   }
 
+  // What Tandrix heard and what it said back. Shown as well as spoken, because a site is loud.
+  // state: "idle" | "listening" | "working"; turns: [{speaker: "you"|"tandrix", text, kind?: "refusal"|"general"}]
+  function VoiceTranscript(props) {
+    var turns = (props.turns || []).slice(-4);
+    var state = props.state || "idle";
+    if (state === "idle" && !turns.length) return null;
+    return h("section", { className: "tx-voice", "aria-live": "polite", "aria-label": "Conversation" },
+      turns.map(function (t, i) {
+        return h("div", { key: i, className: "tx-voice-turn" },
+          h("span", { className: "tx-voice-who" }, t.speaker === "you" ? "You" : "Tandrix"),
+          t.kind === "refusal"
+            ? h("p", { className: "tx-voice-text tx-voice-refusal" }, h(Icon, { name: "stop", size: 20 }), h("span", null, t.text))
+            : h("p", { className: "tx-voice-text" }, t.text),
+          t.kind === "general" ? h(SourceChip, { kind: "generic" }) : null);
+      }),
+      state === "listening"
+        ? h("div", { className: "tx-voice-state", role: "status" }, h("span", { className: "tx-voice-dot", "aria-hidden": true }), "Listening. Let go to send.")
+        : state === "working"
+          ? h("div", { className: "tx-voice-state", role: "status" }, h("span", { className: "tx-spinner", "aria-hidden": true }), "Working it out")
+          : null);
+  }
+
   window.Tandrix = {
     Button: Button, StatusChip: StatusChip, SourceChip: SourceChip, StepCard: StepCard, SafetyGate: SafetyGate,
     PartHighlight: PartHighlight, PointerBuddy: PointerBuddy, ControlIndicator: ControlIndicator,
@@ -455,6 +477,6 @@
     CheckResult: CheckResult, HandoffBanner: HandoffBanner, ModeToggle: ModeToggle, JobReport: JobReport,
     Input: Input, Toggle: Toggle, Tabs: Tabs, Icon: Icon,
     Notice: Notice, ActionCard: ActionCard, SummaryCard: SummaryCard, StepRow: StepRow,
-    HighlightCorrection: HighlightCorrection, ProgressState: ProgressState
+    HighlightCorrection: HighlightCorrection, ProgressState: ProgressState, VoiceTranscript: VoiceTranscript
   };
 })();

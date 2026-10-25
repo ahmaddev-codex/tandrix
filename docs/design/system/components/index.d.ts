@@ -308,3 +308,17 @@ export interface ProgressStateProps {
   backLabel?: string;
   onBack?: MouseEventHandler<HTMLButtonElement>;
 }
+
+export interface VoiceTurn {
+  speaker: "you" | "tandrix";
+  text: string;
+  /** refusal: work Tandrix won't guide. general: advice not from the step or its manual. */
+  kind?: "refusal" | "general";
+}
+
+export interface VoiceTranscriptProps {
+  /** listening while the talk button is held; working while the turn is transcribed and answered. */
+  state?: "idle" | "listening" | "working";
+  /** Oldest first; the last four are shown. */
+  turns: VoiceTurn[];
+}
