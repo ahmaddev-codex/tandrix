@@ -25,6 +25,7 @@ const bridge: TandrixBridge = {
   },
   panel: {
     show: () => ipcRenderer.invoke(channels.panelShow),
+    notify: (title, body) => ipcRenderer.invoke(channels.notify, title, body),
   },
   overlay: {
     testPointer: () => ipcRenderer.invoke(channels.testPointer),

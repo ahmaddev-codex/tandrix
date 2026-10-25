@@ -36,7 +36,12 @@ export function DesktopStep({
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<string>();
   const result = lastCheck;
-  if (!current) return result ? <ScreenCheckResult result={result} /> : null;
+  if (!current)
+    return result ? (
+      <div id="desktop-step">
+        <ScreenCheckResult result={result} />
+      </div>
+    ) : null;
   const { step, jobStep, total } = current;
   const ownResult = result?.jobStepId === jobStep.id ? result : undefined;
 
@@ -113,7 +118,7 @@ export function DesktopStep({
     ) : null;
 
   return (
-    <div className="panel-stack-2">
+    <div className="panel-stack-2" id="desktop-step">
       <StepCard
         index={step.order}
         total={total}

@@ -1,12 +1,13 @@
 import type { JobDetailResponse } from "@tandrix/contracts";
 import { citationLabel, stepChip } from "@tandrix/ui";
-import { Button, Notice, StepRow } from "@tandrix/ui/web";
+import { Button, HandoffBanner, Notice, StepRow } from "@tandrix/ui/web";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import type { ScreenAccess } from "../../shared/bridge";
 import { activeJob } from "../lib/active-job";
 import { api } from "../lib/api";
 import { useAuth } from "../lib/auth";
-import { desktopStep } from "../lib/desktop-step";
+import { desktopStep, finished, stepOf } from "../lib/desktop-step";
+import { useHandoffsToMac, useJobChanges, type IncomingHandoff } from "../lib/realtime";
 import { DesktopStep, type ScreenCheck } from "./DesktopStep";
 import { ShowMe } from "./ShowMe";
 
@@ -137,6 +138,39 @@ export function Home() {
   }, []);
   useOnPanelOpen(load);
 
+  // Changes made on the phone show up here as they happen.
+  useJobChanges(state.kind === "ready" ? state.detail.job.id : undefined, load);
+
+  // The phone sent a job here: open it, tell the user, and offer its step.
+  const [incoming, setIncoming] = useState<IncomingHandoff>();
+  useHandoffsToMac(auth.session!.user.id, (h) => {
+    void (async () => {
+      try {
+        const detail = await api.getJob(h.jobId);
+        setState({ kind: "ready", detail });
+        setIncoming(h);
+        const step = stepOf(detail, h.jobStepId);
+        void window.tandrix.panel.notify(
+          step
+            ? `${detail.job.title}: step ${step.order} is ready`
+            : `${detail.job.title} is ready`,
+          `Sent from your ${h.from}${step ? `. ${step.title}` : "."}`,
+        );
+      } catch {
+        // The next change or panel open loads it anyway.
+      }
+    })();
+  });
+  // Shown until opened, or until the step is finished (on whichever device).
+  const handedStep =
+    incoming && state.kind === "ready" && state.detail.job.id === incoming.jobId
+      ? state.detail.steps.find((s) => s.id === incoming.jobStepId)
+      : undefined;
+  const banner =
+    incoming && state.kind === "ready" && handedStep && !finished.has(handedStep.status)
+      ? { h: incoming, step: stepOf(state.detail, incoming.jobStepId), job: state.detail.job }
+      : undefined;
+
   return (
     <main className="panel-page">
       <header className="panel-bar">
@@ -146,6 +180,19 @@ export function Home() {
         </Button>
       </header>
       <div className="panel-body panel-stack-6">
+        {banner?.step ? (
+          <HandoffBanner
+            state="incoming"
+            step={banner.step.order}
+            stepTitle={banner.step.title}
+            job={banner.job.title}
+            device={`your ${banner.h.from}`}
+            onAction={() => {
+              setIncoming(undefined);
+              document.getElementById("desktop-step")?.scrollIntoView({ behavior: "smooth" });
+            }}
+          />
+        ) : null}
         <ScreenAccessNotice />
         {state.kind === "loading" ? (
           <p className="copy-14 panel-muted" role="status">

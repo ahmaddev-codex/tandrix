@@ -11,6 +11,7 @@ export const channels = {
   screenCapture: "screen:capture",
   panelShow: "panel:show",
   deviceName: "device:name",
+  notify: "panel:notify",
   testPointer: "overlay:test-pointer",
   pointAt: "overlay:point-at",
   clearPointer: "overlay:clear",
@@ -65,6 +66,8 @@ export interface TandrixBridge {
   panel: {
     /** Brings the panel back, e.g. after it was put away for a screenshot. */
     show(): Promise<void>;
+    /** A macOS notification; clicking it opens the panel. */
+    notify(title: string, body: string): Promise<void>;
   };
   overlay: {
     /** Shows the pointer at the centre of every display for a few seconds. */

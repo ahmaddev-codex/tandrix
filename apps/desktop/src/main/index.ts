@@ -8,6 +8,7 @@ import {
   ipcMain,
   Menu,
   nativeImage,
+  Notification,
   screen,
   session,
   systemPreferences,
@@ -68,6 +69,13 @@ function deviceName(): string {
   return name.trim().slice(0, 80) || "Mac";
 }
 
+function notify(title: string, body: string) {
+  if (!Notification.isSupported()) return;
+  const n = new Notification({ title: title.slice(0, 120), body: body.slice(0, 240) });
+  n.on("click", () => tray && showPanel(tray.getBounds()));
+  n.show();
+}
+
 async function micAccess(): Promise<boolean> {
   if (process.platform !== "darwin") return true;
   if (systemPreferences.getMediaAccessStatus("microphone") === "granted") return true;
@@ -109,6 +117,7 @@ function registerIpc() {
   handle(channels.clearPointer, clearPointer, none);
   handle(channels.deviceName, deviceName, none);
   handle(channels.panelShow, () => tray && showPanel(tray.getBounds()), none);
+  handle(channels.notify, notify, keyValue);
   handle(channels.micAccess, micAccess, none);
   handle(channels.listening, setListening, flag);
 }
