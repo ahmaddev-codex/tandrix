@@ -20,6 +20,9 @@ const bridge: TandrixBridge = {
     openSettings: () => ipcRenderer.invoke(channels.screenSettings),
     capture: () => ipcRenderer.invoke(channels.screenCapture),
   },
+  panel: {
+    show: () => ipcRenderer.invoke(channels.panelShow),
+  },
   overlay: {
     testPointer: () => ipcRenderer.invoke(channels.testPointer),
     pointAt: (geometry, point, caption) =>

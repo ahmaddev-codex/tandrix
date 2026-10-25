@@ -6,6 +6,8 @@ import type { ScreenAccess } from "../../shared/bridge";
 import { activeJob } from "../lib/active-job";
 import { api } from "../lib/api";
 import { useAuth } from "../lib/auth";
+import { desktopStep } from "../lib/desktop-step";
+import { DesktopStep, type ScreenCheck } from "./DesktopStep";
 import { ShowMe } from "./ShowMe";
 
 type JobState =
@@ -100,6 +102,25 @@ function JobSteps({ detail, children }: { detail: JobDetailResponse; children?: 
   );
 }
 
+function CurrentDesktopStep({
+  detail,
+  onChanged,
+}: {
+  detail: JobDetailResponse;
+  onChanged: () => void;
+}) {
+  const [lastCheck, setLastCheck] = useState<ScreenCheck>();
+  return (
+    <DesktopStep
+      jobId={detail.job.id}
+      current={desktopStep(detail)}
+      lastCheck={lastCheck}
+      onChecked={setLastCheck}
+      onChanged={onChanged}
+    />
+  );
+}
+
 export function Home() {
   const auth = useAuth();
   const [state, setState] = useState<JobState>({ kind: "loading" });
@@ -145,6 +166,7 @@ export function Home() {
           <Notice>No job in progress. Start one on your phone and it shows up here.</Notice>
         ) : (
           <JobSteps detail={state.detail}>
+            <CurrentDesktopStep key={state.detail.job.id} detail={state.detail} onChanged={load} />
             <ShowMe jobId={state.detail.job.id} />
           </JobSteps>
         )}

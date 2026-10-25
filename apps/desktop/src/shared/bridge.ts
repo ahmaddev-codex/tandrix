@@ -9,6 +9,7 @@ export const channels = {
   screenAccess: "screen:access",
   screenSettings: "screen:settings",
   screenCapture: "screen:capture",
+  panelShow: "panel:show",
   testPointer: "overlay:test-pointer",
   pointAt: "overlay:point-at",
   clearPointer: "overlay:clear",
@@ -55,6 +56,10 @@ export interface TandrixBridge {
      * fresh capture (with the panel put away first).
      */
     capture(): Promise<ScreenCapture>;
+  };
+  panel: {
+    /** Brings the panel back, e.g. after it was put away for a screenshot. */
+    show(): Promise<void>;
   };
   overlay: {
     /** Shows the pointer at the centre of every display for a few seconds. */

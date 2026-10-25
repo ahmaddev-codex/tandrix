@@ -21,6 +21,7 @@ import {
   clearPointer,
   createPanel,
   isOwnWindow,
+  showPanel,
   syncOverlays,
   testPointer,
   togglePanel,
@@ -87,6 +88,7 @@ function registerIpc() {
   handle(channels.screenCapture, captureForQuestion, none);
   handle(channels.pointAt, pointAtCapture, three);
   handle(channels.clearPointer, clearPointer, none);
+  handle(channels.panelShow, () => tray && showPanel(tray.getBounds()), none);
   handle(channels.micAccess, micAccess, none);
   handle(channels.listening, setListening, flag);
 }

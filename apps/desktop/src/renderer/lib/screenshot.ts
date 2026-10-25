@@ -4,7 +4,11 @@ import type { ScreenCapture } from "../../shared/bridge";
 import { api } from "./api";
 import { supabase } from "./supabase";
 
-export async function uploadScreenshot(jobId: string, capture: ScreenCapture): Promise<Evidence> {
+export async function uploadScreenshot(
+  jobId: string,
+  capture: ScreenCapture,
+  jobStepId?: string,
+): Promise<Evidence> {
   const created = await api.createEvidence(jobId, {
     kind: "screenshot",
     mimeType: capture.mimeType,
@@ -13,6 +17,7 @@ export async function uploadScreenshot(jobId: string, capture: ScreenCapture): P
     width: capture.geometry.imageWidth,
     height: capture.geometry.imageHeight,
     capturedAt: capture.capturedAt,
+    ...(jobStepId ? { jobStepId } : {}),
   });
   const { error } = await supabase.storage
     .from(created.upload.bucket)

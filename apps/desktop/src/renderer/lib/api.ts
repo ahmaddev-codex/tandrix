@@ -1,13 +1,16 @@
 // Typed client for the Tandrix API. Responses are validated with the shared contracts.
 import {
+  CheckStepResponse,
   CreateEvidenceResponse,
   Evidence,
   Job,
   JobDetailResponse,
   ScreenAskResponse,
+  StepActionResponse,
   TranscribeResponse,
   type CreateEvidenceRequest,
   type ScreenAskRequest,
+  type StepActionRequest,
 } from "@tandrix/contracts";
 import { z } from "zod";
 import { env } from "./env";
@@ -79,6 +82,18 @@ export const api = {
     form.append("audio", new Blob([wav as BlobPart], { type: "audio/wav" }), "question.wav");
     return request("/voice/transcribe", TranscribeResponse, { method: "POST", body: form }, false);
   },
+  /** Recorded as the Mac's doing in the job's history. */
+  stepAction: (jobId: string, jobStepId: string, body: z.input<typeof StepActionRequest>) =>
+    request(`/jobs/${jobId}/steps/${jobStepId}/actions`, StepActionResponse, {
+      method: "POST",
+      headers: { "X-Tandrix-Surface": "desktop" },
+      body: JSON.stringify(body),
+    }),
+  checkStep: (jobId: string, jobStepId: string, evidenceId: string) =>
+    request(`/jobs/${jobId}/steps/${jobStepId}/check`, CheckStepResponse, {
+      method: "POST",
+      body: JSON.stringify({ evidenceId }),
+    }),
   screenAsk: (jobId: string, body: z.input<typeof ScreenAskRequest>) =>
     request(`/jobs/${jobId}/screen/ask`, ScreenAskResponse, {
       method: "POST",

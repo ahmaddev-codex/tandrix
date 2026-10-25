@@ -81,6 +81,12 @@ export async function hidePanelForCapture(): Promise<boolean> {
   return true;
 }
 
+/** Shows the panel under the menu-bar icon if it's hidden. */
+export function showPanel(anchor: Rectangle) {
+  if (!panel || panel.isVisible()) return;
+  togglePanel(anchor);
+}
+
 /** Shows the panel under the menu-bar icon without taking focus from the app in use. */
 export function showPanelInactive(anchor: Rectangle) {
   if (!panel || panel.isVisible()) return;
