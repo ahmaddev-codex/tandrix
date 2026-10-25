@@ -7,15 +7,24 @@ import type { ScreenCapture } from "../../shared/bridge";
 import { api } from "./api";
 import { startRecording, type Recording } from "./recorder";
 import { uploadScreenshot } from "./screenshot";
+import { recentExchanges } from "./exchanges";
+import { markTried } from "./setup";
 import { speak, stopSpeaking } from "./speech";
 
 export type ShowMePhase = "idle" | "listening" | "working";
 
 export const NO_MIC =
   "Tandrix can't use the microphone. Allow it in System Settings > Privacy & Security > Microphone, or type your question.";
-export const NO_JOB = "Start a job on your phone first. Show me works inside a job.";
+/** What's asked about: inside a job the screenshot is job evidence; outside one it isn't kept. */
+type Shot = { capture: ScreenCapture; evidence: Evidence | null };
 
-type Shot = { capture: ScreenCapture; evidence: Evidence };
+/** Base64 for an inline screenshot, built in chunks so large images don't overflow the stack. */
+function base64(bytes: Uint8Array): string {
+  let out = "";
+  for (let i = 0; i < bytes.length; i += 0x8000)
+    out += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return btoa(out);
+}
 
 export function useShowMe(jobId: string | undefined) {
   const [phase, setPhase] = useState<ShowMePhase>("idle");
@@ -32,24 +41,40 @@ export function useShowMe(jobId: string | undefined) {
     speak(text);
   };
 
-  const shoot = useCallback(async (job: string): Promise<Shot> => {
+  const shoot = useCallback(async (job: string | undefined): Promise<Shot> => {
     const capture = await window.tandrix.screen.capture();
-    return { capture, evidence: await uploadScreenshot(job, capture) };
+    return { capture, evidence: job ? await uploadScreenshot(job, capture) : null };
   }, []);
 
-  const answer = useCallback(async (job: string, question: string, shot: Promise<Shot>) => {
-    const { capture, evidence } = await shot;
-    const r = await api.screenAsk(job, {
-      evidenceId: evidence.id,
-      transcript: question,
-      geometry: capture.geometry,
-      mode: "show",
-    });
-    if (r.status === "unavailable") return reply(r.message);
-    if (r.target?.geometry.kind === "point")
-      await window.tandrix.overlay.pointAt(capture.geometry, r.target.geometry.point, r.reply);
-    reply(r.reply);
-  }, []);
+  const turnsRef = useRef(turns);
+  turnsRef.current = turns;
+  const answer = useCallback(
+    async (job: string | undefined, question: string, shot: Promise<Shot>) => {
+      const { capture, evidence } = await shot;
+      const r =
+        job && evidence
+          ? await api.screenAsk(job, {
+              evidenceId: evidence.id,
+              transcript: question,
+              geometry: capture.geometry,
+              mode: "show",
+            })
+          : await api.screenAskInline({
+              screenshot: { mimeType: capture.mimeType, data: base64(capture.image) },
+              transcript: question,
+              geometry: capture.geometry,
+              mode: "show",
+              // The question just asked is already the last turn; send the ones before it.
+              history: recentExchanges(turnsRef.current.slice(0, -1)),
+            });
+      if (r.status === "unavailable") return reply(r.message);
+      if (r.target?.geometry.kind === "point")
+        await window.tandrix.overlay.pointAt(capture.geometry, r.target.geometry.point, r.reply);
+      reply(r.reply);
+      markTried();
+    },
+    [],
+  );
 
   const run = useCallback(async (work: () => Promise<void>) => {
     setPhase("working");
@@ -65,7 +90,6 @@ export function useShowMe(jobId: string | undefined) {
   /** A typed question. */
   const ask = useCallback(
     (question: string) => {
-      if (!jobId) return setProblem(NO_JOB);
       if (phaseRef.current !== "idle" || !question.trim()) return;
       setProblem(undefined);
       stopSpeaking();
@@ -78,7 +102,7 @@ export function useShowMe(jobId: string | undefined) {
   const finish = useCallback(async () => {
     const rec = recording.current;
     recording.current = undefined;
-    if (!rec || !jobId) return;
+    if (!rec) return;
     void window.tandrix.voice.setListening(false);
     await run(async () => {
       const wav = await rec.stop();
@@ -93,7 +117,6 @@ export function useShowMe(jobId: string | undefined) {
   }, [jobId, run, shoot, answer]);
 
   const listen = useCallback(async () => {
-    if (!jobId) return setProblem(NO_JOB);
     if (phaseRef.current !== "idle") return;
     setProblem(undefined);
     stopSpeaking();

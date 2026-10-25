@@ -9,6 +9,7 @@ import {
   StepActionResponse,
   TranscribeResponse,
   type CreateEvidenceRequest,
+  type ScreenAskInlineRequest,
   type ScreenAskRequest,
   type StepActionRequest,
 } from "@tandrix/contracts";
@@ -94,6 +95,9 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ evidenceId }),
     }),
+  /** A question outside any job: the screenshot travels inline and isn't kept. */
+  screenAskInline: (body: z.input<typeof ScreenAskInlineRequest>) =>
+    request("/screen/ask", ScreenAskResponse, { method: "POST", body: JSON.stringify(body) }),
   screenAsk: (jobId: string, body: z.input<typeof ScreenAskRequest>) =>
     request(`/jobs/${jobId}/screen/ask`, ScreenAskResponse, {
       method: "POST",

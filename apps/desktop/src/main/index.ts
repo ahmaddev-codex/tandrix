@@ -119,6 +119,14 @@ function registerIpc() {
   handle(channels.panelShow, () => tray && showPanel(tray.getBounds()), none);
   handle(channels.notify, notify, keyValue);
   handle(channels.micAccess, micAccess, none);
+  handle(
+    channels.micStatus,
+    () =>
+      process.platform === "darwin"
+        ? systemPreferences.getMediaAccessStatus("microphone")
+        : "granted",
+    none,
+  );
   handle(channels.listening, setListening, flag);
 }
 

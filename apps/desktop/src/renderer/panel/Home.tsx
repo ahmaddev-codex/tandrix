@@ -9,6 +9,7 @@ import { useAuth } from "../lib/auth";
 import { desktopStep, finished, stepOf } from "../lib/desktop-step";
 import { useHandoffsToMac, useJobChanges, type IncomingHandoff } from "../lib/realtime";
 import { DesktopStep, type ScreenCheck } from "./DesktopStep";
+import { Setup, useSetupStatus } from "./Setup";
 import { ShowMe } from "./ShowMe";
 
 type JobState =
@@ -60,7 +61,7 @@ function JobSteps({ detail, children }: { detail: JobDetailResponse; children?: 
   return (
     <section className="panel-stack-6" aria-labelledby="job-title">
       <header className="panel-stack-1">
-        <p className="label-12 panel-muted">Active job</p>
+        <p className="label-12 panel-muted">From your phone</p>
         <h2 className="heading-16" id="job-title">
           {job.title}
         </h2>
@@ -171,6 +172,13 @@ export function Home() {
       ? { h: incoming, step: stepOf(state.detail, incoming.jobStepId), job: state.detail.job }
       : undefined;
 
+  const setup = useSetupStatus();
+  // The Mac shows a job only when the phone has sent it here; otherwise it's for asking.
+  const onMac =
+    state.kind === "ready" && state.detail.job.activeSurface === "desktop"
+      ? state.detail
+      : undefined;
+
   return (
     <main className="panel-page">
       <header className="panel-bar">
@@ -193,12 +201,8 @@ export function Home() {
             }}
           />
         ) : null}
-        <ScreenAccessNotice />
-        {state.kind === "loading" ? (
-          <p className="copy-13 panel-muted" role="status">
-            Loading your job…
-          </p>
-        ) : state.kind === "error" ? (
+        {setup.show ? <Setup status={setup} /> : <ScreenAccessNotice />}
+        {state.kind === "error" ? (
           <Notice
             tone="error"
             action={
@@ -209,13 +213,15 @@ export function Home() {
           >
             {state.message}
           </Notice>
-        ) : state.kind === "none" ? (
-          <Notice>No job in progress. Start one on your phone and it shows up here.</Notice>
-        ) : (
-          <JobSteps detail={state.detail}>
-            <CurrentDesktopStep key={state.detail.job.id} detail={state.detail} onChanged={load} />
-            <ShowMe jobId={state.detail.job.id} />
+        ) : null}
+        {onMac ? (
+          // A project from the phone, continued here: its step, then asking, then its steps.
+          <JobSteps detail={onMac}>
+            <CurrentDesktopStep key={onMac.job.id} detail={onMac} onChanged={load} />
+            <ShowMe jobId={onMac.job.id} />
           </JobSteps>
+        ) : (
+          <ShowMe />
         )}
       </div>
       <footer className="panel-foot">

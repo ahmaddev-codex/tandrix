@@ -17,6 +17,7 @@ export const channels = {
   clearPointer: "overlay:clear",
   pointer: "overlay:pointer",
   micAccess: "voice:mic-access",
+  micStatus: "voice:mic-status",
   listening: "voice:listening",
   askHotkey: "voice:ask-hotkey",
   askCancel: "voice:ask-cancel",
@@ -85,6 +86,8 @@ export interface TandrixBridge {
   voice: {
     /** Asks macOS for the microphone the first time; true when Tandrix may use it. */
     micAccess(): Promise<boolean>;
+    /** The microphone permission as it stands, without asking. */
+    micStatus(): Promise<ScreenAccess>;
     /** Tells the main process to take Esc (cancel) while listening. */
     setListening(listening: boolean): Promise<void>;
     /** The Show me hotkey was pressed: start listening, or send what was heard. */
