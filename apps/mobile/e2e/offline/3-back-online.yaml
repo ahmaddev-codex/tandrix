@@ -1,0 +1,10 @@
+# T17 part 3 of 3: the API is back. The queued start is sent and the step shows in progress.
+appId: app.tandrix.mobile
+env:
+  JOB_TITLE: Offline job e2e ${RUN_ID}
+---
+# Sync runs every 20 seconds while work waits.
+- extendedWaitUntil:
+    visible: "Step 3: Fit the impeller, In progress.*"
+    timeout: 90000
+- takeScreenshot: offline-synced

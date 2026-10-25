@@ -20,10 +20,11 @@ import {
 } from "@tandrix/ui/native";
 import { Image } from "expo-image";
 import { router, Stack, useFocusEffect, useLocalSearchParams } from "expo-router";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { FlatList, Linking, RefreshControl, useWindowDimensions, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "@/lib/api";
+import { loadJob, offlineQueue, useOfflineStatus } from "@/offline";
 import { citationLabel, stepChip } from "@/lib/steps";
 
 const COLUMNS = 3;
@@ -39,13 +40,31 @@ export default function JobScreen() {
   const [procedure, setProcedure] = useState<ProcedureDetail | null>(null);
   const [jobSteps, setJobSteps] = useState<JobStep[]>([]);
   const [partsCheck, setPartsCheck] = useState<PartsCheck | null>(null);
+  const [offline, setOffline] = useState(false);
+  const [queuedSteps, setQueuedSteps] = useState<Set<string>>(new Set());
+  const sync = useOfflineStatus();
+  // When queued work has gone through, show the job as the server now has it.
+  const lastWaiting = useRef(sync.waiting);
+  useEffect(() => {
+    if (sync.waiting < lastWaiting.current) load();
+    lastWaiting.current = sync.waiting;
+  }, [sync.waiting]);
   const [photos, setPhotos] = useState<EvidenceWithUrl[]>();
   const [error, setError] = useState<string>();
   const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
     try {
-      const [detail, items] = await Promise.all([api.getJob(id), api.listEvidence(id)]);
+      const [{ detail, offline: off }, items, queued] = await Promise.all([
+        loadJob(id),
+        // Photo links need the API; offline, the job's own details still show.
+        api.listEvidence(id).catch(() => [] as EvidenceWithUrl[]),
+        offlineQueue.pending({ jobId: id }),
+      ]);
+      setOffline(off);
+      setQueuedSteps(
+        new Set(queued.flatMap((o) => ("jobStepId" in o && o.jobStepId ? [o.jobStepId] : []))),
+      );
       setJob(detail.job);
       setAsset(detail.asset);
       setManual(detail.manual);
@@ -155,6 +174,26 @@ export default function JobScreen() {
                 {error}
               </Notice>
             ) : null}
+            {offline ? (
+              <Notice icon="clock" testID="offline">
+                {`You're offline. This is the job as it was last synced; photos and changes are kept and sent when you're back online.${
+                  sync.waiting ? ` ${sync.waiting} waiting.` : ""
+                }`}
+              </Notice>
+            ) : null}
+            {sync.problems.map((p) => (
+              <Notice
+                key={p}
+                tone="attention"
+                action={
+                  <Button variant="secondary" size="lg" onPress={sync.dismiss}>
+                    Dismiss
+                  </Button>
+                }
+              >
+                {p}
+              </Notice>
+            ))}
             {asset ? (
               <SummaryCard
                 testID="asset-card"
@@ -241,12 +280,15 @@ export default function JobScreen() {
                       testID="step-row"
                       index={step.order}
                       title={step.title}
-                      status={chip.status}
-                      {...(js?.status === "blocked" && js.note
-                        ? { statusLabel: js.note }
-                        : chip.label
-                          ? { statusLabel: chip.label }
-                          : {})}
+                      // Design system: pending is work captured offline and not yet checked.
+                      status={js && queuedSteps.has(js.id) ? "pending" : chip.status}
+                      {...(js && queuedSteps.has(js.id)
+                        ? {}
+                        : js?.status === "blocked" && js.note
+                          ? { statusLabel: js.note }
+                          : chip.label
+                            ? { statusLabel: chip.label }
+                            : {})}
                       {...(cite ? { source: cite } : {})}
                       disabled={!js}
                       onSelect={() =>

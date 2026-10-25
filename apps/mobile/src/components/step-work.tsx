@@ -2,7 +2,7 @@
 // reopen). The API applies the rules (@tandrix/core transitionStep); this shows the same rules up
 // front so the user sees the gate before trying to start. Hold the mic to talk: commands (next,
 // repeat, start, done…) act here, questions are answered in the step's context and spoken back.
-import { gateCopy, refusalFor, requiredGates } from "@tandrix/core";
+import { gateCopy, refusalFor, requiredGates, transitionStep, type StepEvent } from "@tandrix/core";
 import type {
   CheckResult,
   JobStep,
@@ -25,6 +25,7 @@ import {
 import { useRef, useState, type ReactNode } from "react";
 import { View } from "react-native";
 import { api } from "@/lib/api";
+import { isOffline, offlineQueue } from "@/offline";
 import { usePushToTalk } from "@/voice/ptt";
 import { speak, stopSpeaking } from "@/voice/tts";
 
@@ -62,6 +63,8 @@ export interface StepWorkInput {
   onCheck: () => void;
   /** The latest check on this step since it started, if any. */
   lastCheck: CheckResult | null;
+  /** An action couldn't reach the API and was queued. */
+  onOffline: () => void;
 }
 
 /** Null until the step has loaded; then nothing renders. */
@@ -97,11 +100,97 @@ export function useStepWork(input: StepWorkInput | null): StepWork {
       }
       return r;
     } catch (e) {
-      setMessage((e as Error).message);
-      return null;
+      if (!isOffline(e)) {
+        setMessage((e as Error).message);
+        return null;
+      }
+      cur.onOffline();
+      return queueOffline(cur, body);
     } finally {
       setBusy(false);
     }
+  };
+
+  /**
+   * Offline: queue the action with when it happened, and show its effect now using the same rules
+   * the API will apply. The step reads "Pending" until it's sent.
+   */
+  const queueOffline = async (
+    cur: StepWorkInput,
+    body: StepActionRequest,
+  ): Promise<StepActionResponse | null> => {
+    const at = new Date().toISOString();
+    if (body.action === "confirm_safety") {
+      await offlineQueue.enqueue({
+        kind: "action",
+        jobId: cur.jobId,
+        jobStepId: cur.jobStep.id,
+        body: { ...body, occurredAt: at },
+      });
+      const local = {
+        id: `local-${body.gate}`,
+        jobStepId: cur.jobStep.id,
+        gate: body.gate,
+        confirmedBy: "you",
+        surface: "phone" as const,
+        confirmedAt: at,
+      };
+      const confirmations = [...cur.confirmations, local];
+      cur.onChange(cur.jobStep, confirmations);
+      setMessage(undefined);
+      return { status: "applied", step: cur.jobStep, confirmations };
+    }
+    const event: StepEvent =
+      body.action === "start"
+        ? { type: "start", at }
+        : body.action === "confirm_done"
+          ? {
+              type: "confirm_done",
+              at,
+              ...(body.measuredValue !== undefined ? { measuredValue: body.measuredValue } : {}),
+            }
+          : body.action === "skip"
+            ? { type: "skip", reason: body.reason, at }
+            : { type: "reopen", at };
+    const r = transitionStep(
+      {
+        status: cur.jobStep.status,
+        startedAt: cur.jobStep.startedAt,
+        statusEvidenceId: cur.jobStep.statusEvidenceId,
+        lastCheck: cur.lastCheck,
+      },
+      event,
+      {
+        verification: cur.step.verification,
+        hazardTags: cur.step.hazardTags,
+        confirmedGates: cur.confirmations.map((c) => c.gate),
+        ...(cur.step.measurement ? { measurement: cur.step.measurement } : {}),
+      },
+    );
+    if (!r.ok) {
+      setMessage(r.message);
+      return null;
+    }
+    await offlineQueue.enqueue({
+      kind: "action",
+      jobId: cur.jobId,
+      jobStepId: cur.jobStep.id,
+      body: { ...body, occurredAt: at },
+    });
+    const { note: _note, ...rest } = cur.jobStep;
+    const step = {
+      ...rest,
+      status: r.state.status,
+      startedAt: r.state.startedAt,
+      statusEvidenceId: r.state.statusEvidenceId,
+      ...(r.state.note ? { note: r.state.note } : {}),
+    };
+    cur.onChange(step, cur.confirmations);
+    setSkipping(false);
+    setReason("");
+    setMessage(undefined);
+    // Same shape as the server's answer, so voice says "Started." offline too.
+    return { status: "applied", step, confirmations: cur.confirmations };
   };
 
   const runCommand = async (command: VoiceCommand) => {

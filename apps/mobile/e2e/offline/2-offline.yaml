@@ -1,0 +1,32 @@
+# T17 part 2 of 3: the API is down. Starting the step is kept and shows as pending.
+appId: app.tandrix.mobile
+env:
+  JOB_TITLE: Offline job e2e ${RUN_ID}
+---
+- scrollUntilVisible:
+    element:
+      id: start-step
+    direction: DOWN
+    timeout: 20000
+- tapOn:
+    id: start-step
+- extendedWaitUntil:
+    visible: Pending
+    timeout: 15000
+- scrollUntilVisible:
+    element:
+      id: offline
+    direction: UP
+    timeout: 20000
+- takeScreenshot: offline-step-pending
+- tapOn: ${JOB_TITLE}
+- extendedWaitUntil:
+    visible: "Step 3: Fit the impeller, Pending.*"
+    timeout: 15000
+# The notice sits at the top of the job.
+- scrollUntilVisible:
+    element:
+      id: offline
+    direction: UP
+    timeout: 20000
+- takeScreenshot: offline-job

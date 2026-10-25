@@ -1,9 +1,12 @@
 import { nativeFontNames, useTheme } from "@tandrix/ui/native";
 import { Stack } from "expo-router";
 import { isLocal } from "@/lib/env";
+import { useOfflineSync } from "@/offline";
 
 export default function AppLayout() {
   const t = useTheme();
+  // Work done offline is sent from here, for every screen.
+  useOfflineSync();
   return (
     <Stack
       screenOptions={{

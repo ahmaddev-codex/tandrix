@@ -31,6 +31,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ScrollView, View, type ScrollViewInstance } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "@/lib/api";
+import { isOffline, keepPhoto, loadJob, offlineQueue } from "@/offline";
 import { preparePhoto, uploadPhoto, type PreparedPhoto } from "@/lib/evidence";
 import { useStepWork } from "@/components/step-work";
 import { citationLabel, stepChip } from "@/lib/steps";
@@ -65,15 +66,25 @@ export default function StepScreen() {
   // A photo either finds the step's parts or checks the finished work.
   const [purpose, setPurpose] = useState<"find" | "check">("find");
   const [check, setCheck] = useState<Check | null>(null);
+  const [offline, setOffline] = useState(false);
+  const [notice, setNotice] = useState<string>();
+  // Work on this step waiting in the offline queue: the step reads "Pending" until it's sent.
+  const [queued, setQueued] = useState(false);
+  useEffect(() => {
+    offlineQueue.pending({ jobStepId: stepId }).then((ops) => setQueued(ops.length > 0));
+    return offlineQueue.subscribe((ops) =>
+      setQueued(ops.some((o) => "jobStepId" in o && o.jobStepId === stepId)),
+    );
+  }, [stepId]);
   const camera = useRef<CameraView>(null);
   const [permission, requestPermission] = useCameraPermissions();
   const [cameraReady, setCameraReady] = useState(false);
   const [cameraFailed, setCameraFailed] = useState(false);
 
   useEffect(() => {
-    api
-      .getJob(id)
-      .then((detail) => {
+    loadJob(id)
+      .then(({ detail, offline: off }) => {
+        setOffline(off);
         const jobStep = detail.steps.find((s) => s.id === stepId);
         const procedure = detail.procedure;
         const step = procedure?.steps.find((s) => s.id === jobStep?.procedureStepId);
@@ -141,6 +152,7 @@ export default function StepScreen() {
             scroll.current?.scrollTo({ y: 0, animated: true });
           },
           lastCheck: check?.result ?? null,
+          onOffline: () => setOffline(true),
         }
       : null,
   );
@@ -195,8 +207,39 @@ export default function StepScreen() {
       setTargets(r.status === "found" ? r.targets : []);
       setPhase("result");
     } catch (e) {
-      setError((e as Error).message);
-      setPhase("preview");
+      if (!isOffline(e)) {
+        setError((e as Error).message);
+        setPhase("preview");
+        return;
+      }
+      setOffline(true);
+      // Offline: a check photo is kept and checked when the phone is back online; finding parts
+      // needs an answer now, so it can't wait.
+      if (purpose === "check") {
+        const kept = keepPhoto(
+          photo.uri,
+          {
+            width: photo.width,
+            height: photo.height,
+            byteSize: photo.byteSize,
+            capturedAt: photo.capturedAt,
+          },
+          `${stepId}-${Date.now().toString(36)}`,
+        );
+        await offlineQueue.enqueue({
+          kind: "photo",
+          jobId: id,
+          jobStepId: stepId,
+          photo: kept,
+          then: "check",
+        });
+        setNotice("Saved offline. Tandrix will check this photo when you're back online.");
+      } else {
+        setNotice("Finding parts needs a connection. The parts are listed below.");
+      }
+      setPhoto(undefined);
+      setPurpose("find");
+      setPhase("live");
     }
   }, [photo, data, id, stepId, purpose]);
 
@@ -381,6 +424,13 @@ export default function StepScreen() {
         keyboardDismissMode="on-drag"
         automaticallyAdjustKeyboardInsets
       >
+        {offline ? (
+          <Notice icon="clock" testID="offline">
+            You're offline. Steps, safety checks and your changes still work; they're sent when
+            you're back online.
+          </Notice>
+        ) : null}
+        {notice ? <Notice testID="offline-notice">{notice}</Notice> : null}
         {/* Design system: a SafetyGate stands before a hazardous step. */}
         {work.gates}
         {/* Photos are for finding parts; a step that names none has no frame. */}
@@ -450,8 +500,8 @@ export default function StepScreen() {
           title={step.title}
           body={[step.instruction, step.reason].filter(Boolean).join(" ")}
           {...(step.caution ? { caution: step.caution } : {})}
-          status={chip.status}
-          {...(chip.label ? { statusLabel: chip.label } : {})}
+          status={queued ? "pending" : chip.status}
+          {...(queued ? {} : chip.label ? { statusLabel: chip.label } : {})}
           {...(cite ? { source: cite } : { sourceKind: "generic" as const })}
           actions={work.actions}
         />

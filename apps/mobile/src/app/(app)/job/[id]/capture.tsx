@@ -8,6 +8,7 @@ import { useRef, useState } from "react";
 import { Linking, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { preparePhoto, uploadPhoto, type PreparedPhoto } from "@/lib/evidence";
+import { isOffline, keepPhoto, offlineQueue } from "@/offline";
 
 type Phase = "live" | "preview" | "saving";
 
@@ -62,6 +63,22 @@ export default function Capture() {
         router.back();
       }
     } catch (e) {
+      // Offline, an evidence photo is kept and sent later. A nameplate needs reading now.
+      if (isOffline(e) && !isNameplate) {
+        const kept = keepPhoto(
+          photo.uri,
+          {
+            width: photo.width,
+            height: photo.height,
+            byteSize: photo.byteSize,
+            capturedAt: photo.capturedAt,
+          },
+          `photo-${Date.now().toString(36)}`,
+        );
+        await offlineQueue.enqueue({ kind: "photo", jobId: id, photo: kept });
+        router.back();
+        return;
+      }
       setError((e as Error).message);
       setPhase("preview");
     }
