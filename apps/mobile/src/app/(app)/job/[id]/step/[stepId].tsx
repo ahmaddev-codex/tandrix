@@ -5,12 +5,12 @@ import type {
   HighlightResponse,
   HighlightTarget,
   JobStep,
+  SafetyConfirmation,
   PartSpec,
   ProcedureStep,
 } from "@tandrix/contracts";
 import { space } from "@tandrix/ui";
 import {
-  ActionCard,
   Button,
   CaptureView,
   HighlightCorrection,
@@ -30,6 +30,7 @@ import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "@/lib/api";
 import { preparePhoto, uploadPhoto, type PreparedPhoto } from "@/lib/evidence";
+import { useStepWork } from "@/components/step-work";
 import { citationLabel, stepChip } from "@/lib/steps";
 
 type Phase = "live" | "preview" | "analyzing" | "result";
@@ -37,6 +38,7 @@ type Phase = "live" | "preview" | "analyzing" | "result";
 interface Loaded {
   step: ProcedureStep;
   jobStep: JobStep;
+  confirmations: SafetyConfirmation[];
   parts: PartSpec[];
   allParts: PartSpec[];
   index: number;
@@ -72,6 +74,7 @@ export default function StepScreen() {
         setData({
           step,
           jobStep,
+          confirmations: detail.safetyConfirmations.filter((c) => c.jobStepId === jobStep.id),
           parts,
           allParts: procedure.parts,
           index: step.order,
@@ -80,6 +83,19 @@ export default function StepScreen() {
       })
       .catch((e: Error) => setError(e.message));
   }, [id, stepId]);
+
+  const work = useStepWork(
+    data
+      ? {
+          jobId: id,
+          step: data.step,
+          jobStep: data.jobStep,
+          confirmations: data.confirmations,
+          onChange: (jobStep, confirmations) =>
+            setData((d) => (d ? { ...d, jobStep, confirmations } : d)),
+        }
+      : null,
+  );
 
   const take = async () => {
     setError(undefined);
@@ -239,25 +255,26 @@ export default function StepScreen() {
         </CaptureView>
       </View>
     ) : (
-      <ActionCard
+      // Highlighting helps but isn't the step's action, so this asks quietly: one secondary button.
+      <Notice
         icon="camera"
-        title="Show Tandrix the parts"
-        body={
-          parts.length
-            ? `Take or choose a photo and Tandrix highlights the ${partWord}${parts.length > 1 ? " and the other parts" : ""} for this step.`
-            : "This step doesn't name any parts."
+        testID="show-parts"
+        action={
+          canAskCamera ? (
+            <Button variant="secondary" size="lg" onPress={requestPermission} testID="allow-camera">
+              Allow camera
+            </Button>
+          ) : (
+            <Button variant="secondary" size="lg" onPress={choose} testID="choose-photo">
+              Choose photo
+            </Button>
+          )
         }
-        {...(canAskCamera
-          ? {
-              actionLabel: "Allow camera",
-              actionTestID: "allow-camera",
-              onAction: requestPermission,
-              secondaryLabel: "Choose photo",
-              secondaryTestID: "choose-photo",
-              onSecondary: choose,
-            }
-          : { actionLabel: "Choose photo", actionTestID: "choose-photo", onAction: choose })}
-      />
+      >
+        {`Show Tandrix the parts: take or choose a photo and it highlights the ${partWord}${
+          parts.length > 1 ? " and the other parts" : ""
+        } for this step.`}
+      </Notice>
     );
 
   return (
@@ -266,8 +283,17 @@ export default function StepScreen() {
       style={{ flex: 1, backgroundColor: t.color["background-200"] }}
     >
       <Stack.Screen options={{ title: `Step ${data.index}` }} />
-      <ScrollView contentContainerStyle={{ padding: space["space-4"], gap: space["space-3"] }}>
-        {frame}
+      <ScrollView
+        contentContainerStyle={{ padding: space["space-4"], gap: space["space-3"] }}
+        // One tap on "Save measurement" saves, rather than only closing the number pad.
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        automaticallyAdjustKeyboardInsets
+      >
+        {/* Design system: a SafetyGate stands before a hazardous step. */}
+        {work.gates}
+        {/* Photos are for finding parts; a step that names none has no frame. */}
+        {parts.length ? frame : null}
 
         {phase === "result" ? (
           <View style={{ gap: space["space-2"] }}>
@@ -336,7 +362,9 @@ export default function StepScreen() {
           status={chip.status}
           {...(chip.label ? { statusLabel: chip.label } : {})}
           {...(cite ? { source: cite } : { sourceKind: "generic" as const })}
+          actions={work.actions}
         />
+        {work.below}
       </ScrollView>
     </SafeAreaView>
   );

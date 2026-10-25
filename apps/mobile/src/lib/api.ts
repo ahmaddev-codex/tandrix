@@ -3,6 +3,7 @@ import type {
   CorrectDetectionRequest,
   CreateEvidenceRequest,
   SaveAssetRequest,
+  StepActionRequest,
 } from "@tandrix/contracts";
 import {
   Asset,
@@ -10,6 +11,7 @@ import {
   CreateManualUploadResponse,
   GenerateProcedureResponse,
   HighlightResponse,
+  StepActionResponse,
   Detection,
   ManualResponse,
   ManualSearchResponse,
@@ -132,6 +134,11 @@ export const api = {
       method: "PATCH",
       body: JSON.stringify(body),
     }).then((r) => r.detection),
+  stepAction: (jobId: string, jobStepId: string, body: StepActionRequest) =>
+    request(`/jobs/${jobId}/steps/${jobStepId}/actions`, StepActionResponse, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
   createJob: (input: { title: string; surface: Surface }) =>
     request("/jobs", z.object({ job: Job }), { method: "POST", body: JSON.stringify(input) }).then(
       (r) => r.job,

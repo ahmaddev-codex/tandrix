@@ -84,6 +84,9 @@ importers:
       '@tandrix/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      '@tandrix/core':
+        specifier: workspace:*
+        version: link:../../packages/core
       '@tandrix/ui':
         specifier: workspace:*
         version: link:../../packages/ui
