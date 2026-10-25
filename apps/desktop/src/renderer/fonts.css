@@ -1,0 +1,31 @@
+/* Geist and Geist Mono, bundled with the app so the Mac never fetches fonts. */
+@font-face {
+  font-family: "Geist";
+  font-weight: 400;
+  src: url("../../node_modules/@expo-google-fonts/geist/400Regular/Geist_400Regular.ttf")
+    format("truetype");
+}
+@font-face {
+  font-family: "Geist";
+  font-weight: 500;
+  src: url("../../node_modules/@expo-google-fonts/geist/500Medium/Geist_500Medium.ttf")
+    format("truetype");
+}
+@font-face {
+  font-family: "Geist";
+  font-weight: 600;
+  src: url("../../node_modules/@expo-google-fonts/geist/600SemiBold/Geist_600SemiBold.ttf")
+    format("truetype");
+}
+@font-face {
+  font-family: "Geist Mono";
+  font-weight: 400;
+  src: url("../../node_modules/@expo-google-fonts/geist-mono/400Regular/GeistMono_400Regular.ttf")
+    format("truetype");
+}
+@font-face {
+  font-family: "Geist Mono";
+  font-weight: 500;
+  src: url("../../node_modules/@expo-google-fonts/geist-mono/500Medium/GeistMono_500Medium.ttf")
+    format("truetype");
+}

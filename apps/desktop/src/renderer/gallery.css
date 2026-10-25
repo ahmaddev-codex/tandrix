@@ -1,0 +1,42 @@
+/* Gallery layout only; components bring their own styles. */
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+h1,
+h2 {
+  margin: 0;
+}
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(400px, 1fr));
+}
+.gallery-theme {
+  display: grid;
+  align-content: start;
+  gap: var(--space-6);
+  padding: var(--space-6);
+  background: var(--background-200);
+  color: var(--text);
+}
+.gallery-section {
+  display: grid;
+  gap: var(--space-3);
+}
+.gallery-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+}
+.gallery-muted {
+  color: var(--text-secondary);
+}
+.gallery-pointer {
+  position: relative;
+  height: 96px;
+  border-radius: var(--radius-lg);
+  background: var(--background-100);
+  box-shadow: var(--shadow-sm);
+}
