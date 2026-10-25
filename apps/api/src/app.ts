@@ -26,7 +26,7 @@ import { jobsRoutes } from "./routes/jobs";
 import { manualRoutes } from "./routes/manual";
 import { procedureRoutes } from "./routes/procedure";
 import { PAIRING_TOKEN_HEADER, pairingRoutes } from "./routes/pairing";
-import { screenRoutes } from "./routes/screen";
+import { inlineScreenRoutes, screenRoutes } from "./routes/screen";
 import type { PairingsRepo } from "./repos/pairings";
 import type { SessionMinter } from "./session-minter";
 import { detectionRoutes, SURFACE_HEADER, stepRoutes } from "./routes/steps";
@@ -118,6 +118,8 @@ export function createApp(deps: AppDeps) {
   );
   app.use("/jobs/*", requireUser(deps.verifyToken));
   app.use("/voice/*", requireUser(deps.verifyToken));
+  app.use("/screen/*", requireUser(deps.verifyToken));
+  app.route("/screen", inlineScreenRoutes({ guide: deps.screenGuide }));
   app.route("/voice", voiceRoutes(deps.transcriber));
   app.use("/jobs", requireUser(deps.verifyToken));
   // Evidence first: the more specific path must win over /jobs/:id.

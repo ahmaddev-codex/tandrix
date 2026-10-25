@@ -259,3 +259,90 @@ describe("pointerFor", () => {
     expect(pointerFor([{ type: "type", text: "10" }], "ev", size)).toBeNull();
   });
 });
+
+describe("POST /screen/ask (outside a job)", () => {
+  async function inline(outcome: ScreenGuideOutcome) {
+    const asked: ScreenQuestionInput[] = [];
+    const evidence = memoryEvidence(new Map());
+    const app = createApp({
+      verifyToken: async (t) => (t === "a" ? { id: A } : null),
+      jobs: {} as JobsRepo,
+      evidence,
+      storage: memoryStorage(),
+      assets: memoryAssets(),
+      nameplateReader: scriptedReader(),
+      ...noManuals(),
+      screenGuide: {
+        async ask(input) {
+          asked.push(input);
+          return outcome;
+        },
+      },
+      corsOrigins: [],
+      log: () => {},
+    });
+    const ask = (body: object, token: string | null = "a") =>
+      app.request("/screen/ask", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          ...(token ? { authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(body),
+      });
+    return { ask, asked, evidence };
+  }
+  const body = {
+    screenshot: { mimeType: "image/png", data: Buffer.from(PNG).toString("base64") },
+    transcript: "How do I add a layer mask?",
+    geometry,
+    mode: "show",
+    history: [
+      { question: "How do I open the Layers panel?", reply: "Choose Window, then Layers." },
+    ],
+  };
+
+  it("answers about an inline screenshot, with earlier turns as context, and keeps nothing", async () => {
+    const s = await inline({
+      status: "answered",
+      reply: "Click Add layer mask.",
+      actions: [click],
+    });
+    const res = await s.ask(body);
+    expect(res.status).toBe(200);
+    expect(ScreenAskResponse.parse(await res.json())).toEqual({
+      status: "answered",
+      reply: "Click Add layer mask.",
+      target: {
+        surface: "screen",
+        evidenceId: null,
+        label: "Click here",
+        geometry: { kind: "point", point: { x: 412, y: 315 } },
+      },
+      proposed: [click],
+    });
+    expect(Buffer.from(s.asked[0]!.screenshot.bytes).equals(Buffer.from(PNG))).toBe(true);
+    expect(s.asked[0]!.context).toEqual([
+      'Earlier the user asked: "How do I open the Layers panel?" You answered: "Choose Window, then Layers."',
+    ]);
+  });
+
+  it("needs a signed-in user and a real image", async () => {
+    const s = await inline({ status: "answered", reply: "x", actions: [] });
+    expect((await s.ask(body, null)).status).toBe(401);
+    expect(
+      (await s.ask({ ...body, screenshot: { mimeType: "image/png", data: "not base64!" } })).status,
+    ).toBe(400);
+    expect(
+      (await s.ask({ ...body, screenshot: { mimeType: "image/gif", data: "AAAA" } })).status,
+    ).toBe(400);
+    expect(s.asked).toEqual([]);
+  });
+
+  it("refuses screenshots over the limit before reading them", async () => {
+    const s = await inline({ status: "answered", reply: "x", actions: [] });
+    const big = "A".repeat(6 * 1024 * 1024);
+    const res = await s.ask({ ...body, screenshot: { mimeType: "image/png", data: big } });
+    expect(res.status).toBe(413);
+  });
+});

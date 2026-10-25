@@ -2,20 +2,25 @@
 // is words plus where to point. Proposed actions are returned for drawing, never executed here.
 import {
   Id,
+  INLINE_SCREENSHOT_MAX_BYTES,
+  ScreenAskInlineRequest,
   ScreenAskRequest,
   type DesktopAction,
   type PointerTarget,
   type ScreenAskResponse,
 } from "@tandrix/contracts";
 import { Hono } from "hono";
+import { bodyLimit } from "hono/body-limit";
+import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { z } from "zod";
 import type { AuthEnv } from "../auth";
-import { invalid, notFound } from "../errors";
+import { HttpError, invalid, notFound, tooMany } from "../errors";
+import { rateLimiter, type RateLimiter } from "../rate-limit";
 import type { AssetsRepo } from "../repos/assets";
 import type { EvidenceRepo, EvidenceStorage } from "../repos/evidence";
 import type { JobsRepo } from "../repos/jobs";
 import type { ProceduresRepo } from "../repos/procedures";
-import type { ScreenGuide } from "../screen-guide";
+import type { ScreenGuide, ScreenGuideOutcome } from "../screen-guide";
 
 export interface ScreenDeps {
   jobs: JobsRepo;
@@ -37,7 +42,7 @@ const verbs: Partial<Record<DesktopAction["type"], string>> = {
 /** The first proposed action with a place on screen, as a pointer target inside the screenshot. */
 export function pointerFor(
   actions: DesktopAction[],
-  evidenceId: string,
+  evidenceId: string | null,
   size: { width: number; height: number },
 ): PointerTarget | null {
   for (const a of actions) {
@@ -102,12 +107,63 @@ export function screenRoutes(d: ScreenDeps) {
     });
     if (outcome.status === "unavailable") return reply(outcome);
 
-    const target = pointerFor(outcome.actions, ev.id, size);
-    return reply({
-      status: "answered",
-      reply: (outcome.reply || (target ? `${target.label}.` : CANT_POINT)).slice(0, 600),
-      target,
-      proposed: outcome.actions.slice(0, 16),
-    });
+    return reply(answered(outcome, ev.id, size));
   });
+}
+
+/** The answer to send: the model's words (or a plain fallback), where to point, what it proposed. */
+function answered(
+  outcome: Extract<ScreenGuideOutcome, { status: "answered" }>,
+  evidenceId: string | null,
+  size: { width: number; height: number },
+): ScreenAskResponse {
+  const target = pointerFor(outcome.actions, evidenceId, size);
+  return {
+    status: "answered",
+    reply: (outcome.reply || (target ? `${target.label}.` : CANT_POINT)).slice(0, 600),
+    target,
+    proposed: outcome.actions.slice(0, 16),
+  };
+}
+
+/** Earlier turns as context lines, so a follow-up ("and then?") makes sense. */
+export const historyContext = (history: Array<{ question: string; reply: string }>) =>
+  history.map((t) => `Earlier the user asked: "${t.question}" You answered: "${t.reply}"`);
+
+/**
+ * POST /screen/ask: a question about the screen outside any job ("teach me Photoshop"). The
+ * screenshot comes inline, goes to the model and is never stored.
+ */
+export function inlineScreenRoutes(d: { guide: ScreenGuide; limiter?: RateLimiter }) {
+  const limiter = d.limiter ?? rateLimiter(30, 60_000);
+  return new Hono<AuthEnv>().post(
+    "/ask",
+    bodyLimit({
+      maxSize: Math.ceil((INLINE_SCREENSHOT_MAX_BYTES * 4) / 3) + 64 * 1024,
+      onError: () => {
+        throw new HttpError(
+          413 as ContentfulStatusCode,
+          "invalid_request",
+          "That screenshot is too large.",
+        );
+      },
+    }),
+    async (c) => {
+      if (!limiter.allow(c.get("user").id)) throw tooMany();
+      const parsed = ScreenAskInlineRequest.safeParse(await c.req.json().catch(() => undefined));
+      if (!parsed.success) throw invalid(issues(parsed.error));
+      const req = parsed.data;
+      const bytes = Uint8Array.from(Buffer.from(req.screenshot.data, "base64"));
+      if (bytes.length === 0 || bytes.length > INLINE_SCREENSHOT_MAX_BYTES)
+        throw invalid(["screenshot: Empty or too large"]);
+      const size = { width: req.geometry.imageWidth, height: req.geometry.imageHeight };
+      const outcome = await d.guide.ask({
+        screenshot: { bytes, mimeType: req.screenshot.mimeType, ...size },
+        question: req.transcript,
+        context: historyContext(req.history),
+      });
+      if (outcome.status === "unavailable") return c.json(outcome satisfies ScreenAskResponse);
+      return c.json(answered(outcome, null, size));
+    },
+  );
 }

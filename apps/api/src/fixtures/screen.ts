@@ -6,7 +6,7 @@ export const fixtureScreenGuide: ScreenGuide = {
   async ask({ screenshot }) {
     return {
       status: "answered",
-      reply: "Click here to open the settings, then set the ramp time to 10 seconds.",
+      reply: "Click here first. Then follow what opens on screen and ask again if you're stuck.",
       actions: [
         {
           type: "click",
