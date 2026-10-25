@@ -15,6 +15,7 @@ import {
   Button,
   CaptureView,
   CheckResult,
+  HandoffBanner,
   HighlightCorrection,
   Notice,
   PartHighlight,
@@ -34,6 +35,9 @@ import { api } from "@/lib/api";
 import { isOffline, keepPhoto, loadJob, offlineQueue } from "@/offline";
 import { preparePhoto, uploadPhoto, type PreparedPhoto } from "@/lib/evidence";
 import { useStepWork } from "@/components/step-work";
+import { useJobChanges } from "@/lib/realtime";
+
+const finished = ["verified", "user_confirmed", "skipped"];
 
 type Phase = "live" | "preview" | "analyzing" | "result";
 
@@ -50,6 +54,8 @@ interface Loaded {
   nextId?: string;
   keywords: string[];
   language: string;
+  /** The job is open on the Mac (handed off there). */
+  onMac: boolean;
 }
 
 export default function StepScreen() {
@@ -80,7 +86,7 @@ export default function StepScreen() {
   const [cameraReady, setCameraReady] = useState(false);
   const [cameraFailed, setCameraFailed] = useState(false);
 
-  useEffect(() => {
+  const load = useCallback(() => {
     loadJob(id)
       .then(({ detail, offline: off }) => {
         setOffline(off);
@@ -110,10 +116,30 @@ export default function StepScreen() {
             ...(detail.asset ? [detail.asset.make, detail.asset.model] : []),
           ],
           language: detail.job.language,
+          onMac: detail.job.activeSurface === "desktop",
         });
       })
       .catch((e: Error) => setError(e.message));
   }, [id, stepId]);
+  useEffect(load, [load]);
+  // The Mac checking this step, or the job coming back from the Mac, shows here as it happens.
+  useJobChanges(id, load);
+
+  const [handingOff, setHandingOff] = useState(false);
+  const handOff = async (to: "desktop" | "phone") => {
+    if (!data) return;
+    setHandingOff(true);
+    setNotice(undefined);
+    try {
+      await api.handoff(id, to === "desktop" ? { to, stepId: data.jobStep.id } : { to });
+      if (to === "phone") return router.back();
+      setData((d) => (d ? { ...d, onMac: true } : d));
+    } catch (e) {
+      setNotice((e as Error).message);
+    } finally {
+      setHandingOff(false);
+    }
+  };
 
   const work = useStepWork(
     data
@@ -430,6 +456,16 @@ export default function StepScreen() {
           </Notice>
         ) : null}
         {notice ? <Notice testID="offline-notice">{notice}</Notice> : null}
+        {/* Design system: a step done on a computer is handed to the Mac. */}
+        {data && data.step.surface === "desktop" && !finished.includes(data.jobStep.status) ? (
+          <HandoffBanner
+            testID={data.onMac ? "handoff-waiting" : "handoff-offer"}
+            state={data.onMac ? "waiting" : "offer"}
+            step={data.index}
+            stepTitle={data.step.title}
+            onAction={handingOff ? undefined : () => void handOff(data.onMac ? "phone" : "desktop")}
+          />
+        ) : null}
         {/* Design system: a SafetyGate stands before a hazardous step. */}
         {work.gates}
         {/* Photos are for finding parts; a step that names none has no frame. */}

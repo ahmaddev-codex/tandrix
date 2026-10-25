@@ -25,6 +25,7 @@ import {
   Evidence,
   EvidenceWithUrl,
   Job,
+  HandoffResponse,
   PairingApproveResponse,
   PairingLookupResponse,
   type Surface,
@@ -96,6 +97,12 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ code }),
     }),
+  /** Sends the job to another device (the Mac hears it over Realtime). */
+  handoff: (jobId: string, body: { to: Surface; stepId?: string }) =>
+    request(`/jobs/${jobId}/handoff`, HandoffResponse, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }).then((r) => r.job),
   listJobs: () => request("/jobs", z.object({ jobs: z.array(Job) })).then((r) => r.jobs),
   getJob: (id: string) => request(`/jobs/${id}`, JobDetailResponse),
   identifyAsset: (jobId: string, evidenceId: string) =>

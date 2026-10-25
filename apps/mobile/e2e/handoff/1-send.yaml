@@ -1,0 +1,22 @@
+# Handoff, phone side: a step done on a computer offers "Continue on Mac"; sending it leaves the
+# phone waiting on the Mac. Needs JOB_TITLE (a job with the fixture steps; see run.sh).
+appId: app.tandrix.mobile
+---
+- runFlow: ../subflows/open-app.yaml
+# The newest job is first in the list.
+- tapOn: "${JOB_TITLE}.*"
+- scrollUntilVisible:
+    element: "Step 5: Set the drive ramp time,.*"
+    direction: DOWN
+- tapOn: "Step 5: Set the drive ramp time,.*"
+- extendedWaitUntil:
+    visible:
+      id: handoff-offer
+    timeout: 15000
+- takeScreenshot: handoff-offer
+- tapOn: Continue on Mac
+- extendedWaitUntil:
+    visible:
+      id: handoff-waiting
+    timeout: 10000
+- takeScreenshot: handoff-waiting

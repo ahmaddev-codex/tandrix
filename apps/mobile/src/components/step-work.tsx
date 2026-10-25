@@ -309,37 +309,41 @@ export function useStepWork(input: StepWorkInput | null): StepWork {
   const canSave = !busy && !!measured.trim() && !Number.isNaN(measuredValue);
   const saveMeasurement = () => send({ action: "confirm_done", measuredValue });
 
-  // Screen steps are checked on the Mac, not by a photo: the phone shows a notice instead.
-  const primary = refusal ? null : status === "todo" ? (
-    missing.length ? null : (
+  // Steps done on a computer are started and checked on the Mac; the step screen offers the
+  // handoff as its one primary action instead.
+  const primary =
+    refusal || step.surface === "desktop" ? null : status === "todo" ? (
+      missing.length ? null : (
+        <Button
+          variant="primary"
+          block
+          disabled={busy}
+          onPress={() => send({ action: "start" })}
+          testID="start-step"
+        >
+          Start step
+        </Button>
+      )
+    ) : active.includes(status) && step.verification === "screen" ? null : active.includes(
+        status,
+      ) &&
+      step.verification === "photo" &&
+      input.lastCheck !== "not_verifiable" ? (
+      <Button variant="primary" block disabled={busy} onPress={input.onCheck} testID="check-work">
+        {/* After a check found a problem, the one action is to check again. */}
+        {status === "needs_attention" ? "Check again" : "Check my work"}
+      </Button>
+    ) : active.includes(status) && step.verification !== "measurement" ? (
       <Button
         variant="primary"
         block
         disabled={busy}
-        onPress={() => send({ action: "start" })}
-        testID="start-step"
+        onPress={() => send({ action: "confirm_done" })}
+        testID="mark-done"
       >
-        Start step
+        Mark as done
       </Button>
-    )
-  ) : active.includes(status) && step.verification === "screen" ? null : active.includes(status) &&
-    step.verification === "photo" &&
-    input.lastCheck !== "not_verifiable" ? (
-    <Button variant="primary" block disabled={busy} onPress={input.onCheck} testID="check-work">
-      {/* After a check found a problem, the one action is to check again. */}
-      {status === "needs_attention" ? "Check again" : "Check my work"}
-    </Button>
-  ) : active.includes(status) && step.verification !== "measurement" ? (
-    <Button
-      variant="primary"
-      block
-      disabled={busy}
-      onPress={() => send({ action: "confirm_done" })}
-      testID="mark-done"
-    >
-      Mark as done
-    </Button>
-  ) : null;
+    ) : null;
 
   // Design system: StepCard actions are one field primary plus the icon-only mic.
   const actions = (
@@ -362,12 +366,7 @@ export function useStepWork(input: StepWorkInput | null): StepWork {
   const below = (
     <View style={{ gap: space["space-3"] }}>
       <VoiceTranscript testID="voice-transcript" state={talk.state} turns={turns} />
-      {step.verification === "screen" && active.includes(status) ? (
-        <Notice testID="screen-step">
-          This step is done on a computer. Open Tandrix on your Mac: it shows this step and checks
-          your screen.
-        </Notice>
-      ) : null}
+
       {measuring && step.measurement ? (
         // The value and its save sit together, above the keyboard; Done saves too.
         <View style={{ gap: space["space-3"] }}>

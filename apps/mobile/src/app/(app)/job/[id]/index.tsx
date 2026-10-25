@@ -11,6 +11,7 @@ import { citationLabel, radius, space, stepChip } from "@tandrix/ui";
 import {
   ActionCard,
   Button,
+  HandoffBanner,
   Notice,
   StepRow,
   SummaryCard,
@@ -24,6 +25,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { FlatList, Linking, RefreshControl, useWindowDimensions, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "@/lib/api";
+import { useJobChanges } from "@/lib/realtime";
 import { loadJob, offlineQueue, useOfflineStatus } from "@/offline";
 
 const COLUMNS = 3;
@@ -82,6 +84,28 @@ export default function JobScreen() {
       load();
     }, [load]),
   );
+  // Steps checked on the Mac, and handoffs, show here as they happen.
+  useJobChanges(id, load);
+
+  // While the job is on the Mac, the phone says so and can take it back.
+  const onMacStep =
+    job?.activeSurface === "desktop"
+      ? procedure?.steps.find(
+          (s) => s.id === jobSteps.find((js) => js.id === job.currentStepId)?.procedureStepId,
+        )
+      : undefined;
+  const [takingBack, setTakingBack] = useState(false);
+  const takeBack = async () => {
+    setTakingBack(true);
+    try {
+      await api.handoff(id, { to: "phone" });
+      await load();
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setTakingBack(false);
+    }
+  };
 
   const openManual = async (m: Manual) => {
     setOpening(true);
@@ -179,6 +203,15 @@ export default function JobScreen() {
                   sync.waiting ? ` ${sync.waiting} waiting.` : ""
                 }`}
               </Notice>
+            ) : null}
+            {onMacStep ? (
+              <HandoffBanner
+                testID="handoff-waiting"
+                state="waiting"
+                step={onMacStep.order}
+                stepTitle={onMacStep.title}
+                onAction={takingBack ? undefined : () => void takeBack()}
+              />
             ) : null}
             {sync.problems.map((p) => (
               <Notice

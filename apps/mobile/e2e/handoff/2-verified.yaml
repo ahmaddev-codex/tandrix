@@ -1,0 +1,10 @@
+# Handoff, after the Mac checked the step: the phone's open step shows it verified without a
+# refresh (Realtime), and the step no longer offers or waits on the Mac.
+appId: app.tandrix.mobile
+---
+- extendedWaitUntil:
+    visible: Verified
+    timeout: 10000
+- assertNotVisible:
+    id: handoff-waiting
+- takeScreenshot: handoff-verified

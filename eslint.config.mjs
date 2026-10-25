@@ -49,6 +49,19 @@ export default tseslint.config(
     rules: { "@typescript-eslint/no-require-imports": "off" },
   },
   {
+    // Node-run helper scripts for the end-to-end flows.
+    files: ["apps/mobile/e2e/**/*.mjs"],
+    languageOptions: {
+      globals: {
+        process: "readonly",
+        fetch: "readonly",
+        setTimeout: "readonly",
+        console: "readonly",
+        Buffer: "readonly",
+      },
+    },
+  },
+  {
     files: ["apps/**/*.{ts,tsx}", "packages/**/*.{ts,tsx}"],
     ignores: ["packages/ui/**", "**/*.test.{ts,tsx}"],
     rules: { "no-restricted-syntax": ["error", rawColour, rawColourInTemplate] },
