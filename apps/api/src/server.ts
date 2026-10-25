@@ -11,6 +11,8 @@ import { supabaseJobsRepo } from "./repos/jobs";
 import { metaManualFinder, noModelFinder } from "./manual-finder";
 import { supabaseManualsRepo } from "./repos/manuals";
 import { fixtureHighlighter } from "./fixtures/highlight";
+import { fixtureVoice } from "./fixtures/voice";
+import { metaVoice, noModelVoice } from "./voice";
 import { fixtureProcedureGenerator } from "./fixtures/procedure";
 import { metaHighlighter, noModelHighlighter } from "./highlighter";
 import { metaProcedureGenerator, noModelGenerator } from "./procedure-generator";
@@ -38,6 +40,7 @@ const highlighter = config.fixtureModels
   : meta
     ? metaHighlighter(meta, log)
     : noModelHighlighter;
+const voice = config.fixtureModels ? fixtureVoice : meta ? metaVoice(meta, log) : noModelVoice;
 if (config.fixtureModels) log({ level: "warn", event: "fixture_models_on" });
 if (!process.env.META_API_KEY)
   log({ level: "warn", event: "models_disabled", reason: "META_API_KEY not set" });
@@ -57,6 +60,8 @@ const app = createApp({
   detections: supabaseDetectionsRepo(admin),
   highlighter,
   stepState: supabaseStepStateRepo(admin),
+  transcriber: voice,
+  answerer: voice,
   tokenSecret: config.tokenSigningSecret,
   corsOrigins: config.corsOrigins,
   log,

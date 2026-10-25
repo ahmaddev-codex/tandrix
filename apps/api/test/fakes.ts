@@ -14,6 +14,7 @@ import { HttpError } from "../src/errors";
 import { noModelFinder } from "../src/manual-finder";
 import { noModelGenerator } from "../src/procedure-generator";
 import { noModelHighlighter } from "../src/highlighter";
+import { noModelVoice } from "../src/voice";
 import type { DetectionsRepo } from "../src/repos/detections";
 import type { StepStateRepo, StepTransition } from "../src/repos/step-state";
 import type { ProceduresRepo, SaveProcedure } from "../src/repos/procedures";
@@ -233,6 +234,8 @@ export const noManuals = () => ({
   detections: memoryDetections(),
   highlighter: noModelHighlighter,
   stepState: memoryStepState(),
+  transcriber: noModelVoice,
+  answerer: noModelVoice,
 });
 
 /** Stores saved procedures as details; `saves` records what the route asked to save. */
@@ -271,6 +274,8 @@ export function memoryProcedures() {
           surface: s.surface,
           title: s.title,
           instruction: s.instruction,
+          ...(s.reason ? { reason: s.reason } : {}),
+          ...(s.caution ? { caution: s.caution } : {}),
           partSpecIds: s.partRefs.map((r) => partIds.get(r)!),
           hazardTags: s.hazardTags,
           verification: s.verification,

@@ -14,6 +14,7 @@ import type { ProceduresRepo } from "./repos/procedures";
 import type { Highlighter } from "./highlighter";
 import type { DetectionsRepo } from "./repos/detections";
 import type { StepStateRepo } from "./repos/step-state";
+import { voiceRoutes, type StepAnswerer, type Transcriber } from "./voice";
 import type { SafeFetchOptions } from "./safe-fetch";
 import { assetRoutes } from "./routes/asset";
 import { evidenceRoutes } from "./routes/evidence";
@@ -37,6 +38,8 @@ export interface AppDeps {
   detections: DetectionsRepo;
   highlighter: Highlighter;
   stepState: StepStateRepo;
+  transcriber: Transcriber;
+  answerer: StepAnswerer;
   /** Signs manual search candidates (TOKEN_SIGNING_SECRET). */
   tokenSecret: string;
   /** Tests only: swap DNS and transport for the manual download. */
@@ -87,6 +90,8 @@ export function createApp(deps: AppDeps) {
   app.get("/health", (c) => c.json({ ok: true }));
 
   app.use("/jobs/*", requireUser(deps.verifyToken));
+  app.use("/voice/*", requireUser(deps.verifyToken));
+  app.route("/voice", voiceRoutes(deps.transcriber));
   app.use("/jobs", requireUser(deps.verifyToken));
   // Evidence first: the more specific path must win over /jobs/:id.
   app.route("/jobs/:id/evidence", evidenceRoutes(deps.evidence, deps.storage));
@@ -134,6 +139,8 @@ export function createApp(deps: AppDeps) {
     detections: deps.detections,
     highlighter: deps.highlighter,
     stepState: deps.stepState,
+    answerer: deps.answerer,
+    assets: deps.assets,
     ...(deps.now ? { now: deps.now } : {}),
   };
   app.route("/jobs/:id/steps", stepRoutes(stepDeps));

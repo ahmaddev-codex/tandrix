@@ -1,9 +1,18 @@
 // Step work: highlight the step's parts in a photo, and record the user's verdict on a
 // highlight. Everything is scoped to the caller's job.
-import { refusalFor, requiredGates, transitionStep, type StepEvent } from "@tandrix/core";
 import {
+  parseVoiceCommand,
+  refusalFor,
+  refusalForRequest,
+  requiredGates,
+  transitionStep,
+  type StepEvent,
+} from "@tandrix/core";
+import {
+  AskStepRequest,
   CorrectDetectionRequest,
   StepActionRequest,
+  type AskStepResponse,
   type StepActionResponse,
   HIGHLIGHT_CONFIDENT,
   HighlightRequest,
@@ -20,6 +29,8 @@ import type { EvidenceRepo, EvidenceStorage } from "../repos/evidence";
 import type { JobsRepo } from "../repos/jobs";
 import type { ProceduresRepo } from "../repos/procedures";
 import type { StepStateRepo } from "../repos/step-state";
+import type { AssetsRepo } from "../repos/assets";
+import type { StepAnswerer } from "../voice";
 
 /** The design system highlights at most three parts at once. */
 export const MAX_HIGHLIGHTS = 3;
@@ -35,6 +46,8 @@ export interface StepDeps {
   detections: DetectionsRepo;
   highlighter: Highlighter;
   stepState: StepStateRepo;
+  answerer: StepAnswerer;
+  assets: AssetsRepo;
   now?: () => number;
 }
 
@@ -54,12 +67,49 @@ async function stepFor(d: StepDeps, ownerId: string, rawJobId?: string, rawStepI
   const parts = step.partSpecIds
     .map((id) => detail.parts.find((p) => p.id === id))
     .filter((p) => p !== undefined);
-  return { jobId: jobId.data, jobStep, step, parts };
+  return { jobId: jobId.data, job: found.job, jobStep, step, parts };
 }
 
 export function stepRoutes(d: StepDeps) {
   const now = d.now ?? Date.now;
   return new Hono<AuthEnv>()
+    .post("/:stepId/ask", async (c) => {
+      const user = c.get("user");
+      const { job, step, parts } = await stepFor(
+        d,
+        user.id,
+        c.req.param("id"),
+        c.req.param("stepId"),
+      );
+      const parsed = AskStepRequest.safeParse(await c.req.json().catch(() => undefined));
+      if (!parsed.success) throw invalid(issues(parsed.error));
+      const reply = (r: AskStepResponse) => c.json(r);
+      const { text, stuck } = parsed.data;
+
+      // Safety first, without the model: wiring and live work are refused whatever is asked.
+      const refusal = refusalForRequest(text);
+      if (refusal) return reply({ status: "refused", message: refusal.reason });
+
+      const command = stuck ? null : parseVoiceCommand(text);
+      if (command && command.kind !== "stuck") return reply({ status: "command", command });
+
+      const asset = job.assetId ? await d.assets.getForOwner(user.id, job.assetId) : null;
+      const r = await d.answerer.answer({
+        step: {
+          title: step.title,
+          instruction: step.instruction,
+          ...(step.reason ? { reason: step.reason } : {}),
+          ...(step.caution ? { caution: step.caution } : {}),
+          parts: parts.map((p) => p.name),
+          hazards: step.hazardTags,
+        },
+        ...(asset ? { equipment: `${asset.make} ${asset.model}` } : {}),
+        question:
+          command?.kind === "stuck" && command.detail ? `I'm stuck on ${command.detail}` : text,
+        stuck: stuck || command?.kind === "stuck",
+      });
+      return reply(r);
+    })
     .post("/:stepId/actions", async (c) => {
       const user = c.get("user");
       const { jobId, jobStep, step } = await stepFor(
