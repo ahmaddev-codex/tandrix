@@ -2,3 +2,5 @@
 // fonts listed in nativeFontNames before first render.
 export * from "./theme";
 export * from "./components";
+export * from "./highlight";
+export * from "./step";

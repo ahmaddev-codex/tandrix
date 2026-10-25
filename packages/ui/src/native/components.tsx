@@ -1,5 +1,6 @@
-// Native foundation components. Feature components (CaptureView, PartHighlight, CheckResult,
-// PartsList, HandoffBanner, StepCard, SafetyGate) are built on these in their feature tasks.
+// Native foundation components. Feature components are built on these in their feature tasks:
+// PartHighlight (highlight.tsx), StepCard (step.tsx); CheckResult, PartsList, HandoffBanner and
+// SafetyGate to come.
 import { useState, type ReactNode } from "react";
 import {
   ActivityIndicator,
