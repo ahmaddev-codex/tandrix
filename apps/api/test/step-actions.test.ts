@@ -6,7 +6,7 @@ import {
 } from "@tandrix/contracts";
 import { describe, expect, it } from "vitest";
 import { createApp } from "../src/app";
-import { actionTime } from "../src/routes/steps";
+import { actionTime, clientSurface } from "../src/routes/steps";
 import type { JobsRepo } from "../src/repos/jobs";
 import {
   memoryAssets,
@@ -269,5 +269,14 @@ describe("actions replayed from the offline queue", () => {
       status: "applied",
       step: { startedAt: "2026-10-26T09:59:30.000Z" },
     });
+  });
+});
+
+describe("clientSurface", () => {
+  it("takes a known surface from the header and defaults to the phone", () => {
+    expect(clientSurface("desktop")).toBe("desktop");
+    expect(clientSurface("glasses")).toBe("glasses");
+    expect(clientSurface(undefined)).toBe("phone");
+    expect(clientSurface("toaster")).toBe("phone");
   });
 });

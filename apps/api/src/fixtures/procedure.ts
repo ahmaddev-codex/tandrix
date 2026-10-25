@@ -68,6 +68,18 @@ export const fixtureProcedureGenerator: ProcedureGenerator = {
             expectedState: "All eight bolts at 25 Nm.",
             citation: page(4),
           },
+          {
+            order: 5,
+            surface: "desktop",
+            title: "Set the drive ramp time",
+            instruction:
+              "In the drive software, set Acceleration ramp to 10 seconds and save the parameters.",
+            partRefs: [],
+            hazardTags: [],
+            verification: "screen",
+            expectedState: "Acceleration ramp reads 10 s and the parameters are saved.",
+            citation: page(5),
+          },
         ],
       },
     };

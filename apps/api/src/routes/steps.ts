@@ -19,6 +19,7 @@ import {
   HIGHLIGHT_CONFIDENT,
   HighlightRequest,
   Id,
+  Surface,
   type HighlightTarget,
 } from "@tandrix/contracts";
 import { Hono } from "hono";
@@ -67,6 +68,13 @@ export interface StepDeps {
 }
 
 /** The caller's job step with its procedure step and the parts that step names. */
+/** Which app sent a step action, for the audit trail. Defaults to the phone. */
+export const SURFACE_HEADER = "X-Tandrix-Surface";
+export function clientSurface(header: string | undefined): Surface {
+  const s = Surface.safeParse(header);
+  return s.success ? s.data : "phone";
+}
+
 async function stepFor(d: StepDeps, ownerId: string, rawJobId?: string, rawStepId?: string) {
   const jobId = Id.safeParse(rawJobId);
   const stepId = Id.safeParse(rawStepId);
@@ -100,8 +108,12 @@ export function stepRoutes(d: StepDeps) {
       if (!parsed.success) throw invalid(issues(parsed.error));
       const reply = (r: CheckStepResponse) => c.json(r);
 
+      // Steps done in software are checked on a screenshot, everything else on a photo.
+      const medium = step.verification === "screen" ? "screen" : "photo";
+      const kind = medium === "screen" ? "screenshot" : "photo";
       const ev = await d.evidence.getForOwner(user.id, jobId, parsed.data.evidenceId);
-      if (!ev || !ev.uploadedAt || ev.kind !== "photo") throw notFound("Photo");
+      if (!ev || !ev.uploadedAt || ev.kind !== kind)
+        throw notFound(medium === "screen" ? "Screenshot" : "Photo");
 
       const at = new Date(now()).toISOString();
       const state = {
@@ -134,6 +146,7 @@ export function stepRoutes(d: StepDeps) {
 
       const outcome = await d.checker.check({
         jobStepId: jobStep.id,
+        medium,
         photo: { bytes: await d.storage.download(ev.storageKey), mimeType: ev.mimeType },
         instruction: step.instruction,
         expectedState: step.expectedState,
@@ -164,7 +177,7 @@ export function stepRoutes(d: StepDeps) {
             statusEvidenceId: result.state.statusEvidenceId,
             ...(result.state.note ? { note: result.state.note } : {}),
           },
-          surface: "phone",
+          surface: ev.surface,
           event: {},
         },
         evidenceId: ev.id,
@@ -222,6 +235,7 @@ export function stepRoutes(d: StepDeps) {
       const parsed = StepActionRequest.safeParse(await c.req.json().catch(() => undefined));
       if (!parsed.success) throw invalid(issues(parsed.error));
       const action = parsed.data;
+      const surface = clientSurface(c.req.header(SURFACE_HEADER));
       const reply = (r: StepActionResponse) => c.json(r);
       const forStep = async () =>
         (await d.stepState.confirmations(jobId)).filter((x) => x.jobStepId === jobStep.id);
@@ -233,7 +247,7 @@ export function stepRoutes(d: StepDeps) {
         if (!requiredGates(step.hazardTags).includes(action.gate)) {
           throw invalid([`gate: this step doesn't need ${action.gate}`]);
         }
-        await d.stepState.confirmGate(user.id, jobStep.id, action.gate, "phone");
+        await d.stepState.confirmGate(user.id, jobStep.id, action.gate, surface);
         return reply({ status: "applied", step: jobStep, confirmations: await forStep() });
       }
 
@@ -290,7 +304,7 @@ export function stepRoutes(d: StepDeps) {
           statusEvidenceId: result.state.statusEvidenceId,
           ...(result.state.note ? { note: result.state.note } : {}),
         },
-        surface: "phone",
+        surface,
         event: {
           action: action.action,
           ...(action.action === "confirm_done" && action.measuredValue !== undefined
@@ -312,8 +326,12 @@ export function stepRoutes(d: StepDeps) {
       const parsed = HighlightRequest.safeParse(await c.req.json().catch(() => undefined));
       if (!parsed.success) throw invalid(issues(parsed.error));
 
+      // Steps done in software are checked on a screenshot, everything else on a photo.
+      const medium = step.verification === "screen" ? "screen" : "photo";
+      const kind = medium === "screen" ? "screenshot" : "photo";
       const ev = await d.evidence.getForOwner(user.id, jobId, parsed.data.evidenceId);
-      if (!ev || !ev.uploadedAt || ev.kind !== "photo") throw notFound("Photo");
+      if (!ev || !ev.uploadedAt || ev.kind !== kind)
+        throw notFound(medium === "screen" ? "Screenshot" : "Photo");
       if (!ev.width || !ev.height) {
         throw new HttpError(
           422,

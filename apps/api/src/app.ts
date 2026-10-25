@@ -26,7 +26,7 @@ import { jobsRoutes } from "./routes/jobs";
 import { manualRoutes } from "./routes/manual";
 import { procedureRoutes } from "./routes/procedure";
 import { screenRoutes } from "./routes/screen";
-import { detectionRoutes, stepRoutes } from "./routes/steps";
+import { detectionRoutes, SURFACE_HEADER, stepRoutes } from "./routes/steps";
 import type { ScreenGuide } from "./screen-guide";
 
 export interface AppDeps {
@@ -91,7 +91,7 @@ export function createApp(deps: AppDeps) {
   app.use(
     cors({
       origin: (origin) => (deps.corsOrigins.includes(origin) ? origin : null),
-      allowHeaders: ["Authorization", "Content-Type"],
+      allowHeaders: ["Authorization", "Content-Type", SURFACE_HEADER],
       allowMethods: ["GET", "POST", "PATCH", "DELETE"],
       maxAge: 600,
     }),

@@ -23,7 +23,8 @@ export interface Transcriber {
 }
 
 export const HEAR_UNAVAILABLE = "Tandrix can't listen right now. Tap the buttons instead.";
-export const HEAR_UNCLEAR = "Tandrix didn't catch that. Hold the button and try again.";
+// Said on the phone (hold to talk) and the Mac (hotkey or mic), so it names no control.
+export const HEAR_UNCLEAR = "Tandrix didn't catch that. Ask again, a little slower.";
 
 export type StepAnswerResult =
   | { status: "answer"; answer: string; fromStep: boolean }

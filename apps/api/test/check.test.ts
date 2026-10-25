@@ -24,8 +24,8 @@ const A = "00000000-0000-4000-8000-00000000000a";
 const JOB = "00000000-0000-4000-8000-000000000001";
 const OTHER_JOB = "00000000-0000-4000-8000-000000000002";
 const PROC = "00000000-0000-4000-8000-0000000000f1";
-const PSTEP = ["c001", "c002"].map((x) => `00000000-0000-4000-8000-00000000${x}`);
-const JSTEP = ["e001", "e002"].map((x) => `00000000-0000-4000-8000-00000000${x}`);
+const PSTEP = ["c001", "c002", "c003"].map((x) => `00000000-0000-4000-8000-00000000${x}`);
+const JSTEP = ["e001", "e002", "e003"].map((x) => `00000000-0000-4000-8000-00000000${x}`);
 
 const base = {
   surface: "physical" as const,
@@ -53,6 +53,15 @@ const DRAFT: ProcedureDraft = {
       verification: "measurement",
       measurement: { quantity: "torque", unit: "Nm", target: 25 },
       expectedState: "At 25 Nm.",
+    },
+    {
+      ...base,
+      surface: "desktop",
+      order: 3,
+      title: "Set the ramp time",
+      instruction: "Set Ramp time to 10 s and save.",
+      verification: "screen",
+      expectedState: "Ramp time reads 10 s and is saved.",
     },
   ],
 };
@@ -98,6 +107,7 @@ async function setup(answers: CheckOutcome[]) {
   );
   const storage = memoryStorage();
   const checked: string[] = [];
+  const media: string[] = [];
   const app = createApp({
     verifyToken: async (t) => (t === "a" ? { id: A } : null),
     jobs,
@@ -111,6 +121,7 @@ async function setup(answers: CheckOutcome[]) {
     checker: {
       async check(input) {
         checked.push(input.expectedState);
+        media.push(input.medium);
         return answers.shift() ?? { status: "unavailable", message: "No answer scripted." };
       },
     },
@@ -125,13 +136,16 @@ async function setup(answers: CheckOutcome[]) {
       headers: { "content-type": "application/json", authorization: "Bearer a" },
       body: JSON.stringify(body),
     });
-  const photo = async (capturedAt: string, opts: { job?: string; uploaded?: boolean } = {}) => {
+  const photo = async (
+    capturedAt: string,
+    opts: { job?: string; uploaded?: boolean; kind?: "photo" | "screenshot" } = {},
+  ) => {
     const ev = await evidence.createPending({
       id: crypto.randomUUID(),
       jobId: opts.job ?? JOB,
       jobStepId: JSTEP[0]!,
-      kind: "photo",
-      surface: "phone",
+      kind: opts.kind ?? "photo",
+      surface: opts.kind === "screenshot" ? "desktop" : "phone",
       storageKey: `${A}/${JOB}/${crypto.randomUUID()}.png`,
       mimeType: "image/png",
       byteSize: PNG.length,
@@ -150,7 +164,7 @@ async function setup(answers: CheckOutcome[]) {
     StepActionResponse.parse(
       await (await post(`/jobs/${JOB}/steps/${JSTEP[step - 1]}/actions`, body)).json(),
     );
-  return { check, act, photo, checked, stepState };
+  return { check, act, photo, checked, media, stepState };
 }
 
 const LATER = "2026-10-26T11:00:00.000Z";
@@ -239,5 +253,30 @@ describe("POST /jobs/:id/steps/:stepId/check", () => {
     await s.act(1, { action: "start" });
     expect((await s.check(1, (await s.photo(LATER, { job: OTHER_JOB })).id)).res.status).toBe(404);
     expect((await s.check(1, (await s.photo(LATER, { uploaded: false })).id)).res.status).toBe(404);
+  });
+
+  it("checks a step done in software on a screenshot, and only on a screenshot", async () => {
+    const s = await setup([
+      { status: "judged", result: "pass", reason: "Ramp time reads 10 s and is saved." },
+    ]);
+    await s.act(3, { action: "start" });
+    expect((await s.check(3, (await s.photo(LATER)).id)).res.status).toBe(404);
+    const shot = await s.photo(LATER, { kind: "screenshot" });
+    expect((await s.check(3, shot.id)).body).toMatchObject({
+      status: "checked",
+      check: { result: "pass" },
+      step: { status: "verified", statusEvidenceId: shot.id },
+    });
+    expect(s.media).toEqual(["screen"]);
+    // Recorded as the Mac's doing, from the screenshot's surface.
+    expect(s.stepState.steps.get(JSTEP[2]!)!.updatedBySurface).toBe("desktop");
+  });
+
+  it("doesn't take a screenshot as a photo", async () => {
+    const s = await setup([]);
+    await s.act(1, { action: "start" });
+    const r = await s.check(1, (await s.photo(LATER, { kind: "screenshot" })).id);
+    expect(r.res.status).toBe(404);
+    expect(s.checked).toEqual([]);
   });
 });

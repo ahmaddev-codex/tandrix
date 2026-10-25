@@ -5,16 +5,23 @@ import type { StepChecker } from "../step-checker";
 const seen = new Set<string>();
 
 export const fixtureChecker: StepChecker = {
-  async check({ jobStepId, expectedState }) {
+  async check({ jobStepId, medium, expectedState }) {
     if (!seen.has(jobStepId)) {
       seen.add(jobStepId);
-      return {
-        status: "judged",
-        result: "fail",
-        reason:
-          "The part isn't seated yet: there's a gap at the shoulder. Push it fully home and check again.",
-        whatToShowNext: "Show the joint from the side, close up.",
-      };
+      return medium === "screen"
+        ? {
+            status: "judged",
+            result: "fail",
+            reason:
+              "The setting still shows the old value and hasn't been saved. Change it, save, and check again.",
+          }
+        : {
+            status: "judged",
+            result: "fail",
+            reason:
+              "The part isn't seated yet: there's a gap at the shoulder. Push it fully home and check again.",
+            whatToShowNext: "Show the joint from the side, close up.",
+          };
     }
     return { status: "judged", result: "pass", reason: `Matches the step. ${expectedState}` };
   },
