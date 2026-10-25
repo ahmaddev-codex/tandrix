@@ -35,14 +35,17 @@ export interface ProcedureRequest {
   manual?: InputPart;
   /** Pages in the manual, so the model knows which page numbers exist. */
   manualPages?: number;
-  asset: { make: string; model: string };
+  /** The equipment, when the job has any; a project without equipment works from the job alone. */
+  asset?: { make: string; model: string };
   job: string;
   effort?: ReasoningEffort;
   signal?: AbortSignal;
 }
 
 export function generateProcedure(client: MetaClient, models: Models, req: ProcedureRequest) {
-  const about = `Equipment: ${req.asset.make} ${req.asset.model}\nJob: ${req.job}`;
+  const about = req.asset
+    ? `Equipment: ${req.asset.make} ${req.asset.model}\nJob: ${req.job}`
+    : `Project (no specific equipment): ${req.job}`;
   return generateStructured(client, {
     model: models.reasoning,
     name: "procedure_draft",

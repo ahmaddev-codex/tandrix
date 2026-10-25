@@ -12,7 +12,8 @@ import {
 import type { ProcedureDraft } from "@tandrix/contracts";
 
 export interface GenerateInput {
-  asset: { make: string; model: string };
+  /** Null for a project with no equipment: steps come from the task alone. */
+  asset: { make: string; model: string } | null;
   task: string;
   manual: { bytes: Uint8Array; pages: number } | null;
 }
@@ -60,7 +61,7 @@ export function metaProcedureGenerator(
         }
         const r = await generateProcedure(client, config.models, {
           ...(part ? { manual: part, manualPages: manual!.pages } : {}),
-          asset,
+          ...(asset ? { asset } : {}),
           job: task,
         });
         if (!r.ok) {

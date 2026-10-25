@@ -128,6 +128,16 @@ describe("generateProcedure", () => {
     ],
   };
 
+  it("works from the goal alone for a project with no equipment", async () => {
+    const { client, calls } = clientWith([responseWithText(JSON.stringify(draft))]);
+    await generateProcedure(client, models, { job: "Assemble a 12U home server rack" });
+    const body = calls[0]!.body as { instructions: string; input: unknown };
+    expect(body.instructions).toBe(prompts.procedureGeneric);
+    expect(JSON.stringify(body.input)).toContain(
+      "Project (no specific equipment): Assemble a 12U home server rack",
+    );
+  });
+
   it("sends the manual and its page count with the manual prompt", async () => {
     const { client, calls } = clientWith([responseWithText(JSON.stringify(draft))]);
     const r = await generateProcedure(client, models, {

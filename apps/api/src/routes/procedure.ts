@@ -27,6 +27,10 @@ export interface ProcedureDeps {
   log: (l: Record<string, unknown>) => void;
 }
 
+/** Procedures for projects without equipment are keyed by their goal, apart from equipment keys. */
+export const projectKey = (task: string) =>
+  `project|${task.trim().toLowerCase().replace(/\s+/g, " ")}`.slice(0, 260);
+
 export function procedureRoutes(d: ProcedureDeps) {
   return new Hono<AuthEnv>().post("/", async (c) => {
     const user = c.get("user");
@@ -39,12 +43,14 @@ export function procedureRoutes(d: ProcedureDeps) {
     if (!found) throw notFound("Job");
     if (found.job.procedureId)
       throw new HttpError(409, "conflict", "This job already has its steps.");
+    // Equipment is optional: a project ("assemble a home server rack") works from its goal, and
+    // its steps are all Generic because there is no manual to cite.
     const asset = found.job.assetId ? await d.assets.getForOwner(user.id, found.job.assetId) : null;
-    if (!asset) throw new HttpError(409, "conflict", "Identify the equipment first.");
+    const task = parsed.data.task ?? found.job.title;
 
-    const key = assetModelKey(asset.make, asset.model);
-    const manual = await d.manuals.findForModel(user.id, key);
-    if (!manual && !parsed.data.allowGeneric) {
+    const key = asset ? assetModelKey(asset.make, asset.model) : projectKey(task);
+    const manual = asset ? await d.manuals.findForModel(user.id, key) : null;
+    if (asset && !manual && !parsed.data.allowGeneric) {
       throw new HttpError(
         409,
         "conflict",
@@ -53,8 +59,8 @@ export function procedureRoutes(d: ProcedureDeps) {
     }
 
     const result = await d.generator.generate({
-      asset: { make: asset.make, model: asset.model },
-      task: parsed.data.task ?? found.job.title,
+      asset: asset ? { make: asset.make, model: asset.model } : null,
+      task,
       manual: manual
         ? { bytes: await d.manualStorage.download(manual.storageKey), pages: manual.pageCount }
         : null,

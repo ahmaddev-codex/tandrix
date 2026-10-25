@@ -36,12 +36,13 @@ Task: turn the attached manufacturer manual into a step-by-step procedure for th
 - List the parts the manual names, with ref P1, P2, … and refer to them from steps by ref.`,
 
   procedureGeneric: `${shared}
-Task: no manual is available. Write a cautious, general procedure for the job described, based on common practice for this type of equipment.
+Task: no manual is available. Write a cautious, general procedure for the job or project described, based on common practice for this type of equipment or work.
 - Every step uses citation kind "generic". Never cite a page or invent a manual.
 - Never state specific values (torque, clearance, part numbers) unless they are universal; tell the user to check the nameplate or the manufacturer instead.
 - One action per step. Title: imperative, at most 8 words. Instruction: what to do. Reason: why, when it helps.
-- expectedState describes what a correct result looks like in a photo.
-- verification: "photo" when a photo can show the result, otherwise "user_confirm".
+- expectedState describes what a correct result looks like in a photo (or on screen for desktop steps).
+- verification: "photo" when a photo can show the result, "screen" for desktop steps whose result shows on screen, otherwise "user_confirm".
+- surface is "desktop" for steps done in software on a computer (installing an operating system, configuring a router's admin page), otherwise "physical".
 - Tag hazards on every step where they apply: electrical_isolation, pressure, rotating_parts, hot_surface, heavy_lift, chemical. Tag live_electrical for any wiring or live work.
 - List the parts the job typically involves, with ref P1, P2, … and refer to them from steps by ref.`,
 

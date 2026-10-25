@@ -192,9 +192,29 @@ describe("POST /jobs/:id/procedure", () => {
     expect(s.procedures.saves).toEqual([]);
   });
 
-  it("refuses a job without equipment, one that has steps, and others' jobs", async () => {
+  it("writes a project's steps from its goal when there is no equipment, all Generic", async () => {
     const s = await setup();
-    expect((await s.call(`/jobs/${NO_ASSET_JOB}/procedure`, "a")).status).toBe(409);
+    const res = await s.call(`/jobs/${NO_ASSET_JOB}/procedure`, "a", {
+      task: "Assemble a 12U home server rack",
+    });
+    expect(res.status).toBe(201);
+    const body = GenerateProcedureResponse.parse(await res.json());
+    if (body.status !== "created") throw new Error(body.status);
+    expect(s.asked[0]).toMatchObject({
+      asset: null,
+      manual: null,
+      task: "Assemble a 12U home server rack",
+    });
+    // Nothing to cite: the model's page citations become Generic.
+    expect(body.detail.steps.every((x) => x.citation.kind === "generic")).toBe(true);
+    expect(s.procedures.saves[0]).toMatchObject({
+      assetModelKey: "project|assemble a 12u home server rack",
+      manualId: null,
+    });
+  });
+
+  it("refuses a job that has steps, and others' jobs", async () => {
+    const s = await setup();
     expect((await s.call(`/jobs/${JOB}/procedure`, "b")).status).toBe(404);
     s.jobsList[0] = job(JOB, ASSET, "00000000-0000-4000-8000-0000000000f1");
     expect((await s.call(`/jobs/${JOB}/procedure`, "a")).status).toBe(409);
