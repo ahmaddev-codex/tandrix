@@ -124,7 +124,7 @@ All routes authenticated (Supabase JWT), Zod-validated, and scoped to the owner.
 | `/jobs/:id/steps/:stepId/highlight` | POST | An uploaded photo on the job → highlights for up to three of the step's parts (each saved as a `Detection`), the parts not found, and a framing hint; `unavailable` when the model can't help (the app lists the parts by number) |
 | `/jobs/:id/detections/:detectionId` | PATCH | The user's verdict on a highlight: `confirmed`, `wrong`, or `other_part` (relabelled to another part of the procedure) |
 | `/jobs/:id/steps/:stepId/check` | POST | Check photo/screenshot → `Check` |
-| `/jobs/:id/steps/:stepId` | PATCH | User status changes (confirm, skip, safety gate) |
+| `/jobs/:id/steps/:stepId/actions` | POST | `start`, `confirm_safety`, `confirm_done` (with a measured value for measurement steps), `skip` (with a reason) or `reopen`. The API applies `@tandrix/core` `transitionStep` and saves through `confirm_safety_gate` / `apply_step_transition` (one transaction each, with an event). A rule saying no is a `rejected` answer with its code and, for gates, the gates still to confirm; a step changed on another device meanwhile is a 409 |
 | `/jobs/:id/screen/ask` | POST | Desktop: screenshot + question → reply text + `PointerTarget` |
 | `/jobs/:id/handoff` | POST | Set active surface; realtime notifies devices |
 | `/jobs/:id/report` | GET | Report JSON; `/r/:token` serves the web page |

@@ -198,10 +198,10 @@ Sizes: XS 1 file · S 1–2 · M 3–5 · L 5–8 (split if larger). Commands as
 **Dependencies:** T11, T3. **Files:** `packages/ai/src/{sam,pipelines}.ts`, `apps/api/src/{highlighter,routes/steps,repos/detections}.ts`, `packages/ui/src/native/{highlight,step,label-layout}.tsx`, `apps/mobile/src/app/(app)/job/[id]/step/[stepId].tsx`. **Size:** M
 
 #### T13 Safety gates on steps
-**Description:** SafetyGate UI on hazard-tagged steps using `core.canStart`; confirmations persisted.
+**Description:** SafetyGate UI on hazard-tagged steps using `core.transitionStep` (gates before start, refusal for live electrical work); confirmations persisted; `core.refusalForRequest` for free-text requests (used by the assistant in T14).
 **Acceptance:** hazardous step can't start until confirmed; wiring/live-work requests refused with "qualified person" message.
 **Verification:** core tests; API test for refusal prompt; manual.
-**Dependencies:** T12, T2. **Files:** `apps/mobile/src/components/SafetyGate.tsx`, `apps/api/src/routes/steps.ts`, `packages/ai/src/policy.ts`. **Size:** S
+**Dependencies:** T12, T2. **Files:** `packages/ui/src/native/feedback.tsx` (SafetyGate), `apps/mobile/src/components/step-work.tsx`, `apps/api/src/{routes/steps,repos/step-state}.ts`, `supabase/migrations/*_step_actions.sql`, `packages/core/src/safety.ts`. **Size:** S
 
 #### T14 Voice in and out on phone
 **Description:** `/voice/stream` WS proxy to Muse Voice Transcribe; push-to-talk on phone (PCM 16 kHz); voice commands (next, repeat, show me again, I'm stuck, skip, stop) mapped to step actions; free questions answered in step context; TTS via `expo-speech`.
