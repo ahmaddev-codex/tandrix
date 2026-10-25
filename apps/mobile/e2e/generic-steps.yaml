@@ -1,5 +1,5 @@
 # T11: no manual. The user chooses general steps; every step is labelled Generic, never cited.
-# Needs the API with TANDRIX_FIXTURE_PROCEDURE=1 until the model is live.
+# Needs the API with TANDRIX_FIXTURE_MODELS=1 until the model is live.
 appId: app.tandrix.mobile
 env:
   JOB_TITLE: Generic job e2e ${RUN_ID}
@@ -73,8 +73,8 @@ env:
       id: step-list
     timeout: 60000
 - assertVisible: 4 steps
-- assertVisible: "Generic, not from the manufacturer"
-- assertNotVisible: "Manual p.*"
+- assertVisible: "Step 1: .*, To do, Generic, not from the manufacturer"
+- assertNotVisible: ".*Manual p.*"
 - assertNotVisible:
     id: generic-steps
 - takeScreenshot: job-with-generic-steps

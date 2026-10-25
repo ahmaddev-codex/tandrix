@@ -19,6 +19,23 @@ appId: app.tandrix.mobile
 - tapOn: sunlight
 - takeScreenshot: gallery-sunlight
 - scrollUntilVisible:
+    element: "Step 3 of 9"
+    direction: DOWN
+- takeScreenshot: gallery-step-sunlight
+- scrollUntilVisible:
+    element: "Seal, possible match"
+    direction: DOWN
+- takeScreenshot: gallery-highlight-sunlight
+- scrollUntilVisible:
     element: Torque applied
     direction: DOWN
 - takeScreenshot: gallery-inputs-sunlight
+# The highlight must read on the dark theme too.
+- scrollUntilVisible:
+    element: dark
+    direction: UP
+- tapOn: dark
+- scrollUntilVisible:
+    element: "Seal, possible match"
+    direction: DOWN
+- takeScreenshot: gallery-highlight-dark

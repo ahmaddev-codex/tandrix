@@ -1,10 +1,16 @@
 // Typed client for the Tandrix API. Responses are validated with the shared contracts.
-import type { CreateEvidenceRequest, SaveAssetRequest } from "@tandrix/contracts";
+import type {
+  CorrectDetectionRequest,
+  CreateEvidenceRequest,
+  SaveAssetRequest,
+} from "@tandrix/contracts";
 import {
   Asset,
   CreateEvidenceResponse,
   CreateManualUploadResponse,
   GenerateProcedureResponse,
+  HighlightResponse,
+  Detection,
   ManualResponse,
   ManualSearchResponse,
   IdentifyAssetResponse,
@@ -116,6 +122,16 @@ export const api = {
       method: "POST",
       body: JSON.stringify(body),
     }),
+  highlight: (jobId: string, jobStepId: string, evidenceId: string) =>
+    request(`/jobs/${jobId}/steps/${jobStepId}/highlight`, HighlightResponse, {
+      method: "POST",
+      body: JSON.stringify({ evidenceId }),
+    }),
+  correctDetection: (jobId: string, detectionId: string, body: CorrectDetectionRequest) =>
+    request(`/jobs/${jobId}/detections/${detectionId}`, z.object({ detection: Detection }), {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }).then((r) => r.detection),
   createJob: (input: { title: string; surface: Surface }) =>
     request("/jobs", z.object({ job: Job }), { method: "POST", body: JSON.stringify(input) }).then(
       (r) => r.job,

@@ -6,12 +6,19 @@ import type {
   Manual,
   ProcedureDetail,
 } from "@tandrix/contracts";
-import { radius, space } from "@tandrix/ui";
+import { genericSourceLabel, radius, space, statusMeta } from "@tandrix/ui";
 import { Button, Icon, SourceChip, StatusChip, Text, useTheme } from "@tandrix/ui/native";
 import { Image } from "expo-image";
 import { router, Stack, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useState } from "react";
-import { FlatList, Linking, RefreshControl, useWindowDimensions, View } from "react-native";
+import {
+  FlatList,
+  Linking,
+  Pressable,
+  RefreshControl,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "@/lib/api";
 import { citationLabel, stepChip } from "@/lib/steps";
@@ -252,18 +259,31 @@ export default function JobScreen() {
                   const chip = stepChip[js?.status ?? "todo"];
                   const cite = citationLabel(step.citation);
                   return (
-                    <View
+                    <Pressable
                       key={step.id}
                       testID="step-row"
-                      style={{
+                      accessibilityRole="button"
+                      // The whole row is one button, so its label carries the status and source too.
+                      accessibilityLabel={`Step ${step.order}: ${step.title}, ${
+                        chip.label ?? statusMeta[chip.status].label
+                      }, ${cite ?? genericSourceLabel}`}
+                      disabled={!js}
+                      onPress={() =>
+                        js &&
+                        router.push({
+                          pathname: "/job/[id]/step/[stepId]",
+                          params: { id, stepId: js.id },
+                        })
+                      }
+                      style={({ pressed }) => ({
                         flexDirection: "row",
                         gap: space["space-3"],
                         padding: space["space-4"],
                         borderRadius: radius["radius-lg"],
                         borderWidth: 1,
                         borderColor: t.color.border,
-                        backgroundColor: t.color["background-100"],
-                      }}
+                        backgroundColor: pressed ? t.color["gray-100"] : t.color["background-100"],
+                      })}
                     >
                       <Text variant="mono-16" color="text-secondary">
                         {String(step.order)}
@@ -277,7 +297,7 @@ export default function JobScreen() {
                           <SourceChip kind="generic" />
                         )}
                       </View>
-                    </View>
+                    </Pressable>
                   );
                 })}
               </View>

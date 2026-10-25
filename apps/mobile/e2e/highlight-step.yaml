@@ -1,0 +1,124 @@
+# T12: highlight a step's parts on a photo and correct them. Needs the API with
+# TANDRIX_FIXTURE_MODELS=1 until the model is live: the impeller comes back as a confident mask,
+# the impeller nut as a lower-confidence box ("Possible match").
+appId: app.tandrix.mobile
+env:
+  JOB_TITLE: Highlight job e2e ${RUN_ID}
+---
+- addMedia:
+    - assets/sample-part.jpg
+- launchApp:
+    permissions:
+      all: allow
+      camera: deny
+- runFlow: subflows/open-app.yaml
+- tapOn:
+    id: new-job
+- extendedWaitUntil:
+    visible:
+      id: job-title
+    timeout: 30000
+- tapOn:
+    id: job-title
+- inputText: ${JOB_TITLE}
+- tapOn:
+    id: create-job
+- extendedWaitUntil:
+    visible: ${JOB_TITLE},.*
+    timeout: 15000
+- tapOn: ${JOB_TITLE},.*
+- extendedWaitUntil:
+    visible:
+      id: photograph-nameplate
+    timeout: 15000
+- tapOn:
+    id: photograph-nameplate
+- extendedWaitUntil:
+    visible:
+      id: choose-photo
+    timeout: 30000
+- tapOn:
+    id: choose-photo
+- extendedWaitUntil:
+    visible:
+      text: "Photo, .*"
+    timeout: 15000
+- tapOn:
+    text: "Photo, .*"
+    index: 0
+- tapOn:
+    id: use-photo
+- extendedWaitUntil:
+    visible:
+      id: identify-banner
+    timeout: 60000
+- tapOn:
+    id: asset-make
+- eraseText: 120
+- inputText: FlowSet
+- tapOn:
+    id: asset-model
+- eraseText: 120
+- inputText: HL-${RUN_ID}
+- hideKeyboard
+- tapOn:
+    id: save-asset
+- extendedWaitUntil:
+    visible:
+      id: generic-steps
+    timeout: 15000
+- tapOn:
+    id: generic-steps
+- extendedWaitUntil:
+    visible:
+      id: step-list
+    timeout: 60000
+# Open the step with two parts.
+- scrollUntilVisible:
+    element: "Step 3: Fit the impeller,.*"
+    direction: DOWN
+- tapOn: "Step 3: Fit the impeller,.*"
+- extendedWaitUntil:
+    visible:
+      id: step-card
+    timeout: 15000
+- assertVisible: "Step 3 of 4"
+# Without a highlight yet, the step's parts are listed by number.
+- assertVisible: "1. Impeller"
+- assertVisible: "2. Impeller nut"
+- tapOn:
+    id: choose-photo
+- extendedWaitUntil:
+    visible:
+      text: "Photo, .*"
+    timeout: 15000
+- tapOn:
+    text: "Photo, .*"
+    index: 0
+- tapOn: Find the parts
+- extendedWaitUntil:
+    visible:
+      id: part-highlight
+    timeout: 60000
+# Each label is one button whose accessibility label carries "possible match".
+- assertVisible: "Impeller nut, possible match"
+- takeScreenshot: step-highlight
+# Confirm the impeller.
+- tapOn: "Impeller"
+- extendedWaitUntil:
+    visible:
+      id: correct-panel
+    timeout: 5000
+- tapOn:
+    id: confirm-highlight
+- assertNotVisible:
+    id: correct-panel
+# The possible match is wrong: it disappears and is reported as not found.
+- tapOn: "Impeller nut, possible match"
+- tapOn:
+    id: reject-highlight
+- extendedWaitUntil:
+    visible: "Not found in this photo: Impeller nut."
+    timeout: 10000
+- assertNotVisible: "Impeller nut, possible match"
+- takeScreenshot: step-highlight-corrected

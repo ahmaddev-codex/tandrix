@@ -4,8 +4,10 @@ import {
   Button,
   Icon,
   Input,
+  PartHighlight,
   SourceChip,
   StatusChip,
+  StepCard,
   Text,
   ThemeProvider,
   useTheme,
@@ -105,6 +107,56 @@ function Sheet({ theme, onTheme }: { theme: ThemeName; onTheme: (t: ThemeName) =
           <SourceChip kind="manual">Manual p.14, fig. 3</SourceChip>
           <SourceChip kind="expert">Expert recording 02:31</SourceChip>
           <SourceChip kind="generic" />
+        </View>,
+      )}
+      {section(
+        "Step card",
+        <StepCard
+          index={3}
+          total={9}
+          title="Fit the impeller onto the shaft"
+          body="Vanes face the inlet. Push until it seats against the shaft shoulder."
+          caution="The impeller edges are sharp. Wear gloves."
+          status="progress"
+          source="Manual p.14, fig. 3"
+          actions={
+            <>
+              <Button variant="primary" size="field" block>
+                Check my work
+              </Button>
+              <Button
+                variant="secondary"
+                size="field"
+                icon="mic"
+                iconOnly
+                accessibilityLabel="Hold to talk"
+              />
+            </>
+          }
+        />,
+      )}
+      {section(
+        "Part highlight",
+        <View style={{ height: 240 }}>
+          <PartHighlight
+            size={{ width: 400, height: 300 }}
+            alt="Highlighted: impeller in the centre, seal at the top left, possible match"
+            targets={[
+              {
+                id: "impeller",
+                label: "Impeller",
+                partNumber: "96513247",
+                box: { x: 140, y: 120, w: 140, h: 120 },
+                mask: {
+                  path: "M12 0L28 0L40 12L40 28L28 40L12 40L0 28L0 12Z",
+                  raster: { width: 40, height: 40 },
+                },
+              },
+              { id: "seal", label: "Seal", possible: true, box: { x: 30, y: 70, w: 70, h: 60 } },
+            ]}
+          >
+            <View style={{ flex: 1, backgroundColor: t.color["gray-700"] }} />
+          </PartHighlight>
         </View>,
       )}
       {section(

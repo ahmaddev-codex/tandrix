@@ -113,7 +113,7 @@ env:
 - assertVisible:
     id: open-manual
 - takeScreenshot: job-with-manual
-# T11: write the steps from the manual. Needs the API with TANDRIX_FIXTURE_PROCEDURE=1 until the
+# T11: write the steps from the manual. Needs the API with TANDRIX_FIXTURE_MODELS=1 until the
 # model is live; the fixture goes through the same rules and transaction as a real draft. The
 # photographed manual has one page, so every citation is page 1.
 - tapOn:
@@ -123,7 +123,7 @@ env:
       id: step-list
     timeout: 60000
 - assertVisible: 4 steps
-- assertVisible: Isolate and drain the pump
-- assertVisible: "Manual p.1, fig. 2"
-- assertVisible: To do
+# Each row is one button labelled with its title, status and source.
+- assertVisible: "Step 1: Isolate and drain the pump, To do, Manual p.1"
+- assertVisible: "Step 2: Fit the mechanical seal, To do, Manual p.1, fig. 2"
 - takeScreenshot: job-with-steps
