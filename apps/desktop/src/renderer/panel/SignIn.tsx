@@ -50,8 +50,8 @@ export function SignIn() {
   return (
     <main className="panel-page panel-signin">
       <header className="panel-stack-2">
-        <h1 className="heading-24">Tandrix</h1>
-        <p className="copy-14 panel-muted">
+        <h1 className="heading-18">Tandrix</h1>
+        <p className="copy-13 panel-muted">
           {step === "phone"
             ? "Scan this with your phone's camera, or open Tandrix on your phone and choose Sign in a Mac."
             : step === "code"
@@ -134,7 +134,7 @@ export function SignIn() {
           onSubmit={submit(() => void run(() => auth.signInWithPassword!(email.trim(), password)))}
           noValidate
         >
-          <p className="copy-14 panel-muted">
+          <p className="copy-13 panel-muted">
             Only on the local stack: signs in the seeded test user (DEV_USER_EMAIL and
             DEV_USER_PASSWORD in .env.local).
           </p>

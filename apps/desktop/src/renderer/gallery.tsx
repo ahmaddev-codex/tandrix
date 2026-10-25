@@ -41,7 +41,7 @@ const statuses: StepStatus[] = [
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="gallery-section">
-      <h2 className="label-14 gallery-muted">{title}</h2>
+      <h2 className="label-13 gallery-muted">{title}</h2>
       {children}
     </section>
   );
@@ -200,7 +200,7 @@ function Gallery() {
     <main className="gallery">
       {themes.map((theme) => (
         <div key={theme} data-theme={theme} className="gallery-theme">
-          <h1 className="heading-20">{theme}</h1>
+          <h1 className="heading-16">{theme}</h1>
           <Components />
         </div>
       ))}

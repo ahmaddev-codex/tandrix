@@ -96,14 +96,14 @@ export function PairWithPhone() {
             label={`Sign-in code ${formatPairingCode(state.pairing.code)}`}
           />
           <div className="panel-stack-1 pair-code">
-            <span className="mono-16 pair-code-text">{formatPairingCode(state.pairing.code)}</span>
-            <span className="label-13 panel-muted" role="timer">
+            <span className="mono-13 pair-code-text">{formatPairingCode(state.pairing.code)}</span>
+            <span className="label-12 panel-muted" role="timer">
               {left > 0 ? `New code in ${clock(left)}` : "Getting a new code…"}
             </span>
           </div>
         </>
       ) : (
-        <p className="copy-14 panel-muted" role="status">
+        <p className="copy-13 panel-muted" role="status">
           {state.kind === "signing" ? "Signing in…" : "Getting a code…"}
         </p>
       )}

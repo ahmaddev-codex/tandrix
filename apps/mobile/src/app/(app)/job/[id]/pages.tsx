@@ -125,7 +125,7 @@ export default function Pages() {
         </CaptureView>
       ) : (
         <View style={{ flex: 1, justifyContent: "center", gap: space["space-4"] }}>
-          <Text variant="heading-24">Photograph the pages</Text>
+          <Text variant="heading-18">Photograph the pages</Text>
           <Text variant="field-body" color="text-secondary">
             {cameraFailed || (permission && !permission.canAskAgain)
               ? "The camera isn't available. Choose photos of the pages instead, in page order."
@@ -160,7 +160,7 @@ export default function Pages() {
         }}
       >
         <Icon name="file" size={20} color="text-secondary" />
-        <Text variant="label-16">
+        <Text variant="label-14">
           {pages.length === 0
             ? "No pages yet"
             : `${pages.length} ${pages.length === 1 ? "page" : "pages"}`}

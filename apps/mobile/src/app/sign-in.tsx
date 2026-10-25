@@ -55,7 +55,7 @@ export default function SignIn() {
           keyboardShouldPersistTaps="handled"
         >
           <View style={{ gap: space["space-2"] }}>
-            <Text variant="heading-32">Tandrix</Text>
+            <Text variant="heading-24">Tandrix</Text>
             <Text variant="field-body" color="text-secondary">
               {step === "code"
                 ? `We sent a 6-digit code to ${email.trim()}.`
@@ -143,7 +143,7 @@ export default function SignIn() {
 
           {step === "password" && auth.signInWithPassword ? (
             <View style={{ gap: space["space-4"] }}>
-              <Text variant="copy-14" color="text-secondary">
+              <Text variant="copy-13" color="text-secondary">
                 Only on the local stack: signs in the seeded test user (DEV_USER_EMAIL and
                 DEV_USER_PASSWORD in .env.local).
               </Text>

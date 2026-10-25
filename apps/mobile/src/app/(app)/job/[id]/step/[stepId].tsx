@@ -508,14 +508,14 @@ export default function StepScreen() {
 
         {(unavailable || result?.status === "no_parts" || phase !== "result") && parts.length ? (
           <View testID="step-parts" style={{ gap: space["space-1"] }}>
-            <Text variant="label-14" color="text-secondary">
+            <Text variant="label-13" color="text-secondary">
               Parts for this step
             </Text>
             {parts.map((p, i) => (
-              <Text key={p.id} variant="copy-16">
+              <Text key={p.id} variant="copy-14">
                 {`${i + 1}. ${p.name}${p.qty > 1 ? ` ×${p.qty}` : ""}`}
                 {p.partNumber ? (
-                  <Text variant="mono-14" color="text-secondary">{`  ${p.partNumber}`}</Text>
+                  <Text variant="mono-12" color="text-secondary">{`  ${p.partNumber}`}</Text>
                 ) : null}
               </Text>
             ))}

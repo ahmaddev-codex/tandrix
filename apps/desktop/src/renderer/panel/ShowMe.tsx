@@ -17,10 +17,10 @@ export function ShowMe({ jobId }: { jobId: string }) {
   return (
     <section className="panel-stack-4" aria-labelledby="show-me-title">
       <header className="panel-stack-1">
-        <h2 className="heading-16" id="show-me-title">
+        <h2 className="heading-14" id="show-me-title">
           Show me
         </h2>
-        <p className="copy-14 panel-muted">
+        <p className="copy-13 panel-muted">
           Ask how to do something in the app you're in. Tandrix points at it and tells you. Press{" "}
           <kbd className="panel-kbd">{ASK_KEYS}</kbd> to ask out loud, and again to send.
         </p>

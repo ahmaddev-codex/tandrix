@@ -75,7 +75,7 @@ export default function Pair() {
 
         {phase.kind === "find" || phase.kind === "checking" ? (
           <>
-            <Text variant="copy-16" color="text-secondary">
+            <Text variant="copy-14" color="text-secondary">
               Open Tandrix on your Mac and scan the code it shows.
             </Text>
             {permission?.granted ? (
@@ -143,8 +143,8 @@ export default function Pair() {
           />
         ) : (
           <View style={{ gap: space["space-4"] }} testID="pair-done">
-            <Text variant="heading-24">{phase.deviceName} is signed in</Text>
-            <Text variant="copy-16" color="text-secondary">
+            <Text variant="heading-18">{phase.deviceName} is signed in</Text>
+            <Text variant="copy-14" color="text-secondary">
               Your jobs are on your Mac now. You can sign it out from there.
             </Text>
             <Button variant="primary" block onPress={() => router.back()} testID="pair-back">

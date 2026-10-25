@@ -40,7 +40,7 @@ function Sheet({ theme, onTheme }: { theme: ThemeName; onTheme: (t: ThemeName) =
   const [value, setValue] = useState("18");
   const section = (title: string, children: ReactNode) => (
     <View style={{ gap: space["space-3"] }}>
-      <Text variant="label-14" color="text-secondary">
+      <Text variant="label-13" color="text-secondary">
         {title}
       </Text>
       {children}
@@ -70,7 +70,7 @@ function Sheet({ theme, onTheme }: { theme: ThemeName; onTheme: (t: ThemeName) =
           <Text variant="field-body" color="text-secondary">
             Vanes face the inlet. Push until it seats against the shaft shoulder.
           </Text>
-          <Text variant="mono-14">Part 96513247, 25 Nm</Text>
+          <Text variant="mono-12">Part 96513247, 25 Nm</Text>
         </View>,
       )}
       {section(

@@ -103,7 +103,7 @@ export default function Capture() {
         }}
       >
         <Stack.Screen options={{ title: isNameplate ? "Nameplate" : "Add photo" }} />
-        <Text variant="heading-24">{cameraFailed ? "No camera available" : "Camera access"}</Text>
+        <Text variant="heading-18">{cameraFailed ? "No camera available" : "Camera access"}</Text>
         <Text variant="field-body" color="text-secondary">
           {cameraFailed
             ? "This device can't open the camera. Choose a photo you've already taken instead."

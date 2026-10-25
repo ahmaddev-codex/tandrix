@@ -299,7 +299,7 @@ export default function JobScreen() {
             ) : null}
             {procedure ? (
               <View testID="step-list" style={{ gap: space["space-2"] }}>
-                <Text variant="label-16" color="text-secondary">
+                <Text variant="label-14" color="text-secondary">
                   {procedure.steps.length} {procedure.steps.length === 1 ? "step" : "steps"}
                 </Text>
                 {procedure.steps.map((step) => {
@@ -335,7 +335,7 @@ export default function JobScreen() {
                 })}
               </View>
             ) : null}
-            <Text variant="label-16" color="text-secondary">
+            <Text variant="label-14" color="text-secondary">
               {photos ? `${photos.length} ${photos.length === 1 ? "photo" : "photos"}` : " "}
             </Text>
           </View>
@@ -350,7 +350,7 @@ export default function JobScreen() {
                 padding: space["space-6"],
               }}
             >
-              <Text variant="heading-24">No photos yet</Text>
+              <Text variant="heading-18">No photos yet</Text>
               <Text variant="field-body" color="text-secondary">
                 Photos you take for this job appear here.
               </Text>

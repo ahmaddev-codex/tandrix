@@ -60,12 +60,12 @@ function JobSteps({ detail, children }: { detail: JobDetailResponse; children?: 
   return (
     <section className="panel-stack-6" aria-labelledby="job-title">
       <header className="panel-stack-1">
-        <p className="label-13 panel-muted">Active job</p>
-        <h2 className="heading-20" id="job-title">
+        <p className="label-12 panel-muted">Active job</p>
+        <h2 className="heading-16" id="job-title">
           {job.title}
         </h2>
         {asset ? (
-          <p className="copy-14 panel-muted">
+          <p className="copy-13 panel-muted">
             {asset.make} {asset.model}
           </p>
         ) : null}
@@ -73,7 +73,7 @@ function JobSteps({ detail, children }: { detail: JobDetailResponse; children?: 
       {children}
       {procedure ? (
         <div className="panel-stack-2">
-          <p className="label-14 panel-muted">
+          <p className="label-13 panel-muted">
             {procedure.steps.length} {procedure.steps.length === 1 ? "step" : "steps"}
           </p>
           <ol className="panel-steps">
@@ -174,7 +174,7 @@ export function Home() {
   return (
     <main className="panel-page">
       <header className="panel-bar">
-        <h1 className="heading-16">Tandrix</h1>
+        <h1 className="heading-14">Tandrix</h1>
         <Button variant="tertiary" size="sm" onClick={() => void auth.signOut()}>
           Sign out
         </Button>
@@ -195,7 +195,7 @@ export function Home() {
         ) : null}
         <ScreenAccessNotice />
         {state.kind === "loading" ? (
-          <p className="copy-14 panel-muted" role="status">
+          <p className="copy-13 panel-muted" role="status">
             Loading your job…
           </p>
         ) : state.kind === "error" ? (

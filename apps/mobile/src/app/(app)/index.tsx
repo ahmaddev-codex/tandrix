@@ -115,7 +115,7 @@ export default function Jobs() {
                 padding: space["space-6"],
               }}
             >
-              <Text variant="heading-24">No jobs yet</Text>
+              <Text variant="heading-18">No jobs yet</Text>
               <Text variant="field-body" color="text-secondary">
                 Start a job when you're at the equipment. Tandrix keeps it in step across your
                 phone, glasses and Mac.
@@ -137,7 +137,7 @@ export default function Jobs() {
               gap: space["space-2"],
             })}
           >
-            <Text variant="heading-20" numberOfLines={2}>
+            <Text variant="heading-16" numberOfLines={2}>
               {item.title}
             </Text>
             <View style={{ flexDirection: "row", alignItems: "center", gap: space["space-2"] }}>
@@ -145,7 +145,7 @@ export default function Jobs() {
                 name={item.status === "completed" ? "check" : "progress"}
                 color="text-secondary"
               />
-              <Text variant="copy-14" color="text-secondary">
+              <Text variant="copy-13" color="text-secondary">
                 {statusLabel[item.status]}, started {when(item.createdAt)}
               </Text>
             </View>

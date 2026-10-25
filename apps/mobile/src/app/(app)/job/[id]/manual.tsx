@@ -95,7 +95,7 @@ export default function ManualScreen() {
         </Notice>
       ) : search.status === "found" ? (
         <View style={{ gap: space["space-3"] }}>
-          <Text variant="label-16" color="text-secondary">
+          <Text variant="label-14" color="text-secondary">
             Found online
           </Text>
           {search.candidates.map((c) => (
@@ -124,7 +124,7 @@ export default function ManualScreen() {
       ) : null}
 
       <View style={{ gap: space["space-3"], marginTop: space["space-2"] }}>
-        <Text variant="label-16" color="text-secondary">
+        <Text variant="label-14" color="text-secondary">
           {search?.status === "found" && search.candidates.length
             ? "Or add your own"
             : "Add it yourself"}
@@ -146,7 +146,7 @@ export default function ManualScreen() {
         >
           Photograph the pages
         </Button>
-        <Text variant="copy-14" color="text-secondary">
+        <Text variant="copy-13" color="text-secondary">
           Manuals you upload or photograph stay private to you.
         </Text>
       </View>
