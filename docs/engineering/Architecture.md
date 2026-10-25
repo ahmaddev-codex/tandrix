@@ -47,7 +47,7 @@ flowchart LR
 | Screen pointing / control | `muse-spark-1.3` (or `muse-wonder-1.0`) with the computer-use tool | Returns actions with x,y in screenshot pixels. **Show me** mode renders only `move` as a pointer; **Do it for me** mode executes allowed actions through the input driver. |
 | Desktop input driver | `@nut-tree/nut-js` (or a small native helper) in the Electron main process | Synthetic mouse/keyboard; needs macOS Accessibility permission. |
 | Segmentation | `sam-3.1` via Responses API | Text prompt → boxes and masks for all matches; point/box prompts; video tracking. |
-| Speech to text | `muse-voice-transcribe-1.0`, realtime WebSocket | Streaming transcription with endpointing. |
+| Speech to text | `muse-voice-transcribe-1.0`, file endpoint in push-to-talk mode | The phone records one turn (hold to talk) as WAV and the API transcribes it. Chosen over the realtime WebSocket for the MVP: no native PCM streaming module, and a held button already delimits the turn; the cost is no live partial words while speaking. |
 | Text to speech | On-device: `expo-speech` (mobile), Web Speech API (desktop/Electron) | Meta has no TTS model. |
 | Tests | Vitest (packages, API), Maestro or Detox smoke (mobile, optional), Playwright (web report) | |
 
@@ -128,7 +128,8 @@ All routes authenticated (Supabase JWT), Zod-validated, and scoped to the owner.
 | `/jobs/:id/screen/ask` | POST | Desktop: screenshot + question → reply text + `PointerTarget` |
 | `/jobs/:id/handoff` | POST | Set active surface; realtime notifies devices |
 | `/jobs/:id/report` | GET | Report JSON; `/r/:token` serves the web page |
-| `/voice/stream` | WS | Proxies client audio to Muse Voice Transcribe; key stays server-side |
+| `/voice/transcribe` | POST | One push-to-talk turn (multipart WAV, mono 16-bit, 16 or 24 kHz, under a minute; optional keywords) → Muse Voice Transcribe file endpoint in `PUSH_TO_TALK` mode. The WAV is checked before any model call; a tap without speech is `unclear` without one. Key stays server-side |
+| `/jobs/:id/steps/:stepId/ask` | POST | What was said or typed on a step: wiring and live work refused first (`core.refusalForRequest`), then commands (`core.parseVoiceCommand`: next, back, repeat, show me again, start, done, skip [because …], stop) returned for the app to carry out, then questions answered by Spark in the step's context |
 | `/health` | GET | No secrets |
 
 Errors: every database error is converted to an `Error` before it leaves a repo (Supabase returns plain objects, which Hono would not route to the error handler), and a safety net converts anything else thrown. A token whose account no longer exists gets 401 on writes; the phone signs out on any 401.
@@ -206,7 +207,7 @@ Before saving, `normalizeDraft` (@tandrix/core) renumbers steps, drops unknown p
 - Monorepo: Metro resolves React, React Native and native UI libraries from the app only, so `@tandrix/ui` never brings a second copy.
 - `expo-camera` (or `react-native-vision-camera` if we need frame access) for capture.
 - Overlay masks drawn with `react-native-skia` on the captured frame.
-- Voice: record PCM 16 kHz chunks → `/voice/stream`; push-to-talk button and volume-key option.
+- Voice: hold the mic on the StepCard to record a 16 kHz mono WAV turn (`expo-audio`) → `/voice/transcribe` → `/ask`; replies are spoken with `expo-speech` and shown in `VoiceTranscript`. Android can't write WAV with `expo-audio`; it needs PCM streaming or server-side conversion when Android resumes.
 - Offline: cache current procedure, manual pages and reference images; queue evidence uploads.
 
 ### Glasses (Wearables toolkit)

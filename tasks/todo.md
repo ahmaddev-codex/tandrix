@@ -30,7 +30,7 @@ Tracks: **D** design, **A** mobile & glasses, **B** API & AI, **C** desktop (mac
 - [ ] **Checkpoint 2:** nameplate → cited procedure on phone
 - [ ] T12 Highlight parts on the step screen (B + A): built; highlight, corrections and fallback pass on the iOS simulator with the local fixture; open until spike-level accuracy on the real pump photos (billing + T0.3 photos)
 - [x] T13 Safety gates on steps (A): gates, starting and finishing steps pass on the iOS simulator; refusal and skipping covered by API and integration tests; physical-device check by you
-- [ ] T14 Voice in and out on phone (B + A)
+- [ ] T14 Voice in and out on phone (B + A): built; hold-to-talk, transcript and spoken answer pass on the iOS simulator with the fixture; open until three real steps are done by voice on a device with the live model (billing)
 - [ ] **Checkpoint 3:** three steps by voice with highlights
 - [ ] T15 Step check by photo (B + A)
 - [ ] T16 Parts check (B + A)

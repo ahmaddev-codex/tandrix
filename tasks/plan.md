@@ -204,10 +204,10 @@ Sizes: XS 1 file · S 1–2 · M 3–5 · L 5–8 (split if larger). Commands as
 **Dependencies:** T12, T2. **Files:** `packages/ui/src/native/feedback.tsx` (SafetyGate), `apps/mobile/src/components/step-work.tsx`, `apps/api/src/{routes/steps,repos/step-state}.ts`, `supabase/migrations/*_step_actions.sql`, `packages/core/src/safety.ts`. **Size:** S
 
 #### T14 Voice in and out on phone
-**Description:** `/voice/stream` WS proxy to Muse Voice Transcribe; push-to-talk on phone (PCM 16 kHz); voice commands (next, repeat, show me again, I'm stuck, skip, stop) mapped to step actions; free questions answered in step context; TTS via `expo-speech`.
+**Description:** push-to-talk on phone (16 kHz mono WAV per turn) → `/voice/transcribe` (Muse Voice Transcribe, push-to-talk mode; replaces the planned WS stream, see Architecture); voice commands (next, back, repeat, show me again, I'm stuck, start, done, skip, stop) mapped to step actions; free questions answered in step context; wiring/live work refused before any model call; TTS via `expo-speech`.
 **Acceptance:** three real steps completed by voice only; transcript and reply text shown; key never reaches client.
-**Verification:** API WS test with recorded audio; manual on device in a noisy room.
-**Dependencies:** T12. **Files:** `apps/api/src/voice.ts`, `apps/mobile/src/voice/{ptt,commands,tts}.ts`, `packages/ai/src/step-chat.ts`. **Size:** M
+**Verification:** API tests with real WAV bytes; core command tests; Maestro `voice-step.yaml` with the fixture; manual on device in a noisy room once billing works.
+**Dependencies:** T12. **Files:** `apps/api/src/voice.ts`, `apps/mobile/src/voice/{ptt,tts}.ts`, `apps/mobile/src/components/step-work.tsx`, `packages/ai/src/{audio,pipelines}.ts`, `packages/core/src/voice.ts`, `packages/ui/src/native/voice.tsx`. **Size:** M
 
 ### Checkpoint 3 — end of Wed 28 Oct
 - [ ] Three real pump steps guided by voice with highlighted parts and safety gate.
