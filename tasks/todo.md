@@ -34,7 +34,7 @@ Tracks: **D** design, **A** mobile & glasses, **B** API & AI, **C** desktop (mac
 - [ ] **Checkpoint 3:** three steps by voice with highlights
 - [ ] T15 Step check by photo (B + A): built; needs attention then verified passes on the iOS simulator with the fixture; open until Spark judges the real pump stages (billing)
 - [ ] T16 Parts check (B + A): built; missing part blocks its step and a correction releases it on the iOS simulator with the fixture; open until the demo layout is checked live (billing + T0.3 photos)
-- [ ] T17 Offline cache and upload queue (A)
+- [ ] T17 Offline cache and upload queue (A): built; an offline start shows Pending and syncs on reconnect on the iOS simulator. Caching the manual PDF and reference images for offline use is not done yet
 - [ ] **Checkpoint 4:** full phone path
 
 ## Phase 3 — Desktop (30 Oct)

@@ -228,7 +228,7 @@ Sizes: XS 1 file · S 1–2 · M 3–5 · L 5–8 (split if larger). Commands as
 **Description:** Cache procedure, manual pages, reference images per job; queue evidence uploads and checks; "pending" state.
 **Acceptance:** airplane mode mid-job: steps still navigable, captures queued, synced on reconnect.
 **Verification:** unit tests for queue; manual airplane-mode run.
-**Dependencies:** T15. **Files:** `apps/mobile/src/offline/{cache,queue}.ts`. **Size:** S
+**Dependencies:** T15. **Files:** `apps/mobile/src/offline/{queue,store,index}.ts`, `apps/mobile/src/components/step-work.tsx`, `packages/contracts/src/api.ts` (`occurredAt`), `apps/api/src/routes/steps.ts`. Manual PDF and reference image caching left for later. **Size:** S
 
 ### Checkpoint 4 — end of Thu 29 Oct
 - [ ] Full phone path: identify → manual → parts check (missing flagged) → steps with highlights, voice, checks.

@@ -114,6 +114,8 @@ Run the API with `pnpm --filter @tandrix/api dev` (it reloads on change). An API
 
 Release builds come from EAS, never from this machine: Expo loads `.env.local` for production builds too, so a local build would point at the local stack.
 
+Going offline mid-job is checked by `sh apps/mobile/e2e/offline/run.sh`: it opens a step, stops the local API, starts the step (kept, shown as Pending, the job says it's offline), restarts the API with `dev:fixtures`, and waits for the queued start to be sent.
+
 ## Testing on a physical phone
 
 A phone can't reach `127.0.0.1` on your Mac. In `apps/mobile/.env.local`, replace `127.0.0.1`/`localhost` with your Mac's LAN IP (System Settings > Wi-Fi > Details), and keep the phone on the same network. `pnpm env:local` resets these, so re-apply after running it. Not yet verified: that the local Supabase ports accept connections from other devices; if the phone can't connect, check `docker ps` shows them published on `0.0.0.0`.
