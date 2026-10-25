@@ -76,8 +76,10 @@ export interface CheckResultProps {
   reason: string;
   title?: string;
   thumbnail?: ReactNode;
-  /** Evidence label, e.g. "Photo 10:46". */
+  /** Evidence label, e.g. "Photo 10:46" or "Screen 10:52". */
   evidence?: string;
+  /** What the evidence is; a Mac screen check shows a screen chip. */
+  evidenceKind?: "photo" | "screen";
   actions?: ReactNode;
 }
 
@@ -93,6 +95,7 @@ export function CheckResult({
   title,
   thumbnail,
   evidence,
+  evidenceKind = "photo",
   actions,
 }: CheckResultProps) {
   const meta = checkMeta[result];
@@ -109,7 +112,7 @@ export function CheckResult({
           {title ?? meta.title}
         </h3>
         <p className="tx-check-reason">{reason}</p>
-        {evidence ? <SourceChip kind="photo">{evidence}</SourceChip> : null}
+        {evidence ? <SourceChip kind={evidenceKind}>{evidence}</SourceChip> : null}
         {actions ? <div className="tx-check-actions">{actions}</div> : null}
       </div>
     </section>

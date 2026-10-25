@@ -93,3 +93,59 @@ export function StepRow({
     </button>
   );
 }
+
+export interface StepCardProps {
+  index: number;
+  total: number;
+  title: string;
+  body?: string;
+  caution?: string;
+  status?: StepStatus;
+  statusLabel?: string;
+  /** The citation; omit for a generic step. */
+  source?: string;
+  sourceKind?: SourceKind;
+  /** One primary Button (plus the mic where there is one). */
+  actions?: ReactNode;
+}
+
+/** The single step being worked on: instruction, reason, caution and its one action. */
+export function StepCard({
+  index,
+  total,
+  title,
+  body,
+  caution,
+  status,
+  statusLabel,
+  source,
+  sourceKind = "manual",
+  actions,
+}: StepCardProps) {
+  return (
+    <section className="tx-step" aria-label={`Step ${index} of ${total}`}>
+      <div className="tx-step-meta">
+        <span className="tx-step-count">
+          Step {index} of {total}
+        </span>
+        <span className="tx-step-chips">
+          {status ? <StatusChip status={status}>{statusLabel}</StatusChip> : null}
+          {source ? (
+            <SourceChip kind={sourceKind}>{source}</SourceChip>
+          ) : (
+            <SourceChip kind="generic" />
+          )}
+        </span>
+      </div>
+      <h2 className="tx-step-title">{title}</h2>
+      {body ? <p className="tx-step-body">{body}</p> : null}
+      {caution ? (
+        <div className="tx-step-caution" role="note">
+          <Icon name="alert" size={20} />
+          <span>{caution}</span>
+        </div>
+      ) : null}
+      {actions ? <div className="tx-step-actions">{actions}</div> : null}
+    </section>
+  );
+}

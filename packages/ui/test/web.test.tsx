@@ -13,6 +13,7 @@ import {
   Notice,
   SourceChip,
   StatusChip,
+  StepCard,
   StepRow,
   Tabs,
   Toggle,
@@ -194,5 +195,22 @@ describe("VoiceTranscript", () => {
     expect(screen.queryByText("one")).toBeNull();
     expect(screen.getByText("five")).toBeTruthy();
     expect(screen.getByRole("status").textContent).toBe("Press ⌃⌥Space to ask.");
+  });
+});
+
+describe("StepCard", () => {
+  it("names the step's place, its source and its one action", () => {
+    render(
+      <StepCard
+        index={3}
+        total={4}
+        title="Set the ramp time"
+        status="progress"
+        actions={<Button variant="primary">Check my screen</Button>}
+      />,
+    );
+    expect(screen.getByRole("region", { name: "Step 3 of 4" })).toBeTruthy();
+    expect(screen.getByText("Generic, not from the manufacturer")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Check my screen" })).toBeTruthy();
   });
 });
