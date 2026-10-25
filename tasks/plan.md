@@ -216,7 +216,7 @@ Sizes: XS 1 file · S 1–2 · M 3–5 · L 5–8 (split if larger). Commands as
 **Description:** `/steps/:id/check` → Check (pass / fail / not_verifiable + reason); CheckResult UI with reference image; statuses via `core.transitionStep`.
 **Acceptance:** correct stage → verified; deliberately wrong stage → needs attention with a specific reason; torque-type step → not verifiable → user-confirmed.
 **Verification:** `pnpm --filter @tandrix/ai test` (fixtures for each outcome); manual.
-**Dependencies:** T12. **Files:** `packages/ai/src/check.ts`, `apps/api/src/routes/steps.ts`, `apps/mobile/src/components/CheckResult.tsx`. **Size:** M
+**Dependencies:** T12. **Files:** `apps/api/src/{step-checker,routes/steps,repos/step-state}.ts`, `supabase/migrations/*_record_check.sql`, `packages/ui/src/native/feedback.tsx` (CheckResult), `apps/mobile/src/{app/(app)/job/[id]/step/[stepId],components/step-work}.tsx`. Reference images per step come with recorded procedures (T28). **Size:** M
 
 #### T16 Parts check
 **Description:** `/parts-check` (SAM all objects + Spark assignment to PartSpecs); PartsList UI with found/possible/missing; corrections; missing parts block dependent steps.

@@ -32,7 +32,7 @@ Tracks: **D** design, **A** mobile & glasses, **B** API & AI, **C** desktop (mac
 - [x] T13 Safety gates on steps (A): gates, starting and finishing steps pass on the iOS simulator; refusal and skipping covered by API and integration tests; physical-device check by you
 - [ ] T14 Voice in and out on phone (B + A): built; hold-to-talk, transcript and spoken answer pass on the iOS simulator with the fixture; open until three real steps are done by voice on a device with the live model (billing)
 - [ ] **Checkpoint 3:** three steps by voice with highlights
-- [ ] T15 Step check by photo (B + A)
+- [ ] T15 Step check by photo (B + A): built; needs attention then verified passes on the iOS simulator with the fixture; open until Spark judges the real pump stages (billing)
 - [ ] T16 Parts check (B + A)
 - [ ] T17 Offline cache and upload queue (A)
 - [ ] **Checkpoint 4:** full phone path
