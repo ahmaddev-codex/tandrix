@@ -22,6 +22,8 @@ export type NameplateReading = z.infer<typeof NameplateReading>;
 
 /** Below this confidence a reading is shown as a "Possible match" for the user to check. */
 export const NAMEPLATE_CONFIDENT = 0.8;
+/** Below this a highlight is labelled "Possible match" and asks the user to confirm it. */
+export const HIGHLIGHT_CONFIDENT = 0.7;
 
 /** Manual candidates picked from web search results. URLs are checked against the search hits. */
 export const ManualSearchOutput = z.strictObject({

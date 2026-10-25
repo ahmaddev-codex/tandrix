@@ -8,6 +8,7 @@ import {
   Job,
   JobStep,
   Manual,
+  PointerTarget,
   PartSpec,
   Procedure,
   ProcedureStep,
@@ -217,3 +218,44 @@ export const ScreenAskRequest = z.strictObject({
   geometry: ScreenGeometry,
   mode: ControlMode,
 });
+
+/** POST /jobs/:id/steps/:stepId/highlight: find the step's parts in an uploaded photo. */
+export const HighlightRequest = z.strictObject({ evidenceId: Id });
+
+export const HighlightTarget = PointerTarget.extend({
+  detectionId: Id,
+  partSpecId: Id,
+  /** Part number from the parts list, shown in mono on the label. */
+  partNumber: z.string().max(60).optional(),
+  /** Below HIGHLIGHT_CONFIDENT: label shows "Possible match". */
+  possible: z.boolean(),
+});
+export type HighlightTarget = z.infer<typeof HighlightTarget>;
+
+export const HighlightResponse = z.discriminatedUnion("status", [
+  z.strictObject({
+    status: z.literal("found"),
+    evidenceId: Id,
+    /** The photo's pixel size: the coordinate space of every target. */
+    size: z.strictObject({ width: z.number().int().min(1), height: z.number().int().min(1) }),
+    /** At most three, per the design system. */
+    targets: z.array(HighlightTarget).max(3),
+    /** Step parts that weren't found in this photo. */
+    missing: z.array(z.strictObject({ partSpecId: Id, name: text(120) })),
+    /** Framing advice when something wasn't found, e.g. "Show the housing from the front". */
+    hint: text(200).optional(),
+  }),
+  /** The step names no parts, so there is nothing to highlight. */
+  z.strictObject({ status: z.literal("no_parts") }),
+  z.strictObject({ status: z.literal("unavailable"), message: text(300) }),
+]);
+export type HighlightResponse = z.infer<typeof HighlightResponse>;
+
+/** PATCH /jobs/:id/detections/:detectionId: the user's verdict on a highlight. */
+export const CorrectDetectionRequest = z.discriminatedUnion("verdict", [
+  z.strictObject({ verdict: z.literal("confirmed") }),
+  z.strictObject({ verdict: z.literal("wrong") }),
+  /** It's a different part of this step. */
+  z.strictObject({ verdict: z.literal("other_part"), partSpecId: Id }),
+]);
+export type CorrectDetectionRequest = z.infer<typeof CorrectDetectionRequest>;

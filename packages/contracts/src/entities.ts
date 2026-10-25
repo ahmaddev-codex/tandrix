@@ -208,13 +208,26 @@ export const Evidence = z.strictObject({
 });
 export type Evidence = z.infer<typeof Evidence>;
 
+/**
+ * A SAM mask as an SVG path (M/L/Z polygons) in its raster's own pixels. The raster covers the
+ * detection's box, so it is drawn scaled from raster size to box size at the box's position.
+ */
+export const MaskOutline = z.strictObject({
+  path: z.string().min(1).max(500_000),
+  raster: z.strictObject({
+    width: z.number().int().min(1).max(20_000),
+    height: z.number().int().min(1).max(20_000),
+  }),
+});
+export type MaskOutline = z.infer<typeof MaskOutline>;
+
 export const Detection = z.strictObject({
   id: Id,
   evidenceId: Id,
   label: text(120),
   partSpecId: Id.nullable(),
   box: Box,
-  maskKey: optionalText(512),
+  mask: MaskOutline.nullable(),
   confidence: Confidence,
   /** null until the user reviews it. */
   confirmedByUser: z.boolean().nullable(),
@@ -231,7 +244,7 @@ export const PointerTarget = z.strictObject({
   geometry: z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("point"), point: Point }),
     z.strictObject({ kind: z.literal("box"), box: Box }),
-    z.strictObject({ kind: z.literal("mask"), box: Box, maskKey: text(512) }),
+    z.strictObject({ kind: z.literal("mask"), box: Box, mask: MaskOutline }),
   ]),
 });
 export type PointerTarget = z.infer<typeof PointerTarget>;

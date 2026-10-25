@@ -109,6 +109,26 @@ describe("PointerTarget", () => {
   });
 });
 
+describe("MaskOutline geometry", () => {
+  it("carries the path and its raster size", () => {
+    const base = { surface: "camera", evidenceId: id(1), label: "Impeller", confidence: 0.9 };
+    const box = { x: 10, y: 10, w: 60, h: 27 };
+    expect(
+      PointerTarget.safeParse({
+        ...base,
+        geometry: {
+          kind: "mask",
+          box,
+          mask: { path: "M0 0L60 0L60 27Z", raster: { width: 60, height: 27 } },
+        },
+      }).success,
+    ).toBe(true);
+    expect(
+      PointerTarget.safeParse({ ...base, geometry: { kind: "mask", box, maskKey: "x" } }).success,
+    ).toBe(false);
+  });
+});
+
 describe("HighlightPick", () => {
   it("allows a part with no matching box", () => {
     expect(
