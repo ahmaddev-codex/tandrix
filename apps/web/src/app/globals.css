@@ -1,0 +1,40 @@
+/* Site-wide layout. Colours, type and spacing come from @tandrix/ui tokens. */
+html[data-theme] {
+  /* next/font serves Geist under its own family names. */
+  --font-sans:
+    var(--font-geist-sans), -apple-system, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", Menlo, monospace;
+}
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+body {
+  margin: 0;
+  background: var(--background-100);
+  color: var(--text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+h1,
+h2,
+h3,
+p,
+ol,
+ul,
+figure {
+  margin: 0;
+}
+a {
+  color: inherit;
+}
+::selection {
+  background: var(--blue-100);
+  color: var(--blue-900);
+}
