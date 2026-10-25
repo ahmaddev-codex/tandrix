@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { checkStep, imageUrl, MetaClient } from "../src";
+import { checkStep, imageUrl, MetaClient, prompts } from "../src";
 import { noSleep, responseWithText, scriptedFetch } from "./helpers";
 
 const models = { reasoning: "muse-spark-1.3", segmentation: "sam-3.1" };
@@ -48,5 +48,31 @@ describe("checkStep outcomes", () => {
     ]);
     const client = new MetaClient({ apiKey: "k", fetch: s.fetch, sleep: noSleep });
     expect((await checkStep(client, models, req)).ok).toBe(false);
+  });
+});
+
+describe("checkStep on a screenshot", () => {
+  it("uses the screen rules and calls the image a screenshot", async () => {
+    const s = scriptedFetch([
+      responseWithText(JSON.stringify({ result: "pass", reason: "Ramp time reads 10 s." })),
+    ]);
+    const client = new MetaClient({ apiKey: "k", fetch: s.fetch, sleep: noSleep });
+    const r = await checkStep(client, models, {
+      photo: imageUrl("https://example.com/screen.jpg"),
+      medium: "screen",
+      instruction: "Set Ramp time to 10 s.",
+      expectedState: "Ramp time reads 10 s and is saved.",
+    });
+    expect(r.ok && r.data.result).toBe("pass");
+    const body = s.calls[0]!.body;
+    expect(body.instructions).toBe(prompts.checkScreen);
+    expect(JSON.stringify(body.input)).toContain("screenshot taken after the user acted");
+  });
+
+  it("keeps the photo rules by default", async () => {
+    const s = scriptedFetch([responseWithText(JSON.stringify({ result: "pass", reason: "ok" }))]);
+    const client = new MetaClient({ apiKey: "k", fetch: s.fetch, sleep: noSleep });
+    await checkStep(client, models, req);
+    expect(s.calls[0]!.body.instructions).toBe(prompts.check);
   });
 });

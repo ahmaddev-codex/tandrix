@@ -110,16 +110,20 @@ export function answerStepQuestion(client: MetaClient, models: Models, q: StepQu
 }
 
 export interface StepCheckRequest {
+  /** The check image: a photo of the work, or a screenshot for a step done in software. */
   photo: InputPart;
+  /** Defaults to "photo". */
+  medium?: "photo" | "screen";
   reference?: InputPart;
   instruction: string;
   expectedState: string;
 }
 
 export function checkStep(client: MetaClient, models: Models, req: StepCheckRequest) {
+  const screen = req.medium === "screen";
   const parts: InputPart[] = [
     text(
-      `Step: ${req.instruction}\nExpected state: ${req.expectedState}\nThe first image is the check photo.`,
+      `Step: ${req.instruction}\nExpected state: ${req.expectedState}\nThe first image is the ${screen ? "screenshot taken after the user acted" : "check photo"}.`,
     ),
     req.photo,
   ];
@@ -129,7 +133,7 @@ export function checkStep(client: MetaClient, models: Models, req: StepCheckRequ
     model: models.reasoning,
     name: "step_check",
     schema: StepCheckOutput,
-    instructions: prompts.check,
+    instructions: screen ? prompts.checkScreen : prompts.check,
     input: [user(...parts)],
     effort: "medium",
   });

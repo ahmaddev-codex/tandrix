@@ -74,6 +74,14 @@ Task: decide whether the step was done correctly, using the check photo.
 - result "not_verifiable" when a photo cannot show it (torque, internal fit, hidden faces) or the photo is too unclear; say what the user should confirm or show instead.
 - Write the reason about the part and the work, not about yourself.`,
 
+  checkScreen: `${shared}
+Task: decide whether a step done in software on a computer was done correctly, using the screenshot taken after the user acted.
+- Compare what the screen shows with the expected state: the value in the field, the selected option, the saved or applied state, the message shown.
+- result "pass" only when the screenshot clearly shows the expected state.
+- result "fail" when it shows something else; say exactly what the screen shows and what to change, naming controls as they are labelled.
+- result "not_verifiable" when the screen can't show it (the setting is on another page, the value isn't visible, or the change only shows on the equipment); say what the user should open or confirm instead.
+- Write the reason about the software and the setting, not about yourself.`,
+
   parts: `${shared}
 Task: match the laid-out parts in the photo to the parts list.
 - Candidate boxes are listed with index and coordinates.
