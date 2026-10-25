@@ -15,6 +15,7 @@ import { noModelFinder } from "../src/manual-finder";
 import { noModelGenerator } from "../src/procedure-generator";
 import { noModelHighlighter } from "../src/highlighter";
 import { noModelVoice } from "../src/voice";
+import { noModelChecker } from "../src/step-checker";
 import type { DetectionsRepo } from "../src/repos/detections";
 import type { StepStateRepo, StepTransition } from "../src/repos/step-state";
 import type { ProceduresRepo, SaveProcedure } from "../src/repos/procedures";
@@ -236,6 +237,7 @@ export const noManuals = () => ({
   stepState: memoryStepState(),
   transcriber: noModelVoice,
   answerer: noModelVoice,
+  checker: noModelChecker,
 });
 
 /** Stores saved procedures as details; `saves` records what the route asked to save. */
@@ -372,6 +374,23 @@ export function memoryStepState(jobOf: (jobStepId: string) => string = () => "")
       };
       confirmations.push(c);
       return c;
+    },
+    async recordCheck({ transition, evidenceId, result, reason, whatToShowNext }) {
+      const step = await repo.applyTransition(transition);
+      const at = new Date(Date.UTC(2026, 9, 26, 10, 0, checks.length + 1)).toISOString();
+      checks.push({ jobStepId: transition.jobStepId, result, at });
+      return {
+        step,
+        check: {
+          id: `00000000-0000-4000-8000-0000000e${String(checks.length).padStart(4, "0")}`,
+          jobStepId: transition.jobStepId,
+          evidenceId,
+          result,
+          reason,
+          ...(whatToShowNext ? { whatToShowNext } : {}),
+          createdAt: at,
+        },
+      };
     },
     async applyTransition(t) {
       repo.transitions.push(t);

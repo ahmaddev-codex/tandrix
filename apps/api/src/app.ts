@@ -15,6 +15,7 @@ import type { Highlighter } from "./highlighter";
 import type { DetectionsRepo } from "./repos/detections";
 import type { StepStateRepo } from "./repos/step-state";
 import { voiceRoutes, type StepAnswerer, type Transcriber } from "./voice";
+import type { StepChecker } from "./step-checker";
 import type { SafeFetchOptions } from "./safe-fetch";
 import { assetRoutes } from "./routes/asset";
 import { evidenceRoutes } from "./routes/evidence";
@@ -40,6 +41,7 @@ export interface AppDeps {
   stepState: StepStateRepo;
   transcriber: Transcriber;
   answerer: StepAnswerer;
+  checker: StepChecker;
   /** Signs manual search candidates (TOKEN_SIGNING_SECRET). */
   tokenSecret: string;
   /** Tests only: swap DNS and transport for the manual download. */
@@ -140,6 +142,7 @@ export function createApp(deps: AppDeps) {
     highlighter: deps.highlighter,
     stepState: deps.stepState,
     answerer: deps.answerer,
+    checker: deps.checker,
     assets: deps.assets,
     ...(deps.now ? { now: deps.now } : {}),
   };

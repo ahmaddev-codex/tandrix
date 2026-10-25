@@ -10,6 +10,8 @@ import {
 } from "@tandrix/core";
 import {
   AskStepRequest,
+  CheckStepRequest,
+  type CheckStepResponse,
   CorrectDetectionRequest,
   StepActionRequest,
   type AskStepResponse,
@@ -31,6 +33,7 @@ import type { ProceduresRepo } from "../repos/procedures";
 import type { StepStateRepo } from "../repos/step-state";
 import type { AssetsRepo } from "../repos/assets";
 import type { StepAnswerer } from "../voice";
+import type { StepChecker } from "../step-checker";
 
 /** The design system highlights at most three parts at once. */
 export const MAX_HIGHLIGHTS = 3;
@@ -47,6 +50,7 @@ export interface StepDeps {
   highlighter: Highlighter;
   stepState: StepStateRepo;
   answerer: StepAnswerer;
+  checker: StepChecker;
   assets: AssetsRepo;
   now?: () => number;
 }
@@ -73,6 +77,92 @@ async function stepFor(d: StepDeps, ownerId: string, rawJobId?: string, rawStepI
 export function stepRoutes(d: StepDeps) {
   const now = d.now ?? Date.now;
   return new Hono<AuthEnv>()
+    .post("/:stepId/check", async (c) => {
+      const user = c.get("user");
+      const { jobId, jobStep, step } = await stepFor(
+        d,
+        user.id,
+        c.req.param("id"),
+        c.req.param("stepId"),
+      );
+      const parsed = CheckStepRequest.safeParse(await c.req.json().catch(() => undefined));
+      if (!parsed.success) throw invalid(issues(parsed.error));
+      const reply = (r: CheckStepResponse) => c.json(r);
+
+      const ev = await d.evidence.getForOwner(user.id, jobId, parsed.data.evidenceId);
+      if (!ev || !ev.uploadedAt || ev.kind !== "photo") throw notFound("Photo");
+
+      const at = new Date(now()).toISOString();
+      const state = {
+        status: jobStep.status,
+        startedAt: jobStep.startedAt,
+        statusEvidenceId: jobStep.statusEvidenceId,
+        lastCheck: null,
+        ...(jobStep.note ? { note: jobStep.note } : {}),
+      };
+      const ctx = {
+        verification: step.verification,
+        hazardTags: step.hazardTags,
+        confirmedGates: [],
+        ...(step.measurement ? { measurement: step.measurement } : {}),
+      };
+      // Apply the rules before spending a model call: wrong step state or an old photo fail here.
+      const precheck = transitionStep(
+        state,
+        {
+          type: "check",
+          result: "not_verifiable",
+          evidenceId: ev.id,
+          evidenceCapturedAt: ev.capturedAt,
+          at,
+        },
+        ctx,
+      );
+      if (!precheck.ok)
+        return reply({ status: "rejected", code: precheck.code, message: precheck.message });
+
+      const outcome = await d.checker.check({
+        jobStepId: jobStep.id,
+        photo: { bytes: await d.storage.download(ev.storageKey), mimeType: ev.mimeType },
+        instruction: step.instruction,
+        expectedState: step.expectedState,
+      });
+      if (outcome.status === "unavailable") return reply(outcome);
+
+      const result = transitionStep(
+        state,
+        {
+          type: "check",
+          result: outcome.result,
+          evidenceId: ev.id,
+          evidenceCapturedAt: ev.capturedAt,
+          at,
+        },
+        ctx,
+      );
+      if (!result.ok)
+        return reply({ status: "rejected", code: result.code, message: result.message });
+      const saved = await d.stepState.recordCheck({
+        transition: {
+          ownerId: user.id,
+          jobStepId: jobStep.id,
+          fromStatus: jobStep.status,
+          to: {
+            status: result.state.status,
+            startedAt: result.state.startedAt,
+            statusEvidenceId: result.state.statusEvidenceId,
+            ...(result.state.note ? { note: result.state.note } : {}),
+          },
+          surface: "phone",
+          event: {},
+        },
+        evidenceId: ev.id,
+        result: outcome.result,
+        reason: outcome.reason,
+        ...(outcome.whatToShowNext ? { whatToShowNext: outcome.whatToShowNext } : {}),
+      });
+      return reply({ status: "checked", check: saved.check, step: saved.step });
+    })
     .post("/:stepId/ask", async (c) => {
       const user = c.get("user");
       const { job, step, parts } = await stepFor(

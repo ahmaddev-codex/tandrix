@@ -3,6 +3,7 @@ import { z } from "zod";
 import {
   Asset,
   AssetCategory,
+  Check,
   Evidence,
   EvidenceKind,
   Job,
@@ -341,3 +342,14 @@ export const AskStepResponse = z.discriminatedUnion("status", [
   z.strictObject({ status: z.literal("unavailable"), message: text(300) }),
 ]);
 export type AskStepResponse = z.infer<typeof AskStepResponse>;
+
+/** POST /jobs/:id/steps/:stepId/check: judge an uploaded photo against the step. */
+export const CheckStepRequest = z.strictObject({ evidenceId: Id });
+
+export const CheckStepResponse = z.discriminatedUnion("status", [
+  z.strictObject({ status: z.literal("checked"), check: Check, step: JobStep }),
+  /** The step rules turned the check down (photo taken before the step started, step not active…). */
+  z.strictObject({ status: z.literal("rejected"), code: StepRejectionCode, message: text(300) }),
+  z.strictObject({ status: z.literal("unavailable"), message: text(300) }),
+]);
+export type CheckStepResponse = z.infer<typeof CheckStepResponse>;

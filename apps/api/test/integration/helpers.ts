@@ -16,6 +16,7 @@ import type { Highlighter } from "../../src/highlighter";
 import { supabaseDetectionsRepo } from "../../src/repos/detections";
 import { supabaseStepStateRepo } from "../../src/repos/step-state";
 import { noModelVoice } from "../../src/voice";
+import type { StepChecker } from "../../src/step-checker";
 import type { Transport } from "../../src/safe-fetch";
 
 export const config = loadApiConfig();
@@ -75,6 +76,14 @@ export const highlighter: Highlighter & { impl: Highlighter["find"] } = {
   },
 };
 
+/** Tests set `stepChecker.impl` to script the verdict on a check photo. */
+export const stepChecker: StepChecker & { impl: StepChecker["check"] } = {
+  impl: async () => ({ status: "unavailable", message: "Model off in tests." }),
+  check(input) {
+    return stepChecker.impl(input);
+  },
+};
+
 export const app = createApp({
   verifyToken: supabaseVerifier(admin),
   jobs: supabaseJobsRepo(admin),
@@ -92,6 +101,7 @@ export const app = createApp({
   stepState: supabaseStepStateRepo(admin),
   transcriber: noModelVoice,
   answerer: noModelVoice,
+  checker: stepChecker,
   tokenSecret: config.tokenSigningSecret,
   manualFetch: { resolve: (h) => web.resolve(h), transport: web.transport },
   corsOrigins: [],

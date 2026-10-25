@@ -1,6 +1,7 @@
 // What the step rules need to know about a step, and saving what they decide.
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
+  Check,
   SafetyConfirmation,
   type CheckResult,
   type JobStep,
@@ -38,6 +39,14 @@ export interface StepStateRepo {
     surface: Surface,
   ): Promise<SafetyConfirmation>;
   applyTransition(t: StepTransition): Promise<JobStep>;
+  /** Saves the check and the step's new state in one transaction. */
+  recordCheck(c: {
+    transition: StepTransition;
+    evidenceId: string;
+    result: CheckResult;
+    reason: string;
+    whatToShowNext?: string;
+  }): Promise<{ check: Check; step: JobStep }>;
 }
 
 type Row = Record<string, unknown>;
@@ -111,6 +120,47 @@ export function supabaseStepStateRepo(db: SupabaseClient): StepStateRepo {
         .single();
       if (error) throw dbError(error);
       return toJobStep(data as Row);
+    },
+
+    async recordCheck({ transition: t, evidenceId, result, reason, whatToShowNext }) {
+      const { data, error } = await db
+        .rpc("record_check", {
+          p_owner_id: t.ownerId,
+          p_job_step_id: t.jobStepId,
+          p_evidence_id: evidenceId,
+          p_result: result,
+          p_reason: reason,
+          p_what_to_show_next: whatToShowNext ?? "",
+          p_from_status: t.fromStatus,
+          p_to: {
+            status: t.to.status,
+            started_at: t.to.startedAt,
+            status_evidence_id: t.to.statusEvidenceId,
+            note: t.to.note ?? null,
+          },
+          p_surface: t.surface,
+        })
+        .single();
+      if (error) throw dbError(error);
+      const r = data as Row;
+      const check = Check.parse({
+        id: r.id,
+        jobStepId: r.job_step_id,
+        evidenceId: r.evidence_id,
+        result: r.result,
+        reason: r.reason,
+        whatToShowNext: r.what_to_show_next ?? undefined,
+        createdAt: iso(r.created_at),
+      });
+      const { data: step, error: stepError } = await db
+        .from("job_steps")
+        .select(
+          "id, job_id, procedure_step_id, status, status_evidence_id, started_at, note, updated_at, updated_by_surface",
+        )
+        .eq("id", t.jobStepId)
+        .single();
+      if (stepError) throw dbError(stepError);
+      return { check, step: toJobStep(step as Row) };
     },
   };
 }
