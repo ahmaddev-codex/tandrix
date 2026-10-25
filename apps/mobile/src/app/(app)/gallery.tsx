@@ -15,6 +15,7 @@ import {
   SafetyGate,
   StepRow,
   SummaryCard,
+  VoiceTranscript,
   SourceChip,
   StatusChip,
   StepCard,
@@ -178,6 +179,37 @@ function Sheet({ theme, onTheme }: { theme: ThemeName; onTheme: (t: ThemeName) =
             { id: "key", name: "Shaft key" },
           ]}
         />,
+      )}
+      {section(
+        "Voice",
+        <View style={{ gap: space["space-3"] }}>
+          <VoiceTranscript
+            state="listening"
+            turns={[
+              { speaker: "you", text: "Which way round does the impeller go?" },
+              {
+                speaker: "tandrix",
+                text: "Vanes face the inlet. Push it on until it seats against the shaft shoulder.",
+              },
+            ]}
+          />
+          <VoiceTranscript
+            state="working"
+            turns={[
+              { speaker: "you", text: "How do I wire the motor?" },
+              {
+                speaker: "tandrix",
+                text: "Electrical wiring and live work need a qualified electrician. Tandrix will continue with the other steps.",
+                kind: "refusal",
+              },
+              {
+                speaker: "tandrix",
+                text: "A thin film of clean grease on the shaft is common practice. Check the manual first.",
+                kind: "general",
+              },
+            ]}
+          />
+        </View>,
       )}
       {section(
         "Notices",

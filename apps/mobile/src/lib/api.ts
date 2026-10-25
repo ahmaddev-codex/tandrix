@@ -12,6 +12,8 @@ import {
   GenerateProcedureResponse,
   HighlightResponse,
   StepActionResponse,
+  AskStepResponse,
+  TranscribeResponse,
   Detection,
   ManualResponse,
   ManualSearchResponse,
@@ -23,6 +25,7 @@ import {
   type Surface,
 } from "@tandrix/contracts";
 import { z } from "zod";
+import { File } from "expo-file-system";
 import { env } from "./env";
 import { supabase } from "./supabase";
 
@@ -38,7 +41,13 @@ export class ApiError extends Error {
 
 const ErrorBody = z.object({ error: z.object({ code: z.string(), message: z.string() }) });
 
-async function request<T>(path: string, schema: z.ZodType<T>, init: RequestInit = {}): Promise<T> {
+async function request<T>(
+  path: string,
+  schema: z.ZodType<T>,
+  init: RequestInit = {},
+  /** Multipart bodies set their own content type. */
+  json = true,
+): Promise<T> {
   const { data } = await supabase.auth.getSession();
   const token = data.session?.access_token;
   if (!token) throw new ApiError(401, "unauthorized", "Sign in to continue.");
@@ -48,7 +57,7 @@ async function request<T>(path: string, schema: z.ZodType<T>, init: RequestInit 
       ...init,
       headers: {
         Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
+        ...(json ? { "Content-Type": "application/json" } : {}),
         ...init.headers,
       },
     });
@@ -136,6 +145,18 @@ export const api = {
     }).then((r) => r.detection),
   stepAction: (jobId: string, jobStepId: string, body: StepActionRequest) =>
     request(`/jobs/${jobId}/steps/${jobStepId}/actions`, StepActionResponse, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  transcribe: (wavUri: string, keywords: string[]) => {
+    const form = new FormData();
+    // Expo's fetch doesn't take React Native's { uri } FormData parts; expo-file-system's File is a Blob.
+    form.append("audio", new File(wavUri), "turn.wav");
+    form.append("keywords", JSON.stringify(keywords.slice(0, 20)));
+    return request("/voice/transcribe", TranscribeResponse, { method: "POST", body: form }, false);
+  },
+  askStep: (jobId: string, jobStepId: string, body: { text: string; stuck?: boolean }) =>
+    request(`/jobs/${jobId}/steps/${jobStepId}/ask`, AskStepResponse, {
       method: "POST",
       body: JSON.stringify(body),
     }),

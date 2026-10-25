@@ -24,9 +24,9 @@ import {
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
-import { Stack, useLocalSearchParams } from "expo-router";
+import { router, Stack, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ScrollView, View } from "react-native";
+import { ScrollView, View, type ScrollViewInstance } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "@/lib/api";
 import { preparePhoto, uploadPhoto, type PreparedPhoto } from "@/lib/evidence";
@@ -43,6 +43,11 @@ interface Loaded {
   allParts: PartSpec[];
   index: number;
   total: number;
+  /** Neighbouring job steps, for spoken "next" and "back". */
+  previousId?: string;
+  nextId?: string;
+  keywords: string[];
+  language: string;
 }
 
 export default function StepScreen() {
@@ -79,6 +84,17 @@ export default function StepScreen() {
           allParts: procedure.parts,
           index: step.order,
           total: procedure.steps.length,
+          ...(detail.steps[detail.steps.indexOf(jobStep) - 1]
+            ? { previousId: detail.steps[detail.steps.indexOf(jobStep) - 1]!.id }
+            : {}),
+          ...(detail.steps[detail.steps.indexOf(jobStep) + 1]
+            ? { nextId: detail.steps[detail.steps.indexOf(jobStep) + 1]!.id }
+            : {}),
+          keywords: [
+            ...parts.map((p) => p.name),
+            ...(detail.asset ? [detail.asset.make, detail.asset.model] : []),
+          ],
+          language: detail.job.language,
         });
       })
       .catch((e: Error) => setError(e.message));
@@ -93,9 +109,30 @@ export default function StepScreen() {
           confirmations: data.confirmations,
           onChange: (jobStep, confirmations) =>
             setData((d) => (d ? { ...d, jobStep, confirmations } : d)),
+          onNavigate: (to) => {
+            const target = to === "next" ? data.nextId : data.previousId;
+            if (!target) return false;
+            router.replace({ pathname: "/job/[id]/step/[stepId]", params: { id, stepId: target } });
+            return true;
+          },
+          onShow: () => {
+            setPhoto(undefined);
+            setResult(undefined);
+            setTargets([]);
+            setCorrecting(undefined);
+            setPhase("live");
+          },
+          keywords: data.keywords,
+          language: data.language,
         }
       : null,
   );
+
+  // A new spoken reply comes into view; the transcript sits at the end of the screen.
+  const scroll = useRef<ScrollViewInstance>(null);
+  useEffect(() => {
+    if (work.turnCount) scroll.current?.scrollToEnd({ animated: true });
+  }, [work.turnCount]);
 
   const take = async () => {
     setError(undefined);
@@ -284,6 +321,7 @@ export default function StepScreen() {
     >
       <Stack.Screen options={{ title: `Step ${data.index}` }} />
       <ScrollView
+        ref={scroll}
         contentContainerStyle={{ padding: space["space-4"], gap: space["space-3"] }}
         // One tap on "Save measurement" saves, rather than only closing the number pad.
         keyboardShouldPersistTaps="handled"

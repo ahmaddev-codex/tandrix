@@ -1,0 +1,99 @@
+# T14: hold to talk on a step. Needs the API with TANDRIX_FIXTURE_MODELS=1: the simulator's
+# microphone hears nothing useful, so the fixture hears every recording as one question and
+# answers it from the step. What was said and the reply are both on screen.
+appId: app.tandrix.mobile
+env:
+  JOB_TITLE: Voice job e2e ${RUN_ID}
+---
+- addMedia:
+    - assets/sample-part.jpg
+- launchApp:
+    permissions:
+      all: allow
+      camera: deny
+- runFlow: subflows/open-app.yaml
+- tapOn:
+    id: new-job
+- extendedWaitUntil:
+    visible:
+      id: job-title
+    timeout: 30000
+- tapOn:
+    id: job-title
+- inputText: ${JOB_TITLE}
+- tapOn:
+    id: create-job
+- extendedWaitUntil:
+    visible: ${JOB_TITLE},.*
+    timeout: 15000
+- tapOn: ${JOB_TITLE},.*
+- extendedWaitUntil:
+    visible:
+      id: photograph-nameplate
+    timeout: 15000
+- tapOn:
+    id: photograph-nameplate
+- extendedWaitUntil:
+    visible:
+      id: choose-photo
+    timeout: 30000
+- tapOn:
+    id: choose-photo
+- extendedWaitUntil:
+    visible:
+      text: "Photo, .*"
+    timeout: 15000
+- tapOn:
+    text: "Photo, .*"
+    index: 0
+- tapOn:
+    id: use-photo
+- extendedWaitUntil:
+    visible:
+      id: identify-banner
+    timeout: 60000
+- tapOn:
+    id: asset-make
+- eraseText: 120
+- inputText: FlowSet
+- tapOn:
+    id: asset-model
+- eraseText: 120
+- inputText: VOX-${RUN_ID}
+- hideKeyboard
+- tapOn:
+    id: save-asset
+- extendedWaitUntil:
+    visible:
+      id: generic-steps
+    timeout: 15000
+- tapOn:
+    id: generic-steps
+- extendedWaitUntil:
+    visible:
+      id: step-list
+    timeout: 60000
+- scrollUntilVisible:
+    element: "Step 3: Fit the impeller,.*"
+    direction: DOWN
+- tapOn: "Step 3: Fit the impeller,.*"
+- extendedWaitUntil:
+    visible:
+      id: step-card
+    timeout: 15000
+- scrollUntilVisible:
+    element:
+      id: talk
+    direction: DOWN
+    timeout: 20000
+# Hold to talk, then let go.
+- longPressOn:
+    id: talk
+- extendedWaitUntil:
+    visible: Which way round does this go?
+    timeout: 30000
+# The fixture's reply ends with this; the step card's own text doesn't.
+- extendedWaitUntil:
+    visible: ".*Check it against the step before you move on\\."
+    timeout: 30000
+- takeScreenshot: voice-answer

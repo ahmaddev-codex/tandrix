@@ -1,6 +1,7 @@
-// Working a step: its safety gates, its one primary action and the ways out (skip, reopen). The
-// API applies the rules (@tandrix/core transitionStep); this shows the same rules up front so the
-// user sees the gate before trying to start.
+// Working a step: its safety gates, its one primary action, the mic, and the ways out (skip,
+// reopen). The API applies the rules (@tandrix/core transitionStep); this shows the same rules up
+// front so the user sees the gate before trying to start. Hold the mic to talk: commands (next,
+// repeat, start, done…) act here, questions are answered in the step's context and spoken back.
 import { gateCopy, refusalFor, requiredGates } from "@tandrix/core";
 import type {
   JobStep,
@@ -8,12 +9,23 @@ import type {
   SafetyConfirmation,
   SafetyGate as Gate,
   StepActionRequest,
+  StepActionResponse,
+  VoiceCommand,
 } from "@tandrix/contracts";
 import { space } from "@tandrix/ui";
-import { Button, Input, Notice, SafetyGate } from "@tandrix/ui/native";
-import { useState, type ReactNode } from "react";
+import {
+  Button,
+  Input,
+  Notice,
+  SafetyGate,
+  VoiceTranscript,
+  type VoiceTurn,
+} from "@tandrix/ui/native";
+import { useRef, useState, type ReactNode } from "react";
 import { View } from "react-native";
 import { api } from "@/lib/api";
+import { usePushToTalk } from "@/voice/ptt";
+import { speak, stopSpeaking } from "@/voice/tts";
 
 const active = ["in_progress", "needs_attention"];
 const done = ["verified", "user_confirmed", "skipped"];
@@ -24,10 +36,12 @@ const confirmedAt = (iso: string) =>
 export interface StepWork {
   /** Safety gates or the refusal, shown before the step's content. */
   gates: ReactNode;
-  /** The StepCard's actions: one primary, at most. */
+  /** The StepCard's actions: one primary, at most, and the mic. */
   actions: ReactNode;
-  /** Under the StepCard: the measurement field, skip and reopen, and any answer from the rules. */
+  /** Under the StepCard: what was said, the measurement field, skip and reopen. */
   below: ReactNode;
+  /** Turns said so far, so the screen can bring a new reply into view. */
+  turnCount: number;
 }
 
 export interface StepWorkInput {
@@ -36,6 +50,13 @@ export interface StepWorkInput {
   jobStep: JobStep;
   confirmations: SafetyConfirmation[];
   onChange: (jobStep: JobStep, confirmations: SafetyConfirmation[]) => void;
+  /** Spoken "next" / "back". */
+  onNavigate: (to: "next" | "previous") => boolean;
+  /** Spoken "show me again": back to the camera. */
+  onShow: () => void;
+  /** Part names and the equipment, to bias recognition. */
+  keywords: string[];
+  language: string;
 }
 
 /** Null until the step has loaded; then nothing renders. */
@@ -45,33 +66,118 @@ export function useStepWork(input: StepWorkInput | null): StepWork {
   const [measured, setMeasured] = useState("");
   const [skipping, setSkipping] = useState(false);
   const [reason, setReason] = useState("");
-  if (!input) return { gates: null, actions: null, below: null };
-  const { jobId, step, jobStep, confirmations, onChange } = input;
+  const [turns, setTurns] = useState<VoiceTurn[]>([]);
+  // The talk handlers outlive a render; they read the latest step through this.
+  const latest = useRef(input);
+  latest.current = input;
+
+  const say = (text: string, kind?: VoiceTurn["kind"]) => {
+    setTurns((ts) => [...ts, { speaker: "tandrix", text, ...(kind ? { kind } : {}) }]);
+    speak(text, latest.current?.language);
+  };
+
+  const send = async (body: StepActionRequest): Promise<StepActionResponse | null> => {
+    const cur = latest.current;
+    if (!cur) return null;
+    setBusy(true);
+    setMessage(undefined);
+    try {
+      const r = await api.stepAction(cur.jobId, cur.jobStep.id, body);
+      if (r.status === "applied") {
+        cur.onChange(r.step, r.confirmations);
+        setSkipping(false);
+        setReason("");
+      } else {
+        setMessage(r.message);
+      }
+      return r;
+    } catch (e) {
+      setMessage((e as Error).message);
+      return null;
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const runCommand = async (command: VoiceCommand) => {
+    const cur = latest.current!;
+    switch (command.kind) {
+      case "stop":
+        stopSpeaking();
+        return;
+      case "repeat":
+        return say(`${cur.step.title}. ${cur.step.instruction}`);
+      case "next":
+      case "previous":
+        if (!cur.onNavigate(command.kind)) {
+          say(command.kind === "next" ? "This is the last step." : "This is the first step.");
+        }
+        return;
+      case "show":
+        cur.onShow();
+        return say("Show me the parts in the frame.");
+      case "start": {
+        const r = await send({ action: "start" });
+        return say(
+          r?.status === "applied" ? "Started." : (r?.message ?? "That didn't work. Try again."),
+        );
+      }
+      case "done": {
+        if (cur.step.verification === "measurement")
+          return say("Enter the value you measured, then save it.");
+        if (cur.step.verification !== "user_confirm")
+          return say("Take a photo of the result so Tandrix can check it.");
+        const r = await send({ action: "confirm_done" });
+        return say(
+          r?.status === "applied"
+            ? "Marked as done."
+            : (r?.message ?? "That didn't work. Try again."),
+        );
+      }
+      case "skip": {
+        if (!command.reason) {
+          setSkipping(true);
+          return say("Why are you skipping it? Say skip because, then the reason, or type it.");
+        }
+        const r = await send({ action: "skip", reason: command.reason });
+        return say(
+          r?.status === "applied" ? "Skipped." : (r?.message ?? "That didn't work. Try again."),
+        );
+      }
+      case "stuck":
+        return; // answered by the API as a question
+    }
+  };
+
+  const onHeard = async (text: string) => {
+    const cur = latest.current;
+    if (!cur) return;
+    setTurns((ts) => [...ts, { speaker: "you", text }]);
+    try {
+      const r = await api.askStep(cur.jobId, cur.jobStep.id, { text });
+      if (r.status === "command") await runCommand(r.command);
+      else if (r.status === "answer") say(r.answer, r.fromStep ? undefined : "general");
+      else if (r.status === "refused") say(r.message, "refusal");
+      else say(r.message);
+    } catch (e) {
+      say((e as Error).message);
+    }
+  };
+
+  const talk = usePushToTalk({
+    keywords: input?.keywords ?? [],
+    onHeard,
+    onProblem: (m) => say(m),
+  });
+
+  if (!input) return { gates: null, actions: null, below: null, turnCount: 0 };
+  const { step, jobStep, confirmations } = input;
 
   const refusal = refusalFor(step.hazardTags);
   const gates = requiredGates(step.hazardTags);
   const confirmedGate = (g: Gate) => confirmations.find((c) => c.gate === g);
   const missing = gates.filter((g) => !confirmedGate(g));
   const status = jobStep.status;
-
-  const send = async (body: StepActionRequest) => {
-    setBusy(true);
-    setMessage(undefined);
-    try {
-      const r = await api.stepAction(jobId, jobStep.id, body);
-      if (r.status === "applied") {
-        onChange(r.step, r.confirmations);
-        setSkipping(false);
-        setReason("");
-      } else {
-        setMessage(r.message);
-      }
-    } catch (e) {
-      setMessage((e as Error).message);
-    } finally {
-      setBusy(false);
-    }
-  };
 
   // Gates stand between the step and its start, so they show until it starts.
   const gateViews = refusal ? (
@@ -106,7 +212,7 @@ export function useStepWork(input: StepWorkInput | null): StepWork {
   const canSave = !busy && !!measured.trim() && !Number.isNaN(measuredValue);
   const saveMeasurement = () => send({ action: "confirm_done", measuredValue });
 
-  const actions = refusal ? null : status === "todo" ? (
+  const primary = refusal ? null : status === "todo" ? (
     missing.length ? null : (
       <Button
         variant="primary"
@@ -130,8 +236,27 @@ export function useStepWork(input: StepWorkInput | null): StepWork {
     </Button>
   ) : null;
 
+  // Design system: StepCard actions are one field primary plus the icon-only mic.
+  const actions = (
+    <>
+      {primary ? <View style={{ flex: 1 }}>{primary}</View> : null}
+      <Button
+        variant={talk.state === "listening" ? "primary" : "secondary"}
+        icon="mic"
+        iconOnly
+        accessibilityLabel="Hold to talk"
+        accessibilityHint="Hold, speak, then let go"
+        disabled={talk.state === "working"}
+        onPressIn={talk.start}
+        onPressOut={talk.finish}
+        testID="talk"
+      />
+    </>
+  );
+
   const below = (
     <View style={{ gap: space["space-3"] }}>
+      <VoiceTranscript testID="voice-transcript" state={talk.state} turns={turns} />
       {measuring && step.measurement ? (
         // The value and its save sit together, above the keyboard; Done saves too.
         <View style={{ gap: space["space-3"] }}>
@@ -218,5 +343,5 @@ export function useStepWork(input: StepWorkInput | null): StepWork {
     </View>
   );
 
-  return { gates: gateViews, actions, below };
+  return { gates: gateViews, actions, below, turnCount: turns.length };
 }

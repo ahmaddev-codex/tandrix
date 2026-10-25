@@ -8,7 +8,8 @@ set -a; . ../../../.env.local; set +a
 
 OUT=../../../.maestro
 RUN_ID=$(date +%s)
-run() { maestro test --test-output-dir "$OUT" -e DEV_USER_EMAIL="$DEV_USER_EMAIL" -e DEV_USER_PASSWORD="$DEV_USER_PASSWORD" -e RUN_ID="$RUN_ID" "$@"; }
+# Maestro's iOS driver can hang (testmanagerd snapshot timeouts); cap each run at 15 minutes.
+run() { perl -e 'alarm shift; exec @ARGV' 900 maestro test --test-output-dir "$OUT" -e DEV_USER_EMAIL="$DEV_USER_EMAIL" -e DEV_USER_PASSWORD="$DEV_USER_PASSWORD" -e RUN_ID="$RUN_ID" "$@"; }
 
 run sign-in-create-job.yaml design-gallery.yaml
 
@@ -19,3 +20,4 @@ run manual-from-pages.yaml
 run generic-steps.yaml
 run highlight-step.yaml
 run safety-steps.yaml
+run voice-step.yaml

@@ -45,6 +45,13 @@
           "cameraPermission": "Tandrix uses the camera to photograph equipment and check each step.",
           "microphonePermission": false
         }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Tandrix listens while you hold the talk button.",
+          "recordAudioAndroid": true
+        }
       ]
     ],
     "scheme": "tandrix",
