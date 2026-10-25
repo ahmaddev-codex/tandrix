@@ -278,6 +278,33 @@ export const ScreenAskRequest = z.strictObject({
   mode: ControlMode,
 });
 
+/** The largest inline screenshot a question outside a job may carry (base64 of a 1280 px JPEG is far smaller). */
+export const INLINE_SCREENSHOT_MAX_BYTES = 4 * 1024 * 1024;
+
+/** One earlier exchange, so a follow-up ("and then?") makes sense. Text only. */
+export const ScreenTurn = z.strictObject({ question: text(2000), reply: text(600) });
+
+/**
+ * POST /screen/ask: a question about the screen outside any job ("teach me Photoshop"). The
+ * screenshot travels inline and is never stored.
+ */
+export const ScreenAskInlineRequest = z.strictObject({
+  screenshot: z.strictObject({
+    mimeType: z.enum(["image/jpeg", "image/png"]),
+    /** Base64 of the image bytes. */
+    data: z
+      .string()
+      .min(1)
+      .max(Math.ceil((INLINE_SCREENSHOT_MAX_BYTES * 4) / 3) + 4)
+      .regex(/^[A-Za-z0-9+/]+=*$/),
+  }),
+  transcript: text(2000),
+  geometry: ScreenGeometry,
+  mode: ControlMode,
+  /** Oldest first; the last four at most. */
+  history: z.array(ScreenTurn).max(4).default([]),
+});
+
 export const ScreenAskResponse = z.discriminatedUnion("status", [
   z.strictObject({
     status: z.literal("answered"),

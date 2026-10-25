@@ -16,6 +16,9 @@ const assets = join(root, "node_modules/@phosphor-icons/core/assets");
 const OUT_TS = join(root, "src/generated/icons.ts");
 const BUNDLE = join(root, "../../docs/design/system/components/bundle.js");
 
+/** Icons always drawn in outline, even small (the solid check reads too heavy next to text). */
+const outlineOnly = new Set<string>(["check"]);
+
 /** Tandrix icon name → Phosphor icon. Names say what the icon means in Tandrix. */
 const map = {
   check: "check",
@@ -58,9 +61,10 @@ function paths(file: string): Path[] {
 
 const data: Record<string, { fill: Path[]; outline: Path[] }> = {};
 for (const [name, ph] of Object.entries(map)) {
+  const outline = paths(join(assets, "regular", `${ph}.svg`));
   data[name] = {
-    fill: paths(join(assets, "fill", `${ph}-fill.svg`)),
-    outline: paths(join(assets, "regular", `${ph}.svg`)),
+    fill: outlineOnly.has(name) ? outline : paths(join(assets, "fill", `${ph}-fill.svg`)),
+    outline,
   };
 }
 

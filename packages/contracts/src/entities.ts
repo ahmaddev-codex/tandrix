@@ -240,7 +240,8 @@ export type Detection = z.infer<typeof Detection>;
 /** One shape for the camera highlight and the screen pointer. Pixels are in the source image. */
 export const PointerTarget = z.strictObject({
   surface: z.enum(["camera", "screen"]),
-  evidenceId: Id,
+  /** The photo or screenshot it points into; null for a Mac question asked outside a job, whose screenshot isn't kept. */
+  evidenceId: Id.nullable(),
   label: text(120),
   /** Absent when the model gives none, as computer-use pointing doesn't. */
   confidence: Confidence.optional(),
