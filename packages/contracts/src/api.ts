@@ -257,7 +257,13 @@ export const StepActionResponse = z.discriminatedUnion("status", [
 ]);
 export type StepActionResponse = z.infer<typeof StepActionResponse>;
 
+/**
+ * POST /jobs/:id/handoff: send the job to another device, optionally at a step (a job step id).
+ * The other device hears it over Realtime (public.jobs).
+ */
 export const HandoffRequest = z.strictObject({ to: Surface, stepId: Id.optional() });
+export const HandoffResponse = z.strictObject({ job: Job });
+export type HandoffResponse = z.infer<typeof HandoffResponse>;
 
 export const ControlModeRequest = z.strictObject({ mode: ControlMode });
 

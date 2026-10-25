@@ -9,11 +9,21 @@ const A = "00000000-0000-4000-8000-00000000000a";
 const B = "00000000-0000-4000-8000-00000000000b";
 const ASSET = "00000000-0000-4000-8000-0000000000a1";
 
-function memoryRepo(): JobsRepo & { jobs: Job[] } {
+function memoryRepo(): JobsRepo & { jobs: Job[]; handoffs: Array<{ by: string }> } {
   const jobs: Job[] = [];
+  const handoffs: Array<{ by: string }> = [];
   let n = 0;
   return {
     jobs,
+    handoffs,
+    async handOff(input) {
+      const job = jobs.find((j) => j.id === input.jobId && j.ownerId === input.ownerId);
+      if (!job) throw dbError({ code: "P0002", message: "job not found for owner" });
+      handoffs.push({ by: input.by });
+      job.activeSurface = input.to;
+      if (input.jobStepId) job.currentStepId = input.jobStepId;
+      return job;
+    },
     async create(input: NewJob) {
       const now = new Date(Date.UTC(2026, 9, 26, 10, 0, n)).toISOString();
       const job: Job = {
@@ -262,5 +272,43 @@ describe("errors and logging", () => {
     expect(ok.headers.get("access-control-allow-origin")).toBe("http://localhost:5173");
     const bad = await call("/health", { headers: { origin: "https://evil.example" } });
     expect(bad.headers.get("access-control-allow-origin")).toBeNull();
+  });
+});
+
+describe("POST /jobs/:id/handoff", () => {
+  const STEP = "00000000-0000-4000-8000-0000000000e5";
+  async function withJob() {
+    const s = setup();
+    const res = await s.call("/jobs", {
+      method: "POST",
+      token: "token-a",
+      body: JSON.stringify(create),
+    });
+    const { job } = (await res.json()) as { job: Job };
+    return { ...s, job };
+  }
+
+  it("sends the job to the Mac at a step, and says who sent it", async () => {
+    const s = await withJob();
+    const res = await s.call(`/jobs/${s.job.id}/handoff`, {
+      method: "POST",
+      token: "token-a",
+      headers: { "X-Tandrix-Surface": "phone" },
+      body: JSON.stringify({ to: "desktop", stepId: STEP }),
+    });
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({
+      job: { activeSurface: "desktop", currentStepId: STEP },
+    });
+    expect(s.repo.handoffs).toEqual([{ by: "phone" }]);
+  });
+
+  it("only hands off the owner's job, to a known device", async () => {
+    const s = await withJob();
+    const send = (token: string, body: object) =>
+      s.call(`/jobs/${s.job.id}/handoff`, { method: "POST", token, body: JSON.stringify(body) });
+    expect((await send("token-b", { to: "desktop" })).status).toBe(404);
+    expect((await send("token-a", { to: "toaster" })).status).toBe(400);
+    expect((await send("token-a", { to: "desktop", stepId: "nope" })).status).toBe(400);
   });
 });

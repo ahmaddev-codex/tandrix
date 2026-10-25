@@ -17,6 +17,14 @@ export interface JobsRepo {
   getForOwner(ownerId: string, jobId: string): Promise<{ job: Job; steps: JobStep[] } | null>;
   /** True when the asset exists and belongs to the owner. */
   ownsAsset(ownerId: string, assetId: string): Promise<boolean>;
+  /** Sends the job to another device (public.hand_off_job). Not found: the job or step isn't the owner's. */
+  handOff(input: {
+    ownerId: string;
+    jobId: string;
+    to: Surface;
+    jobStepId?: string;
+    by: Surface;
+  }): Promise<Job>;
 }
 
 type Row = Record<string, unknown>;
@@ -61,6 +69,20 @@ const JOB_COLUMNS =
 
 export function supabaseJobsRepo(db: SupabaseClient): JobsRepo {
   return {
+    async handOff(input) {
+      const { data, error } = await db
+        .rpc("hand_off_job", {
+          p_owner_id: input.ownerId,
+          p_job_id: input.jobId,
+          p_to: input.to,
+          p_job_step_id: input.jobStepId ?? null,
+          p_by: input.by,
+        })
+        .single();
+      if (error) throw dbError(error);
+      return toJob(data as Row);
+    },
+
     async create(input) {
       // Job and its job_created event in one transaction (public.create_job).
       const { data, error } = await db

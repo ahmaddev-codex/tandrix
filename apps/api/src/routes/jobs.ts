@@ -1,4 +1,4 @@
-import { CreateJobRequest, Id } from "@tandrix/contracts";
+import { CreateJobRequest, HandoffRequest, Id, type HandoffResponse } from "@tandrix/contracts";
 import { Hono } from "hono";
 import { z } from "zod";
 import type { AuthEnv } from "../auth";
@@ -9,6 +9,7 @@ import { assetModelKey, type ManualsRepo } from "../repos/manuals";
 import type { ProceduresRepo } from "../repos/procedures";
 import type { StepStateRepo } from "../repos/step-state";
 import type { PartsChecksRepo } from "../repos/parts-checks";
+import { clientSurface, SURFACE_HEADER } from "./steps";
 
 const ListQuery = z.object({ limit: z.coerce.number().int().min(1).max(100).default(50) });
 
@@ -40,6 +41,20 @@ export function jobsRoutes(
         surface: parsed.data.surface,
       });
       return c.json({ job }, 201);
+    })
+    .post("/:id/handoff", async (c) => {
+      const id = Id.safeParse(c.req.param("id"));
+      if (!id.success) throw notFound("Job");
+      const parsed = HandoffRequest.safeParse(await c.req.json().catch(() => undefined));
+      if (!parsed.success) throw invalid(issues(parsed.error));
+      const job = await repo.handOff({
+        ownerId: c.get("user").id,
+        jobId: id.data,
+        to: parsed.data.to,
+        ...(parsed.data.stepId ? { jobStepId: parsed.data.stepId } : {}),
+        by: clientSurface(c.req.header(SURFACE_HEADER)),
+      });
+      return c.json({ job } satisfies HandoffResponse);
     })
     .get("/", async (c) => {
       const q = ListQuery.safeParse(c.req.query());
