@@ -114,6 +114,8 @@ Run the API with `pnpm --filter @tandrix/api dev` (it reloads on change). An API
 
 Release builds come from EAS, never from this machine: Expo loads `.env.local` for production builds too, so a local build would point at the local stack.
 
+Signing in a Mac from the phone is checked by `sh apps/mobile/e2e/pair-mac/run.sh`: the script plays the Mac (asks the API for a code), the flow opens the Mac's link on the phone, checks the Mac's name and approves it, and the script then checks the Mac's poll gets its sign-in.
+
 Going offline mid-job is checked by `sh apps/mobile/e2e/offline/run.sh`: it opens a step, stops the local API, starts the step (kept, shown as Pending, the job says it's offline), restarts the API with `dev:fixtures`, and waits for the queued start to be sent.
 
 ## Mac app
@@ -128,7 +130,7 @@ pnpm --filter @tandrix/desktop start  # runs the built app
 ```
 
 - Tandrix lives in the menu bar (a "Tandrix" title, no Dock icon). Click it to open the panel; it closes when it loses focus. Right-click for Quit. The panel opens by itself on launch.
-- Sign in as on the phone: an email code from Mailpit, or "Local test sign-in" on the local stack. The session is encrypted with `safeStorage` (Keychain) under the app's userData folder and survives restarts.
+- Signed out, the panel shows a QR: scan it with the phone (the camera app opens Tandrix), or choose Sign in a Mac on the phone (the laptop icon on the jobs list) and type the code. "Sign in with email instead" gives the email code (from Mailpit) and, on the local stack, "Local test sign-in". The session is encrypted with `safeStorage` (Keychain) under the app's userData folder and survives restarts.
 - **Show me:** type a question in the panel, or press ⌃⌥Space, ask out loud and press it again. With `dev:fixtures` the API "clicks" a third of the way into the screenshot and says so, so the pointer can be checked without the model; screenshots are saved as job evidence. In dev, macOS asks about the microphone for the app that launched Electron.
 - **Desktop steps:** the fixture steps (`dev:fixtures`, "Use general steps" on the phone) end with step 5, "Set the drive ramp time", done in software. The panel offers it: start it, then "Check my screen"; the fixture checker fails the first check and passes the next.
 - "Test the pointer" draws the pointer at the centre of every display for four seconds. Checking it on two displays is a manual check.

@@ -44,7 +44,7 @@ Tracks: **D** design, **A** mobile & glasses, **B** API & AI, **C** desktop (mac
 - [ ] **Checkpoint 5:** teach-me-this-screen works
 
 ## Phase 4 — Continuity (31 Oct)
-- [ ] T21 Desktop pairing by QR (C + A)
+- [x] T21 Desktop pairing by QR (C): the Mac's live code approved on the simulator signs the panel in; pair-mac e2e passes; scanning with a physical iPhone is a manual check
 - [ ] T22 Handoff between devices (all)
 - [ ] T23 Job report and share link (B)
 - [ ] **Checkpoint 6:** full spine twice; human review
