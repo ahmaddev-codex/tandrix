@@ -9,6 +9,8 @@ export interface IconProps {
   name: IconName;
   /** 16 (default), 20 or 24 px. */
   size?: 16 | 20 | 24;
+  /** solid ("fill") below 20 px and "outline" at 20 px and up, unless set. */
+  weight?: "fill" | "outline";
   /** Accessible name; omit for decorative icons. */
   label?: string;
   className?: string;

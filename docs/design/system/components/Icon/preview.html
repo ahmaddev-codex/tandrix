@@ -1,12 +1,18 @@
-<!-- @dsCard group="Foundations" height=100 -->
+<!-- @dsCard group="Foundations" height=136 -->
 <!doctype html>
 <html>
 <head><meta charset="utf-8"></head>
 <body>
-<div id="root" class="tx-row" style="gap:16px"></div>
+<div id="root" style="display:grid;gap:12px;padding:16px"></div>
 <script>
   var T = window.Tandrix, h = React.createElement;
-  ReactDOM.createRoot(document.getElementById('root')).render(h(React.Fragment, null, ['check','user','alert','info','eyeOff','stop','clock','book','video','camera','monitor','file','mic','power','gauge','arrowRight'].map(function(n){return h(T.Icon,{key:n,name:n,size:24,label:n})})));
+  var names = ['check','user','alert','info','eyeOff','stop','clock','book','video','camera','monitor','file','mic','power','gauge','arrowRight','retake','glasses','laptop','phone','x','pointer','hand'];
+  var row = function (size) {
+    return h('div', { className: 'tx-row', style: { gap: 16, padding: 0, alignItems: 'center' } },
+      h('span', { className: 'label-12', style: { width: 72, color: 'var(--text-secondary)' } }, size === 16 ? 'Solid 16' : 'Outline 24'),
+      names.map(function (n) { return h(T.Icon, { key: n, name: n, size: size, label: n }); }));
+  };
+  ReactDOM.createRoot(document.getElementById('root')).render(h(React.Fragment, null, row(16), row(24)));
 </script>
 </body>
 </html>

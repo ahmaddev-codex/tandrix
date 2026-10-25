@@ -38,10 +38,11 @@ These sit on photos and over other apps, not on Tandrix surfaces, so they are th
 ## Type
 
 - Set everything in Geist (`sans`). Use Geist Mono (`mono`) only for part numbers, serials, values, citations and logs.
-- **Headings** `heading-48` to `heading-16` use weight 600 and tight negative tracking. Use one `heading-48` per page at most.
+- The scale is compact: every style is named for its size in px. Readability on site comes from contrast, weight and the `sunlight` theme, and touch targets stay large (`control-lg`, `control-field`) even where the text is small.
+- **Headings** `heading-32` to `heading-14` use weight 600 and tight negative tracking. Use one `heading-32` per page at most.
 - **Field** styles are for the phone and overlay: `field-instruction` for the step instruction, `field-body` for its reason, `field-caption` for pointer captions and highlight labels, `lens-20` for the lens.
-- **Copy:** `copy-16` is the phone body, `copy-14` the Mac and web body, `copy-13` for dense tables. Keep line length near 65 characters.
-- **Labels and buttons:** `label-*` and `button-*` at weight 500 (`button-18` at 600 for field buttons).
+- **Copy:** `copy-14` is the phone body, `copy-13` the Mac and web body, `copy-12` for dense tables. Keep line length near 65 characters.
+- **Labels and buttons:** `label-*` and `button-*` at weight 500 (`button-15` at 600 for field buttons).
 - Use tabular numerals wherever numbers line up: step counts, values, timestamps.
 
 ## Space, size, radius, elevation
@@ -65,8 +66,9 @@ These sit on photos and over other apps, not on Tandrix surfaces, so they are th
 
 ## Iconography
 
-- Line icons on a 24-unit grid, 1.5 stroke, round caps and joins, in `currentColor`. The bundle's `Icon` covers status, source, capture, safety and notice glyphs (`info` for an info `Notice`; never `progress`, which reads as loading). For anything else use Lucide (`lucide-react`, `lucide-react-native`) at the same stroke.
-- Use 16px in chips and small buttons, 20px in cards, 24px in field buttons.
+- Icons are [Phosphor](https://phosphoricons.com) (MIT), in two styles only, both in `currentColor`: **solid** (Phosphor Fill) and **outline** (Phosphor Regular). Never mix in another set or another weight.
+- **The rule:** solid for small inline icons (16px: in chips, buttons and inputs, next to a word); outline for standalone icons at 20px and up (in cards, banners, notices, gates and field buttons). `Icon` applies it from `size`; set `weight` only to break it on purpose (for example a selected state in solid).
+- The bundle's `Icon` covers status, source, capture, safety and notice glyphs (`info` for an info `Notice`; never `progress`, which reads as loading). For anything else take the same Phosphor icon in the same style: `@phosphor-icons/react` on the Mac and web, `phosphor-react-native` on the phone, with `weight="fill"` or `weight="regular"`.
 - Icons always sit next to a word, except icon-only buttons, which need an `aria-label`.
 - The safety discs in `SafetyGate` follow ISO 7010 shapes: a blue disc for mandatory, a red slashed disc for stop.
 
@@ -79,5 +81,5 @@ There is no Tandrix logo yet. Set the name in Geist at weight 600 with `heading-
 - **Phone, job:** `SummaryCard`s for what the job has (equipment, manual), one `ActionCard` for what it's waiting on (identify the equipment, add the manual, write the steps), then the steps as `StepRow`s. A `Notice` explains when a service can't help; `ProgressState` covers long waits such as reading the manual.
 - **Phone, step:** `CaptureView` on top, `StepCard` below with one `field` primary action plus the mic. After a photo, `PartHighlight` marks the step's parts and `HighlightCorrection` confirms or corrects one; without highlights, list the step's parts by number. `SafetyGate` before a hazardous step; the icon-only mic in the `StepCard` ("Hold to talk") with `VoiceTranscript` under it; `CheckResult` after "Check my work"; `PartsList` for the parts check; `HandoffBanner` when the next step is on the Mac; `Tabs` (Task, Evidence, Assistant) at `field` size. Use the `sunlight` theme outdoors.
 - **Glasses:** speech carries the instruction and `LensCard` shows the step. Highlights stay on the phone.
-- **Mac:** a menu-bar panel (`shadow-md`, `copy-14`) with `ModeToggle`, the job's steps and `HandoffBanner` (`incoming`); the transparent overlay with `PointerBuddy`, and `ControlIndicator` while in Do it for me mode. Switching to Do it for me always goes through `ConfirmDialog`. Settings use `Toggle` and `Input`.
+- **Mac:** a menu-bar panel (`shadow-md`, `copy-13`) with `ModeToggle`, the job's steps and `HandoffBanner` (`incoming`); the transparent overlay with `PointerBuddy`, and `ControlIndicator` while in Do it for me mode. Switching to Do it for me always goes through `ConfirmDialog`. Settings use `Toggle` and `Input`.
 - **Web report:** `JobReport`, with evidence thumbnails in `radius-lg`.
