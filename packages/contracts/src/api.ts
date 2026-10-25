@@ -208,12 +208,22 @@ export const ManualResponse = z.strictObject({ manual: Manual });
 export type JobDetailResponse = z.infer<typeof JobDetailResponse>;
 
 /** What a user can do to a step. Status changes from checks come only from the check pipeline. */
+/**
+ * When the action really happened, for actions sent later from the offline queue. The API uses it
+ * only within the last day and never in the future; otherwise it uses its own clock.
+ */
+const OccurredAt = { occurredAt: Timestamp.optional() };
+
 export const StepActionRequest = z.discriminatedUnion("action", [
-  z.strictObject({ action: z.literal("start") }),
-  z.strictObject({ action: z.literal("confirm_done"), measuredValue: z.number().optional() }),
-  z.strictObject({ action: z.literal("confirm_safety"), gate: SafetyGate }),
-  z.strictObject({ action: z.literal("skip"), reason: text(400) }),
-  z.strictObject({ action: z.literal("reopen") }),
+  z.strictObject({ action: z.literal("start"), ...OccurredAt }),
+  z.strictObject({
+    action: z.literal("confirm_done"),
+    measuredValue: z.number().optional(),
+    ...OccurredAt,
+  }),
+  z.strictObject({ action: z.literal("confirm_safety"), gate: SafetyGate, ...OccurredAt }),
+  z.strictObject({ action: z.literal("skip"), reason: text(400), ...OccurredAt }),
+  z.strictObject({ action: z.literal("reopen"), ...OccurredAt }),
 ]);
 export type StepActionRequest = z.infer<typeof StepActionRequest>;
 
