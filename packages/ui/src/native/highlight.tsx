@@ -13,6 +13,7 @@ import {
 import Svg, { G, Path, Rect } from "react-native-svg";
 import { radius, space } from "../generated/tokens";
 import { estimateLabelSize, placeLabels } from "./label-layout";
+import { Button, Text } from "./components";
 import { nativeTextStyle, useTheme } from "./theme";
 
 export interface HighlightBox {
@@ -213,7 +214,7 @@ function Outline({ target, scale }: { target: NativeHighlightTarget; scale: numb
           y={box.y}
           width={box.w}
           height={box.h}
-          rx={px(6)}
+          rx={px(radius["radius-md"])}
           fill="none"
           stroke={st.color}
           strokeOpacity={st.opacity}
@@ -265,5 +266,56 @@ function Label({
         </RNText>
       ) : null}
     </Pressable>
+  );
+}
+
+export interface HighlightCorrectionProps {
+  /** The highlighted part's name. */
+  label: string;
+  /** The step's other parts, offered as "It's the …". */
+  otherParts?: Array<{ id: string; name: string }>;
+  onConfirm?: () => void;
+  onReject?: () => void;
+  onOtherPart?: (part: { id: string; name: string }) => void;
+  testID?: string;
+}
+
+/** Confirm or correct one highlight (design system: HighlightCorrection). */
+export function HighlightCorrection({
+  label,
+  otherParts = [],
+  onConfirm,
+  onReject,
+  onOtherPart,
+  testID,
+}: HighlightCorrectionProps) {
+  const t = useTheme();
+  const name = label.toLowerCase();
+  return (
+    <View
+      testID={testID}
+      style={{
+        gap: space["space-2"],
+        padding: space["space-4"],
+        borderRadius: radius["radius-lg"],
+        backgroundColor: t.color["background-100"],
+        boxShadow: t.shadow["shadow-md"],
+      }}
+    >
+      <Text variant="heading-16" style={{ marginBottom: space["space-1"] }}>
+        {`This looks like the ${name}. Is that right?`}
+      </Text>
+      <Button variant="primary" size="lg" block onPress={onConfirm} testID="confirm-highlight">
+        {`Yes, that's the ${name}`}
+      </Button>
+      <Button variant="secondary" size="lg" block onPress={onReject} testID="reject-highlight">
+        No, that's not it
+      </Button>
+      {otherParts.map((p) => (
+        <Button key={p.id} variant="tertiary" size="lg" block onPress={() => onOtherPart?.(p)}>
+          {`It's the ${p.name.toLowerCase()}`}
+        </Button>
+      ))}
+    </View>
   );
 }

@@ -1,6 +1,7 @@
-// Native foundation components. Feature components are built on these in their feature tasks:
-// PartHighlight (highlight.tsx), StepCard (step.tsx); CheckResult, PartsList, HandoffBanner and
-// SafetyGate to come.
+// Native foundation components. Feature components build on these: PartHighlight and
+// HighlightCorrection (highlight.tsx), StepCard (step.tsx), Notice, ActionCard, SummaryCard and
+// StepRow (cards.tsx), ProgressState (progress.tsx), SafetyGate, CheckResult, PartsList and
+// HandoffBanner (feedback.tsx).
 import { useState, type ReactNode } from "react";
 import {
   ActivityIndicator,
