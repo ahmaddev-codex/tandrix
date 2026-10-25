@@ -1,5 +1,14 @@
 // Typed client for the Tandrix API. Responses are validated with the shared contracts.
-import { Job, JobDetailResponse } from "@tandrix/contracts";
+import {
+  CreateEvidenceResponse,
+  Evidence,
+  Job,
+  JobDetailResponse,
+  ScreenAskResponse,
+  TranscribeResponse,
+  type CreateEvidenceRequest,
+  type ScreenAskRequest,
+} from "@tandrix/contracts";
 import { z } from "zod";
 import { env } from "./env";
 import { supabase } from "./supabase";
@@ -16,7 +25,13 @@ export class ApiError extends Error {
 
 const ErrorBody = z.object({ error: z.object({ code: z.string(), message: z.string() }) });
 
-async function request<T>(path: string, schema: z.ZodType<T>, init: RequestInit = {}) {
+async function request<T>(
+  path: string,
+  schema: z.ZodType<T>,
+  init: RequestInit = {},
+  /** Multipart bodies set their own content type. */
+  json = true,
+) {
   const { data } = await supabase.auth.getSession();
   const token = data.session?.access_token;
   if (!token) throw new ApiError(401, "unauthorized", "Sign in to continue.");
@@ -26,7 +41,7 @@ async function request<T>(path: string, schema: z.ZodType<T>, init: RequestInit 
       ...init,
       headers: {
         Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
+        ...(json ? { "Content-Type": "application/json" } : {}),
         ...init.headers,
       },
     });
@@ -50,4 +65,23 @@ async function request<T>(path: string, schema: z.ZodType<T>, init: RequestInit 
 export const api = {
   listJobs: () => request("/jobs", z.object({ jobs: z.array(Job) })).then((r) => r.jobs),
   getJob: (id: string) => request(`/jobs/${id}`, JobDetailResponse),
+  createEvidence: (jobId: string, body: z.input<typeof CreateEvidenceRequest>) =>
+    request(`/jobs/${jobId}/evidence`, CreateEvidenceResponse, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  completeEvidence: (jobId: string, evidenceId: string) =>
+    request(`/jobs/${jobId}/evidence/${evidenceId}/complete`, z.object({ evidence: Evidence }), {
+      method: "POST",
+    }).then((r) => r.evidence),
+  transcribe: (wav: Uint8Array) => {
+    const form = new FormData();
+    form.append("audio", new Blob([wav as BlobPart], { type: "audio/wav" }), "question.wav");
+    return request("/voice/transcribe", TranscribeResponse, { method: "POST", body: form }, false);
+  },
+  screenAsk: (jobId: string, body: z.input<typeof ScreenAskRequest>) =>
+    request(`/jobs/${jobId}/screen/ask`, ScreenAskResponse, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
 };

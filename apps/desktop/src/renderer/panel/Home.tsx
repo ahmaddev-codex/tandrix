@@ -1,11 +1,12 @@
 import type { JobDetailResponse } from "@tandrix/contracts";
 import { citationLabel, stepChip } from "@tandrix/ui";
 import { Button, Notice, StepRow } from "@tandrix/ui/web";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import type { ScreenAccess } from "../../shared/bridge";
 import { activeJob } from "../lib/active-job";
 import { api } from "../lib/api";
 import { useAuth } from "../lib/auth";
+import { ShowMe } from "./ShowMe";
 
 type JobState =
   | { kind: "loading" }
@@ -51,10 +52,10 @@ function ScreenAccessNotice() {
   );
 }
 
-function JobSteps({ detail }: { detail: JobDetailResponse }) {
+function JobSteps({ detail, children }: { detail: JobDetailResponse; children?: ReactNode }) {
   const { job, asset, procedure, steps } = detail;
   return (
-    <section className="panel-stack-4" aria-labelledby="job-title">
+    <section className="panel-stack-6" aria-labelledby="job-title">
       <header className="panel-stack-1">
         <p className="label-13 panel-muted">Active job</p>
         <h2 className="heading-20" id="job-title">
@@ -66,6 +67,7 @@ function JobSteps({ detail }: { detail: JobDetailResponse }) {
           </p>
         ) : null}
       </header>
+      {children}
       {procedure ? (
         <div className="panel-stack-2">
           <p className="label-14 panel-muted">
@@ -142,7 +144,9 @@ export function Home() {
         ) : state.kind === "none" ? (
           <Notice>No job in progress. Start one on your phone and it shows up here.</Notice>
         ) : (
-          <JobSteps detail={state.detail} />
+          <JobSteps detail={state.detail}>
+            <ShowMe jobId={state.detail.job.id} />
+          </JobSteps>
         )}
       </div>
       <footer className="panel-foot">

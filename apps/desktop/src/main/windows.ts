@@ -7,6 +7,8 @@ import { centre, toOverlay, type DisplayInfo, type Point } from "./displays";
 
 const PANEL = { width: 400, height: 620 };
 const TEST_POINTER_MS = 4000;
+/** An answer's pointer stays this long, or until the next question. */
+const ANSWER_POINTER_MS = 15_000;
 
 const overlays = new Map<number, BrowserWindow>();
 let panel: BrowserWindow | undefined;
@@ -42,7 +44,8 @@ export function createPanel(): BrowserWindow {
     fullscreenable: false,
     skipTaskbar: true,
     alwaysOnTop: true,
-    webPreferences: secure,
+    // The panel listens and speaks while it's hidden or behind other windows.
+    webPreferences: { ...secure, backgroundThrottling: false },
   });
   panel.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
   // Behaves like a menu-bar menu: clicking anywhere else puts it away.
@@ -54,7 +57,7 @@ export function createPanel(): BrowserWindow {
 }
 
 /** Opens the panel under the menu-bar icon, or closes it if it's open. */
-export function togglePanel(anchor: Rectangle) {
+export function togglePanel(anchor: Rectangle, focus = true) {
   if (!panel) return;
   if (panel.isVisible()) return panel.hide();
   const area = screen.getDisplayMatching(anchor).workArea;
@@ -63,8 +66,29 @@ export function togglePanel(anchor: Rectangle) {
     Math.min(Math.max(x, area.x + 8), area.x + area.width - PANEL.width - 8),
     area.y + 4,
   );
-  panel.show();
-  panel.focus();
+  if (focus) {
+    panel.show();
+    panel.focus();
+  } else panel.showInactive();
+}
+
+/** Puts the panel away (before a screenshot) and reports whether it was open. */
+export async function hidePanelForCapture(): Promise<boolean> {
+  if (!panel?.isVisible()) return false;
+  panel.hide();
+  // Let the window server remove it before the screen is captured.
+  await new Promise((r) => setTimeout(r, 150));
+  return true;
+}
+
+/** Shows the panel under the menu-bar icon without taking focus from the app in use. */
+export function showPanelInactive(anchor: Rectangle) {
+  if (!panel || panel.isVisible()) return;
+  togglePanel(anchor, false);
+}
+
+export function sendToPanel(channel: string) {
+  panel?.webContents.send(channel);
 }
 
 const displayInfo = (): DisplayInfo[] =>
@@ -122,6 +146,7 @@ export function showPointer(at: Point, caption?: string) {
   const target = toOverlay(at, displayInfo());
   for (const id of overlays.keys())
     send(id, target?.displayId === id ? { ...target.point, caption } : null);
+  clearTimer = setTimeout(clearPointer, ANSWER_POINTER_MS);
 }
 
 /** The pointer at the centre of every display, so the user can see each overlay works. */
