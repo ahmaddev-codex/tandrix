@@ -309,6 +309,7 @@ export function useStepWork(input: StepWorkInput | null): StepWork {
   const canSave = !busy && !!measured.trim() && !Number.isNaN(measuredValue);
   const saveMeasurement = () => send({ action: "confirm_done", measuredValue });
 
+  // Screen steps are checked on the Mac, not by a photo: the phone shows a notice instead.
   const primary = refusal ? null : status === "todo" ? (
     missing.length ? null : (
       <Button
@@ -321,8 +322,8 @@ export function useStepWork(input: StepWorkInput | null): StepWork {
         Start step
       </Button>
     )
-  ) : active.includes(status) &&
-    (step.verification === "photo" || step.verification === "screen") &&
+  ) : active.includes(status) && step.verification === "screen" ? null : active.includes(status) &&
+    step.verification === "photo" &&
     input.lastCheck !== "not_verifiable" ? (
     <Button variant="primary" block disabled={busy} onPress={input.onCheck} testID="check-work">
       {/* After a check found a problem, the one action is to check again. */}
@@ -361,6 +362,12 @@ export function useStepWork(input: StepWorkInput | null): StepWork {
   const below = (
     <View style={{ gap: space["space-3"] }}>
       <VoiceTranscript testID="voice-transcript" state={talk.state} turns={turns} />
+      {step.verification === "screen" && active.includes(status) ? (
+        <Notice testID="screen-step">
+          This step is done on a computer. Open Tandrix on your Mac: it shows this step and checks
+          your screen.
+        </Notice>
+      ) : null}
       {measuring && step.measurement ? (
         // The value and its save sit together, above the keyboard; Done saves too.
         <View style={{ gap: space["space-3"] }}>

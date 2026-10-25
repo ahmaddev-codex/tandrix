@@ -67,7 +67,7 @@ env:
     visible:
       id: step-list
     timeout: 60000
-- assertVisible: 4 steps
+- assertVisible: 5 steps
 - assertVisible: "Step 1: .*, To do, Generic, not from the manufacturer"
 - assertNotVisible: ".*Manual p.*"
 - assertNotVisible:

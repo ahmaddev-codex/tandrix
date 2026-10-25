@@ -117,7 +117,7 @@ env:
     visible:
       id: step-list
     timeout: 60000
-- assertVisible: 4 steps
+- assertVisible: 5 steps
 # Each row is one button labelled with its title, status and source.
 - assertVisible: "Step 1: Isolate and drain the pump, To do, Manual p.1"
 - assertVisible: "Step 2: Fit the mechanical seal, To do, Manual p.1, fig. 2"
