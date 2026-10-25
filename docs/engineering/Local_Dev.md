@@ -64,6 +64,7 @@ The fixtures replace only these model calls; everything else (rules, transaction
 - **Highlight:** the step's first part found mid-photo with a mask, the second as a lower-confidence box ("Possible match"), the rest reported missing with a framing hint.
 - **Voice:** every recording is heard as "Which way round does this go?" and answered from the step.
 - **Check:** a step's first check needs attention (a gap at the shoulder); the next passes.
+- **Parts check:** the last part on the list is missing and the second is a possible match; the rest are found.
 
 The e2e flows for steps need them.
 

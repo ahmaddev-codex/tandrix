@@ -13,6 +13,8 @@ import {
   HighlightResponse,
   StepActionResponse,
   CheckStepResponse,
+  PartsCheckResponse,
+  CorrectPartResponse,
   AskStepResponse,
   TranscribeResponse,
   Detection,
@@ -160,6 +162,21 @@ export const api = {
     request(`/jobs/${jobId}/steps/${jobStepId}/check`, CheckStepResponse, {
       method: "POST",
       body: JSON.stringify({ evidenceId }),
+    }),
+  partsCheck: (jobId: string, evidenceId: string) =>
+    request(`/jobs/${jobId}/parts-check`, PartsCheckResponse, {
+      method: "POST",
+      body: JSON.stringify({ evidenceId }),
+    }),
+  correctPart: (
+    jobId: string,
+    partsCheckId: string,
+    partSpecId: string,
+    status: "found" | "possible" | "missing",
+  ) =>
+    request(`/jobs/${jobId}/parts-check/${partsCheckId}/parts/${partSpecId}`, CorrectPartResponse, {
+      method: "PATCH",
+      body: JSON.stringify({ status }),
     }),
   askStep: (jobId: string, jobStepId: string, body: { text: string; stuck?: boolean }) =>
     request(`/jobs/${jobId}/steps/${jobStepId}/ask`, AskStepResponse, {

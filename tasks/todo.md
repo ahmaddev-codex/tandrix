@@ -33,7 +33,7 @@ Tracks: **D** design, **A** mobile & glasses, **B** API & AI, **C** desktop (mac
 - [ ] T14 Voice in and out on phone (B + A): built; hold-to-talk, transcript and spoken answer pass on the iOS simulator with the fixture; open until three real steps are done by voice on a device with the live model (billing)
 - [ ] **Checkpoint 3:** three steps by voice with highlights
 - [ ] T15 Step check by photo (B + A): built; needs attention then verified passes on the iOS simulator with the fixture; open until Spark judges the real pump stages (billing)
-- [ ] T16 Parts check (B + A)
+- [ ] T16 Parts check (B + A): built; missing part blocks its step and a correction releases it on the iOS simulator with the fixture; open until the demo layout is checked live (billing + T0.3 photos)
 - [ ] T17 Offline cache and upload queue (A)
 - [ ] **Checkpoint 4:** full phone path
 

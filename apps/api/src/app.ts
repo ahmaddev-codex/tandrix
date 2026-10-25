@@ -16,6 +16,9 @@ import type { DetectionsRepo } from "./repos/detections";
 import type { StepStateRepo } from "./repos/step-state";
 import { voiceRoutes, type StepAnswerer, type Transcriber } from "./voice";
 import type { StepChecker } from "./step-checker";
+import type { PartsChecker } from "./parts-checker";
+import type { PartsChecksRepo } from "./repos/parts-checks";
+import { partsRoutes } from "./routes/parts";
 import type { SafeFetchOptions } from "./safe-fetch";
 import { assetRoutes } from "./routes/asset";
 import { evidenceRoutes } from "./routes/evidence";
@@ -42,6 +45,8 @@ export interface AppDeps {
   transcriber: Transcriber;
   answerer: StepAnswerer;
   checker: StepChecker;
+  partsChecks: PartsChecksRepo;
+  partsChecker: PartsChecker;
   /** Signs manual search candidates (TOKEN_SIGNING_SECRET). */
   tokenSecret: string;
   /** Tests only: swap DNS and transport for the manual download. */
@@ -147,10 +152,28 @@ export function createApp(deps: AppDeps) {
     ...(deps.now ? { now: deps.now } : {}),
   };
   app.route("/jobs/:id/steps", stepRoutes(stepDeps));
+  app.route(
+    "/jobs/:id/parts-check",
+    partsRoutes({
+      jobs: deps.jobs,
+      procedures: deps.procedures,
+      evidence: deps.evidence,
+      storage: deps.storage,
+      partsChecks: deps.partsChecks,
+      checker: deps.partsChecker,
+    }),
+  );
   app.route("/jobs/:id/detections", detectionRoutes(stepDeps));
   app.route(
     "/jobs",
-    jobsRoutes(deps.jobs, deps.assets, deps.manuals, deps.procedures, deps.stepState),
+    jobsRoutes(
+      deps.jobs,
+      deps.assets,
+      deps.manuals,
+      deps.procedures,
+      deps.stepState,
+      deps.partsChecks,
+    ),
   );
 
   app.notFound((c) => c.json({ error: { code: "not_found", message: "No such route." } }, 404));

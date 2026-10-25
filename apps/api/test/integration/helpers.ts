@@ -17,6 +17,8 @@ import { supabaseDetectionsRepo } from "../../src/repos/detections";
 import { supabaseStepStateRepo } from "../../src/repos/step-state";
 import { noModelVoice } from "../../src/voice";
 import type { StepChecker } from "../../src/step-checker";
+import type { PartsChecker } from "../../src/parts-checker";
+import { supabasePartsChecksRepo } from "../../src/repos/parts-checks";
 import type { Transport } from "../../src/safe-fetch";
 
 export const config = loadApiConfig();
@@ -84,6 +86,14 @@ export const stepChecker: StepChecker & { impl: StepChecker["check"] } = {
   },
 };
 
+/** Tests set `partsChecker.impl` to script what's found on the parts photo. */
+export const partsChecker: PartsChecker & { impl: PartsChecker["check"] } = {
+  impl: async () => ({ status: "unavailable", message: "Model off in tests." }),
+  check(input) {
+    return partsChecker.impl(input);
+  },
+};
+
 export const app = createApp({
   verifyToken: supabaseVerifier(admin),
   jobs: supabaseJobsRepo(admin),
@@ -102,6 +112,8 @@ export const app = createApp({
   transcriber: noModelVoice,
   answerer: noModelVoice,
   checker: stepChecker,
+  partsChecks: supabasePartsChecksRepo(admin),
+  partsChecker,
   tokenSecret: config.tokenSigningSecret,
   manualFetch: { resolve: (h) => web.resolve(h), transport: web.transport },
   corsOrigins: [],

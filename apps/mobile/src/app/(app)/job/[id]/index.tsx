@@ -4,6 +4,7 @@ import type {
   Job,
   JobStep,
   Manual,
+  PartsCheck,
   ProcedureDetail,
 } from "@tandrix/contracts";
 import { radius, space } from "@tandrix/ui";
@@ -37,6 +38,7 @@ export default function JobScreen() {
   const [opening, setOpening] = useState(false);
   const [procedure, setProcedure] = useState<ProcedureDetail | null>(null);
   const [jobSteps, setJobSteps] = useState<JobStep[]>([]);
+  const [partsCheck, setPartsCheck] = useState<PartsCheck | null>(null);
   const [photos, setPhotos] = useState<EvidenceWithUrl[]>();
   const [error, setError] = useState<string>();
   const [refreshing, setRefreshing] = useState(false);
@@ -49,6 +51,7 @@ export default function JobScreen() {
       setManual(detail.manual);
       setProcedure(detail.procedure);
       setJobSteps(detail.steps);
+      setPartsCheck(detail.partsCheck);
       setPhotos(items);
       setError(undefined);
     } catch (e) {
@@ -111,7 +114,16 @@ export default function JobScreen() {
               actionTestID: "write-steps",
               onAction: () => router.push({ pathname: "/job/[id]/procedure", params: { id } }),
             }
-          : null;
+          : procedure && procedure.parts.length && !partsCheck
+            ? {
+                icon: "camera",
+                title: "Check the parts",
+                body: "Lay the parts out and photograph them. Tandrix ticks them off against the parts list and holds any step whose part is missing.",
+                actionLabel: "Check the parts",
+                actionTestID: "check-parts",
+                onAction: () => router.push({ pathname: "/job/[id]/parts", params: { id } }),
+              }
+            : null;
 
   const gap = space["space-2"];
   const tile = (width - space["space-4"] * 2 - gap * (COLUMNS - 1)) / COLUMNS;
@@ -180,6 +192,40 @@ export default function JobScreen() {
               />
             ) : null}
             {next ? <ActionCard {...next} /> : null}
+            {procedure && partsCheck ? (
+              <SummaryCard
+                testID="parts-card"
+                label="Parts"
+                title={`${partsCheck.results.filter((r) => r.status === "found").length} of ${partsCheck.results.length} parts found`}
+                facts={[
+                  {
+                    text:
+                      [
+                        partsCheck.results.filter((r) => r.status === "missing").length
+                          ? `${partsCheck.results.filter((r) => r.status === "missing").length} missing`
+                          : null,
+                        partsCheck.results.filter((r) => r.status === "possible").length
+                          ? `${partsCheck.results.filter((r) => r.status === "possible").length} to confirm`
+                          : null,
+                      ]
+                        .filter(Boolean)
+                        .join(", ") || "Everything on the list is here",
+                  },
+                ]}
+                action={
+                  <Button
+                    variant="secondary"
+                    size="lg"
+                    block
+                    icon="camera"
+                    onPress={() => router.push({ pathname: "/job/[id]/parts", params: { id } })}
+                    testID="recheck-parts"
+                  >
+                    Check the parts again
+                  </Button>
+                }
+              />
+            ) : null}
             {procedure ? (
               <View testID="step-list" style={{ gap: space["space-2"] }}>
                 <Text variant="label-16" color="text-secondary">
@@ -196,7 +242,11 @@ export default function JobScreen() {
                       index={step.order}
                       title={step.title}
                       status={chip.status}
-                      {...(chip.label ? { statusLabel: chip.label } : {})}
+                      {...(js?.status === "blocked" && js.note
+                        ? { statusLabel: js.note }
+                        : chip.label
+                          ? { statusLabel: chip.label }
+                          : {})}
                       {...(cite ? { source: cite } : {})}
                       disabled={!js}
                       onSelect={() =>

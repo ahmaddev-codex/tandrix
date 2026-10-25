@@ -222,7 +222,7 @@ Sizes: XS 1 file · S 1–2 · M 3–5 · L 5–8 (split if larger). Commands as
 **Description:** `/parts-check` (SAM all objects + Spark assignment to PartSpecs); PartsList UI with found/possible/missing; corrections; missing parts block dependent steps.
 **Acceptance:** demo layout: all present parts found, removed O-ring flagged missing; correction updates result.
 **Verification:** ai test with fixture; core test for blocking; manual.
-**Dependencies:** T11, T2. **Files:** `packages/ai/src/parts-check.ts`, `apps/api/src/routes/parts-check.ts`, `apps/mobile/app/job/[id]/parts.tsx`. **Size:** M
+**Dependencies:** T11, T2. **Files:** `apps/api/src/{parts-checker,routes/parts,repos/parts-checks}.ts`, `supabase/migrations/*_parts_check.sql` (adds `job_steps.blocked_by`), `packages/core/src/parts.ts`, `apps/mobile/src/app/(app)/job/[id]/{index,parts}.tsx`. **Size:** M
 
 #### T17 Offline cache and upload queue
 **Description:** Cache procedure, manual pages, reference images per job; queue evidence uploads and checks; "pending" state.

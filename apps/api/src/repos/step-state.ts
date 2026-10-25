@@ -155,7 +155,7 @@ export function supabaseStepStateRepo(db: SupabaseClient): StepStateRepo {
       const { data: step, error: stepError } = await db
         .from("job_steps")
         .select(
-          "id, job_id, procedure_step_id, status, status_evidence_id, started_at, note, updated_at, updated_by_surface",
+          "id, job_id, procedure_step_id, status, status_evidence_id, started_at, note, blocked_by, updated_at, updated_by_surface",
         )
         .eq("id", t.jobStepId)
         .single();

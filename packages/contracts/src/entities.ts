@@ -180,6 +180,8 @@ export const JobStep = z.strictObject({
   startedAt: Timestamp.nullable(),
   /** Skip or block reason, shown in the report. */
   note: optionalText(400),
+  /** Set while blocked: "parts" blocks are lifted when the parts turn up; "other" only by hand. */
+  blockedBy: z.enum(["parts", "other"]).optional(),
   updatedAt: Timestamp,
   updatedBySurface: Surface,
 });

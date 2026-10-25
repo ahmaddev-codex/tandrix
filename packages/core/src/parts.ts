@@ -34,6 +34,13 @@ export function applyPartsCheck(
   return decision;
 }
 
+/** The note on a step blocked by missing parts, as its StatusChip reads: "Missing part: O-ring". */
+export function missingPartsNote(names: readonly string[]): string {
+  const shown = names.slice(0, 3).join(", ");
+  const more = names.length > 3 ? ` and ${names.length - 3} more` : "";
+  return `${names.length === 1 ? "Missing part" : "Missing parts"}: ${shown}${more}`;
+}
+
 export interface ReportCounts {
   verified: number;
   confirmed: number;

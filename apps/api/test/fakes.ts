@@ -1,5 +1,6 @@
 // In-memory evidence repo and storage for unit tests.
 import type {
+  PartsCheck,
   CheckResult,
   JobStep,
   SafetyConfirmation,
@@ -16,6 +17,8 @@ import { noModelGenerator } from "../src/procedure-generator";
 import { noModelHighlighter } from "../src/highlighter";
 import { noModelVoice } from "../src/voice";
 import { noModelChecker } from "../src/step-checker";
+import { noModelPartsChecker } from "../src/parts-checker";
+import type { PartsChecksRepo } from "../src/repos/parts-checks";
 import type { DetectionsRepo } from "../src/repos/detections";
 import type { StepStateRepo, StepTransition } from "../src/repos/step-state";
 import type { ProceduresRepo, SaveProcedure } from "../src/repos/procedures";
@@ -238,6 +241,8 @@ export const noManuals = () => ({
   transcriber: noModelVoice,
   answerer: noModelVoice,
   checker: noModelChecker,
+  partsChecks: memoryPartsChecks(),
+  partsChecker: noModelPartsChecker,
 });
 
 /** Stores saved procedures as details; `saves` records what the route asked to save. */
@@ -408,6 +413,55 @@ export function memoryStepState(jobOf: (jobStepId: string) => string = () => "")
       };
       steps.set(t.jobStepId, next);
       return next;
+    },
+  };
+  return repo;
+}
+
+/** Parts checks in memory; blocking is applied to the shared step store when given one. */
+export function memoryPartsChecks(steps?: Map<string, JobStep>) {
+  const checks: PartsCheck[] = [];
+  let n = 0;
+  const apply = (c: { block: Array<{ jobStepId: string; note: string }>; unblock: string[] }) => {
+    if (!steps) return;
+    for (const b of c.block) {
+      steps.set(b.jobStepId, {
+        ...steps.get(b.jobStepId)!,
+        status: "blocked",
+        blockedBy: "parts",
+        note: b.note,
+      });
+    }
+    for (const id of c.unblock) {
+      const { blockedBy: _b, note: _n, ...rest } = steps.get(id)!;
+      steps.set(id, { ...rest, status: "todo", startedAt: null, statusEvidenceId: null });
+    }
+  };
+  const repo: PartsChecksRepo & { checks: PartsCheck[] } = {
+    checks,
+    async latest(jobId) {
+      return [...checks].reverse().find((c) => c.jobId === jobId) ?? null;
+    },
+    async getForJob(jobId, id) {
+      return checks.find((c) => c.id === id && c.jobId === jobId) ?? null;
+    },
+    async save(c) {
+      const pc: PartsCheck = {
+        id: `00000000-0000-4000-8000-0000000f${String(++n).padStart(4, "0")}`,
+        jobId: c.jobId,
+        evidenceIds: [c.evidenceId],
+        results: c.results,
+        createdAt: "2026-10-26T10:00:00.000Z",
+      };
+      checks.push(pc);
+      apply(c);
+      return pc;
+    },
+    async correct(c) {
+      const i = checks.findIndex((x) => x.id === c.partsCheckId);
+      checks[i] = { ...checks[i]!, results: c.results };
+      apply(c);
+      return checks[i]!;
     },
   };
   return repo;

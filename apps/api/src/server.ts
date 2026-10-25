@@ -13,6 +13,9 @@ import { supabaseManualsRepo } from "./repos/manuals";
 import { fixtureHighlighter } from "./fixtures/highlight";
 import { fixtureVoice } from "./fixtures/voice";
 import { fixtureChecker } from "./fixtures/check";
+import { fixturePartsChecker } from "./fixtures/parts";
+import { metaPartsChecker, noModelPartsChecker } from "./parts-checker";
+import { supabasePartsChecksRepo } from "./repos/parts-checks";
 import { metaStepChecker, noModelChecker } from "./step-checker";
 import { metaVoice, noModelVoice } from "./voice";
 import { fixtureProcedureGenerator } from "./fixtures/procedure";
@@ -47,6 +50,11 @@ const checker = config.fixtureModels
   : meta
     ? metaStepChecker(meta, log)
     : noModelChecker;
+const partsChecker = config.fixtureModels
+  ? fixturePartsChecker
+  : meta
+    ? metaPartsChecker(meta, log)
+    : noModelPartsChecker;
 const voice = config.fixtureModels ? fixtureVoice : meta ? metaVoice(meta, log) : noModelVoice;
 if (config.fixtureModels) log({ level: "warn", event: "fixture_models_on" });
 if (!process.env.META_API_KEY)
@@ -70,6 +78,8 @@ const app = createApp({
   transcriber: voice,
   answerer: voice,
   checker,
+  partsChecks: supabasePartsChecksRepo(admin),
+  partsChecker,
   tokenSecret: config.tokenSigningSecret,
   corsOrigins: config.corsOrigins,
   log,

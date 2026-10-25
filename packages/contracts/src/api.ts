@@ -11,6 +11,9 @@ import {
   Manual,
   PointerTarget,
   PartSpec,
+  PartStatus,
+  PartsCheck,
+  Detection,
   Procedure,
   ProcedureStep,
   SafetyConfirmation,
@@ -130,6 +133,8 @@ export const JobDetailResponse = z.strictObject({
   procedure: ProcedureDetail.nullable(),
   /** Safety gates confirmed on this job's steps. */
   safetyConfirmations: z.array(SafetyConfirmation),
+  /** The latest parts check, if the parts have been checked. */
+  partsCheck: PartsCheck.nullable(),
 });
 
 /** POST /jobs/:id/procedure. The task defaults to the job title. */
@@ -353,3 +358,29 @@ export const CheckStepResponse = z.discriminatedUnion("status", [
   z.strictObject({ status: z.literal("unavailable"), message: text(300) }),
 ]);
 export type CheckStepResponse = z.infer<typeof CheckStepResponse>;
+
+/** POST /jobs/:id/parts-check: match one photo of the laid-out parts to the parts list. */
+export const PartsCheckRequest = z.strictObject({ evidenceId: Id });
+
+export const PartsCheckResponse = z.discriminatedUnion("status", [
+  z.strictObject({
+    status: z.literal("checked"),
+    partsCheck: PartsCheck,
+    /** The boxes found for each part, for highlighting on the photo. */
+    detections: z.array(Detection),
+    /** The job's steps after missing parts blocked (or found parts unblocked) them. */
+    steps: z.array(JobStep),
+  }),
+  /** The procedure lists no parts. */
+  z.strictObject({ status: z.literal("no_parts") }),
+  z.strictObject({ status: z.literal("unavailable"), message: text(300) }),
+]);
+export type PartsCheckResponse = z.infer<typeof PartsCheckResponse>;
+
+/** PATCH /jobs/:id/parts-check/:partsCheckId/parts/:partSpecId: the user corrects one part. */
+export const CorrectPartRequest = z.strictObject({ status: PartStatus });
+
+export const CorrectPartResponse = z.strictObject({
+  partsCheck: PartsCheck,
+  steps: z.array(JobStep),
+});

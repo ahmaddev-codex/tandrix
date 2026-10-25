@@ -46,6 +46,7 @@ export const toJobStep = (r: Row): JobStep =>
     statusEvidenceId: r.status_evidence_id,
     startedAt: r.started_at === null ? null : iso(r.started_at),
     note: r.note ?? undefined,
+    blockedBy: r.blocked_by ?? undefined,
     updatedAt: iso(r.updated_at),
     updatedBySurface: r.updated_by_surface,
   });
@@ -98,7 +99,7 @@ export function supabaseJobsRepo(db: SupabaseClient): JobsRepo {
       const steps = await db
         .from("job_steps")
         .select(
-          "id, job_id, procedure_step_id, status, status_evidence_id, started_at, note, updated_at, updated_by_surface, procedure_steps!inner(order)",
+          "id, job_id, procedure_step_id, status, status_evidence_id, started_at, note, blocked_by, updated_at, updated_by_surface, procedure_steps!inner(order)",
         )
         .eq("job_id", jobId);
       if (steps.error) throw dbError(steps.error);

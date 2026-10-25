@@ -6,6 +6,7 @@ import {
   hazardTagsForStep,
   mergeHazardTags,
   missingGates,
+  missingPartsNote,
   refusalFor,
   refusalForRequest,
   requiredGates,
@@ -118,5 +119,13 @@ describe("refusalForRequest", () => {
   it("answers ordinary questions", () => {
     expect(refusalForRequest("Which way do the impeller vanes face?")).toBeNull();
     expect(refusalForRequest("Isolate the power first, then what?")).toBeNull();
+  });
+});
+
+describe("missingPartsNote", () => {
+  it("names the missing parts, briefly", () => {
+    expect(missingPartsNote(["O-ring"])).toBe("Missing part: O-ring");
+    expect(missingPartsNote(["O-ring", "Shaft key"])).toBe("Missing parts: O-ring, Shaft key");
+    expect(missingPartsNote(["a", "b", "c", "d", "e"])).toBe("Missing parts: a, b, c and 2 more");
   });
 });
