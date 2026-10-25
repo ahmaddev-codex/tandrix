@@ -7,6 +7,8 @@ cd "$(dirname "$0")"
 set -a; . ../../../.env.local; set +a
 
 OUT=../../../.maestro
+# The iOS driver sometimes starts slowly after many runs; give it two minutes.
+export MAESTRO_DRIVER_STARTUP_TIMEOUT=120000
 RUN_ID=$(date +%s)
 # Maestro's iOS driver can hang (testmanagerd snapshot timeouts); cap each run at 15 minutes.
 run() { perl -e 'alarm shift; exec @ARGV' 900 maestro test --test-output-dir "$OUT" -e DEV_USER_EMAIL="$DEV_USER_EMAIL" -e DEV_USER_PASSWORD="$DEV_USER_PASSWORD" -e RUN_ID="$RUN_ID" "$@"; }

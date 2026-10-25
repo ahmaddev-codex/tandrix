@@ -47,12 +47,7 @@ env:
     visible:
       id: new-job
     timeout: 15000
-- tapOn:
-    id: new-job
-- extendedWaitUntil:
-    visible:
-      id: job-title
-    timeout: 30000
+- runFlow: subflows/new-job.yaml
 - tapOn:
     id: job-title
 - inputText: ${JOB_TITLE}

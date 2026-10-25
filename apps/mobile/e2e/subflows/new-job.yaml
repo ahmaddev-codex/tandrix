@@ -1,0 +1,13 @@
+# Opens the new-job form. Right after launch the jobs list may still be loading and swallow the
+# first tap, so the tap is retried once the form hasn't appeared.
+appId: app.tandrix.mobile
+---
+- retry:
+    maxRetries: 2
+    commands:
+      - tapOn:
+          id: new-job
+      - extendedWaitUntil:
+          visible:
+            id: job-title
+          timeout: 10000
