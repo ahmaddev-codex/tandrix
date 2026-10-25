@@ -38,7 +38,7 @@ Tracks: **D** design, **A** mobile & glasses, **B** API & AI, **C** desktop (mac
 - [ ] **Checkpoint 4:** full phone path
 
 ## Phase 3 — Desktop (30 Oct)
-- [ ] T18 Electron shell with overlay and panel (C)
+- [x] T18 Electron shell with overlay and panel (C): verified on this Mac with one display; two displays and the built app's Screen Recording prompt are manual checks
 - [ ] T19 Show me: ask → pointer + voice (C + B)
 - [ ] T20 Screen step verification (C + B)
 - [ ] **Checkpoint 5:** teach-me-this-screen works

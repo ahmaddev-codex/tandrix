@@ -116,6 +116,25 @@ Release builds come from EAS, never from this machine: Expo loads `.env.local` f
 
 Going offline mid-job is checked by `sh apps/mobile/e2e/offline/run.sh`: it opens a step, stops the local API, starts the step (kept, shown as Pending, the job says it's offline), restarts the API with `dev:fixtures`, and waits for the queued start to be sent.
 
+## Mac app
+
+Needs the API running. `pnpm env:local` writes the Mac app's public `VITE_*` values into `.env.local` and allows its origins (`http://localhost:5173` for the dev server, `app://tandrix` for built apps) in `CORS_ORIGINS`; re-run it once if your `.env.local` predates the Mac app.
+
+```bash
+pnpm --filter @tandrix/api dev        # API on :8787 (separate terminal)
+pnpm --filter @tandrix/desktop dev    # Vite on :5173 + Electron; restarts Electron when main/preload change
+pnpm --filter @tandrix/desktop build  # dist/: renderer (served from app://tandrix), main and preload
+pnpm --filter @tandrix/desktop start  # runs the built app
+```
+
+- Tandrix lives in the menu bar (a "Tandrix" title, no Dock icon). Click it to open the panel; it closes when it loses focus. Right-click for Quit. The panel opens by itself on launch.
+- Sign in as on the phone: an email code from Mailpit, or "Local test sign-in" on the local stack. The session is encrypted with `safeStorage` (Keychain) under the app's userData folder and survives restarts.
+- "Test the pointer" draws the pointer at the centre of every display for four seconds. Checking it on two displays is a manual check.
+- Screen Recording: in dev, macOS asks about (and lists) the app that launched Electron, usually your terminal or editor, not Tandrix.
+- Editors built on Electron export `ELECTRON_RUN_AS_NODE` to their terminals; the dev script removes it. Run the built app with `env -u ELECTRON_RUN_AS_NODE pnpm --filter @tandrix/desktop start` from such a terminal.
+- Pass Electron flags after `--`, e.g. `pnpm --filter @tandrix/desktop dev -- --remote-debugging-port=9222` to inspect the panel and overlays from Chrome.
+- The design-system gallery for the Mac and web components, in light, dark and sunlight, is at http://localhost:5173/gallery.html while the dev server runs (in any browser; it isn't in the built app).
+
 ## Testing on a physical phone
 
 A phone can't reach `127.0.0.1` on your Mac. In `apps/mobile/.env.local`, replace `127.0.0.1`/`localhost` with your Mac's LAN IP (System Settings > Wi-Fi > Details), and keep the phone on the same network. `pnpm env:local` resets these, so re-apply after running it. Not yet verified: that the local Supabase ports accept connections from other devices; if the phone can't connect, check `docker ps` shows them published on `0.0.0.0`.

@@ -219,8 +219,10 @@ Before saving, `normalizeDraft` (@tandrix/core) renumbers steps, drops unknown p
 - Needs the Wearables Developer Center access and a supported country; confirm on day 0.
 
 ### Desktop (Electron)
-- Overlay: full-screen transparent, always-on-top, click-through `BrowserWindow` per display; draws the pointer buddy and caption.
-- Panel: small window (tray/menu bar) with current job, steps, mic state, stop.
+- Overlay: full-screen transparent, always-on-top (`screen-saver` level, on every Space and over full-screen apps), click-through, non-focusable `BrowserWindow` per display, rebuilt when displays change; draws the pointer buddy and caption. Coordinates (`apps/desktop/src/main/displays.ts`): screenshot pixels → global points via the capture's display bounds and image size; global points → the overlay of the display that shows them, clamped on screen.
+- Panel: frameless menu-bar window with the signed-in user's active job (most recently updated `active` job) and its steps; mic state, mode and stop arrive with T19 and T27.
+- Renderer security: `contextIsolation`, `sandbox`, no Node; the preload exposes only `window.tandrix` (`src/shared/bridge.ts`), and the main process answers IPC only from its own windows, with argument checks. No new windows or navigation. Built apps load pages from `app://tandrix` (a privileged scheme confined to the renderer folder), so the API allows that origin by name and the CSP (`connect-src` only the API and Supabase) means something.
+- Sign-in: Supabase email code as on the phone; the session is stored by the main process, encrypted with `safeStorage` (Keychain key), never in `localStorage`.
 - Hotkey: hold-to-talk via `globalShortcut` (plus a native key-up helper if needed).
 - Capture: `desktopCapturer`; macOS Screen Recording permission flow.
 - Subscribes to job realtime for handoff.
