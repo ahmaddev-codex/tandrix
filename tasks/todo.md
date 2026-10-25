@@ -40,7 +40,7 @@ Tracks: **D** design, **A** mobile & glasses, **B** API & AI, **C** desktop (mac
 ## Phase 3 — Desktop (30 Oct)
 - [x] T18 Electron shell with overlay and panel (C): verified on this Mac with one display; two displays and the built app's Screen Recording prompt are manual checks
 - [ ] T19 Show me: ask → pointer + voice (C + B): built; typed question → screenshot → pointer verified on this Mac with fixtures; open until the live model hits ≥ 9/10 in the demo app (billing, T4); speaking a question is a manual check
-- [ ] T20 Screen step verification (C + B)
+- [ ] T20 Screen step verification (C): built; start → check → needs attention → verified on this Mac with fixtures, recorded as desktop; open until a live check (billing); phone Maestro flows not rerun
 - [ ] **Checkpoint 5:** teach-me-this-screen works
 
 ## Phase 4 — Continuity (31 Oct)
