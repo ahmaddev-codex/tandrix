@@ -1278,3 +1278,81 @@
   flex-wrap: wrap;
   gap: var(--space-2);
 }
+
+/* Spinner */
+.tx-spinner {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid var(--gray-300);
+  border-top-color: var(--text-secondary);
+  animation: tx-spin 800ms linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tx-spinner {
+    animation-duration: 2400ms;
+  }
+}
+
+/* Voice transcript. The design system bundle names this pulse tx-pulse, which clashes with the
+   mode dot's; it is tx-voice-pulse here. */
+.tx-voice {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--background-100);
+  box-shadow: var(--shadow-sm);
+}
+.tx-voice-turn {
+  display: grid;
+  gap: var(--space-1);
+  justify-items: start;
+}
+.tx-voice-who {
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+.tx-voice-text {
+  margin: 0;
+  font-size: 16px;
+  line-height: 24px;
+  color: var(--text);
+}
+.tx-voice-refusal {
+  display: flex;
+  gap: var(--space-2);
+  align-items: flex-start;
+  color: var(--red-900);
+}
+.tx-voice-refusal .tx-ico {
+  margin-top: 2px;
+}
+.tx-voice-state {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+.tx-voice-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--red-700);
+  animation: tx-voice-pulse 1200ms ease-in-out infinite;
+}
+@keyframes tx-voice-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tx-voice-dot {
+    animation: none;
+  }
+}

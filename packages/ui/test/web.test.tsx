@@ -16,6 +16,7 @@ import {
   StepRow,
   Tabs,
   Toggle,
+  VoiceTranscript,
 } from "../src/web";
 
 afterEach(cleanup);
@@ -173,5 +174,25 @@ describe("StepRow", () => {
     });
     fireEvent.click(row);
     expect(onSelect).toHaveBeenCalledOnce();
+  });
+});
+
+describe("VoiceTranscript", () => {
+  it("is hidden with nothing to show", () => {
+    const { container } = render(<VoiceTranscript />);
+    expect(container.innerHTML).toBe("");
+  });
+
+  it("shows the last four turns and how to send while listening", () => {
+    const turns = ["one", "two", "three", "four", "five"].map((text) => ({
+      speaker: "you" as const,
+      text,
+    }));
+    render(
+      <VoiceTranscript state="listening" turns={turns} listeningLabel="Press ⌃⌥Space to ask." />,
+    );
+    expect(screen.queryByText("one")).toBeNull();
+    expect(screen.getByText("five")).toBeTruthy();
+    expect(screen.getByRole("status").textContent).toBe("Press ⌃⌥Space to ask.");
   });
 });
