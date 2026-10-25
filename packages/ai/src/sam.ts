@@ -1,6 +1,7 @@
 // SAM 3.1 segmentation via the Responses API, parsed with Meta's @meta-sam/parser.
 import {
   buildObjectPrompt,
+  decodeMaskToSVGPath,
   parseImageStream,
   recordsOfKind,
   ResponsesStreamSourceError,
@@ -98,4 +99,32 @@ export function normalizeConcept(phrase: string): string {
     .toLowerCase();
   if (!cleaned) throw new Error(`Concept "${phrase}" has no usable words`);
   return cleaned.split(" ").slice(0, 5).join(" ");
+}
+
+/**
+ * A segment's mask as an SVG outline in its raster's pixels (the raster covers the box), or null
+ * when there is no mask or it can't be decoded. Draw it scaled from raster size to box size.
+ */
+export function maskOutline(
+  s: Segment,
+): { path: string; raster: { width: number; height: number } } | null {
+  if (!s.mask) return null;
+  try {
+    const path = decodeMaskToSVGPath(s.mask);
+    return path ? { path, raster: { width: s.mask.width, height: s.mask.height } } : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Whole-pixel box inside the image, at least 1×1. */
+export function pixelBox(
+  box: Segment["box"],
+  size: { width: number; height: number },
+): { x: number; y: number; w: number; h: number } {
+  const x = Math.max(0, Math.min(size.width - 1, Math.floor(box.x)));
+  const y = Math.max(0, Math.min(size.height - 1, Math.floor(box.y)));
+  const right = Math.min(size.width, Math.ceil(box.x + box.w));
+  const bottom = Math.min(size.height, Math.ceil(box.y + box.h));
+  return { x, y, w: Math.max(1, right - x), h: Math.max(1, bottom - y) };
 }

@@ -10,8 +10,10 @@ import {
   imageUrl,
   loadMetaConfig,
   MetaClient,
+  maskOutline,
   normalizeConcept,
   pdfData,
+  pixelBox,
   prompts,
   segment,
   text,
@@ -194,6 +196,27 @@ describe("segment (SAM 3.1)", () => {
       model: "sam-3.1",
       stream: true,
       metadata: { include_confidence: "true" },
+    });
+  });
+
+  it("turns a mask into an SVG outline in its raster's pixels", async () => {
+    const { client } = clientWith([samStream(DOC_SAM_LINE)]);
+    const r = await segment(client, { model: "sam-3.1", image: photo, concept: "button" });
+    const outline = maskOutline(r.segments[0]!);
+    expect(outline?.raster).toEqual({ width: 60, height: 27 });
+    expect(outline?.path).toMatch(/^M[\d. ]+L/);
+    expect(maskOutline({ ...r.segments[0]!, mask: null })).toBeNull();
+    expect(
+      maskOutline({ ...r.segments[0]!, mask: { ...r.segments[0]!.mask!, payload: "!!" } }),
+    ).toBeNull();
+  });
+
+  it("keeps boxes on whole pixels inside the image", () => {
+    expect(pixelBox({ x: 10.4, y: -2, w: 5.2, h: 400 }, { width: 100, height: 50 })).toEqual({
+      x: 10,
+      y: 0,
+      w: 6,
+      h: 50,
     });
   });
 
