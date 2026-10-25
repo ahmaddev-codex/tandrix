@@ -409,7 +409,7 @@ export function useStepWork(input: StepWorkInput | null): StepWork {
           <Input
             testID="skip-reason"
             label="Why skip this step?"
-            hint="This goes in the job report."
+            hint="This goes in the project report."
             value={reason}
             onChangeText={setReason}
             maxLength={400}

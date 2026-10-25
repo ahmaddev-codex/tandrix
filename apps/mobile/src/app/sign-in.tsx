@@ -1,15 +1,25 @@
 import { space } from "@tandrix/ui";
 import { Button, Input, Text } from "@tandrix/ui/native";
+import { Redirect } from "expo-router";
 import { useState } from "react";
 import { KeyboardAvoidingView, Platform, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "@/lib/auth";
+import { useWelcomeSeen } from "@/lib/welcome";
 
 type Step = "email" | "code" | "password";
 
 const looksLikeEmail = (s: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s.trim());
 
 export default function SignIn() {
+  // First run: the welcome screen explains Tandrix before anyone signs in.
+  const welcomed = useWelcomeSeen();
+  if (welcomed === undefined) return null;
+  if (!welcomed) return <Redirect href="/welcome" />;
+  return <SignInForm />;
+}
+
+function SignInForm() {
   const auth = useAuth();
   const [step, setStep] = useState<Step>("email");
   const [email, setEmail] = useState("");

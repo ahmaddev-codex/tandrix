@@ -120,14 +120,19 @@ export default function JobScreen() {
 
   // The one thing the job is waiting on, if any (design system: one ActionCard per screen).
   const next: ActionCardProps | null =
-    asset === null
+    asset === null && !procedure
       ? {
-          icon: "camera",
-          title: "Identify the equipment",
-          body: "Photograph the nameplate. Tandrix reads the make and model and uses them to find the manual.",
-          actionLabel: "Photograph the nameplate",
-          actionTestID: "photograph-nameplate",
+          // A project starts from its goal; equipment with a nameplate makes the steps better.
+          icon: "file",
+          title: "Write the steps",
+          body: "Tandrix writes the steps for this project. Working on equipment with a nameplate? Scan it first and the steps come from its manual.",
+          actionLabel: "Write the steps",
+          actionTestID: "write-project-steps",
           onAction: () =>
+            router.push({ pathname: "/job/[id]/procedure", params: { id, generic: "1" } }),
+          secondaryLabel: "Scan a nameplate first",
+          secondaryTestID: "photograph-nameplate",
+          onSecondary: () =>
             router.push({ pathname: "/job/[id]/capture", params: { id, purpose: "nameplate" } }),
         }
       : asset && !manual && !procedure
@@ -151,7 +156,7 @@ export default function JobScreen() {
           ? {
               icon: "progress",
               title: "Write the steps",
-              body: "Tandrix reads the manual and writes the steps for this job, each with the page it came from.",
+              body: "Tandrix reads the manual and writes the steps for this project, each with the page it came from.",
               actionLabel: "Write the steps",
               actionTestID: "write-steps",
               onAction: () => router.push({ pathname: "/job/[id]/procedure", params: { id } }),
@@ -199,7 +204,7 @@ export default function JobScreen() {
             ) : null}
             {offline ? (
               <Notice icon="clock" testID="offline">
-                {`You're offline. This is the job as it was last synced; photos and changes are kept and sent when you're back online.${
+                {`You're offline. This is the project as it was last synced; photos and changes are kept and sent when you're back online.${
                   sync.waiting ? ` ${sync.waiting} waiting.` : ""
                 }`}
               </Notice>
@@ -352,7 +357,7 @@ export default function JobScreen() {
             >
               <Text variant="heading-18">No photos yet</Text>
               <Text variant="field-body" color="text-secondary">
-                Photos you take for this job appear here.
+                Photos you take for this project appear here.
               </Text>
             </View>
           ) : undefined

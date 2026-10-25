@@ -17,10 +17,7 @@ env:
 - inputText: ${JOB_TITLE}
 - tapOn:
     id: create-job
-- extendedWaitUntil:
-    visible: ${JOB_TITLE},.*
-    timeout: 15000
-- tapOn: ${JOB_TITLE},.*
+# Starting a project opens it.
 - extendedWaitUntil:
     visible:
       id: photograph-nameplate

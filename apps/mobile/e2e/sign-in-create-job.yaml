@@ -21,7 +21,7 @@ env:
 # Wait for the app to finish loading (signed in or not) before deciding anything.
 - extendedWaitUntil:
     visible:
-      text: "(Local test sign-in|New job)"
+      text: "(Local test sign-in|Start a project|Get started)"
     timeout: 60000
 # The keychain can outlive clearState on iOS, so sign out first if a session survived.
 - runFlow:
@@ -31,9 +31,21 @@ env:
     commands:
       - tapOn:
           id: sign-out
+# Signed out on a fresh install: the welcome screen first.
 - extendedWaitUntil:
-    visible: Local test sign-in
+    visible: "(Local test sign-in|Get started)"
     timeout: 30000
+- runFlow:
+    when:
+      visible:
+        id: get-started
+    commands:
+      - takeScreenshot: welcome
+      - tapOn:
+          id: get-started
+      - extendedWaitUntil:
+          visible: Local test sign-in
+          timeout: 15000
 - tapOn: Local test sign-in
 - tapOn:
     id: email
@@ -47,17 +59,20 @@ env:
     visible:
       id: new-job
     timeout: 15000
+- takeScreenshot: home
 - runFlow: subflows/new-job.yaml
 - tapOn:
     id: job-title
 - inputText: ${JOB_TITLE}
+- takeScreenshot: new-project
 - tapOn:
     id: create-job
+# Starting a project opens it, on its first step: writing the steps.
 - extendedWaitUntil:
-    # Job rows expose one accessibility label: "<title>, <status>".
-    visible: ${JOB_TITLE},.*
+    visible:
+      id: write-project-steps
     timeout: 15000
-- takeScreenshot: jobs-after-create
+- takeScreenshot: project-after-create
 # Restart: the session comes back from the keychain and the job from the API.
 - stopApp
 - launchApp

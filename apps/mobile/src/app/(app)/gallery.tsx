@@ -277,7 +277,7 @@ function Sheet({ theme, onTheme }: { theme: ThemeName; onTheme: (t: ThemeName) =
           <ProgressState
             label="Writing the steps"
             failed="Tandrix can't write the steps right now. Try again in a minute."
-            backLabel="Back to the job"
+            backLabel="Back to the project"
           />
         </View>,
       )}

@@ -132,7 +132,7 @@ export default function Pair() {
             testID="pair-confirm"
             icon="laptop"
             title={`Sign in ${phase.deviceName}?`}
-            body="It will see and change your Tandrix jobs. Only approve a Mac you're using right now."
+            body="It will see and change your Tandrix projects. Only approve a Mac you're using right now."
             actionLabel={phase.kind === "approving" ? "Signing in…" : "Sign in this Mac"}
             actionTestID="pair-approve"
             onAction={() =>
@@ -145,10 +145,10 @@ export default function Pair() {
           <View style={{ gap: space["space-4"] }} testID="pair-done">
             <Text variant="heading-18">{phase.deviceName} is signed in</Text>
             <Text variant="copy-14" color="text-secondary">
-              Your jobs are on your Mac now. You can sign it out from there.
+              Your projects are on your Mac now. You can sign it out from there.
             </Text>
             <Button variant="primary" block onPress={() => router.back()} testID="pair-back">
-              Back to jobs
+              Back to projects
             </Button>
           </View>
         )}

@@ -8,6 +8,8 @@ appId: app.tandrix.mobile
 - scrollUntilVisible:
     element: "Step 5: Set the drive ramp time,.*"
     direction: DOWN
+    # Centred, so the fixed bottom bar never covers the row being tapped.
+    centerElement: true
 - tapOn: "Step 5: Set the drive ramp time,.*"
 - extendedWaitUntil:
     visible:

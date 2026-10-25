@@ -36,6 +36,8 @@ appId: app.tandrix.mobile
 - scrollUntilVisible:
     element: "Step 3: Fit the impeller,.*"
     direction: DOWN
+    # Centred, so the fixed bottom bar never covers the row being tapped.
+    centerElement: true
     timeout: 60000
 - takeScreenshot: gallery-cards-sunlight
 - scrollUntilVisible:

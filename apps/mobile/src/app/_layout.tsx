@@ -65,6 +65,8 @@ function Navigator({ ready }: { ready: boolean }) {
           <Stack.Screen name="(app)" options={{ headerShown: false }} />
         </Stack.Protected>
         <Stack.Protected guard={!session}>
+          {/* First run: what Tandrix does, then sign in (welcome skips itself once seen). */}
+          <Stack.Screen name="welcome" options={{ headerShown: false }} />
           <Stack.Screen name="sign-in" options={{ headerShown: false }} />
         </Stack.Protected>
       </Stack>

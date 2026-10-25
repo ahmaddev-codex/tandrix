@@ -78,7 +78,9 @@ export default function PartsScreen() {
         setDetections(r.detections);
         setPhase("result");
       } else {
-        setMessage(r.status === "no_parts" ? "This job's steps don't list any parts." : r.message);
+        setMessage(
+          r.status === "no_parts" ? "This project's steps don't list any parts." : r.message,
+        );
         setPhase("preview");
       }
     } catch (e) {

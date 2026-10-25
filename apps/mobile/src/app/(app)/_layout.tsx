@@ -17,10 +17,10 @@ export default function AppLayout() {
         contentStyle: { backgroundColor: t.color["background-200"] },
       }}
     >
-      <Stack.Screen name="index" options={{ title: "Jobs" }} />
-      <Stack.Screen name="new-job" options={{ title: "New job", presentation: "modal" }} />
+      <Stack.Screen name="index" options={{ title: "Tandrix" }} />
+      <Stack.Screen name="new-job" options={{ title: "New project", presentation: "modal" }} />
       <Stack.Screen name="pair" options={{ title: "Sign in a Mac", presentation: "modal" }} />
-      <Stack.Screen name="job/[id]/index" options={{ title: "Job" }} />
+      <Stack.Screen name="job/[id]/index" options={{ title: "Project" }} />
       <Stack.Screen name="job/[id]/identify" options={{ title: "Equipment" }} />
       <Stack.Screen
         name="job/[id]/capture"

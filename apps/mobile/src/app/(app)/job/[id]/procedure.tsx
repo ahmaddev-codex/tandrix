@@ -58,7 +58,7 @@ export default function ProcedureScreen() {
         label={message}
         {...(failure ? { failed: failure } : {})}
         onRetry={() => setAttempt((n) => n + 1)}
-        backLabel="Back to the job"
+        backLabel="Back to the project"
         onBack={() => router.back()}
       />
     </View>

@@ -10,8 +10,19 @@ appId: app.tandrix.mobile
       - tapOn: Open
 - extendedWaitUntil:
     visible:
-      text: "(Local test sign-in|New job)"
+      text: "(Local test sign-in|Start a project|Get started)"
     timeout: 30000
+# First run, signed out: the welcome screen comes before sign-in.
+- runFlow:
+    when:
+      visible:
+        id: get-started
+    commands:
+      - tapOn:
+          id: get-started
+      - extendedWaitUntil:
+          visible: Local test sign-in
+          timeout: 15000
 - runFlow:
     when:
       visible: Local test sign-in

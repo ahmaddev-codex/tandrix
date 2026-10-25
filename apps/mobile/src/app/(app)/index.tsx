@@ -6,6 +6,7 @@ import { useCallback, useState } from "react";
 import { FlatList, Pressable, RefreshControl, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "@/lib/api";
+import { exampleGoals } from "@/lib/goals";
 import { useAuth } from "@/lib/auth";
 import { isLocal } from "@/lib/env";
 
@@ -92,35 +93,61 @@ export default function Jobs() {
           />
         }
         ListHeaderComponent={
-          error ? (
-            <Notice
-              tone="error"
-              action={
-                <Button variant="secondary" size="lg" onPress={load}>
-                  Try again
-                </Button>
-              }
-            >
-              {error}
-            </Notice>
-          ) : undefined
+          <View style={{ gap: space["space-6"], marginBottom: space["space-2"] }}>
+            {error ? (
+              <Notice
+                tone="error"
+                action={
+                  <Button variant="secondary" size="lg" onPress={load}>
+                    Try again
+                  </Button>
+                }
+              >
+                {error}
+              </Notice>
+            ) : null}
+            <View style={{ gap: space["space-4"] }}>
+              <View style={{ gap: space["space-2"] }}>
+                <Text variant="heading-24">What are you building or fixing?</Text>
+                <Text variant="field-body" color="text-secondary">
+                  Tandrix writes the steps, shows you each one on the real parts, and checks your
+                  work with a photo.
+                </Text>
+              </View>
+              <Button
+                variant="primary"
+                block
+                onPress={() => router.push("/new-job")}
+                testID="new-job"
+              >
+                Start a project
+              </Button>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space["space-2"] }}>
+                {exampleGoals.map((goal) => (
+                  <Button
+                    key={goal}
+                    variant="secondary"
+                    size="md"
+                    onPress={() => router.push({ pathname: "/new-job", params: { goal } })}
+                  >
+                    {goal}
+                  </Button>
+                ))}
+              </View>
+            </View>
+            {jobs?.length ? (
+              <Text variant="label-14" color="text-secondary">
+                Recent projects
+              </Text>
+            ) : null}
+          </View>
         }
         ListEmptyComponent={
           jobs && !error ? (
-            <View
-              style={{
-                flex: 1,
-                justifyContent: "center",
-                gap: space["space-3"],
-                padding: space["space-6"],
-              }}
-            >
-              <Text variant="heading-18">No jobs yet</Text>
-              <Text variant="field-body" color="text-secondary">
-                Start a job when you're at the equipment. Tandrix keeps it in step across your
-                phone, glasses and Mac.
-              </Text>
-            </View>
+            <Text variant="copy-14" color="text-secondary">
+              Your projects show up here. Software to set up as well? Tandrix on your Mac picks up
+              where the phone leaves off.
+            </Text>
           ) : undefined
         }
         renderItem={({ item }) => (
@@ -152,18 +179,6 @@ export default function Jobs() {
           </Pressable>
         )}
       />
-      <View
-        style={{
-          padding: space["space-4"],
-          borderTopWidth: 1,
-          borderColor: t.color.border,
-          backgroundColor: t.color["background-100"],
-        }}
-      >
-        <Button variant="primary" block onPress={() => router.push("/new-job")} testID="new-job">
-          New job
-        </Button>
-      </View>
     </SafeAreaView>
   );
 }

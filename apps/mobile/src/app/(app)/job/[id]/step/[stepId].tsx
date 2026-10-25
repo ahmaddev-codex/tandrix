@@ -93,7 +93,7 @@ export default function StepScreen() {
         const jobStep = detail.steps.find((s) => s.id === stepId);
         const procedure = detail.procedure;
         const step = procedure?.steps.find((s) => s.id === jobStep?.procedureStepId);
-        if (!jobStep || !procedure || !step) return setError("This step isn't on the job.");
+        if (!jobStep || !procedure || !step) return setError("This step isn't in this project.");
         const parts = step.partSpecIds
           .map((pid) => procedure.parts.find((p) => p.id === pid))
           .filter((p) => p !== undefined);
