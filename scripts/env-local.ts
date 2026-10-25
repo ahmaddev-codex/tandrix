@@ -82,7 +82,17 @@ const sections: Array<[string, Array<[string, string]>]> = [
     [
       ["API_PORT", apiPort],
       ["API_PUBLIC_URL", localApi],
-      ["CORS_ORIGINS", keep("CORS_ORIGINS")],
+      // The Mac app's dev server and built app always need access; other origins are kept.
+      [
+        "CORS_ORIGINS",
+        [
+          ...new Set([
+            ...keep("CORS_ORIGINS").split(",").filter(Boolean),
+            "http://localhost:5173",
+            "app://tandrix",
+          ]),
+        ].join(","),
+      ],
       [
         "TOKEN_SIGNING_SECRET",
         kept.get("TOKEN_SIGNING_SECRET") || randomBytes(32).toString("base64"),
