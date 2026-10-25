@@ -1,3 +1,4 @@
+"use client";
 // Mac overlay and panel components: pointer, control state and the Show me / Do it for me switch.
 import { useId, type ReactNode } from "react";
 import type { ControlMode } from "../shared";

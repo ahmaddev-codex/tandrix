@@ -300,6 +300,13 @@ export interface TextStyleSpec {
 }
 
 export const textStyles = {
+  "display-48": {
+    "family": "sans",
+    "fontSize": 48,
+    "lineHeight": 52,
+    "fontWeight": 600,
+    "letterSpacing": -2.4
+  },
   "heading-32": {
     "family": "sans",
     "fontSize": 32,

@@ -201,6 +201,7 @@
   --font-sans: "Geist", -apple-system, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
   --font-mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
 }
+.display-48 { font-family: var(--font-sans); font-size: 48px; line-height: 52px; font-weight: 600; letter-spacing: -2.4px; }
 .heading-32 { font-family: var(--font-sans); font-size: 32px; line-height: 40px; font-weight: 600; letter-spacing: -1.28px; }
 .heading-24 { font-family: var(--font-sans); font-size: 24px; line-height: 32px; font-weight: 600; letter-spacing: -0.96px; }
 .heading-18 { font-family: var(--font-sans); font-size: 18px; line-height: 24px; font-weight: 600; letter-spacing: -0.36px; }

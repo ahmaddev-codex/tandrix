@@ -39,7 +39,7 @@ These sit on photos and over other apps, not on Tandrix surfaces, so they are th
 
 - Set everything in Geist (`sans`). Use Geist Mono (`mono`) only for part numbers, serials, values, citations and logs.
 - The scale is compact: every style is named for its size in px. Readability on site comes from contrast, weight and the `sunlight` theme, and touch targets stay large (`control-lg`, `control-field`) even where the text is small.
-- **Headings** `heading-32` to `heading-14` use weight 600 and tight negative tracking. Use one `heading-32` per page at most.
+- **Headings** `heading-32` to `heading-14` use weight 600 and tight negative tracking. Use one `heading-32` per page at most. `display-48` is for the marketing site's page headline only (one per page, `heading-32` on narrow screens); product screens never use it.
 - **Field** styles are for the phone and overlay: `field-instruction` for the step instruction, `field-body` for its reason, `field-caption` for pointer captions and highlight labels, `lens-20` for the lens.
 - **Copy:** `copy-14` is the phone body, `copy-13` the Mac and web body, `copy-12` for dense tables. Keep line length near 65 characters.
 - **Labels and buttons:** `label-*` and `button-*` at weight 500 (`button-15` at 600 for field buttons).
