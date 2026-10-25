@@ -1,4 +1,5 @@
 // In-memory evidence repo and storage for unit tests.
+import type { NewPairing, PairingRow, PairingsRepo } from "../src/repos/pairings";
 import { noModelScreenGuide } from "../src/screen-guide";
 import type {
   PartsCheck,
@@ -245,7 +246,63 @@ export const noManuals = () => ({
   partsChecks: memoryPartsChecks(),
   partsChecker: noModelPartsChecker,
   screenGuide: noModelScreenGuide,
+  pairings: memoryPairings(),
+  sessionMinter: { mint: async () => null },
 });
+
+/** Pairings with the same guarded updates as the database. */
+export function memoryPairings() {
+  type P = NewPairing & {
+    id: string;
+    userId: string | null;
+    approvedAt: string | null;
+    consumedAt: string | null;
+  };
+  const rows = new Map<string, P>();
+  const view = (p: P): PairingRow => ({
+    id: p.id,
+    deviceName: p.deviceName,
+    expiresAt: p.expiresAt,
+    approved: p.approvedAt !== null,
+    consumed: p.consumedAt !== null,
+  });
+  const open = (codeHash: string, now: string) =>
+    [...rows.values()].find(
+      (p) => p.codeHash === codeHash && p.approvedAt === null && p.expiresAt > now,
+    );
+  const repo: PairingsRepo & { rows: typeof rows } = {
+    rows,
+    async create(p) {
+      if ([...rows.values()].some((r) => r.codeHash === p.codeHash)) return null;
+      const id = crypto.randomUUID();
+      rows.set(id, { ...p, id, userId: null, approvedAt: null, consumedAt: null });
+      return { id };
+    },
+    async findOpen(codeHash, now) {
+      const p = open(codeHash, now);
+      return p ? view(p) : null;
+    },
+    async approve(codeHash, userId, now) {
+      const p = open(codeHash, now);
+      if (!p) return null;
+      p.userId = userId;
+      p.approvedAt = now;
+      return view(p);
+    },
+    async get(id, pollHash) {
+      const p = rows.get(id);
+      return p && p.pollHash === pollHash ? view(p) : null;
+    },
+    async consume(id, pollHash, now) {
+      const p = rows.get(id);
+      if (!p || p.pollHash !== pollHash || !p.approvedAt || p.consumedAt || p.expiresAt <= now)
+        return null;
+      p.consumedAt = now;
+      return p.userId;
+    },
+  };
+  return repo;
+}
 
 /** Stores saved procedures as details; `saves` records what the route asked to save. */
 export function memoryProcedures() {

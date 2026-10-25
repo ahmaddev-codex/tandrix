@@ -1,4 +1,4 @@
-import { Hono } from "hono";
+import { Hono, type Context } from "hono";
 import { cors } from "hono/cors";
 import { requestId } from "hono/request-id";
 import { requireUser, type AuthEnv, type VerifyToken } from "./auth";
@@ -25,7 +25,10 @@ import { evidenceRoutes } from "./routes/evidence";
 import { jobsRoutes } from "./routes/jobs";
 import { manualRoutes } from "./routes/manual";
 import { procedureRoutes } from "./routes/procedure";
+import { PAIRING_TOKEN_HEADER, pairingRoutes } from "./routes/pairing";
 import { screenRoutes } from "./routes/screen";
+import type { PairingsRepo } from "./repos/pairings";
+import type { SessionMinter } from "./session-minter";
 import { detectionRoutes, SURFACE_HEADER, stepRoutes } from "./routes/steps";
 import type { ScreenGuide } from "./screen-guide";
 
@@ -50,6 +53,10 @@ export interface AppDeps {
   partsChecks: PartsChecksRepo;
   partsChecker: PartsChecker;
   screenGuide: ScreenGuide;
+  pairings: PairingsRepo;
+  sessionMinter: SessionMinter;
+  /** Who's calling, for rate limits on signed-out routes (the client's address). */
+  clientKey?: (c: Context) => string;
   /** Signs manual search candidates (TOKEN_SIGNING_SECRET). */
   tokenSecret: string;
   /** Tests only: swap DNS and transport for the manual download. */
@@ -91,7 +98,7 @@ export function createApp(deps: AppDeps) {
   app.use(
     cors({
       origin: (origin) => (deps.corsOrigins.includes(origin) ? origin : null),
-      allowHeaders: ["Authorization", "Content-Type", SURFACE_HEADER],
+      allowHeaders: ["Authorization", "Content-Type", SURFACE_HEADER, PAIRING_TOKEN_HEADER],
       allowMethods: ["GET", "POST", "PATCH", "DELETE"],
       maxAge: 600,
     }),
@@ -99,6 +106,16 @@ export function createApp(deps: AppDeps) {
 
   app.get("/health", (c) => c.json({ ok: true }));
 
+  app.route(
+    "/pairing",
+    pairingRoutes({
+      pairings: deps.pairings,
+      minter: deps.sessionMinter,
+      verifyToken: deps.verifyToken,
+      ...(deps.now ? { now: deps.now } : {}),
+      ...(deps.clientKey ? { clientKey: deps.clientKey } : {}),
+    }),
+  );
   app.use("/jobs/*", requireUser(deps.verifyToken));
   app.use("/voice/*", requireUser(deps.verifyToken));
   app.route("/voice", voiceRoutes(deps.transcriber));

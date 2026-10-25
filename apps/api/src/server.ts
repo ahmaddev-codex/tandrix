@@ -1,4 +1,5 @@
 import { serve } from "@hono/node-server";
+import { getConnInfo } from "@hono/node-server/conninfo";
 import { createClient } from "@supabase/supabase-js";
 import { createApp } from "./app";
 import { supabaseVerifier } from "./auth";
@@ -26,6 +27,8 @@ import { metaProcedureGenerator, noModelGenerator } from "./procedure-generator"
 import { supabaseProceduresRepo } from "./repos/procedures";
 import { supabaseDetectionsRepo } from "./repos/detections";
 import { supabaseStepStateRepo } from "./repos/step-state";
+import { supabasePairingsRepo } from "./repos/pairings";
+import { supabaseSessionMinter } from "./session-minter";
 
 const config = loadApiConfig();
 const admin = createClient(config.supabaseUrl, config.supabaseSecretKey, {
@@ -88,6 +91,9 @@ const app = createApp({
   partsChecks: supabasePartsChecksRepo(admin),
   partsChecker,
   screenGuide,
+  pairings: supabasePairingsRepo(admin),
+  sessionMinter: supabaseSessionMinter(admin),
+  clientKey: (c) => getConnInfo(c).remote.address ?? "unknown",
   tokenSecret: config.tokenSigningSecret,
   corsOrigins: config.corsOrigins,
   log,
