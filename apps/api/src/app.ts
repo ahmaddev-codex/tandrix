@@ -26,6 +26,8 @@ import { jobsRoutes } from "./routes/jobs";
 import { manualRoutes } from "./routes/manual";
 import { procedureRoutes } from "./routes/procedure";
 import { PAIRING_TOKEN_HEADER, pairingRoutes } from "./routes/pairing";
+import { jobReportRoutes, publicReportRoutes } from "./routes/report";
+import type { ReportsRepo } from "./repos/reports";
 import { inlineScreenRoutes, screenRoutes } from "./routes/screen";
 import type { PairingsRepo } from "./repos/pairings";
 import type { SessionMinter } from "./session-minter";
@@ -54,6 +56,7 @@ export interface AppDeps {
   partsChecker: PartsChecker;
   screenGuide: ScreenGuide;
   pairings: PairingsRepo;
+  reports: ReportsRepo;
   sessionMinter: SessionMinter;
   /** Who's calling, for rate limits on signed-out routes (the client's address). */
   clientKey?: (c: Context) => string;
@@ -67,6 +70,18 @@ export interface AppDeps {
   /** Logs one line per request. Never request bodies, tokens or media. */
   log?: (line: Record<string, unknown>) => void;
 }
+
+const reportDeps = (deps: AppDeps) => ({
+  jobs: deps.jobs,
+  procedures: deps.procedures,
+  assets: deps.assets,
+  manuals: deps.manuals,
+  stepState: deps.stepState,
+  partsChecks: deps.partsChecks,
+  evidence: deps.evidence,
+  storage: deps.storage,
+  reports: deps.reports,
+});
 
 export function createApp(deps: AppDeps) {
   const log = deps.log ?? ((l) => console.log(JSON.stringify(l)));
@@ -99,7 +114,7 @@ export function createApp(deps: AppDeps) {
     cors({
       origin: (origin) => (deps.corsOrigins.includes(origin) ? origin : null),
       allowHeaders: ["Authorization", "Content-Type", SURFACE_HEADER, PAIRING_TOKEN_HEADER],
-      allowMethods: ["GET", "POST", "PATCH", "DELETE"],
+      allowMethods: ["GET", "POST", "PATCH", "PUT", "DELETE"],
       maxAge: 600,
     }),
   );
@@ -112,6 +127,14 @@ export function createApp(deps: AppDeps) {
       pairings: deps.pairings,
       minter: deps.sessionMinter,
       verifyToken: deps.verifyToken,
+      ...(deps.now ? { now: deps.now } : {}),
+      ...(deps.clientKey ? { clientKey: deps.clientKey } : {}),
+    }),
+  );
+  app.route(
+    "/report",
+    publicReportRoutes({
+      ...reportDeps(deps),
       ...(deps.now ? { now: deps.now } : {}),
       ...(deps.clientKey ? { clientKey: deps.clientKey } : {}),
     }),
@@ -186,6 +209,10 @@ export function createApp(deps: AppDeps) {
     }),
   );
   app.route("/jobs/:id/detections", detectionRoutes(stepDeps));
+  app.route(
+    "/jobs/:id",
+    jobReportRoutes({ ...reportDeps(deps), ...(deps.now ? { now: deps.now } : {}) }),
+  );
   app.route(
     "/jobs/:id/screen",
     screenRoutes({

@@ -28,6 +28,7 @@ import { supabaseProceduresRepo } from "./repos/procedures";
 import { supabaseDetectionsRepo } from "./repos/detections";
 import { supabaseStepStateRepo } from "./repos/step-state";
 import { supabasePairingsRepo } from "./repos/pairings";
+import { supabaseReportsRepo } from "./repos/reports";
 import { supabaseSessionMinter } from "./session-minter";
 
 const config = loadApiConfig();
@@ -92,6 +93,7 @@ const app = createApp({
   partsChecker,
   screenGuide,
   pairings: supabasePairingsRepo(admin),
+  reports: supabaseReportsRepo(admin),
   sessionMinter: supabaseSessionMinter(admin),
   clientKey: (c) => getConnInfo(c).remote.address ?? "unknown",
   tokenSecret: config.tokenSigningSecret,

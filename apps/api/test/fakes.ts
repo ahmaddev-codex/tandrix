@@ -1,4 +1,6 @@
 // In-memory evidence repo and storage for unit tests.
+import type { ShareLink } from "@tandrix/contracts";
+import type { ReportsRepo, StepCheck } from "../src/repos/reports";
 import type { NewPairing, PairingRow, PairingsRepo } from "../src/repos/pairings";
 import { noModelScreenGuide } from "../src/screen-guide";
 import type {
@@ -247,8 +249,57 @@ export const noManuals = () => ({
   partsChecker: noModelPartsChecker,
   screenGuide: noModelScreenGuide,
   pairings: memoryPairings(),
+  reports: memoryReports(),
   sessionMinter: { mint: async () => null },
 });
+
+/** Report data: checks are recorded by tests; share links keep only token hashes, as in the database. */
+export function memoryReports(owners = new Map<string, string>()) {
+  const checks: StepCheck[] = [];
+  const links: Array<ShareLink & { jobId: string; tokenHash: string }> = [];
+  const repo: ReportsRepo & { checks: typeof checks; links: typeof links; owners: typeof owners } =
+    {
+      checks,
+      links,
+      owners,
+      async latestChecks(jobId) {
+        const latest = new Map<string, StepCheck>();
+        for (const c of [...checks].sort((a, b) => b.createdAt.localeCompare(a.createdAt)))
+          if (!latest.has(c.jobStepId) && owners.has(jobId)) latest.set(c.jobStepId, c);
+        return [...latest.values()];
+      },
+      async createShare(jobId, tokenHash, expiresAt) {
+        const link = {
+          id: crypto.randomUUID(),
+          createdAt: new Date().toISOString(),
+          expiresAt,
+          revokedAt: null,
+          jobId,
+          tokenHash,
+        };
+        links.push(link);
+        const { jobId: _j, tokenHash: _t, ...pub } = link;
+        return pub;
+      },
+      async listShares(jobId) {
+        return links
+          .filter((l) => l.jobId === jobId)
+          .map(({ jobId: _j, tokenHash: _t, ...pub }) => pub);
+      },
+      async revokeShare(jobId, linkId, now) {
+        const l = links.find((x) => x.id === linkId && x.jobId === jobId && !x.revokedAt);
+        if (!l) return false;
+        l.revokedAt = now;
+        return true;
+      },
+      async findShare(tokenHash, now) {
+        const l = links.find((x) => x.tokenHash === tokenHash && !x.revokedAt && x.expiresAt > now);
+        const ownerId = l ? owners.get(l.jobId) : undefined;
+        return l && ownerId ? { jobId: l.jobId, ownerId } : null;
+      },
+    };
+  return repo;
+}
 
 /** Pairings with the same guarded updates as the database. */
 export function memoryPairings() {
