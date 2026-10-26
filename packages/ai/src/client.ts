@@ -2,6 +2,8 @@
 // Retries transient failures (429, 5xx, network) with backoff, honouring Retry-After, and never
 // logs or echoes request bodies.
 
+import { segmentationCost, spendMeter, tokenCost, transcriptionCost } from "./pricing";
+
 export interface MetaClientOptions {
   apiKey: string;
   baseUrl?: string;
@@ -83,8 +85,11 @@ export class MetaClient {
 
   /** POST /responses, non-streaming. */
   async respond(body: Record<string, unknown>, signal?: AbortSignal): Promise<MetaResponse> {
+    const model = String(body.model ?? "");
+    spendMeter()?.allow(model);
     const res = await this.post("/responses", { store: false, ...body, stream: false }, signal);
     const json = (await res.json()) as MetaResponse;
+    if (json.usage) spendMeter()?.record(tokenCost(json.model || model, json.usage));
     if (json.status === "failed") {
       throw new MetaApiError(
         json.error?.message ?? "Response failed",
@@ -99,6 +104,10 @@ export class MetaClient {
 
   /** POST /responses with stream: true. Retries only happen before the first event arrives. */
   async *stream(body: Record<string, unknown>, signal?: AbortSignal): AsyncGenerator<StreamEvent> {
+    const model = String(body.model ?? "");
+    spendMeter()?.allow(model);
+    // SAM is billed per image; Spark streams report their token usage when they complete.
+    if (model.startsWith("sam")) spendMeter()?.record(segmentationCost(model));
     const res = await this.post(
       "/responses",
       { store: false, ...body, stream: true },
@@ -106,7 +115,12 @@ export class MetaClient {
       "text/event-stream",
     );
     if (!res.body) throw new MetaApiError("Empty stream", res.status, null, null, true);
-    yield* parseSse(res.body);
+    for await (const event of parseSse(res.body)) {
+      const usage = (event.response as MetaResponse | undefined)?.usage;
+      if (event.type === "response.completed" && usage && !model.startsWith("sam"))
+        spendMeter()?.record(tokenCost(model, usage));
+      yield event;
+    }
   }
 
   /**
@@ -165,12 +179,15 @@ export class MetaClient {
       f.append("audio", new Blob([wav as BlobPart], { type: "audio/wav" }), "turn.wav");
       return f;
     };
+    spendMeter()?.allow(opts.model);
     const res = await this.send("/asr/transcribe", { method: "POST", body: form }, signal);
     const json = (await res.json()) as {
       transcript?: unknown;
       audioDurationMs?: unknown;
       sessionId?: unknown;
     };
+    if (typeof json.audioDurationMs === "number")
+      spendMeter()?.record(transcriptionCost(opts.model, json.audioDurationMs));
     if (typeof json.transcript !== "string") {
       throw new MetaApiError("Transcription returned no transcript", res.status, null, null, false);
     }

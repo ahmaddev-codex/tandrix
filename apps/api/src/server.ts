@@ -4,7 +4,9 @@ import { createClient } from "@supabase/supabase-js";
 import { createApp } from "./app";
 import { supabaseVerifier } from "./auth";
 import { loadApiConfig } from "./config";
-import { loadMetaConfig } from "@tandrix/ai";
+import { join } from "node:path";
+import { loadMetaConfig, setSpendMeter } from "@tandrix/ai";
+import { fileSpendMeter } from "./spend";
 import { metaNameplateReader, noModelReader } from "./nameplate";
 import { supabaseAssetsRepo } from "./repos/assets";
 import { supabaseEvidenceRepo, supabaseEvidenceStorage } from "./repos/evidence";
@@ -39,6 +41,20 @@ const admin = createClient(config.supabaseUrl, config.supabaseSecretKey, {
 const log = (l: Record<string, unknown>) => console.log(JSON.stringify(l));
 // Models are optional: without a key, identification reports "unavailable" and users type details.
 const meta = process.env.META_API_KEY ? loadMetaConfig() : null;
+// Every model call is metered against a local cap, so testing can't run through the credit.
+if (meta && !config.fixtureModels) {
+  const limit = Number(
+    process.env.META_SPEND_LIMIT_USD ?? (config.env === "local" ? 10 : Infinity),
+  );
+  setSpendMeter(
+    fileSpendMeter(
+      process.env.META_SPEND_LEDGER ?? join(import.meta.dirname, "..", ".meta-spend.json"),
+      limit,
+      log,
+    ),
+  );
+  log({ event: "spend_meter_on", limitUsd: limit });
+}
 const nameplateReader = meta ? metaNameplateReader(meta, log) : noModelReader;
 const manualFinder = meta ? metaManualFinder(meta, log) : noModelFinder;
 const procedureGenerator = config.fixtureModels

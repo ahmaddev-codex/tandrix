@@ -12,3 +12,4 @@ coverage/
 .next/
 *.tsbuildinfo
 fixtures/demo-pi5/manuals/
+apps/api/.meta-spend.json

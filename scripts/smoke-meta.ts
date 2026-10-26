@@ -5,8 +5,11 @@
  */
 import { deflateSync } from "node:zlib";
 import { z } from "zod";
+import { join } from "node:path";
+import { fileSpendMeter, readLedger } from "../apps/api/src/spend";
 import {
   MetaClient,
+  setSpendMeter,
   generateStructured,
   imageData,
   loadMetaConfig,
@@ -16,6 +19,12 @@ import {
 } from "@tandrix/ai";
 
 const cfg = loadMetaConfig();
+// Charged to the same local ledger and cap as the API (pnpm --filter @tandrix/api spend).
+const ledgerPath = join(import.meta.dirname, "..", "apps/api/.meta-spend.json");
+const spentBefore = readLedger(ledgerPath).totalUsd;
+setSpendMeter(
+  fileSpendMeter(ledgerPath, Number(process.env.META_SPEND_LIMIT_USD ?? 10), () => undefined),
+);
 const client = new MetaClient({
   apiKey: cfg.apiKey,
   baseUrl: cfg.baseUrl,
@@ -188,6 +197,9 @@ await timed(`${cfg.models.transcribe}: 1 s of silence`, async () => {
   );
 });
 
+console.log(
+  `\nThis run cost $${(readLedger(ledgerPath).totalUsd - spentBefore).toFixed(4)} (SAM and Spark; the raw transcription call is billed by audio length).`,
+);
 console.log(
   process.exitCode
     ? "\nSome checks failed. Record the output in docs/engineering/spikes.md."
