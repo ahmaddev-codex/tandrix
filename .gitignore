@@ -11,3 +11,4 @@ coverage/
 .maestro/
 .next/
 *.tsbuildinfo
+fixtures/demo-pi5/manuals/

@@ -1,0 +1,20 @@
+# Demo: a Raspberry Pi 5 home server
+
+Test and demo material for a physical build with a software part: fit the Active Cooler, mount the board in its case, add M.2 storage (phone), then flash the OS with Raspberry Pi Imager (Mac).
+
+- `photos/`: openly licensed photos from Wikimedia Commons, downsized to 1600 px. Attribution below.
+- `manuals/` (git-ignored): official product briefs, © Raspberry Pi Ltd. Run `sh fixtures/demo-pi5/fetch.sh` to download them and build `manuals/pi5-build-kit.pdf` (22 pages: Active Cooler, Case for Raspberry Pi 5, M.2 HAT+).
+
+| File                         | Author               | Licence                                                        | Source                                                                                                                                              |
+| ---------------------------- | -------------------- | -------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| photos/board-top.jpg         | SimonWaldherr        | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0)       | [File:Raspberry Pi 5.jpg](https://commons.wikimedia.org/wiki/File:Raspberry_Pi_5.jpg)                                                               |
+| photos/board-back.jpg        | SimonWaldherr        | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0)       | [File:Raspberry Pi 5 Backside.jpg](https://commons.wikimedia.org/wiki/File:Raspberry_Pi_5_Backside.jpg)                                             |
+| photos/board-angle.jpg       | SimonWaldherr        | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0)       | [File:Raspberry Pi 5 SBC.jpg](https://commons.wikimedia.org/wiki/File:Raspberry_Pi_5_SBC.jpg)                                                       |
+| photos/board-with-cooler.jpg | SimonWaldherr        | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0)       | [File:Raspberry Pi 5 with active cooler.jpg](https://commons.wikimedia.org/wiki/File:Raspberry_Pi_5_with_active_cooler.jpg)                         |
+| photos/cooler-1.jpg          | Suyash Dwivedi       | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) | [File:Raspberry Pi Active Cooler for PI 5 (1).jpg](<https://commons.wikimedia.org/wiki/File:Raspberry_Pi_Active_Cooler_for_PI_5_(1).jpg>)           |
+| photos/cooler-2.jpg          | Suyash Dwivedi       | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) | [File:Raspberry Pi Active Cooler for PI 5 (2).jpg](<https://commons.wikimedia.org/wiki/File:Raspberry_Pi_Active_Cooler_for_PI_5_(2).jpg>)           |
+| photos/cooler-4.jpg          | Suyash Dwivedi       | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) | [File:Raspberry Pi Active Cooler for PI 5 (4).jpg](<https://commons.wikimedia.org/wiki/File:Raspberry_Pi_Active_Cooler_for_PI_5_(4).jpg>)           |
+| photos/cooler-front.jpg      | SparkFun Electronics | [CC BY 2.0](https://creativecommons.org/licenses/by/2.0)       | [File:23585 Raspberry Pi 5 Cooling Front.jpg](https://commons.wikimedia.org/wiki/File:23585_Raspberry_Pi_5_Cooling_Front.jpg)                       |
+| photos/cooler-back.jpg       | SparkFun Electronics | [CC BY 2.0](https://creativecommons.org/licenses/by/2.0)       | [File:23585 Raspberry Pi 5 Cooling Back.jpg](https://commons.wikimedia.org/wiki/File:23585_Raspberry_Pi_5_Cooling_Back.jpg)                         |
+| photos/box-label.jpg         | Suyash Dwivedi       | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) | [File:Raspberry Pi5 8GB Pakaging Box Top View (3).jpg](<https://commons.wikimedia.org/wiki/File:Raspberry_Pi5_8GB_Pakaging_Box_Top_View_(3).jpg>)   |
+| photos/parts-laid-out.jpg    | SimonWaldherr        | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) | [File:Raspberry Pi 1, Pi 5, Pi 400, Zero 2 and Pico.jpg](https://commons.wikimedia.org/wiki/File:Raspberry_Pi_1,_Pi_5,_Pi_400,_Zero_2_and_Pico.jpg) |
