@@ -142,6 +142,10 @@ export const GenerateProcedureRequest = z.strictObject({
   task: text(300).optional(),
   /** True to proceed without a manual: every step is labelled Generic. */
   allowGeneric: z.boolean().default(false),
+  /** Uploaded photos of where the work stands now, so the steps start from there. */
+  contextEvidenceIds: z.array(Id).max(4).default([]),
+  /** Anything else the user said about the job, in their words. */
+  notes: optionalText(600),
 });
 
 export const GenerateProcedureResponse = z.discriminatedUnion("status", [

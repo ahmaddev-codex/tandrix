@@ -69,9 +69,11 @@ export function jobsRoutes(
       const found = await repo.getForOwner(user.id, id.data);
       if (!found) throw notFound("Job");
       const asset = found.job.assetId ? await assets.getForOwner(user.id, found.job.assetId) : null;
-      const manual = asset
-        ? await manuals.findForModel(user.id, assetModelKey(asset.make, asset.model))
-        : null;
+      const manual =
+        (await manuals.forJob(user.id, found.job.id)) ??
+        (asset
+          ? await manuals.findForModel(user.id, assetModelKey(asset.make, asset.model))
+          : null);
       const procedure = found.job.procedureId
         ? await procedures.getDetail(user.id, found.job.procedureId)
         : null;

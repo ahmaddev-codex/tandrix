@@ -17,7 +17,7 @@ import { imagesToPdf, pdfPageCount } from "../pdf";
 import type { AssetsRepo } from "../repos/assets";
 import type { EvidenceRepo, EvidenceStorage } from "../repos/evidence";
 import type { JobsRepo } from "../repos/jobs";
-import { assetModelKey, type ManualsRepo } from "../repos/manuals";
+import { assetModelKey, projectKey, type ManualsRepo } from "../repos/manuals";
 import { FetchRefused, safeFetchPdf, type SafeFetchOptions } from "../safe-fetch";
 import { signToken, verifyToken } from "../signed-token";
 
@@ -53,6 +53,21 @@ export function manualRoutes(d: ManualDeps) {
     const asset = found.job.assetId ? await d.assets.getForOwner(ownerId, found.job.assetId) : null;
     if (!asset) throw new HttpError(409, "conflict", "Identify the equipment first.");
     return asset;
+  };
+  /**
+   * The caller's job and the key its manual is filed under: the equipment's make and model, or, for
+   * a project without equipment, its goal. Uploaded and photographed manuals work for either.
+   */
+  const jobKey = async (ownerId: string, rawJobId: string | undefined) => {
+    const jobId = Id.safeParse(rawJobId);
+    if (!jobId.success) throw notFound("Job");
+    const found = await d.jobs.getForOwner(ownerId, jobId.data);
+    if (!found) throw notFound("Job");
+    const asset = found.job.assetId ? await d.assets.getForOwner(ownerId, found.job.assetId) : null;
+    return {
+      jobId: jobId.data,
+      key: asset ? assetModelKey(asset.make, asset.model) : projectKey(found.job.title),
+    };
   };
   const candidateFields = (userId: string, url: string, key: string) => [
     "manual",
@@ -132,7 +147,7 @@ export function manualRoutes(d: ManualDeps) {
 
     .post("/upload", async (c) => {
       const user = c.get("user");
-      await jobAsset(user.id, c.req.param("id"));
+      await jobKey(user.id, c.req.param("id"));
       const parsed = CreateManualUploadRequest.safeParse(await c.req.json().catch(() => undefined));
       if (!parsed.success) throw invalid(issues(parsed.error));
       const id = randomUUID();
@@ -150,7 +165,7 @@ export function manualRoutes(d: ManualDeps) {
 
     .post("/upload/:uploadId/complete", async (c) => {
       const user = c.get("user");
-      const asset = await jobAsset(user.id, c.req.param("id"));
+      const { key } = await jobKey(user.id, c.req.param("id"));
       const uploadId = Id.safeParse(c.req.param("uploadId"));
       if (!uploadId.success) throw notFound("Upload");
       const up = await d.manuals.getUpload(user.id, Id.parse(c.req.param("id")), uploadId.data);
@@ -170,7 +185,7 @@ export function manualRoutes(d: ManualDeps) {
       const pages = await pdfPageCount(await d.manualStorage.download(up.storageKey));
       if (!pages) await reject("file isn't a readable PDF");
       const manual = await d.manuals.insert({
-        assetModelKey: assetModelKey(asset.make, asset.model),
+        assetModelKey: key,
         title: up.title,
         sourceType: "upload",
         sourceUrl: null,
@@ -185,8 +200,7 @@ export function manualRoutes(d: ManualDeps) {
 
     .post("/from-photos", async (c) => {
       const user = c.get("user");
-      const asset = await jobAsset(user.id, c.req.param("id"));
-      const jobId = Id.parse(c.req.param("id"));
+      const { jobId, key } = await jobKey(user.id, c.req.param("id"));
       const parsed = ManualFromPhotosRequest.safeParse(await c.req.json().catch(() => undefined));
       if (!parsed.success) throw invalid(issues(parsed.error));
       const images: Array<{ bytes: Uint8Array; mimeType: string }> = [];
@@ -207,7 +221,7 @@ export function manualRoutes(d: ManualDeps) {
       const storageKey = `${user.id}/${randomUUID()}.pdf`;
       await d.manualStorage.put(storageKey, pdf, "application/pdf");
       const manual = await d.manuals.insert({
-        assetModelKey: assetModelKey(asset.make, asset.model),
+        assetModelKey: key,
         title: parsed.data.title,
         sourceType: "upload",
         sourceUrl: null,
@@ -221,7 +235,7 @@ export function manualRoutes(d: ManualDeps) {
 
     .get("/:manualId/url", async (c) => {
       const user = c.get("user");
-      await jobAsset(user.id, c.req.param("id"));
+      await jobKey(user.id, c.req.param("id"));
       const manualId = Id.safeParse(c.req.param("manualId"));
       if (!manualId.success) throw notFound("Manual");
       const manual = await d.manuals.getForOwner(user.id, manualId.data);

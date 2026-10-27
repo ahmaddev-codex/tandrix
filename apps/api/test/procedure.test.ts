@@ -80,6 +80,13 @@ const job = (id: string, assetId: string | null, procedureId: string | null = nu
 });
 
 async function setup(opts: { manual?: boolean; answer?: GenerateResult } = {}) {
+  const evidence = memoryEvidence(
+    new Map([
+      [JOB, A],
+      [NO_ASSET_JOB, A],
+    ]),
+  );
+  const evidenceStorage = memoryStorage();
   const jobsList = [job(JOB, ASSET), job(NO_ASSET_JOB, null)];
   const jobs = {
     async getForOwner(ownerId: string, id: string) {
@@ -117,8 +124,8 @@ async function setup(opts: { manual?: boolean; answer?: GenerateResult } = {}) {
   const app = createApp({
     verifyToken: async (t) => (t === "a" ? { id: A } : t === "b" ? { id: B } : null),
     jobs,
-    evidence: memoryEvidence(new Map()),
-    storage: memoryStorage(),
+    evidence,
+    storage: evidenceStorage,
     assets,
     nameplateReader: scriptedReader(),
     ...noManuals(),
@@ -140,7 +147,22 @@ async function setup(opts: { manual?: boolean; answer?: GenerateResult } = {}) {
       headers: { "content-type": "application/json", authorization: `Bearer ${token}` },
       ...(body ? { body: JSON.stringify(body) } : {}),
     });
-  return { call, procedures, asked, jobsList, app };
+  const photo = async (jobId: string, kind: "photo" | "audio" = "photo") => {
+    const ev = await evidence.createPending({
+      id: crypto.randomUUID(),
+      jobId,
+      jobStepId: null,
+      kind,
+      surface: "phone",
+      storageKey: `${A}/${jobId}/${crypto.randomUUID()}.jpg`,
+      mimeType: "image/jpeg",
+      byteSize: 3,
+      capturedAt: "2026-10-26T10:00:00.000Z",
+    });
+    await evidenceStorage.put(ev.storageKey, new Uint8Array([0xff, 0xd8, 0xff]), "image/jpeg");
+    return evidence.markUploaded(ev.id, 3);
+  };
+  return { call, procedures, asked, jobsList, app, manuals, manualStorage, photo };
 }
 
 describe("POST /jobs/:id/procedure", () => {
@@ -211,6 +233,45 @@ describe("POST /jobs/:id/procedure", () => {
       assetModelKey: "project|assemble a 12u home server rack",
       manualId: null,
     });
+  });
+
+  it("writes a project's steps from the manual attached to it, with its photos and notes", async () => {
+    const s = await setup({ manual: false });
+    await s.manualStorage.put(`${A}/kit.pdf`, await samplePdf(4), "application/pdf");
+    const kit = await s.manuals.insert({
+      assetModelKey: "project|assemble the pump",
+      title: "Kit instructions",
+      sourceType: "upload",
+      sourceUrl: null,
+      storageKey: `${A}/kit.pdf`,
+      pageCount: 4,
+      ownerId: A,
+    });
+    await s.manuals.recordAttached(NO_ASSET_JOB, kit.id, "upload");
+    const where = await s.photo(NO_ASSET_JOB);
+    const res = await s.call(`/jobs/${NO_ASSET_JOB}/procedure`, "a", {
+      contextEvidenceIds: [where.id],
+      notes: "The frame is already built.",
+    });
+    expect(res.status).toBe(201);
+    expect(s.asked[0]).toMatchObject({
+      asset: null,
+      manual: { pages: 4 },
+      notes: "The frame is already built.",
+      photos: [{ mimeType: "image/jpeg" }],
+    });
+    expect(s.procedures.saves[0]).toMatchObject({ manualId: kit.id });
+  });
+
+  it("refuses context photos that aren't this job's photos", async () => {
+    const s = await setup();
+    const other = await s.photo(NO_ASSET_JOB);
+    const audio = await s.photo(JOB, "audio");
+    for (const id of [other.id, audio.id]) {
+      const res = await s.call(`/jobs/${JOB}/procedure`, "a", { contextEvidenceIds: [id] });
+      expect(res.status).toBe(404);
+    }
+    expect(s.asked).toHaveLength(0);
   });
 
   it("refuses a job that has steps, and others' jobs", async () => {

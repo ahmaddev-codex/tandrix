@@ -138,6 +138,19 @@ describe("generateProcedure", () => {
     );
   });
 
+  it("adds the user's notes and photos of where the work stands, after the words", async () => {
+    const { client, calls } = clientWith([responseWithText(JSON.stringify(draft))]);
+    await generateProcedure(client, models, {
+      job: "Assemble a 12U home server rack",
+      notes: "The frame is already built.",
+      photos: [imageUrl("https://example.com/now.jpg")],
+    });
+    const input = JSON.stringify((calls[0]!.body as { input: unknown }).input);
+    expect(input).toContain("The user adds: The frame is already built.");
+    expect(input).toContain("The next photo shows where the work stands now");
+    expect(input.indexOf("where the work stands")).toBeLessThan(input.indexOf("now.jpg"));
+  });
+
   it("sends the manual and its page count with the manual prompt", async () => {
     const { client, calls } = clientWith([responseWithText(JSON.stringify(draft))]);
     const r = await generateProcedure(client, models, {

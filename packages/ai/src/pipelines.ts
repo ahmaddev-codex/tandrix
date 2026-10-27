@@ -39,14 +39,29 @@ export interface ProcedureRequest {
   /** The equipment, when the job has any; a project without equipment works from the job alone. */
   asset?: { make: string; model: string };
   job: string;
+  /** What the user added about their situation, in their words. */
+  notes?: string;
+  /** Photos of where the work stands now (what's there, what's done), up to four. */
+  photos?: InputPart[];
   effort?: ReasoningEffort;
   signal?: AbortSignal;
 }
 
 export function generateProcedure(client: MetaClient, models: Models, req: ProcedureRequest) {
-  const about = req.asset
-    ? `Equipment: ${req.asset.make} ${req.asset.model}\nJob: ${req.job}`
-    : `Project (no specific equipment): ${req.job}`;
+  const about = `${
+    req.asset
+      ? `Equipment: ${req.asset.make} ${req.asset.model}\nJob: ${req.job}`
+      : `Project (no specific equipment): ${req.job}`
+  }${req.notes ? `\nThe user adds: ${req.notes}` : ""}`;
+  // The user's photos come last, after the manual, with what they are.
+  const photos: InputPart[] = req.photos?.length
+    ? [
+        text(
+          `The next ${req.photos.length === 1 ? "photo shows" : `${req.photos.length} photos show`} where the work stands now. Use them to fit the steps to what the user has: start from where they are, and name the parts as they appear. Don't write steps for work the photos show is already done.`,
+        ),
+        ...req.photos,
+      ]
+    : [];
   return generateStructured(client, {
     model: models.reasoning,
     name: "procedure_draft",
@@ -59,8 +74,9 @@ export function generateProcedure(client: MetaClient, models: Models, req: Proce
               `${about}${req.manualPages ? `\nThe manual has ${req.manualPages} pages; cite page numbers as printed in the PDF viewer (1 to ${req.manualPages}).` : ""}`,
             ),
             req.manual,
+            ...photos,
           )
-        : user(text(`${about}\nNo manual is available.`)),
+        : user(text(`${about}\nNo manual is available.`), ...photos),
     ],
     effort: req.effort ?? "medium",
     ...(req.signal ? { signal: req.signal } : {}),

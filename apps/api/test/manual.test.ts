@@ -357,6 +357,21 @@ describe("manual upload", () => {
     expect(again.status).toBe(404);
   });
 
+  it("files a project's own manual under its goal when there is no equipment", async () => {
+    const s = await setup();
+    const res = await s.call(`/jobs/${NO_ASSET_JOB}/manual/upload`, "a", "POST", {
+      byteSize: 1000,
+      title: "Kit instructions",
+    });
+    expect(res.status).toBe(201);
+    const { uploadId, upload } = CreateManualUploadResponse.parse(await res.json());
+    await s.manualStorage.put(upload.path, await samplePdf(3), "application/pdf");
+    const done = await s.call(`/jobs/${NO_ASSET_JOB}/manual/upload/${uploadId}/complete`, "a");
+    expect(done.status).toBe(201);
+    expect(s.manuals.manuals[0]).toMatchObject({ assetModelKey: "project|pump", ownerId: A });
+    expect(s.manuals.events[0]).toMatchObject({ jobId: NO_ASSET_JOB, how: "upload" });
+  });
+
   it("removes a file that isn't a PDF", async () => {
     const s = await setup();
     const { uploadId, upload } = CreateManualUploadResponse.parse(

@@ -182,6 +182,8 @@ export function createApp(deps: AppDeps) {
       assets: deps.assets,
       manuals: deps.manuals,
       manualStorage: deps.manualStorage,
+      evidence: deps.evidence,
+      evidenceStorage: deps.storage,
       procedures: deps.procedures,
       generator: deps.procedureGenerator,
       log,

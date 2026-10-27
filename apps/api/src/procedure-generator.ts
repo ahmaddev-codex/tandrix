@@ -3,6 +3,7 @@
 import {
   fileRef,
   generateProcedure,
+  imageData,
   INLINE_FILE_MAX_BYTES,
   MetaApiError,
   MetaClient,
@@ -16,6 +17,9 @@ export interface GenerateInput {
   asset: { make: string; model: string } | null;
   task: string;
   manual: { bytes: Uint8Array; pages: number } | null;
+  notes?: string;
+  /** Photos of where the work stands now. */
+  photos?: Array<{ bytes: Uint8Array; mimeType: string }>;
 }
 
 export type GenerateResult =
@@ -45,7 +49,7 @@ export function metaProcedureGenerator(
   }),
 ): ProcedureGenerator {
   return {
-    async generate({ asset, task, manual }) {
+    async generate({ asset, task, manual, notes, photos }) {
       let uploadedId: string | null = null;
       try {
         let part;
@@ -63,6 +67,14 @@ export function metaProcedureGenerator(
           ...(part ? { manual: part, manualPages: manual!.pages } : {}),
           ...(asset ? { asset } : {}),
           job: task,
+          ...(notes ? { notes } : {}),
+          ...(photos?.length
+            ? {
+                photos: photos.map((p) =>
+                  imageData(p.bytes, p.mimeType === "image/png" ? "image/png" : "image/jpeg"),
+                ),
+              }
+            : {}),
         });
         if (!r.ok) {
           log({ level: "warn", event: "procedure_invalid_output", issues: r.issues.length });

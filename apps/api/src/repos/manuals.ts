@@ -7,6 +7,10 @@ import { dbError } from "../errors";
 export const assetModelKey = (make: string, model: string) =>
   `${make}|${model}`.normalize("NFKC").toLowerCase().replace(/\s+/g, " ").trim();
 
+/** Procedures and manuals for projects without equipment are keyed by their goal, apart from equipment keys. */
+export const projectKey = (task: string) =>
+  `project|${task.trim().toLowerCase().replace(/\s+/g, " ")}`.slice(0, 260);
+
 export interface NewManual {
   assetModelKey: string;
   title: string;
@@ -40,6 +44,8 @@ export interface ManualsRepo {
     manualId: string,
     how: "search" | "upload" | "photos",
   ): Promise<void>;
+  /** The manual last attached to this job (the caller owns the job), if any. */
+  forJob(ownerId: string, jobId: string): Promise<Manual | null>;
 }
 
 type Row = Record<string, unknown>;
@@ -156,6 +162,20 @@ export function supabaseManualsRepo(db: SupabaseClient): ManualsRepo {
         .from("events")
         .insert({ job_id: jobId, type: "manual_attached", payload: { manualId, how } });
       if (error) throw dbError(error);
+    },
+
+    async forJob(ownerId, jobId) {
+      const { data, error } = await db
+        .from("events")
+        .select("payload")
+        .eq("job_id", jobId)
+        .eq("type", "manual_attached")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw dbError(error);
+      const id = (data?.payload as { manualId?: unknown } | undefined)?.manualId;
+      return typeof id === "string" ? this.getForOwner(ownerId, id) : null;
     },
   };
 }

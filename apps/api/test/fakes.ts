@@ -221,6 +221,10 @@ export function memoryManuals() {
     async recordAttached(jobId, manualId, how) {
       repo.events.push({ jobId, manualId, how });
     },
+    async forJob(ownerId, jobId) {
+      const last = repo.events.filter((e) => e.jobId === jobId).at(-1);
+      return last ? repo.getForOwner(ownerId, last.manualId) : null;
+    },
   };
   return repo;
 }

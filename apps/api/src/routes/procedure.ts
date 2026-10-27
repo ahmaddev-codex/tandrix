@@ -9,9 +9,11 @@ import type { AuthEnv } from "../auth";
 import { HttpError, invalid, notFound } from "../errors";
 import type { ProcedureGenerator } from "../procedure-generator";
 import type { AssetsRepo } from "../repos/assets";
-import type { EvidenceStorage } from "../repos/evidence";
+import type { EvidenceRepo, EvidenceStorage } from "../repos/evidence";
 import type { JobsRepo } from "../repos/jobs";
-import { assetModelKey, type ManualsRepo } from "../repos/manuals";
+import { assetModelKey, projectKey, type ManualsRepo } from "../repos/manuals";
+
+export { projectKey };
 import type { ProceduresRepo } from "../repos/procedures";
 
 const issues = (e: z.ZodError) =>
@@ -22,14 +24,12 @@ export interface ProcedureDeps {
   assets: AssetsRepo;
   manuals: ManualsRepo;
   manualStorage: EvidenceStorage;
+  evidence: EvidenceRepo;
+  evidenceStorage: EvidenceStorage;
   procedures: ProceduresRepo;
   generator: ProcedureGenerator;
   log: (l: Record<string, unknown>) => void;
 }
-
-/** Procedures for projects without equipment are keyed by their goal, apart from equipment keys. */
-export const projectKey = (task: string) =>
-  `project|${task.trim().toLowerCase().replace(/\s+/g, " ")}`.slice(0, 260);
 
 export function procedureRoutes(d: ProcedureDeps) {
   return new Hono<AuthEnv>().post("/", async (c) => {
@@ -49,7 +49,20 @@ export function procedureRoutes(d: ProcedureDeps) {
     const task = parsed.data.task ?? found.job.title;
 
     const key = asset ? assetModelKey(asset.make, asset.model) : projectKey(task);
-    const manual = asset ? await d.manuals.findForModel(user.id, key) : null;
+    // The manual attached to this job wins (a project's own PDF or pages); else the model's.
+    const manual =
+      (await d.manuals.forJob(user.id, jobId.data)) ??
+      (asset ? await d.manuals.findForModel(user.id, key) : null);
+    // Photos of where the work stands, owned by this job and uploaded.
+    const photos: Array<{ bytes: Uint8Array; mimeType: string }> = [];
+    for (const id of parsed.data.contextEvidenceIds) {
+      const ev = await d.evidence.getForOwner(user.id, jobId.data, id);
+      if (!ev || !ev.uploadedAt || ev.kind !== "photo") throw notFound("Photo");
+      photos.push({
+        bytes: await d.evidenceStorage.download(ev.storageKey),
+        mimeType: ev.mimeType,
+      });
+    }
     if (asset && !manual && !parsed.data.allowGeneric) {
       throw new HttpError(
         409,
@@ -64,6 +77,8 @@ export function procedureRoutes(d: ProcedureDeps) {
       manual: manual
         ? { bytes: await d.manualStorage.download(manual.storageKey), pages: manual.pageCount }
         : null,
+      ...(parsed.data.notes ? { notes: parsed.data.notes } : {}),
+      ...(photos.length ? { photos } : {}),
     });
     if (result.status === "unavailable") return c.json(result);
 
