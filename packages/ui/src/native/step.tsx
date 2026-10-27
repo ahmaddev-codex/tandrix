@@ -54,24 +54,14 @@ export function StepCard({
         boxShadow: t.shadow["shadow-sm"],
       }}
     >
-      <View
-        style={{
-          flexDirection: "row",
-          flexWrap: "wrap",
-          gap: space["space-2"],
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}
-      >
+      <View style={{ alignItems: "flex-start", gap: space["space-1"] }}>
+        {status ? <StatusChip status={status}>{statusLabel}</StatusChip> : null}
         <Text variant="label-13" color="text-secondary" style={{ fontVariant: ["tabular-nums"] }}>
           {`Step ${index} of ${total}`}
         </Text>
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space["space-2"] }}>
-          {status ? <StatusChip status={status}>{statusLabel}</StatusChip> : null}
-          {source || sourceKind === "generic" ? (
-            <SourceChip kind={sourceKind}>{source}</SourceChip>
-          ) : null}
-        </View>
+        {source || sourceKind === "generic" ? (
+          <SourceChip kind={sourceKind}>{source}</SourceChip>
+        ) : null}
       </View>
       <Text variant="field-instruction">{title}</Text>
       {body ? (
