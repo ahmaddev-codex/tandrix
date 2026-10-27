@@ -38,7 +38,7 @@ export function PointerBuddy({ x, y, caption }: PointerBuddyProps) {
   );
 }
 
-export type PresenceState = "listening" | "looking" | "answering";
+export type PresenceState = "listening" | "thinking" | "looking" | "answering";
 
 export interface PresenceBarProps {
   state: PresenceState;
@@ -48,7 +48,7 @@ export interface PresenceBarProps {
   keys?: string;
   /** What to do with the keys: "Let go to ask". */
   keysHint?: string;
-  /** The reply while it's spoken, at most two lines. */
+  /** Under the pill, at most two lines: what the user asked while thinking, the reply after. */
   text?: string;
   /** Microphone level while listening, 0 to 1. */
   level?: number;
@@ -59,8 +59,9 @@ export interface PresenceBarProps {
 const BARS = [0.55, 0.85, 1, 0.8, 0.5];
 
 /**
- * Tandrix is active: a light along the top edge of the display and a pill under the menu bar
- * saying what it's doing. Click-through, and gone when Tandrix is idle, so the screen stays free.
+ * Tandrix is active: a pill under the menu bar, ringed with a glow, saying what it's doing; what
+ * was asked or the reply sits under it. Click-through, and gone when Tandrix is idle, so the screen
+ * stays free.
  */
 export function PresenceBar({
   state,
@@ -79,7 +80,6 @@ export function PresenceBar({
       aria-live="polite"
       style={{ ["--tx-level" as string]: Math.max(0, Math.min(1, level)) }}
     >
-      <div className="tx-presence-edge" aria-hidden />
       <div className="tx-presence-stack" style={{ top: top + 8 }}>
         <div className="tx-presence-pill">
           {state === "listening" ? (
@@ -87,6 +87,12 @@ export function PresenceBar({
               {BARS.map((b, i) => (
                 <span key={i} style={{ ["--tx-bar" as string]: b }} />
               ))}
+            </span>
+          ) : state === "thinking" || state === "looking" ? (
+            <span className="tx-presence-dots" aria-hidden>
+              <span />
+              <span />
+              <span />
             </span>
           ) : (
             <span className="tx-ctl-dot" aria-hidden />
@@ -99,7 +105,11 @@ export function PresenceBar({
             </span>
           ) : null}
         </div>
-        {text ? <p className="tx-presence-text">{text}</p> : null}
+        {text ? (
+          <p className="tx-presence-text" data-kind={state === "answering" ? "reply" : "asked"}>
+            {text}
+          </p>
+        ) : null}
       </div>
     </div>
   );

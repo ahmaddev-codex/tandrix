@@ -7,7 +7,7 @@ import { overlayDisplayIds, sendToOverlay } from "./windows";
 
 let displayId: number | undefined;
 
-const states = new Set(["listening", "looking", "answering"]);
+const states = new Set(["listening", "thinking", "looking", "answering"]);
 const text = (v: unknown, max: number) => (typeof v === "string" ? v.slice(0, max) : undefined);
 
 /** Checks what the renderer sent: a presence, or null to hide it. */

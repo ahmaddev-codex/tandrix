@@ -5,7 +5,7 @@ Tandrix is one AI engineer for the physical and digital worlds. It runs on the p
 - **Monochrome carries the product; colour carries meaning.** Build every surface from `background-100`, `background-200` and the gray scale. Use blue, green, amber and red only for a state or an action with that meaning.
 - **Evidence is visible.** Every step shows a `SourceChip`, and every status uses `StatusChip`. Never show `confirmed` with the look of `verified`.
 - **One action per view.** One `primary` Button per view; everything else is `secondary` or `tertiary`.
-- **Readable in the field.** On the phone, primary actions are `control-field` (48px, full width) and instructions are set in `field-instruction`. In direct sun, switch to the `sunlight` theme.
+- **Readable in the field.** On the phone, primary actions are `control-field` (44px, full width) and instructions are set in `field-instruction`. In direct sun, switch to the `sunlight` theme.
 
 ## Voice
 
@@ -48,7 +48,7 @@ These sit on photos and over other apps, not on Tandrix surfaces, so they are th
 ## Space, size, radius, elevation
 
 - Use a 4px grid: `space-1` (4) to `space-16` (64). Card padding is `space-4` on the Mac and `space-5` on the phone; the gap between cards is `space-6`.
-- Control heights: `control-sm` 32, `control-md` 40, `control-lg` 48, `control-field` 48 (the phone's full-width actions), and `control-shutter` 72 for the camera shutter. Anything touched on the phone is at least `control-lg`, and primary phone actions are `control-field`.
+- Control heights: `control-sm` 32, `control-md` 40, `control-lg` 44, `control-field` 44 (the phone's full-width actions), and `control-shutter` 72 for the camera shutter. Anything touched on the phone is at least `control-lg`, and primary phone actions are `control-field`.
 - Radius by role: `radius-sm` for source chips and keycaps, `radius-md` for buttons, inputs and captions, `radius-lg` for cards, panels, dialogs and the camera frame, `radius-full` for status chips and the in-control indicator.
 - Elevation is mostly a border: `shadow-border` and `shadow-sm` for cards, `shadow-md` for menus and the Mac panel, `shadow-lg` for dialogs. Over other apps, use `shadow-overlay`.
 

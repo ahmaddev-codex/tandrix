@@ -279,8 +279,8 @@ export type RadiusToken = keyof typeof radius;
 export const size = {
   "control-sm": 32,
   "control-md": 40,
-  "control-lg": 48,
-  "control-field": 48,
+  "control-lg": 44,
+  "control-field": 44,
   "control-shutter": 72
 } as const;
 export type SizeToken = keyof typeof size;

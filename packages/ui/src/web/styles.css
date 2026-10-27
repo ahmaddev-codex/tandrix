@@ -452,34 +452,18 @@ button.tx-visual-frame:focus-visible {
   }
 }
 
-/* Presence bar: Tandrix is active. A light along the display's top edge and a pill under the
-   menu bar; click-through (the overlay ignores the mouse) and gone when Tandrix is idle. */
+/* Presence bar: Tandrix is active. A pill under the menu bar ringed with a glow, and what was
+   asked or the reply under it; click-through (the overlay ignores the mouse) and gone when idle. */
+@property --tx-ring {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
 .tx-presence {
   position: fixed;
   inset: 0 0 auto;
   pointer-events: none;
   font-family: var(--font-sans);
-}
-.tx-presence-edge {
-  position: absolute;
-  inset: 0 0 auto;
-  height: 3px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    var(--highlight) 18%,
-    var(--highlight-halo) 50%,
-    var(--highlight) 82%,
-    transparent
-  );
-  background-size: 200% 100%;
-  box-shadow:
-    0 0 14px 2px var(--highlight),
-    0 0 48px 10px var(--highlight-tint);
-  opacity: 0.9;
-}
-.tx-presence[data-state="listening"] .tx-presence-edge {
-  opacity: calc(0.55 + var(--tx-level) * 0.45);
 }
 .tx-presence-stack {
   position: absolute;
@@ -489,9 +473,10 @@ button.tx-visual-frame:focus-visible {
   justify-items: center;
   gap: var(--space-2);
   width: max-content;
-  max-width: min(640px, 90vw);
+  max-width: min(600px, 90vw);
 }
 .tx-presence-pill {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
@@ -500,12 +485,35 @@ button.tx-visual-frame:focus-visible {
   border-radius: var(--radius-full);
   background: var(--overlay-ground);
   color: var(--overlay-ink);
-  box-shadow:
-    var(--shadow-overlay),
-    0 0 0 1px var(--overlay-raised);
   font-size: 13px;
   font-weight: 500;
   white-space: nowrap;
+  /* The glow: brighter while the user speaks. */
+  box-shadow:
+    var(--shadow-overlay),
+    0 0 calc(10px + 18px * var(--tx-level, 0)) calc(1px + 3px * var(--tx-level, 0))
+      color-mix(in srgb, var(--highlight) 55%, transparent);
+}
+/* The bordered ring: a gradient border drawn outside the pill. */
+.tx-presence-pill::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  padding: 2px;
+  background: conic-gradient(
+    from var(--tx-ring),
+    var(--highlight),
+    var(--highlight-halo) 18%,
+    var(--highlight) 36%,
+    color-mix(in srgb, var(--highlight) 25%, transparent) 60%,
+    var(--highlight)
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
 }
 .tx-presence-keys {
   display: inline-flex;
@@ -535,7 +543,18 @@ button.tx-visual-frame:focus-visible {
   background: var(--highlight);
   transition: height 90ms linear;
 }
+.tx-presence-dots {
+  display: inline-flex;
+  gap: 3px;
+}
+.tx-presence-dots span {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--highlight);
+}
 .tx-presence-text {
+  position: relative;
   margin: 0;
   padding: 10px 14px;
   border-radius: var(--radius-lg);
@@ -550,14 +569,29 @@ button.tx-visual-frame:focus-visible {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+/* What the user asked, while Tandrix works on it: quieter than the reply. */
+.tx-presence-text[data-kind="asked"] {
+  color: color-mix(in srgb, var(--overlay-ink) 72%, transparent);
+  font-size: 13px;
+}
 @media (prefers-reduced-motion: no-preference) {
   .tx-presence-stack {
     animation: tx-presence-in 220ms ease-out;
   }
-  .tx-presence[data-state="looking"] .tx-presence-edge {
-    animation: tx-presence-sweep 1.6s linear infinite;
+  /* Working: the ring turns and the dots wave. */
+  .tx-presence[data-state="thinking"] .tx-presence-pill::before,
+  .tx-presence[data-state="looking"] .tx-presence-pill::before {
+    animation: tx-presence-turn 1.4s linear infinite;
   }
-  .tx-presence[data-state="looking"] .tx-ctl-dot,
+  .tx-presence-dots span {
+    animation: tx-presence-wave 1s ease-in-out infinite;
+  }
+  .tx-presence-dots span:nth-child(2) {
+    animation-delay: 0.15s;
+  }
+  .tx-presence-dots span:nth-child(3) {
+    animation-delay: 0.3s;
+  }
   .tx-presence[data-state="answering"] .tx-ctl-dot {
     animation: tx-pulse 1.6s ease-in-out infinite;
   }
@@ -568,12 +602,20 @@ button.tx-visual-frame:focus-visible {
     transform: translate(-50%, -6px);
   }
 }
-@keyframes tx-presence-sweep {
-  from {
-    background-position: 200% 0;
-  }
+@keyframes tx-presence-turn {
   to {
-    background-position: 0 0;
+    --tx-ring: 360deg;
+  }
+}
+@keyframes tx-presence-wave {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-3px);
   }
 }
 

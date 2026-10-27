@@ -48,7 +48,7 @@ export interface OverlayPointer {
 
 /** What Tandrix is doing, for the presence bar at the top of the screen. Null: idle, nothing shown. */
 export interface Presence {
-  state: "listening" | "looking" | "answering";
+  state: "listening" | "thinking" | "looking" | "answering";
   label: string;
   keys?: string;
   keysHint?: string;

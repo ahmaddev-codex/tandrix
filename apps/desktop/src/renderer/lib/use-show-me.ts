@@ -12,7 +12,7 @@ import { recentExchanges } from "./exchanges";
 import { markTried } from "./setup";
 import { speak, stopSpeaking } from "./speech";
 import { present, presentAnswer, presenceState } from "./presence";
-import { TALK_KEYS } from "../../shared/bridge";
+import { TALK_KEYS, type Presence } from "../../shared/bridge";
 
 export type ShowMePhase = "idle" | "listening" | "working";
 
@@ -87,9 +87,10 @@ export function useShowMe(jobId: string | undefined) {
     [],
   );
 
-  const run = useCallback(async (work: () => Promise<void>) => {
+  /** Does the work with the presence bar showing it's busy from the start. */
+  const run = useCallback(async (work: () => Promise<void>, busy: Presence) => {
     setPhase("working");
-    present({ state: "looking", label: "Looking at your screen" });
+    present(busy);
     try {
       await work();
     } catch (e) {
@@ -97,7 +98,8 @@ export function useShowMe(jobId: string | undefined) {
     } finally {
       setPhase("idle");
       // Work that ended without a reply leaves the screen clear.
-      if (presenceState() === "looking") present(null);
+      const shown = presenceState();
+      if (shown === "thinking" || shown === "looking") present(null);
     }
   }, []);
 
@@ -108,7 +110,11 @@ export function useShowMe(jobId: string | undefined) {
       setProblem(undefined);
       stopSpeaking();
       add({ speaker: "you", text: question.trim() });
-      void run(() => answer(jobId, question.trim(), shoot(jobId)));
+      void run(() => answer(jobId, question.trim(), shoot(jobId)), {
+        state: "looking",
+        label: "Looking at your screen",
+        text: question.trim(),
+      });
     },
     [jobId, run, answer, shoot],
   );
@@ -123,18 +129,25 @@ export function useShowMe(jobId: string | undefined) {
       if ((step ?? rec.ended()) === "nothing_heard") {
         rec.cancel();
         setPhase("idle");
-        return reply(NOTHING_HEARD);
+        // Shown, not spoken: answering silence with a voice would be odd.
+        add({ speaker: "tandrix", text: NOTHING_HEARD });
+        return presentAnswer(NOTHING_HEARD);
       }
-      await run(async () => {
-        const wav = await rec.stop();
-        // Upload the screenshot while the question is transcribed.
-        const shot = shoot(jobId);
-        shot.catch(() => undefined);
-        const heard = await api.transcribe(wav);
-        if (heard.status !== "heard") return reply(heard.message);
-        add({ speaker: "you", text: heard.transcript });
-        await answer(jobId, heard.transcript, shot);
-      });
+      await run(
+        async () => {
+          const wav = await rec.stop();
+          // Upload the screenshot while the question is transcribed.
+          const shot = shoot(jobId);
+          shot.catch(() => undefined);
+          const heard = await api.transcribe(wav);
+          if (heard.status !== "heard") return reply(heard.message);
+          add({ speaker: "you", text: heard.transcript });
+          // What was heard, so the user knows Tandrix got it while it looks.
+          present({ state: "looking", label: "Looking at your screen", text: heard.transcript });
+          await answer(jobId, heard.transcript, shot);
+        },
+        { state: "thinking", label: "Thinking" },
+      );
     },
     [jobId, run, shoot, answer],
   );
