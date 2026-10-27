@@ -12,13 +12,13 @@ import { TALK_KEYS } from "../../shared/bridge";
 import { useShowMe } from "../lib/use-show-me";
 
 const examples = [
-  "How do I add a layer mask in Photoshop?",
-  "Where do I change my Wi-Fi password?",
-  "How do I make a pivot table here?",
+  "Add a layer mask in Photoshop",
+  "Change my Wi-Fi password",
+  "Make a pivot table",
 ];
 /** Do it for me takes tasks, not questions. */
 const tasks = [
-  "Turn on notifications for Calendar",
+  "Turn on Calendar notifications",
   "Make this window full screen",
   "Sort this table by date",
 ];
@@ -42,13 +42,13 @@ export function ShowMe({ jobId }: { jobId?: string }) {
     <section className="panel-stack-4" aria-labelledby="show-me-title">
       <header className="panel-stack-1">
         <h2 className="heading-16" id="show-me-title">
-          {doing ? "Tell Tandrix what to do" : "Ask about your screen"}
+          {doing ? "What should Tandrix do?" : "What do you need help with?"}
         </h2>
         <p className="copy-13 panel-muted">
           {doing
-            ? "Tandrix clicks and types for you, one step at a time, and asks before anything that sends, pays or deletes. "
-            : "Tandrix points at the control and tells you what to do. "}
-          In any app, hold <kbd className="panel-kbd">{TALK_KEYS}</kbd>, ask out loud, and let go.
+            ? "Describe one task. Tandrix shows each action and asks before anything that sends, pays or deletes. "
+            : "Ask about the app in front of you. Tandrix points to the control and explains what to do. "}
+          Type below, or hold <kbd className="panel-kbd">{TALK_KEYS}</kbd> anywhere to talk.
         </p>
       </header>
       <ModeToggle
@@ -74,22 +74,24 @@ export function ShowMe({ jobId }: { jobId?: string }) {
       <form className="panel-stack-2" onSubmit={submit} noValidate>
         <div className="panel-ask">
           <Input
-            label="Your question"
+            label={doing ? "Task" : "Question"}
             value={question}
             onChange={setQuestion}
-            placeholder={doing ? "Turn on notifications for…" : "How do I…?"}
+            placeholder={doing ? "What would you like done?" : "What are you trying to do?"}
             disabled={busy}
           />
           <Button
-            iconOnly
             icon="mic"
+            size="sm"
             aria-label="Hold to talk"
             aria-pressed={s.phase === "listening"}
             disabled={s.phase === "working"}
             onPointerDown={() => void s.press()}
             onPointerUp={s.release}
             onPointerLeave={s.release}
-          />
+          >
+            Hold to talk
+          </Button>
         </div>
         {!s.turns.length && !question ? (
           <div className="ask-examples" aria-label="Examples">

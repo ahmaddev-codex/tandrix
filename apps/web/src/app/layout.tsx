@@ -8,9 +8,9 @@ import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 
 export const metadata: Metadata = {
-  title: "Tandrix — an AI engineer for the work in front of you",
+  title: "Tandrix — a clear next step for the work in front of you",
   description:
-    "On your phone, Tandrix guides physical work step by step and checks it with a photo. On your Mac, it points at what to click in any app.",
+    "On your phone, Tandrix guides physical work with checked steps. On your Mac, it points to the control you need in any app.",
 };
 
 export const viewport: Viewport = {

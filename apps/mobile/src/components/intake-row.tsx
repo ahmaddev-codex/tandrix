@@ -44,19 +44,19 @@ export function IntakeRow({
     <View
       testID={testID}
       style={{
-        gap: space["space-3"],
-        padding: space["space-4"],
+        gap: space["space-2"],
+        padding: space["space-3"],
         borderRadius: radius["radius-lg"],
         backgroundColor: t.color["background-100"],
         borderWidth: 1,
         borderColor: t.color.border,
       }}
     >
-      <View style={{ flexDirection: "row", gap: space["space-3"], alignItems: "flex-start" }}>
+      <View style={{ flexDirection: "row", gap: space["space-2"], alignItems: "flex-start" }}>
         <Icon name={icon} size={20} color="text-secondary" />
         <View style={{ flex: 1, gap: space["space-1"] }}>
-          <Text variant="heading-16">{title}</Text>
-          <Text variant="copy-14" color="text-secondary">
+          <Text variant="label-14">{title}</Text>
+          <Text variant="copy-13" color="text-secondary">
             {body}
           </Text>
         </View>

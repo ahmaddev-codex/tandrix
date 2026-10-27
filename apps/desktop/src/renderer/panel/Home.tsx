@@ -7,6 +7,7 @@ import { activeJob } from "../lib/active-job";
 import { api } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { desktopStep, finished, stepOf } from "../lib/desktop-step";
+import { isLocal } from "../lib/env";
 import { useHandoffsToMac, useJobChanges, type IncomingHandoff } from "../lib/realtime";
 import { DesktopStep, type ScreenCheck } from "./DesktopStep";
 import { Setup, useSetupStatus } from "./Setup";
@@ -224,15 +225,17 @@ export function Home() {
           <ShowMe />
         )}
       </div>
-      <footer className="panel-foot">
-        <Button
-          variant="secondary"
-          icon="pointer"
-          onClick={() => void window.tandrix.overlay.testPointer()}
-        >
-          Test the pointer
-        </Button>
-      </footer>
+      {isLocal ? (
+        <footer className="panel-foot">
+          <Button
+            variant="secondary"
+            icon="pointer"
+            onClick={() => void window.tandrix.overlay.testPointer()}
+          >
+            Test the pointer
+          </Button>
+        </footer>
+      ) : null}
     </main>
   );
 }

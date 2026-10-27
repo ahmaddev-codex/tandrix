@@ -1,6 +1,4 @@
-// Start a project with everything at once, so Tandrix doesn't have to come back with questions:
-// the goal, then (all optional) the label, the parts, where the work stands, the manual and notes.
-// "Set up project" then does it all in one pass (lib/setup.ts) and opens the project.
+// Start with the goal; reference photos, manuals and notes are optional context for setup.
 import { space } from "@tandrix/ui";
 import { Button, Icon, Input, Notice, Text, useTheme, type IconProps } from "@tandrix/ui/native";
 import * as ImagePicker from "expo-image-picker";
@@ -222,9 +220,9 @@ export default function NewJob() {
         ) : null}
 
         <View style={{ gap: space["space-1"], marginTop: space["space-2"] }}>
-          <Text variant="heading-18">Show Tandrix what you have</Text>
+          <Text variant="heading-18">Add details</Text>
           <Text variant="copy-14" color="text-secondary">
-            All optional. Each thing you add now is a question Tandrix won't have to ask later.
+            Optional. Your goal is enough to get started.
           </Text>
         </View>
 
@@ -232,7 +230,7 @@ export default function NewJob() {
           testID="intake-label"
           icon="camera"
           title="The label or box"
-          body="The nameplate, sticker or packaging. Tandrix reads the make and model and finds the manual."
+          body="Read the model and look for the right manual."
           canAdd={!label}
           onAdd={async () => setLabel((await addPhotos(false))[0] ?? label)}
           thumbs={label ? thumbs([label], "Label photo") : []}
@@ -242,7 +240,7 @@ export default function NewJob() {
           testID="intake-now"
           icon="image"
           title="Where it stands now"
-          body="What's in front of you. The steps start from here and skip what's done."
+          body="Start from where the work is now and skip what's done."
           canAdd={now.length < MAX_NOW}
           onAdd={async () => {
             const more = await addPhotos(true);
@@ -258,7 +256,7 @@ export default function NewJob() {
           body={
             pdf || pages.length
               ? "The steps come from this, with the page for each."
-              : "A PDF from Files, or photos of the pages. Without one, Tandrix searches for it."
+              : "Choose a PDF or photograph the pages. If you skip it, Tandrix can search."
           }
           canAdd={!pdf && pages.length < MAX_PAGES}
           addLabel={pages.length ? "Add pages" : "Add"}
@@ -293,7 +291,7 @@ export default function NewJob() {
           testID="intake-parts"
           icon="camera"
           title="The parts, laid out"
-          body="Everything in one photo. Tandrix checks it against the parts list and says what's missing."
+          body="Check what you have against the parts list."
           canAdd={!parts}
           onAdd={async () => setParts((await addPhotos(false))[0] ?? parts)}
           thumbs={parts ? thumbs([parts], "Parts photo") : []}
@@ -303,7 +301,7 @@ export default function NewJob() {
           testID="intake-notes"
           icon="file"
           title="Anything else"
-          body="What you're working with, what's already done, what you want to end up with."
+          body="Add context or describe how you want the job to end."
         >
           <Input
             testID="intake-notes-input"
@@ -317,7 +315,7 @@ export default function NewJob() {
         </IntakeRow>
 
         <Button variant="primary" block onPress={start} testID="create-job">
-          Set up project
+          Create project
         </Button>
       </ScrollView>
     </KeyboardAvoidingView>

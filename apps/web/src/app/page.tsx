@@ -1,64 +1,41 @@
+// The Tandrix site: what it does on the bench (phone) and on screen (Mac), shown with the real
+// product: design-system components, a real part outline from a test run, and real photos.
 import {
   CheckResult,
   HandoffBanner,
   Icon,
-  JobReport,
-  StatusChip,
-  StepRow,
-  VoiceTranscript,
+  ModeToggle,
+  StepCard,
+  StepVisual,
 } from "@tandrix/ui/web";
 import type { IconName } from "@tandrix/ui";
-import { PhoneMock } from "../components/PhoneMock";
-import { ScreenMock } from "../components/ScreenMock";
+import Image from "next/image";
+import { AppWindow } from "../components/AppWindow";
+import { Viewfinder } from "../components/Viewfinder";
 import styles from "./page.module.css";
 
-const phoneSteps: Array<{ title: string; body: string }> = [
-  {
-    title: "Say what you're doing",
-    body: "One sentence is enough: assemble a 12U home server rack, replace the seal on a pump. Scan a nameplate if there's equipment, and Tandrix finds its manual.",
-  },
-  {
-    title: "Get steps you can check",
-    body: "Every step cites the manual page it came from. Steps without a source are labelled Generic, so you always know what you're trusting.",
-  },
-  {
-    title: "See it on the real thing",
-    body: "Point the camera at the work. Tandrix marks the part the step is about, on your own photo.",
-  },
-  {
-    title: "Prove it's done",
-    body: "Take a photo when you finish a step. Tandrix says whether it looks right and why, and says so plainly when a photo can't show it.",
-  },
+const intake: Array<{ title: string; note: string }> = [
+  { title: "Read the label", note: "Raspberry Pi 5" },
+  { title: "Get the manual", note: "Build kit, 22 pages" },
+  { title: "Write the steps", note: "10 steps, 9 from the manual" },
+  { title: "Check the parts", note: "Ethernet cable missing" },
 ];
 
-const macPoints: Array<{ icon: IconName; title: string; body: string }> = [
-  {
-    icon: "pointer",
-    title: "Points at the control",
-    body: "Ask how to do something in the app you're in. Tandrix looks at your screen and moves a pointer to what you need, with what to do next.",
-  },
-  {
-    icon: "mic",
-    title: "Ask out loud",
-    body: "Press ⌃⌥Space anywhere, ask, press it again. The answer is spoken and shown.",
-  },
-  {
-    icon: "eyeOff",
-    title: "Keeps nothing it doesn't need",
-    body: "A question outside a project is answered and forgotten: the screenshot isn't stored.",
-  },
-];
-
-const safety: Array<{ icon: IconName; title: string; body: string }> = [
+const careful: Array<{ icon: IconName; title: string; body: string }> = [
   {
     icon: "power",
-    title: "Make it safe first",
-    body: "Steps with a hazard wait for you to confirm the power is isolated, the pressure released or the parts cool.",
+    title: "Safe before it starts",
+    body: "A step that needs the power off or the pressure released waits until you confirm it.",
   },
   {
     icon: "stop",
     title: "Knows where to stop",
-    body: "Tandrix won't guide live electrical, gas or refrigerant work, and says who should do it instead.",
+    body: "It won't guide live electrical, gas or refrigerant work, and says who should do it instead.",
+  },
+  {
+    icon: "hand",
+    title: "Asks before it acts",
+    body: "Doing it for you, Tandrix asks before anything that sends, pays or deletes. Move the mouse and you have control back.",
   },
   {
     icon: "check",
@@ -76,236 +53,258 @@ export default function Home() {
             Tandrix
           </a>
           <nav aria-label="Sections" className={styles.navLinks}>
-            <a href="#phone">Phone</a>
-            <a href="#mac">Mac</a>
-            <a href="#evidence">Evidence</a>
-            <a href="#safety">Safety</a>
+            <a href="#bench">Phone</a>
+            <a href="#screen">Mac</a>
+            <a href="#careful">Safety</a>
           </nav>
         </div>
       </header>
 
       <main id="top">
-        <section className={styles.hero}>
-          <div className={styles.heroText}>
-            <h1 className={styles.headline}>An AI engineer for the work in front of you.</h1>
+        <section className={styles.hero} aria-labelledby="hero-title">
+          <div className={styles.heroCopy}>
+            <h1 id="hero-title" className="display-48">
+              A clear next step, right where you need it.
+            </h1>
             <p className={styles.lead}>
-              On your phone, Tandrix guides physical work step by step and checks it with a photo.
-              On your Mac, it points at what to click in any app.
+              On your phone, Tandrix turns a goal and a manual into checked steps. On your Mac, ask
+              about the app in front of you and it points to what to do.
             </p>
-            <div className={styles.actions}>
-              <a href="#phone" className="tx-btn tx-btn-primary tx-btn-lg">
-                See how it works
+            <div className={styles.ctas}>
+              <a className="tx-btn tx-btn-primary tx-btn-lg" href="#bench">
+                See phone guidance
               </a>
-              <a href="#safety" className="tx-btn tx-btn-tertiary tx-btn-lg">
-                How it keeps you safe
+              <a className="tx-btn tx-btn-secondary tx-btn-lg" href="#screen">
+                See Mac guidance
               </a>
             </div>
+            <p className={styles.small}>
+              For iPhone and Mac. A manual helps, but you can start without one.
+            </p>
           </div>
-          <div className={styles.heroArt}>
-            <div className={styles.heroScreen}>
-              <ScreenMock />
-            </div>
-            <div className={styles.heroPhone}>
-              <PhoneMock />
-            </div>
+          <Viewfinder />
+        </section>
+
+        <section id="bench" className={styles.bench} aria-labelledby="bench-title">
+          <div className={styles.benchPhoto}>
+            <Image
+              src="/photos/technician-rack.jpg"
+              alt="A technician in a hi-vis vest working at an open server rack, tools on the floor"
+              fill
+              sizes="(max-width: 900px) 100vw, 42vw"
+              className={styles.cover}
+            />
+          </div>
+          <div className={styles.benchCopy}>
+            <h2 id="bench-title" className="heading-32">
+              Build, repair, install. One clear step at a time.
+            </h2>
+            <p className={styles.body}>
+              Building a home server, fitting a pump seal, wiring a rack: say what you're doing and
+              show Tandrix what you have. It does the reading, so you can keep your hands on the
+              work.
+            </p>
           </div>
         </section>
 
-        <section id="phone" className={styles.section}>
-          <div className={styles.sectionHead}>
-            <p className={styles.kicker}>
-              <Icon name="phone" size={20} /> On your phone
-            </p>
-            <h2 className={styles.title}>Physical work, one checked step at a time.</h2>
-          </div>
-          <div className={styles.split}>
-            <ol className={styles.steps}>
-              {phoneSteps.map((s, i) => (
-                <li key={s.title}>
-                  <span className={styles.stepNo}>{i + 1}</span>
-                  <div>
-                    <h3 className={styles.itemTitle}>{s.title}</h3>
-                    <p className={styles.itemBody}>{s.body}</p>
-                  </div>
-                </li>
-              ))}
-            </ol>
-            <div className={styles.stack}>
-              <StepRow
-                index={1}
-                title="Check every part is there"
-                status="verified"
-                source="Manual p.4"
-              />
-              <StepRow
-                index={2}
-                title="Fit the cage nuts"
-                status="confirmed"
-                source="Manual p.6, fig. 2"
-              />
-              <StepRow
+        <ol className={styles.sequence} aria-label="How a project goes">
+          <li className={styles.stage}>
+            <div className={styles.stageText}>
+              <span className={styles.num}>1</span>
+              <h3 className="heading-18">Show it what you have</h3>
+              <p className={styles.body}>
+                A photo of the label, the parts laid out, where you've got to. Tandrix reads the
+                model, finds the manual and checks nothing's missing, before you pick up a tool.
+              </p>
+            </div>
+            <div className={styles.stageVisual}>
+              <div className={styles.intake}>
+                <Image
+                  src="/photos/fitting-ssd.jpg"
+                  alt="Hands fitting an SSD into a computer case"
+                  width={2000}
+                  height={1333}
+                  sizes="(max-width: 900px) 100vw, 520px"
+                  className={styles.intakePhoto}
+                />
+                <ul className={styles.stages} aria-label="Setting up">
+                  {intake.map((s, i) => (
+                    <li key={s.title}>
+                      <Icon name={i === 3 ? "alert" : "check"} size={20} />
+                      <span>
+                        <b>{s.title}</b>
+                        <span className={i === 3 ? styles.warn : undefined}>{s.note}</span>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </li>
+
+          <li className={styles.stage}>
+            <div className={styles.stageText}>
+              <span className={styles.num}>2</span>
+              <h3 className="heading-18">Every step from the manual</h3>
+              <p className={styles.body}>
+                One action per step, with the page it came from and the picture that goes with it.
+                Steps the manual doesn't cover say so.
+              </p>
+            </div>
+            <div className={styles.stageVisual}>
+              <StepCard
                 index={3}
-                title="Fit the rails for the server"
-                status="progress"
-                source="Manual p.7"
+                total={10}
+                title="Press both pins down until they click"
+                body="Hold the cooler over the board with the fan above the processor and the pins over the two holes."
+                status="pending"
+                statusLabel="To do"
+                source="Manual p.1"
+                visual={
+                  <StepVisual
+                    items={[
+                      {
+                        id: "manual",
+                        label: "Manual p.1",
+                        source: "Manual p.1",
+                        sourceKind: "manual",
+                        src: "/photos/kit-sheet-p1.jpg",
+                        alt: "The kit sheet's page 1: what's in the box and how to fit the cooler",
+                        aspectRatio: 1240 / 1754,
+                      },
+                    ]}
+                  />
+                }
+              />
+            </div>
+          </li>
+
+          <li className={styles.stage}>
+            <div className={styles.stageText}>
+              <span className={styles.num}>3</span>
+              <h3 className="heading-18">It checks your work</h3>
+              <p className={styles.body}>
+                Take a photo when you're done. Tandrix says whether it looks right and why, and says
+                plainly when a photo can't show it.
+              </p>
+            </div>
+            <div className={`${styles.stageVisual} ${styles.checks}`}>
+              <CheckResult
+                result="fail"
+                reason="The Active Cooler isn't on the board yet. Fit it over the processor, then check again."
+                evidence="Photo 10:41"
+                thumbnail={
+                  <Image
+                    src="/photos/pi5-board.jpg"
+                    alt="The bare board"
+                    width={176}
+                    height={130}
+                  />
+                }
               />
               <CheckResult
                 result="pass"
-                title="Step 1 looks right"
-                reason="All 14 parts are laid out: rails, screws and cage nuts match the parts list."
+                reason="The cooler sits flat over the processor with both pins through the board."
                 evidence="Photo 10:46"
+                thumbnail={
+                  <Image
+                    src="/photos/pi5-board-cooler.jpg"
+                    alt="The board with the cooler fitted"
+                    width={176}
+                    height={130}
+                  />
+                }
               />
+            </div>
+          </li>
+        </ol>
+
+        <section id="screen" className={styles.screen} aria-labelledby="screen-title">
+          <div className={styles.screenCopy}>
+            <h2 id="screen-title" className="heading-32">
+              Ask about the app. Tandrix shows you where to click.
+            </h2>
+            <p className={styles.body}>
+              Photoshop, a spreadsheet, your router's settings: ask out loud and let go. Tandrix
+              looks at your screen, points at the control, and tells you what to do. Nothing else on
+              your screen changes.
+            </p>
+          </div>
+          <AppWindow
+            presence={{
+              state: "answering",
+              label: "Tandrix",
+              text: "Click Choose storage to pick your card.",
+            }}
+            pointer={{ x: "70.2%", y: "55.4%", caption: "Choose storage" }}
+          />
+          <div className={styles.screenPair}>
+            <figure className={styles.photoCard}>
+              <Image
+                src="/photos/editing-app.jpg"
+                alt="A photo editing app open on a laptop"
+                width={2000}
+                height={1333}
+                sizes="(max-width: 900px) 100vw, 480px"
+                className={styles.photoFill}
+              />
+              <figcaption>Learn the app you're in, from the screen you're on.</figcaption>
+            </figure>
+            <div className={styles.doIt}>
+              <h3 className="heading-18">Let Tandrix take the action, one step at a time.</h3>
+              <p className={styles.body}>
+                Switch on Do it for me and say what you want done: turn on notifications, sort a
+                table, add an appointment. Tandrix opens the app it needs and works one step at a
+                time, showing each click a second before it happens.
+              </p>
+              <ModeToggle mode="do" />
             </div>
           </div>
         </section>
 
-        <section id="mac" className={styles.section}>
-          <div className={styles.sectionHead}>
-            <p className={styles.kicker}>
-              <Icon name="laptop" size={20} /> On your Mac
-            </p>
-            <h2 className={styles.title}>Learn any app by being shown, not told.</h2>
-          </div>
-          <div className={styles.splitReverse}>
-            <div className={styles.stack}>
-              <ScreenMock caption="Click Add layer mask, then paint with black to hide" />
-              <VoiceTranscript
-                turns={[
-                  { speaker: "you", text: "How do I hide part of this layer without erasing it?" },
-                  {
-                    speaker: "tandrix",
-                    text: "Click Add layer mask at the bottom of the Layers panel, then paint with black where you want it hidden.",
-                  },
-                ]}
-              />
-            </div>
-            <ul className={styles.points}>
-              {macPoints.map((p) => (
-                <li key={p.title}>
-                  <Icon name={p.icon} size={20} />
-                  <div>
-                    <h3 className={styles.itemTitle}>{p.title}</h3>
-                    <p className={styles.itemBody}>{p.body}</p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </section>
-
-        <section className={styles.section}>
-          <div className={styles.sectionHead}>
-            <h2 className={styles.title}>When a project needs both, it moves with you.</h2>
-            <p className={styles.sectionLead}>
-              The rack is built; the server needs setting up. Send the step to your Mac and pick it
-              up there, with the same project and the same record.
+        <section className={styles.handoff} aria-labelledby="handoff-title">
+          <div>
+            <h2 id="handoff-title" className="heading-24">
+              Starts on the phone, finishes on the Mac.
+            </h2>
+            <p className={styles.body}>
+              When a job reaches a step done on a computer, like writing the operating system to the
+              card, send it to your Mac. It opens there at that step, and your phone shows it ticked
+              off when it's done.
             </p>
           </div>
-          <div className={styles.handoff}>
-            <figure>
-              <figcaption>Phone</figcaption>
-              <HandoffBanner
-                state="offer"
-                step={6}
-                stepTitle="Install the operating system"
-                size="md"
-              />
-            </figure>
-            <figure>
-              <figcaption>Mac</figcaption>
-              <HandoffBanner
-                state="incoming"
-                step={6}
-                job="Home server rack"
-                stepTitle="Install the operating system"
-              />
-            </figure>
-          </div>
+          <HandoffBanner state="offer" step={5} stepTitle="Write Raspberry Pi OS to the card" />
         </section>
 
-        <section id="evidence" className={styles.section}>
-          <div className={styles.sectionHead}>
-            <h2 className={styles.title}>A record you can hand to someone.</h2>
-            <p className={styles.sectionLead}>
-              Every step keeps its source, its status and the photo or screenshot behind it. Share a
-              read-only report with a link.
-            </p>
-          </div>
-          <div className={styles.split}>
-            <ul className={styles.legend}>
-              <li>
-                <StatusChip status="verified" />
-                <span>A photo or screen check passed.</span>
-              </li>
-              <li>
-                <StatusChip status="confirmed" />
-                <span>You marked it done; no check could show it.</span>
-              </li>
-              <li>
-                <StatusChip status="attention" />
-                <span>A check found something to fix.</span>
-              </li>
-              <li>
-                <StatusChip status="blocked" />
-                <span>Waiting on a missing part.</span>
-              </li>
-            </ul>
-            <JobReport
-              title="Home server rack"
-              meta="25 Oct 2026, 6 steps"
-              counts={{ verified: 3, confirmed: 2, attention: 1 }}
-              steps={[
-                {
-                  index: 1,
-                  title: "Check every part is there",
-                  status: "verified",
-                  source: "Manual p.4",
-                  time: "10:46",
-                },
-                {
-                  index: 2,
-                  title: "Fit the cage nuts",
-                  status: "confirmed",
-                  source: "Manual p.6",
-                  time: "10:58",
-                },
-                {
-                  index: 3,
-                  title: "Fit the rails for the server",
-                  status: "attention",
-                  source: "Manual p.7",
-                  time: "11:12",
-                },
-              ]}
-            />
-          </div>
-        </section>
-
-        <section id="safety" className={styles.section}>
-          <div className={styles.sectionHead}>
-            <h2 className={styles.title}>Careful by design.</h2>
-          </div>
-          <ul className={styles.grid3}>
-            {safety.map((s) => (
-              <li key={s.title}>
-                <Icon name={s.icon} size={24} />
-                <h3 className={styles.itemTitle}>{s.title}</h3>
-                <p className={styles.itemBody}>{s.body}</p>
+        <section id="careful" className={styles.careful} aria-labelledby="careful-title">
+          <h2 id="careful-title" className="heading-24">
+            Careful by default
+          </h2>
+          <ul className={styles.carefulList}>
+            {careful.map((c) => (
+              <li key={c.title}>
+                <Icon name={c.icon} size={20} />
+                <h3 className="heading-16">{c.title}</h3>
+                <p className={styles.body}>{c.body}</p>
               </li>
             ))}
           </ul>
         </section>
+
+        <section className={styles.closing} aria-labelledby="closing-title">
+          <Image src="/photos/desk-setup.jpg" alt="" fill sizes="100vw" className={styles.cover} />
+          <div className={styles.closingInner}>
+            <h2 id="closing-title" className="heading-32">
+              Bring an engineer to your next job.
+            </h2>
+            <p>Tandrix is in early testing on iPhone and Mac.</p>
+          </div>
+        </section>
       </main>
 
       <footer className={styles.footer}>
-        <div className={styles.footerInner}>
-          <span className={styles.wordmark}>Tandrix</span>
-          <p>
-            Built for the Meta Global AI Developer Hackathon, 2026. Runs on Meta&apos;s Muse Spark,
-            SAM and Voice models. Tandrix doesn&apos;t certify that work is safe or correctly
-            installed.
-          </p>
-        </div>
+        <span>Tandrix</span>
+        <a href="/photos/CREDITS.md">Photo credits</a>
       </footer>
     </>
   );

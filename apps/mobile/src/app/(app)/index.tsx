@@ -87,7 +87,7 @@ export default function Jobs() {
           />
         }
         ListHeaderComponent={
-          <View style={{ gap: space["space-6"], marginBottom: space["space-2"] }}>
+          <View style={{ gap: space["space-5"], marginBottom: space["space-2"] }}>
             {error ? (
               <Notice
                 tone="error"
@@ -100,12 +100,11 @@ export default function Jobs() {
                 {error}
               </Notice>
             ) : null}
-            <View style={{ gap: space["space-4"] }}>
+            <View style={{ gap: space["space-3"] }}>
               <View style={{ gap: space["space-2"] }}>
                 <Text variant="heading-24">What are you building or fixing?</Text>
                 <Text variant="field-body" color="text-secondary">
-                  Tandrix writes the steps, shows you each one on the real parts, and checks your
-                  work with a photo.
+                  Describe the job in a sentence. Add a photo or manual if you have one.
                 </Text>
               </View>
               <Button
@@ -116,33 +115,30 @@ export default function Jobs() {
               >
                 Start a project
               </Button>
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space["space-2"] }}>
-                {exampleGoals.map((goal) => (
-                  <Button
-                    key={goal}
-                    variant="secondary"
-                    size="md"
-                    onPress={() => router.push({ pathname: "/new-job", params: { goal } })}
-                  >
-                    {goal}
-                  </Button>
-                ))}
+              <View style={{ gap: space["space-2"] }}>
+                <Text variant="label-12" color="text-tertiary">
+                  Or try an example
+                </Text>
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space["space-2"] }}>
+                  {exampleGoals.map((goal) => (
+                    <Button
+                      key={goal}
+                      variant="secondary"
+                      size="md"
+                      onPress={() => router.push({ pathname: "/new-job", params: { goal } })}
+                    >
+                      {goal}
+                    </Button>
+                  ))}
+                </View>
               </View>
             </View>
             {jobs?.length ? (
               <Text variant="label-14" color="text-secondary">
-                Recent projects
+                Your projects
               </Text>
             ) : null}
           </View>
-        }
-        ListEmptyComponent={
-          jobs && !error ? (
-            <Text variant="copy-14" color="text-secondary">
-              Your projects show up here. Software to set up as well? Tandrix on your Mac picks up
-              where the phone leaves off.
-            </Text>
-          ) : undefined
         }
         renderItem={({ item }) => (
           <Pressable
@@ -150,24 +146,30 @@ export default function Jobs() {
             accessibilityRole="button"
             accessibilityLabel={`${item.title}, ${statusLabel[item.status]}`}
             style={({ pressed }) => ({
-              padding: space["space-4"],
-              borderRadius: radius["radius-lg"],
+              padding: space["space-3"],
+              borderRadius: radius["radius-md"],
               backgroundColor: pressed ? t.color["gray-100"] : t.color["background-100"],
               borderWidth: 1,
               borderColor: t.color.border,
-              gap: space["space-2"],
+              gap: space["space-1"],
             })}
           >
-            <Text variant="heading-16" numberOfLines={2}>
+            <Text variant="label-14" numberOfLines={2}>
               {item.title}
             </Text>
             <View style={{ flexDirection: "row", alignItems: "center", gap: space["space-2"] }}>
               <Icon
-                name={item.status === "completed" ? "check" : "progress"}
+                name={
+                  item.status === "completed"
+                    ? "check"
+                    : item.status === "stopped"
+                      ? "stop"
+                      : "progress"
+                }
                 color="text-secondary"
               />
               <Text variant="copy-13" color="text-secondary">
-                {statusLabel[item.status]}, started {when(item.createdAt)}
+                {statusLabel[item.status]} · started {when(item.createdAt)}
               </Text>
             </View>
           </Pressable>

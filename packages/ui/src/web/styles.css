@@ -35,6 +35,7 @@
   line-height: 18px;
   font-weight: 500;
   border: 0;
+  text-decoration: none;
   cursor: pointer;
   white-space: nowrap;
   transition:
@@ -372,12 +373,14 @@ button.tx-visual-frame:focus-visible {
 .tx-ptr {
   position: absolute;
   pointer-events: none;
+  cursor: pointer;
 }
-.tx-ptr svg {
-  display: block;
+.tx-ptr .tx-ptr-hand {
   width: 28px;
   height: 28px;
-  overflow: visible;
+  color: var(--highlight);
+  filter: drop-shadow(0 0 1px var(--highlight-halo)) drop-shadow(0 1px 1px var(--highlight-keyline));
+  transform: rotate(-45deg);
 }
 .tx-ptr-cap {
   position: absolute;

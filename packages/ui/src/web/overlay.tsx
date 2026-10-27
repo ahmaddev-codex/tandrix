@@ -5,8 +5,6 @@ import type { ControlMode } from "../shared";
 import { cx } from "./cx";
 import { Button, Icon } from "./primitives";
 
-const POINTER_PATH = "M3 2 L3 22 L8.5 16.8 L12.4 25 L16 23.4 L12.2 15.4 L19.5 15.4 Z";
-
 export interface PointerBuddyProps {
   /** Position inside the overlay window, already mapped from screenshot pixels and display scale. */
   x: number | string;
@@ -17,22 +15,7 @@ export interface PointerBuddyProps {
 export function PointerBuddy({ x, y, caption }: PointerBuddyProps) {
   return (
     <div className="tx-ptr" style={{ left: x, top: y }} role="status" aria-live="polite">
-      <svg viewBox="0 0 28 28" aria-hidden>
-        <path
-          d={POINTER_PATH}
-          fill="var(--highlight)"
-          stroke="var(--highlight-halo)"
-          strokeWidth={2}
-          strokeLinejoin="round"
-        />
-        <path
-          d={POINTER_PATH}
-          fill="none"
-          stroke="var(--highlight-keyline)"
-          strokeWidth={0.75}
-          strokeLinejoin="round"
-        />
-      </svg>
+      <Icon name="hand" size={24} className="tx-ptr-hand" />
       {caption ? <div className="tx-ptr-cap">{caption}</div> : null}
     </div>
   );
