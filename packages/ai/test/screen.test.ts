@@ -106,3 +106,41 @@ describe("askScreen", () => {
     expect(r.safetyChecks).toBe(1);
   });
 });
+
+describe("askScreen replies", () => {
+  const ask = async (...replies: string[]) => {
+    const s = scriptedFetch(replies.map((r) => response([message(r)])));
+    const client = new MetaClient({ apiKey: "k", fetch: s.fetch, sleep: noSleep });
+    const r = await askScreen(client, "muse-spark-1.3", { screenshot, question: "How?" });
+    return { reply: r.reply, calls: s.calls };
+  };
+
+  it("rewrites narration as the instruction, with one more call", async () => {
+    const r = await ask(
+      "I’ll highlight the storage button so you can pick your SD card.",
+      "Click Choose storage to pick your SD card.",
+    );
+    expect(r.reply).toBe("Click Choose storage to pick your SD card.");
+    expect(r.calls).toHaveLength(2);
+    expect(r.calls[1]!.body.instructions).toBe(prompts.asInstruction);
+    expect(r.calls[1]!.body.tools).toBeUndefined();
+  });
+
+  it("leaves an instruction alone", async () => {
+    const r = await ask("Click Choose storage.");
+    expect(r.reply).toBe("Click Choose storage.");
+    expect(r.calls).toHaveLength(1);
+  });
+
+  it("keeps the first reply when the rewrite still narrates", async () => {
+    const r = await ask("Let me point at Save.", "I'll point at Save for you.");
+    expect(r.reply).toBe("Let me point at Save.");
+  });
+
+  it("never reads out leaked tool-call markup", async () => {
+    const r = await ask(
+      '<atem:function_calls><atem:invoke name="computer.stop"><atem:parameter name="answer">Say which button you need.</atem:parameter></atem:invoke></atem:function_calls>',
+    );
+    expect(r.reply).toBe("Say which button you need.");
+  });
+});

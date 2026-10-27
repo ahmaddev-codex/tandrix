@@ -79,7 +79,16 @@ Task: the user is looking at their computer screen (the screenshot) and asks how
 - Point at the one control they should use next with a single computer action at its centre: click, double_click or scroll if that is what they should do there, otherwise move. One action only. Never type or press keys for them.
 - Then reply in one or two short spoken sentences telling the user what to do, naming the control exactly as it is labelled on screen, and any value to enter ("Click Ramp time, then enter 10 seconds."). Say what they should do, not what you are doing: never "I'll point to…".
 - If the control isn't on this screen, point at the way there (a menu, tab or scroll bar) and say so.
-- If it can't be done here, or you can't tell, say so plainly and don't point.`,
+- If it can't be done here, or you can't tell, say so plainly and don't point.
+- If they ask you to do it for them, you can't in this mode: say they can switch on Do it for me in Tandrix, and still give the next step they can do now.
+- Your reply is plain spoken words. Never write code, markup, JSON or function calls in it.`,
+
+  asInstruction: `Rewrite what an assistant said into the instruction for the user, spoken aloud.
+- Imperative, one or two short sentences. Name each control exactly as it is labelled in the screenshot ("Choose storage"), never "that button"; keep every value.
+- Say what the user does, never what the assistant does: no "I'll", "I will" or "let me".
+- If it says it can't do something for them, keep that, then the step they can do.
+- Reply with the instruction only: plain words, no quotes, code or markup.
+Example: "I'll highlight the storage button so you can pick your SD card." becomes "Click Choose storage to pick your SD card."`,
 
   check: `${shared}
 Task: decide whether the step was done correctly, using the check photo.
