@@ -1,79 +1,11 @@
-# T17 part 1 of 3 (run by offline/run.sh): a job with steps, open on step 3, while online.
+# T17 part 1 of 3 (run by offline/run.sh): the seeded project, open on step 2, while online.
+# Needs JOB_ID and JOB_TITLE; no model calls.
 appId: app.tandrix.mobile
 env:
-  JOB_TITLE: Offline job e2e ${RUN_ID}
+  STEP: "Step 2: Fit the Active Cooler"
 ---
-- addMedia:
-    - ../assets/sample-part.jpg
-- launchApp:
-    permissions:
-      all: allow
-      camera: deny
+- launchApp
 - runFlow: ../subflows/open-app.yaml
-- runFlow: ../subflows/new-job.yaml
-- tapOn:
-    id: job-title
-- inputText: ${JOB_TITLE}
-- tapOn:
-    id: create-job
-# Starting a project opens it.
-- extendedWaitUntil:
-    visible:
-      id: photograph-nameplate
-    timeout: 15000
-- tapOn:
-    id: photograph-nameplate
-- extendedWaitUntil:
-    visible:
-      id: choose-photo
-    timeout: 30000
-- tapOn:
-    id: choose-photo
-- extendedWaitUntil:
-    visible:
-      text: "Photo, .*"
-    timeout: 15000
-- tapOn:
-    text: "Photo, .*"
-    index: 0
-- tapOn:
-    id: use-photo
-- extendedWaitUntil:
-    visible:
-      id: identify-banner
-    timeout: 60000
-- tapOn:
-    id: asset-make
-- eraseText: 120
-- inputText: FlowSet
-- tapOn:
-    id: asset-model
-- eraseText: 120
-- inputText: OFF-${RUN_ID}
-- hideKeyboard
-- tapOn:
-    id: save-asset
-- extendedWaitUntil:
-    visible:
-      id: generic-steps
-    timeout: 15000
-- tapOn:
-    id: generic-steps
-- extendedWaitUntil:
-    visible:
-      id: step-list
-    timeout: 60000
-- scrollUntilVisible:
-    element: "Step 3: Fit the impeller,.*"
-    direction: DOWN
-    # Centred, so the fixed bottom bar never covers the row being tapped.
-    centerElement: true
-# A tap while the list is still settling can be lost: retry until the step opens.
-- retry:
-    maxRetries: 2
-    commands:
-      - tapOn: "Step 3: Fit the impeller,.*"
-      - extendedWaitUntil:
-          visible:
-            id: step-card
-          timeout: 10000
+- runFlow: ../subflows/open-job.yaml
+- runFlow: ../subflows/open-step.yaml
+- takeScreenshot: offline-step-online

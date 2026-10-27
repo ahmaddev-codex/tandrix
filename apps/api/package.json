@@ -10,7 +10,8 @@
     "build": "esbuild src/server.ts src/pdf-render-worker.ts --bundle --platform=node --format=esm --target=node22 --outdir=dist --sourcemap --external:pdfjs-dist --external:@napi-rs/canvas --banner:js=\"import { createRequire as __tandrixRequire } from 'node:module'; const require = __tandrixRequire(import.meta.url);\"",
     "start": "node --enable-source-maps dist/server.js",
     "spend": "tsx --env-file-if-exists=../../.env.local scripts/spend.ts",
-    "live-check": "tsx --env-file=../../.env.local scripts/live-check.ts"
+    "live-check": "tsx --env-file=../../.env.local scripts/live-check.ts",
+    "e2e:seed": "tsx --env-file=../../.env.local scripts/e2e-seed.ts"
   },
   "dependencies": {
     "@hono/node-server": "2.1.5",

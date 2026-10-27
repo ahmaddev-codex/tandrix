@@ -313,7 +313,8 @@ body { margin: 0; background: var(--background-100); color: var(--text); font-fa
 .tx-steprow:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
 .tx-steprow-num { font-family: var(--font-mono); font-size: 14px; line-height: 20px; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
 .tx-steprow-main { display: grid; gap: var(--space-2); min-width: 0; }
-.tx-steprow-title { font-size: 14px; line-height: 20px; font-weight: 600; letter-spacing: -0.28px; }
+.tx-steprow-head { display: flex; align-items: center; gap: var(--space-2); }
+.tx-steprow-title { flex: 1; min-width: 0; font-size: 14px; line-height: 20px; font-weight: 600; letter-spacing: -0.28px; }
 .tx-steprow-chips { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 
 /* HighlightCorrection: confirm or correct one highlight. */

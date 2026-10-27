@@ -1,8 +1,9 @@
-// Plays the Mac for the handoff flow, through the API as the local test user: creates a job with
-// the fixture steps, or (with a job id) waits for the phone's handoff, starts step 5 and checks
-// it on a screenshot until it's verified (the fixture checker fails the first check).
-//   node mac.mjs create            → prints the job id and title
-//   node mac.mjs work <jobId>      → exits 0 once step 5 is verified
+import { readFileSync } from "node:fs";
+
+// Plays the Mac for the handoff flow, through the API as the local test user: waits for the
+// phone's handoff, starts the desktop step and checks it on the real model with a screenshot of
+// the synthetic OS Writer showing a finished write (rendered by run.sh).
+//   node mac.mjs <jobId> <screenshot.png>   → exits 0 once the step is verified
 const api = process.env.API_PUBLIC_URL ?? "http://localhost:8787";
 const sb = process.env.SUPABASE_URL;
 const key = process.env.SUPABASE_PUBLISHABLE_KEY;
@@ -32,19 +33,8 @@ const call = async (method, path, body) => {
 };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-const [mode, jobId] = process.argv.slice(2);
-if (mode === "create") {
-  const title = `Handoff e2e ${Date.now() % 1_000_000}`;
-  const { job } = await call("POST", "/jobs", { title, surface: "phone" });
-  await call("PUT", `/jobs/${job.id}/asset`, {
-    make: "FlowSet",
-    model: "VFD-200",
-    source: "manual",
-  });
-  await call("POST", `/jobs/${job.id}/procedure`, { allowGeneric: true });
-  console.log(`${job.id}\t${title}`);
-  process.exit(0);
-}
+const [jobId, shotPath] = process.argv.slice(2);
+if (!jobId || !shotPath) throw new Error("Usage: node mac.mjs <jobId> <screenshot.png>");
 
 // Wait for the phone to hand the job over, as the Mac's panel would.
 let detail;
@@ -59,19 +49,16 @@ const jobStep = detail.steps.find((s) => s.procedureStepId === step.id);
 if (detail.job.currentStepId !== jobStep.id) throw new Error("Handed off at the wrong step.");
 
 await call("POST", `/jobs/${jobId}/steps/${jobStep.id}/actions`, { action: "start" });
-// A 1×1 PNG stands in for the screenshot.
-const png = Buffer.from(
-  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
-  "base64",
-);
-for (let attempt = 0; attempt < 2; attempt++) {
+const png = readFileSync(shotPath);
+// One check: the screenshot shows the finished write, so the real model should pass it.
+{
   const created = await call("POST", `/jobs/${jobId}/evidence`, {
     kind: "screenshot",
     mimeType: "image/png",
     byteSize: png.length,
     surface: "desktop",
-    width: 1,
-    height: 1,
+    width: 1280,
+    height: 800,
     jobStepId: jobStep.id,
   });
   const up = await fetch(created.upload.signedUrl, {
@@ -88,5 +75,5 @@ for (let attempt = 0; attempt < 2; attempt++) {
     console.log("The Mac verified the step.");
     process.exit(0);
   }
+  throw new Error(`The step wasn't verified: ${JSON.stringify(r).slice(0, 300)}`);
 }
-throw new Error("The step wasn't verified.");

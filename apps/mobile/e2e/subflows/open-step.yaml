@@ -1,0 +1,17 @@
+# Opens step STEP ("Step 2: Fit the Active Cooler") from the open project's list.
+appId: app.tandrix.mobile
+---
+- scrollUntilVisible:
+    element: "${STEP},.*"
+    direction: DOWN
+    # Centred, so the fixed bottom bar never covers the row being tapped.
+    centerElement: true
+# A tap while the list is still settling can be lost: retry until the step opens.
+- retry:
+    maxRetries: 2
+    commands:
+      - tapOn: "${STEP},.*"
+      - extendedWaitUntil:
+          visible:
+            id: step-card
+          timeout: 10000

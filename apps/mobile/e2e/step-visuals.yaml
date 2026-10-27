@@ -1,39 +1,20 @@
 # P7: a step's pictures. Add your own reference photo to a step, see it on the step and full
-# screen, then remove it. Needs the API with TANDRIX_FIXTURE_MODELS=1 (it writes the steps).
+# screen, then remove it; no model calls. Needs JOB_ID and JOB_TITLE (the seeded Raspberry Pi 5
+# project) and its photos in .media (the fitted board); see run.sh.
 appId: app.tandrix.mobile
+env:
+  STEP: "Step 2: Fit the Active Cooler"
 ---
 - addMedia:
-    - assets/sample-part.jpg
+    - .media/board-with-cooler.jpg
 # Camera denied, so the photo comes from the picker.
 - launchApp:
     permissions:
       all: allow
       camera: deny
 - runFlow: subflows/open-app.yaml
-- tapOn: Assemble a 12U home server rack
-- extendedWaitUntil:
-    visible:
-      id: create-job
-    timeout: 10000
-- tapOn:
-    id: create-job
-- extendedWaitUntil:
-    visible:
-      id: write-project-steps
-    timeout: 15000
-- tapOn:
-    id: write-project-steps
-- extendedWaitUntil:
-    visible: 4 steps
-    timeout: 60000
-- retry:
-    maxRetries: 2
-    commands:
-      - tapOn: "Step 1: Check every part is there,.*"
-      - extendedWaitUntil:
-          visible:
-            id: step-card
-          timeout: 10000
+- runFlow: subflows/open-job.yaml
+- runFlow: subflows/open-step.yaml
 # A generic step with no photos yet has no pictures, only the way to add one.
 - assertNotVisible:
     id: step-visual
@@ -49,13 +30,10 @@ appId: app.tandrix.mobile
     timeout: 10000
 - tapOn:
     id: choose-photo
-- extendedWaitUntil:
-    visible:
-      text: "Photo, .*"
-    timeout: 15000
-- tapOn:
-    text: "Photo, .*"
-    index: 0
+- runFlow:
+    file: subflows/pick-photo.yaml
+    env:
+      INDEX: 0
 - tapOn: Use as reference
 - extendedWaitUntil:
     visible:

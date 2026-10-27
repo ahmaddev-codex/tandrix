@@ -1,0 +1,12 @@
+# Picks the newest photo in the system picker (run.sh adds each flow's photos newest-last, in the
+# order the flow uses them). Thumbnails are labelled "Photo, <date>"; the comma keeps the
+# "Photos" tab from matching. Pass INDEX: 0 for the newest, 1 for the one before.
+appId: app.tandrix.mobile
+---
+- extendedWaitUntil:
+    visible:
+      text: "Photo, .*"
+    timeout: 15000
+- tapOn:
+    text: "Photo, .*"
+    index: ${INDEX}

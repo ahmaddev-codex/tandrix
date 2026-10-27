@@ -1,76 +1,25 @@
-# T10 + T11: add the job's manual, then write the steps from it. Search can't run without the model (no key, billing), so the app
-# says so and offers the other routes; here the user photographs the pages (photo picker, camera
-# denied) and Tandrix makes a private manual that shows on the job.
+# Photograph a two-page kit sheet as the manual, then write the steps from it on the real model:
+# the steps cite its pages. Needs JOB_ID and JOB_TITLE (a project for "Cooler kit CK-5", no manual)
+# and its photos in .media (the kit sheet's two pages, page 1 newest); see run.sh. The search for the manual runs
+# for real and may or may not find anything; the pages are added either way.
 appId: app.tandrix.mobile
-env:
-  JOB_TITLE: Manual job e2e ${RUN_ID}
 ---
 - addMedia:
-    - assets/sample-part.jpg
+    - .media/page-2.jpg
+    - .media/page-1.jpg
 - launchApp:
-    # Camera refused: the app must still offer the photo picker.
     permissions:
       all: allow
       camera: deny
 - runFlow: subflows/open-app.yaml
-- runFlow: subflows/new-job.yaml
-- tapOn:
-    id: job-title
-- inputText: ${JOB_TITLE}
-- tapOn:
-    id: create-job
-# Starting a project opens it.
-# Equipment first: the manual is found by make and model.
-- extendedWaitUntil:
-    visible:
-      id: photograph-nameplate
-    timeout: 15000
-- tapOn:
-    id: photograph-nameplate
-- extendedWaitUntil:
-    visible:
-      id: choose-photo
-    timeout: 30000
-- tapOn:
-    id: choose-photo
-- extendedWaitUntil:
-    visible:
-      text: "Photo, .*"
-    timeout: 15000
-- tapOn:
-    text: "Photo, .*"
-    index: 0
-- tapOn:
-    id: use-photo
-- extendedWaitUntil:
-    visible:
-      id: identify-banner
-    timeout: 60000
-- tapOn:
-    id: asset-make
-- eraseText: 120
-- inputText: FlowSet
-- tapOn:
-    id: asset-model
-- eraseText: 120
-- inputText: E2E-${RUN_ID}
-- hideKeyboard
-- tapOn:
-    id: save-asset
-# Find the manual: search reports plainly that it can't run, upload and photos stay open.
-- extendedWaitUntil:
-    visible:
-      id: find-manual
-    timeout: 15000
+- runFlow: subflows/open-job.yaml
 - tapOn:
     id: find-manual
 - extendedWaitUntil:
     visible:
-      id: manual-search-unavailable
-    timeout: 60000
-- assertVisible:
-    id: upload-manual
-- takeScreenshot: manual-search-unavailable
+      id: photograph-pages
+    timeout: 90000
+- takeScreenshot: manual-search
 - tapOn:
     id: photograph-pages
 - extendedWaitUntil:
@@ -80,18 +29,19 @@ env:
 - assertVisible: No pages yet
 - tapOn:
     id: choose-pages
-- extendedWaitUntil:
-    visible:
-      text: "Photo, .*"
-    timeout: 15000
+# Pages in order: page 1 (newest), then page 2.
+- runFlow:
+    file: subflows/pick-photo.yaml
+    env:
+      INDEX: 0
 - tapOn:
     text: "Photo, .*"
-    index: 0
+    index: 1
 # The multi-select picker confirms with a check button (id Add, label Done).
 - tapOn:
     id: Add
 - extendedWaitUntil:
-    visible: 1 page
+    visible: 2 pages
     timeout: 30000
 - takeScreenshot: manual-pages
 - tapOn:
@@ -100,22 +50,14 @@ env:
     visible:
       id: manual-card
     timeout: 30000
-- assertVisible: "Manual: FlowSet E2E-${RUN_ID} manual \\(photographed\\).*"
 - assertVisible: Your copy
-- assertVisible:
-    id: open-manual
 - takeScreenshot: job-with-manual
-# T11: write the steps from the manual. Needs the API with TANDRIX_FIXTURE_MODELS=1 until the
-# model is live; the fixture goes through the same rules and transaction as a real draft. The
-# photographed manual has one page, so every citation is page 1.
 - tapOn:
     id: write-steps
 - extendedWaitUntil:
     visible:
       id: step-list
-    timeout: 60000
-- assertVisible: 5 steps
+    timeout: 180000
 # Each row is one button labelled with its title, status and source.
-- assertVisible: "Step 1: Isolate and drain the pump, To do, Manual p.1"
-- assertVisible: "Step 2: Fit the mechanical seal, To do, Manual p.1, fig. 2"
+- assertVisible: "Step 1: .*Manual p\\.[12].*"
 - takeScreenshot: job-with-steps

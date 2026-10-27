@@ -1,12 +1,11 @@
-# T7 end-to-end: sign in, create a job, restart the app, still signed in and the job is listed.
-# Local stack only (uses the seeded test user and the local password sign-in):
-#   pnpm --filter @tandrix/mobile e2e
+# Sign in, start a project from its goal alone, restart: still signed in and the project listed.
+# Real models: setting up writes general steps from the goal (one model call, a few cents).
+#   sh apps/mobile/e2e/run.sh
 appId: app.tandrix.mobile
 env:
-  # Plain text only: Maestro matches visible text as a regular expression.
-  # RUN_ID (set by the e2e script) keeps the title unique, so leftovers from earlier runs
-  # can't satisfy the checks.
-  JOB_TITLE: Pump P-100 assembly e2e ${RUN_ID}
+  # Plain text only: Maestro matches visible text as a regular expression. RUN_ID (set by run.sh)
+  # keeps the title unique, so leftovers from earlier runs can't satisfy the checks.
+  JOB_TITLE: Assemble a 12U home server rack ${RUN_ID}
 ---
 - launchApp:
     clearState: true
@@ -64,28 +63,38 @@ env:
 - tapOn:
     id: job-title
 - inputText: ${JOB_TITLE}
-- takeScreenshot: new-project
+- hideKeyboard
+- takeScreenshot: intake
+- scrollUntilVisible:
+    element:
+      id: create-job
+    centerElement: true
 - tapOn:
     id: create-job
-# Starting a project opens it, on its first step: writing the steps.
+# Set up in visible stages; with nothing to report it opens the project by itself.
 - extendedWaitUntil:
     visible:
-      id: write-project-steps
+      id: stage-steps
     timeout: 15000
-- takeScreenshot: project-after-create
-# Restart: the session comes back from the keychain and the job from the API.
+- takeScreenshot: setting-up
+- extendedWaitUntil:
+    visible:
+      id: step-list
+    timeout: 180000
+# No manual: every step is labelled Generic.
+- assertVisible: "Step 1: .*Generic, not from the manufacturer.*"
+- takeScreenshot: project-steps
+# Restart: the session comes back from the keychain and the project from the API.
 - stopApp
 - launchApp
-# Same link `expo run:ios` uses: loads the local bundle and skips the dev-menu onboarding and button.
 - openLink: exp+tandrix://?__expo_url=http%3A%2F%2F127.0.0.1%3A8081&__expo_disable_fab=1&__expo_disable_auto_launch=1&__expo_disable_onboarding=1
-# iOS asks before a link opens the app ("Open in Tandrix?").
 - runFlow:
     when:
       visible: Open
     commands:
       - tapOn: Open
 - extendedWaitUntil:
-    # Job rows expose one accessibility label: "<title>, <status>".
+    # Project rows expose one accessibility label: "<title>, <status>".
     visible: ${JOB_TITLE},.*
     timeout: 30000
 - assertNotVisible: Local test sign-in

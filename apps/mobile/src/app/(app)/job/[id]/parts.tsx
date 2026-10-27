@@ -42,7 +42,14 @@ export default function PartsScreen() {
   useEffect(() => {
     api
       .getJob(id)
-      .then((d) => setParts(d.procedure?.parts ?? []))
+      .then((d) => {
+        setParts(d.procedure?.parts ?? []);
+        // Back to the latest check, to correct a part that turned up, without a new photo.
+        if (d.partsCheck) {
+          setCheck(d.partsCheck);
+          setPhase("result");
+        }
+      })
       .catch((e: Error) => setError(e.message));
   }, [id]);
 
@@ -131,7 +138,7 @@ export default function PartsScreen() {
     >
       <Stack.Screen options={{ title: "Parts" }} />
       <ScrollView contentContainerStyle={{ padding: space["space-4"], gap: space["space-3"] }}>
-        {phase === "result" && photo && check ? (
+        {phase === "result" && !photo ? null : phase === "result" && photo && check ? (
           <View style={{ height: 300 }}>
             <PartHighlight
               testID="parts-highlight"
@@ -205,7 +212,7 @@ export default function PartsScreen() {
           // A correction is the one thing to answer now.
           <ActionCard
             testID="part-correction"
-            title={`Is the ${asking.name.toLowerCase()} here?`}
+            title={`Is the ${asking.name} here?`}
             body="Check the parts you laid out."
             actionLabel="Yes, it's here"
             actionTestID="part-here"

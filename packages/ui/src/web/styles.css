@@ -1313,7 +1313,14 @@ button.tx-visual-frame:focus-visible {
   gap: var(--space-2);
   min-width: 0;
 }
+.tx-steprow-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
 .tx-steprow-title {
+  flex: 1;
+  min-width: 0;
   font-size: 14px;
   line-height: 20px;
   font-weight: 600;

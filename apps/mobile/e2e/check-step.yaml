@@ -1,83 +1,20 @@
-# T15: check a step by photo. Needs the API with TANDRIX_FIXTURE_MODELS=1: the fixture finds a
-# problem with a step's first check and passes the next, so both outcomes are seen.
+# Check a step by photo with the real model: the bare board needs attention, the board with the
+# cooler fitted is verified. Needs JOB_ID and JOB_TITLE (the seeded Raspberry Pi 5 project) and
+# its photos in .media (the bare board newest, the fitted board before it); see run.sh.
 appId: app.tandrix.mobile
 env:
-  JOB_TITLE: Check job e2e ${RUN_ID}
+  STEP: "Step 2: Fit the Active Cooler"
 ---
 - addMedia:
-    - assets/sample-part.jpg
+    - .media/board-with-cooler.jpg
+    - .media/board-top.jpg
 - launchApp:
     permissions:
       all: allow
       camera: deny
 - runFlow: subflows/open-app.yaml
-- runFlow: subflows/new-job.yaml
-- tapOn:
-    id: job-title
-- inputText: ${JOB_TITLE}
-- tapOn:
-    id: create-job
-# Starting a project opens it.
-- extendedWaitUntil:
-    visible:
-      id: photograph-nameplate
-    timeout: 15000
-- tapOn:
-    id: photograph-nameplate
-- extendedWaitUntil:
-    visible:
-      id: choose-photo
-    timeout: 30000
-- tapOn:
-    id: choose-photo
-- extendedWaitUntil:
-    visible:
-      text: "Photo, .*"
-    timeout: 15000
-- tapOn:
-    text: "Photo, .*"
-    index: 0
-- tapOn:
-    id: use-photo
-- extendedWaitUntil:
-    visible:
-      id: identify-banner
-    timeout: 60000
-- tapOn:
-    id: asset-make
-- eraseText: 120
-- inputText: FlowSet
-- tapOn:
-    id: asset-model
-- eraseText: 120
-- inputText: CHK-${RUN_ID}
-- hideKeyboard
-- tapOn:
-    id: save-asset
-- extendedWaitUntil:
-    visible:
-      id: generic-steps
-    timeout: 15000
-- tapOn:
-    id: generic-steps
-- extendedWaitUntil:
-    visible:
-      id: step-list
-    timeout: 60000
-- scrollUntilVisible:
-    element: "Step 3: Fit the impeller,.*"
-    direction: DOWN
-    # Centred, so the fixed bottom bar never covers the row being tapped.
-    centerElement: true
-# A tap while the list is still settling can be lost: retry until the step opens.
-- retry:
-    maxRetries: 2
-    commands:
-      - tapOn: "Step 3: Fit the impeller,.*"
-      - extendedWaitUntil:
-          visible:
-            id: step-card
-          timeout: 10000
+- runFlow: subflows/open-job.yaml
+- runFlow: subflows/open-step.yaml
 - scrollUntilVisible:
     element:
       id: start-step
@@ -98,20 +35,16 @@ env:
     timeout: 15000
 - tapOn:
     id: choose-photo
-- extendedWaitUntil:
-    visible:
-      text: "Photo, .*"
-    timeout: 15000
-- tapOn:
-    text: "Photo, .*"
-    index: 0
+- runFlow:
+    file: subflows/pick-photo.yaml
+    env:
+      INDEX: 0
 - tapOn: Check this photo
 - extendedWaitUntil:
     visible:
       id: check-result
-    timeout: 60000
+    timeout: 90000
 - assertVisible: Needs attention
-- assertVisible: ".*gap at the shoulder.*"
 - takeScreenshot: check-needs-attention
 - scrollUntilVisible:
     element: Check again
@@ -120,17 +53,14 @@ env:
 - tapOn: Check again
 - tapOn:
     id: choose-photo
-- extendedWaitUntil:
-    visible:
-      text: "Photo, .*"
-    timeout: 15000
-- tapOn:
-    text: "Photo, .*"
-    index: 0
+- runFlow:
+    file: subflows/pick-photo.yaml
+    env:
+      INDEX: 1
 - tapOn: Check this photo
 - extendedWaitUntil:
     visible: Looks right
-    timeout: 60000
+    timeout: 90000
 - scrollUntilVisible:
     element: Verified
     direction: DOWN

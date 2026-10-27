@@ -4,7 +4,7 @@ appId: app.tandrix.mobile
 ---
 - extendedWaitUntil:
     visible: Verified
-    timeout: 10000
+    timeout: 30000
 - assertNotVisible:
     id: handoff-waiting
 - takeScreenshot: handoff-verified

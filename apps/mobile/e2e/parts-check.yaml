@@ -1,70 +1,17 @@
-# T16: the parts check. Needs the API with TANDRIX_FIXTURE_MODELS=1: the last part on the list
-# (Mechanical seal) is missing and the second (Impeller) is a possible match. The step that needs
-# the seal waits until it's found; saying it's here releases the step.
+# The parts check on the real models. Needs JOB_ID and JOB_TITLE (the seeded Raspberry Pi 5
+# project: Raspberry Pi 5, Active Cooler, Ethernet cable) and its photos in .media (several boards and a keyboard,
+# with no cable); see run.sh. The cable is missing, so the step that needs it waits; saying it's
+# here releases the step.
 appId: app.tandrix.mobile
-env:
-  JOB_TITLE: Parts job e2e ${RUN_ID}
 ---
 - addMedia:
-    - assets/sample-part.jpg
+    - .media/parts-laid-out.jpg
 - launchApp:
     permissions:
       all: allow
       camera: deny
 - runFlow: subflows/open-app.yaml
-- runFlow: subflows/new-job.yaml
-- tapOn:
-    id: job-title
-- inputText: ${JOB_TITLE}
-- tapOn:
-    id: create-job
-# Starting a project opens it.
-- extendedWaitUntil:
-    visible:
-      id: photograph-nameplate
-    timeout: 15000
-- tapOn:
-    id: photograph-nameplate
-- extendedWaitUntil:
-    visible:
-      id: choose-photo
-    timeout: 30000
-- tapOn:
-    id: choose-photo
-- extendedWaitUntil:
-    visible:
-      text: "Photo, .*"
-    timeout: 15000
-- tapOn:
-    text: "Photo, .*"
-    index: 0
-- tapOn:
-    id: use-photo
-- extendedWaitUntil:
-    visible:
-      id: identify-banner
-    timeout: 60000
-- tapOn:
-    id: asset-make
-- eraseText: 120
-- inputText: FlowSet
-- tapOn:
-    id: asset-model
-- eraseText: 120
-- inputText: PRT-${RUN_ID}
-- hideKeyboard
-- tapOn:
-    id: save-asset
-- extendedWaitUntil:
-    visible:
-      id: generic-steps
-    timeout: 15000
-- tapOn:
-    id: generic-steps
-- extendedWaitUntil:
-    visible:
-      id: step-list
-    timeout: 60000
+- runFlow: subflows/open-job.yaml
 - tapOn:
     id: check-parts
 - extendedWaitUntil:
@@ -73,63 +20,47 @@ env:
     timeout: 30000
 - tapOn:
     id: choose-photo
-- extendedWaitUntil:
-    visible:
-      text: "Photo, .*"
-    timeout: 15000
-- tapOn:
-    text: "Photo, .*"
-    index: 0
+- runFlow:
+    file: subflows/pick-photo.yaml
+    env:
+      INDEX: 0
 - tapOn: Check these parts
 - extendedWaitUntil:
-    visible: 2 of 4 parts found
-    timeout: 60000
-- assertVisible: 1 missing, 1 to confirm
+    visible: ".* of 3 parts found"
+    timeout: 120000
 - takeScreenshot: parts-checked
-# The step that needs the seal waits for it.
+# The step that needs the cable waits for it.
 - tapOn: ${JOB_TITLE}
-- extendedWaitUntil:
-    visible: "Step 2: Fit the mechanical seal, Missing part: Mechanical seal.*"
-    timeout: 15000
-- assertVisible: "Parts: 2 of 4 parts found.*"
+- scrollUntilVisible:
+    element: "Step 4: Connect the network cable, Missing part: Ethernet cable.*"
+    direction: DOWN
+    centerElement: true
+    timeout: 20000
 - takeScreenshot: step-waiting-for-part
-# It turns up: say so, and the step is free again.
+# It turns up: say so on the parts list, and the step is free again.
+# The parts list reopens on the latest check: no new photo needed.
 - scrollUntilVisible:
     element:
-      id: recheck-parts
-    direction: DOWN
+      id: open-parts
+    direction: UP
     timeout: 20000
 - tapOn:
-    id: recheck-parts
-- tapOn:
-    id: choose-photo
-- extendedWaitUntil:
-    visible:
-      text: "Photo, .*"
-    timeout: 15000
-- tapOn:
-    text: "Photo, .*"
-    index: 0
-- tapOn: Check these parts
-- extendedWaitUntil:
-    visible: 2 of 4 parts found
-    timeout: 60000
+    id: open-parts
 - scrollUntilVisible:
-    element: "Mechanical seal, .*Missing"
+    element: "Ethernet cable, .*Missing"
     direction: DOWN
     timeout: 20000
-- tapOn: "Mechanical seal, .*Missing"
+- tapOn: "Ethernet cable, .*Missing"
 - extendedWaitUntil:
     visible:
       id: part-correction
     timeout: 10000
 - tapOn:
     id: part-here
-- extendedWaitUntil:
-    visible: 3 of 4 parts found
-    timeout: 15000
 - tapOn: ${JOB_TITLE}
-- extendedWaitUntil:
-    visible: "Step 2: Fit the mechanical seal, To do.*"
-    timeout: 15000
+- scrollUntilVisible:
+    element: "Step 4: Connect the network cable, To do.*"
+    direction: DOWN
+    centerElement: true
+    timeout: 20000
 - takeScreenshot: step-released

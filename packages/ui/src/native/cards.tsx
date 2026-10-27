@@ -231,6 +231,7 @@ export function StepRow({
         flexDirection: "row",
         gap: space["space-3"],
         minHeight: sizes["control-field"],
+        alignItems: "flex-start",
         padding: space["space-4"],
         borderRadius: radius["radius-lg"],
         backgroundColor: pressed ? t.color["gray-200"] : t.color["background-100"],
@@ -245,15 +246,18 @@ export function StepRow({
         {String(index)}
       </Text>
       <View style={{ flex: 1, gap: space["space-2"] }}>
-        <Text variant="heading-14">{title}</Text>
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space["space-2"] }}>
+        {/* Status first, on the title's line, so every row's state reads down one edge. */}
+        <View style={{ flexDirection: "row", alignItems: "center", gap: space["space-2"] }}>
           <StatusChip status={status}>{statusLabel}</StatusChip>
-          {source ? (
-            <SourceChip kind={sourceKind}>{source}</SourceChip>
-          ) : (
-            <SourceChip kind="generic" />
-          )}
+          <Text variant="heading-14" style={{ flex: 1 }}>
+            {title}
+          </Text>
         </View>
+        {source ? (
+          <SourceChip kind={sourceKind}>{source}</SourceChip>
+        ) : (
+          <SourceChip kind="generic" />
+        )}
       </View>
     </Pressable>
   );

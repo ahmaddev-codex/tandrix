@@ -80,9 +80,12 @@ export function StepRow({
     >
       <span className="tx-steprow-num">{index}</span>
       <span className="tx-steprow-main">
-        <span className="tx-steprow-title">{title}</span>
-        <span className="tx-steprow-chips">
+        {/* Status first, on the title's line, so every row's state reads down one edge. */}
+        <span className="tx-steprow-head">
           <StatusChip status={status}>{statusLabel}</StatusChip>
+          <span className="tx-steprow-title">{title}</span>
+        </span>
+        <span className="tx-steprow-chips">
           {source ? (
             <SourceChip kind={sourceKind}>{source}</SourceChip>
           ) : (

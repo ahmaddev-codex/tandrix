@@ -396,9 +396,10 @@
     },
       h("span", { className: "tx-steprow-num" }, props.index),
       h("span", { className: "tx-steprow-main" },
-        h("span", { className: "tx-steprow-title" }, props.title),
-        h("span", { className: "tx-steprow-chips" },
+        h("span", { className: "tx-steprow-head" },
           h(StatusChip, { status: props.status || "pending" }, props.statusLabel),
+          h("span", { className: "tx-steprow-title" }, props.title)),
+        h("span", { className: "tx-steprow-chips" },
           h(SourceChip, { kind: props.source ? props.sourceKind || "manual" : "generic" }, props.source))));
   }
 

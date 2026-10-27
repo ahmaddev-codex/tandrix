@@ -1,108 +1,40 @@
-# T12: highlight a step's parts on a photo and correct them. Needs the API with
-# TANDRIX_FIXTURE_MODELS=1 until the model is live: the impeller comes back as a confident mask,
-# the impeller nut as a lower-confidence box ("Possible match").
+# Highlight a step's parts on a photo with the real models, and correct the highlight.
+# Needs JOB_ID and JOB_TITLE (the seeded Raspberry Pi 5 project) and its photos in .media (the bare board);
+# see run.sh. The board is in the photo; the Active Cooler isn't, so it's reported not found.
 appId: app.tandrix.mobile
 env:
-  JOB_TITLE: Highlight job e2e ${RUN_ID}
+  STEP: "Step 2: Fit the Active Cooler"
 ---
 - addMedia:
-    - assets/sample-part.jpg
+    - .media/board-top.jpg
 - launchApp:
     permissions:
       all: allow
       camera: deny
 - runFlow: subflows/open-app.yaml
-- runFlow: subflows/new-job.yaml
-- tapOn:
-    id: job-title
-- inputText: ${JOB_TITLE}
-- tapOn:
-    id: create-job
-# Starting a project opens it.
-- extendedWaitUntil:
-    visible:
-      id: photograph-nameplate
-    timeout: 15000
-- tapOn:
-    id: photograph-nameplate
-- extendedWaitUntil:
-    visible:
-      id: choose-photo
-    timeout: 30000
-- tapOn:
-    id: choose-photo
-- extendedWaitUntil:
-    visible:
-      text: "Photo, .*"
-    timeout: 15000
-- tapOn:
-    text: "Photo, .*"
-    index: 0
-- tapOn:
-    id: use-photo
-- extendedWaitUntil:
-    visible:
-      id: identify-banner
-    timeout: 60000
-- tapOn:
-    id: asset-make
-- eraseText: 120
-- inputText: FlowSet
-- tapOn:
-    id: asset-model
-- eraseText: 120
-- inputText: HL-${RUN_ID}
-- hideKeyboard
-- tapOn:
-    id: save-asset
-- extendedWaitUntil:
-    visible:
-      id: generic-steps
-    timeout: 15000
-- tapOn:
-    id: generic-steps
-- extendedWaitUntil:
-    visible:
-      id: step-list
-    timeout: 60000
-# Open the step with two parts.
-- scrollUntilVisible:
-    element: "Step 3: Fit the impeller,.*"
-    direction: DOWN
-    # Centred, so the fixed bottom bar never covers the row being tapped.
-    centerElement: true
-# A tap while the list is still settling can be lost: retry until the step opens.
-- retry:
-    maxRetries: 2
-    commands:
-      - tapOn: "Step 3: Fit the impeller,.*"
-      - extendedWaitUntil:
-          visible:
-            id: step-card
-          timeout: 10000
-- assertVisible: "Step 3 of 5"
+- runFlow: subflows/open-job.yaml
+- runFlow: subflows/open-step.yaml
+- assertVisible: "Step 2 of 5"
 # Without a highlight yet, the step's parts are listed by number.
-- assertVisible: "1. Impeller"
-- assertVisible: "2. Impeller nut"
+- assertVisible: "1. Raspberry Pi 5"
+- assertVisible: "2. Active Cooler"
 - tapOn:
     id: choose-photo
-- extendedWaitUntil:
-    visible:
-      text: "Photo, .*"
-    timeout: 15000
-- tapOn:
-    text: "Photo, .*"
-    index: 0
+- runFlow:
+    file: subflows/pick-photo.yaml
+    env:
+      INDEX: 0
 - tapOn: Find the parts
 - extendedWaitUntil:
     visible:
       id: part-highlight
-    timeout: 60000
-# Each label is one button whose accessibility label carries "possible match".
-- assertVisible: "Impeller nut, possible match"
+    timeout: 90000
+- extendedWaitUntil:
+    visible: "Not found in this photo: Active Cooler.*"
+    timeout: 10000
 - takeScreenshot: step-highlight
-# Confirm the impeller.
-- tapOn: "Impeller"
+# Confirm the board: its label opens the correction panel.
+- tapOn: "Raspberry Pi 5.*"
 - extendedWaitUntil:
     visible:
       id: correct-panel
@@ -111,12 +43,4 @@ env:
     id: confirm-highlight
 - assertNotVisible:
     id: correct-panel
-# The possible match is wrong: it disappears and is reported as not found.
-- tapOn: "Impeller nut, possible match"
-- tapOn:
-    id: reject-highlight
-- extendedWaitUntil:
-    visible: "Not found in this photo: Impeller nut."
-    timeout: 10000
-- assertNotVisible: "Impeller nut, possible match"
-- takeScreenshot: step-highlight-corrected
+- takeScreenshot: step-highlight-confirmed

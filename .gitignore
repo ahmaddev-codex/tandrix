@@ -13,3 +13,6 @@ coverage/
 *.tsbuildinfo
 fixtures/demo-pi5/manuals/
 apps/api/.meta-spend.json
+
+# e2e photos staged per flow by apps/mobile/e2e/run.sh
+apps/mobile/e2e/.media/

@@ -120,46 +120,47 @@ export default function JobScreen() {
 
   // The one thing the job is waiting on, if any (design system: one ActionCard per screen).
   const next: ActionCardProps | null =
-    asset === null && !procedure
+    // A manual on file (the equipment's, or one added for this project): steps come from it.
+    manual && !procedure
       ? {
-          // A project starts from its goal; equipment with a nameplate makes the steps better.
-          icon: "file",
+          icon: "progress",
           title: "Write the steps",
-          body: "Tandrix writes the steps for this project. Working on equipment with a nameplate? Scan it first and the steps come from its manual.",
+          body: "Tandrix reads the manual and writes the steps for this project, each with the page it came from.",
           actionLabel: "Write the steps",
-          actionTestID: "write-project-steps",
-          onAction: () =>
-            router.push({ pathname: "/job/[id]/procedure", params: { id, generic: "1" } }),
-          secondaryLabel: "Scan a nameplate first",
-          secondaryTestID: "photograph-nameplate",
-          onSecondary: () =>
-            router.push({ pathname: "/job/[id]/capture", params: { id, purpose: "nameplate" } }),
+          actionTestID: "write-steps",
+          onAction: () => router.push({ pathname: "/job/[id]/procedure", params: { id } }),
         }
-      : asset && !manual && !procedure
+      : asset === null && !procedure
         ? {
-            icon: "book",
-            title: "Add the manual",
-            body: "Tandrix builds the steps from the manufacturer's manual, so every step cites a page.",
-            actionLabel: "Find the manual",
-            actionTestID: "find-manual",
+            // A project starts from its goal; equipment with a nameplate makes the steps better.
+            icon: "file",
+            title: "Write the steps",
+            body: "Tandrix writes the steps for this project. Working on equipment with a nameplate? Scan it first and the steps come from its manual.",
+            actionLabel: "Write the steps",
+            actionTestID: "write-project-steps",
             onAction: () =>
-              router.push({
-                pathname: "/job/[id]/manual",
-                params: { id, equipment: `${asset.make} ${asset.model}` },
-              }),
-            secondaryLabel: "Use general steps instead",
-            secondaryTestID: "generic-steps",
-            onSecondary: () =>
               router.push({ pathname: "/job/[id]/procedure", params: { id, generic: "1" } }),
+            secondaryLabel: "Scan a nameplate first",
+            secondaryTestID: "photograph-nameplate",
+            onSecondary: () =>
+              router.push({ pathname: "/job/[id]/capture", params: { id, purpose: "nameplate" } }),
           }
-        : asset && manual && !procedure
+        : asset && !procedure
           ? {
-              icon: "progress",
-              title: "Write the steps",
-              body: "Tandrix reads the manual and writes the steps for this project, each with the page it came from.",
-              actionLabel: "Write the steps",
-              actionTestID: "write-steps",
-              onAction: () => router.push({ pathname: "/job/[id]/procedure", params: { id } }),
+              icon: "book",
+              title: "Add the manual",
+              body: "Tandrix builds the steps from the manufacturer's manual, so every step cites a page.",
+              actionLabel: "Find the manual",
+              actionTestID: "find-manual",
+              onAction: () =>
+                router.push({
+                  pathname: "/job/[id]/manual",
+                  params: { id, equipment: `${asset.make} ${asset.model}` },
+                }),
+              secondaryLabel: "Use general steps instead",
+              secondaryTestID: "generic-steps",
+              onSecondary: () =>
+                router.push({ pathname: "/job/[id]/procedure", params: { id, generic: "1" } }),
             }
           : procedure && procedure.parts.length && !partsCheck
             ? {
@@ -293,11 +294,10 @@ export default function JobScreen() {
                     variant="secondary"
                     size="lg"
                     block
-                    icon="camera"
                     onPress={() => router.push({ pathname: "/job/[id]/parts", params: { id } })}
-                    testID="recheck-parts"
+                    testID="open-parts"
                   >
-                    Check the parts again
+                    Open the parts list
                   </Button>
                 }
               />

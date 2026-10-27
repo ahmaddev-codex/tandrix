@@ -1,29 +1,15 @@
-# T9: identify the equipment from a nameplate photo. Runs with the camera denied (photo
-# picker). When the model can't help (no key, billing, rate limit), the app says so and the
-# user types the details; either way the confirmed equipment is saved on the job.
+# Identify the equipment from a photo of its box, on the real model, and save it.
+# Needs JOB_ID and JOB_TITLE (an empty project) and its photos in .media (the Raspberry Pi 5 box); see run.sh.
 appId: app.tandrix.mobile
-env:
-  JOB_TITLE: Identify job e2e ${RUN_ID}
 ---
 - addMedia:
-    - assets/sample-part.jpg
+    - .media/box-label.jpg
 - launchApp:
-    # Camera refused: the app must still offer the photo picker.
     permissions:
       all: allow
       camera: deny
 - runFlow: subflows/open-app.yaml
-- runFlow: subflows/new-job.yaml
-- tapOn:
-    id: job-title
-- inputText: ${JOB_TITLE}
-- tapOn:
-    id: create-job
-# Starting a project opens it.
-- extendedWaitUntil:
-    visible:
-      id: photograph-nameplate
-    timeout: 15000
+- runFlow: subflows/open-job.yaml
 - tapOn:
     id: photograph-nameplate
 - extendedWaitUntil:
@@ -32,37 +18,23 @@ env:
     timeout: 30000
 - tapOn:
     id: choose-photo
-- extendedWaitUntil:
-    visible:
-      text: "Photo, .*"
-    timeout: 15000
-- tapOn:
-    text: "Photo, .*"
-    index: 0
+- runFlow:
+    file: subflows/pick-photo.yaml
+    env:
+      INDEX: 0
 - tapOn:
     id: use-photo
-# Reading the nameplate: a reading, or the plain-language fallback when the model can't help.
 - extendedWaitUntil:
     visible:
       id: identify-banner
     timeout: 60000
+# The model reads the box: make and model filled in for the user to confirm.
+- assertVisible: "Raspberry Pi"
 - takeScreenshot: identify-result
-- tapOn:
-    id: asset-make
-- eraseText: 120
-- inputText: FlowSet
-- tapOn:
-    id: asset-model
-- eraseText: 120
-- inputText: CR 3-10
-- tapOn:
-    id: asset-serial
-- eraseText: 120
-- inputText: 4521-0098
 - hideKeyboard
 - tapOn:
     id: save-asset
 - extendedWaitUntil:
-    visible: "Equipment: FlowSet CR 3-10.*"
+    visible: "Equipment: Raspberry Pi.*"
     timeout: 15000
 - takeScreenshot: job-with-equipment

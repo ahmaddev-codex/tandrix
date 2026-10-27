@@ -1,92 +1,30 @@
-# T13: safety gates and finishing steps. Needs the API with TANDRIX_FIXTURE_MODELS=1 until the
-# model is live. Step 1 (isolate and drain) has two gates and can't start until both are
-# confirmed; step 4 (torque) takes a measured value and refuses one outside the manual's range.
+# Safety gates and finishing steps; no model calls. Needs JOB_ID and JOB_TITLE (the seeded
+# Raspberry Pi 5 project); see run.sh. Step 1 (power off) can't start until its gate is
+# confirmed; step 3 (torque) takes a measured value and refuses one outside the range.
 appId: app.tandrix.mobile
-env:
-  JOB_TITLE: Safety job e2e ${RUN_ID}
 ---
-- addMedia:
-    - assets/sample-part.jpg
-- launchApp:
-    permissions:
-      all: allow
-      camera: deny
+- launchApp
 - runFlow: subflows/open-app.yaml
-- runFlow: subflows/new-job.yaml
-- tapOn:
-    id: job-title
-- inputText: ${JOB_TITLE}
-- tapOn:
-    id: create-job
-# Starting a project opens it.
-- extendedWaitUntil:
-    visible:
-      id: photograph-nameplate
-    timeout: 15000
-- tapOn:
-    id: photograph-nameplate
-- extendedWaitUntil:
-    visible:
-      id: choose-photo
-    timeout: 30000
-- tapOn:
-    id: choose-photo
-- extendedWaitUntil:
-    visible:
-      text: "Photo, .*"
-    timeout: 15000
-- tapOn:
-    text: "Photo, .*"
-    index: 0
-- tapOn:
-    id: use-photo
-- extendedWaitUntil:
-    visible:
-      id: identify-banner
-    timeout: 60000
-- tapOn:
-    id: asset-make
-- eraseText: 120
-- inputText: FlowSet
-- tapOn:
-    id: asset-model
-- eraseText: 120
-- inputText: SAFE-${RUN_ID}
-- hideKeyboard
-- tapOn:
-    id: save-asset
-- extendedWaitUntil:
-    visible:
-      id: generic-steps
-    timeout: 15000
-- tapOn:
-    id: generic-steps
-- extendedWaitUntil:
-    visible:
-      id: step-list
-    timeout: 60000
-# Step 1: two gates before it can start.
-- tapOn: "Step 1: Isolate and drain the pump,.*"
+- runFlow: subflows/open-job.yaml
+- runFlow:
+    file: subflows/open-step.yaml
+    env:
+      STEP: "Step 1: Power off and unplug the Pi"
 - extendedWaitUntil:
     visible: Confirm isolated
     timeout: 15000
-- assertVisible: Confirm pressure released
 - assertNotVisible:
     id: start-step
-- takeScreenshot: safety-gates
+- takeScreenshot: safety-gate
 - tapOn: Confirm isolated
 - extendedWaitUntil:
     visible: "Confirmed at .*"
     timeout: 10000
-- assertNotVisible:
-    id: start-step
-- tapOn: Confirm pressure released
 - scrollUntilVisible:
     element:
       id: start-step
     direction: DOWN
     timeout: 20000
-- takeScreenshot: safety-gates-confirmed
 - tapOn:
     id: start-step
 - extendedWaitUntil:
@@ -105,27 +43,17 @@ env:
 - assertVisible:
     id: reopen-step
 - takeScreenshot: step-done
-# Step 4: a torque value outside the manual's range is refused.
-# iOS has no system back: tap the header's back button, labelled with the job title.
+# Step 3: a torque value outside the range is refused.
+# iOS has no system back: tap the header's back button, labelled with the project title.
 - tapOn: ${JOB_TITLE}
 - extendedWaitUntil:
     visible:
       id: step-list
     timeout: 15000
-- scrollUntilVisible:
-    element: "Step 4: Torque the casing bolts,.*"
-    direction: DOWN
-    # Centred, so the fixed bottom bar never covers the row being tapped.
-    centerElement: true
-# A tap while the list is still settling can be lost: retry until the step opens.
-- retry:
-    maxRetries: 2
-    commands:
-      - tapOn: "Step 4: Torque the casing bolts,.*"
-      - extendedWaitUntil:
-          visible:
-            id: step-card
-          timeout: 10000
+- runFlow:
+    file: subflows/open-step.yaml
+    env:
+      STEP: "Step 3: Tighten the standoff screws"
 - scrollUntilVisible:
     element:
       id: start-step
@@ -140,20 +68,20 @@ env:
     timeout: 20000
 - tapOn:
     id: measured-value
-- inputText: "30"
+- inputText: "2"
 - hideKeyboard
 - tapOn:
     id: save-measurement
 # The refusal shows as the field's error.
 - extendedWaitUntil:
-    visible: "The manual specifies 25 Nm\\."
+    visible: ".*specifies 0\\.4 Nm\\."
     timeout: 10000
 - assertVisible: In progress
 - takeScreenshot: measurement-refused
 - tapOn:
     id: measured-value
 - eraseText: 10
-- inputText: "25"
+- inputText: "0.4"
 - hideKeyboard
 - tapOn:
     id: save-measurement
