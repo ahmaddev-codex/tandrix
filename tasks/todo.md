@@ -4,7 +4,7 @@ See [plan.md](plan.md) for descriptions, acceptance criteria and verification.
 Tracks: **D** design, **A** mobile & glasses, **B** API & AI, **C** desktop (macOS).
 
 ## Phase 0 — Prep (24–25 Oct)
-- [ ] T0.1 Meta API smoke script (B)
+- [x] T0.1 Meta API smoke script (B): all four models live 27 Oct; $0.004 a run; results in docs/engineering/spikes.md
 - [ ] T0.2 Glasses toolkit sample running (A)
 - [ ] T0.3 Demo fixtures: pump photos, manual, desktop app choice (all)
 - [ ] T0.4 Monorepo skeleton + CI (B): local lint, format, typecheck, test and build pass; open until CI runs green on the first push
@@ -24,33 +24,36 @@ Tracks: **D** design, **A** mobile & glasses, **B** API & AI, **C** desktop (mac
 
 ## Phase 2 — Physical core (27–29 Oct)
 - [x] T8 Capture photo as evidence (A): passes on the iOS simulator; camera shutter on a physical phone by you
-- [ ] T9 Identify asset from nameplate (B + A): built, fallback verified on the simulator; open until Meta billing works and the demo nameplate reads correctly
-- [ ] T10 Find or attach manual (B + A): built; upload and photographed pages pass on the iOS simulator, search fallback verified through a real 402; open until search finds the demo pump manual live (billing). Offline upload queue moves to T17
-- [ ] T11 Procedure from manual with citations (B + A): built; rules, transaction and race tested; steps and Generic path pass on the iOS simulator with the local fixture; open until Spark drafts the demo pump procedure live (billing)
+- [x] T9 Identify asset from nameplate (B + A): live, reads makes and models from nameplates, labels and packaging (Raspberry Pi 5 box: 0.99); a physical-phone check by you
+- [ ] T10 Find or attach manual (B + A): upload live (22-page kit); search live in two calls, finds the official page but prefers web pages to PDFs, so fetch can fail and the user uploads; open: steer search to PDFs
+- [x] T11 Procedure from manual with citations (B + A): live, 18 steps from a 22-page manual, 15 with page citations, ~$0.12 and ~55 s
 - [ ] **Checkpoint 2:** nameplate → cited procedure on phone
-- [ ] T12 Highlight parts on the step screen (B + A): built; highlight, corrections and fallback pass on the iOS simulator with the local fixture; open until spike-level accuracy on the real pump photos (billing + T0.3 photos)
+- [x] T12 Highlight parts on the step screen (B + A): live, boards and assemblies outlined (mask, 0.98) via plain-word concepts; small connectors are beyond SAM
 - [x] T13 Safety gates on steps (A): gates, starting and finishing steps pass on the iOS simulator; refusal and skipping covered by API and integration tests; physical-device check by you
-- [ ] T14 Voice in and out on phone (B + A): built; hold-to-talk, transcript and spoken answer pass on the iOS simulator with the fixture; open until three real steps are done by voice on a device with the live model (billing)
+- [x] T14 Voice in and out on phone (B + A): transcription and answers live; answers name the step that covers a question; speaking on a physical phone by you
 - [ ] **Checkpoint 3:** three steps by voice with highlights
-- [ ] T15 Step check by photo (B + A): built; needs attention then verified passes on the iOS simulator with the fixture; open until Spark judges the real pump stages (billing)
-- [ ] T16 Parts check (B + A): built; missing part blocks its step and a correction releases it on the iOS simulator with the fixture; open until the demo layout is checked live (billing + T0.3 photos)
+- [x] T15 Step check by photo (B + A): live, fail then pass with specific reasons
+- [x] T16 Parts check (B + A): live, each kind of part looked for by what it looks like; generic SAM words find nothing
 - [ ] T17 Offline cache and upload queue (A): built; an offline start shows Pending and syncs on reconnect on the iOS simulator. Caching the manual PDF and reference images for offline use is not done yet
 - [ ] **Checkpoint 4:** full phone path
 
 ## Phase 3 — Desktop (30 Oct)
 - [x] T18 Electron shell with overlay and panel (C): verified on this Mac with one display; two displays and the built app's Screen Recording prompt are manual checks
-- [ ] T19 Show me: ask → pointer + voice (C + B): built; typed question → screenshot → pointer verified on this Mac with fixtures; open until the live model hits ≥ 9/10 in the demo app (billing, T4); speaking a question is a manual check
-- [ ] T20 Screen step verification (C): built; start → check → needs attention → verified on this Mac with fixtures, recorded as desktop; open until a live check (billing); phone Maestro flows not rerun
+- [ ] T19 Show me: ask → pointer + voice (C + B): live on a synthetic app, instructive replies, pointer inside the target 3 of 5 runs and 10 px below it twice; open until the T4 spike (18 of 20) in the demo app
+- [ ] T20 Screen step verification (C): built and verified with fixtures; live check not yet run
 - [ ] **Checkpoint 5:** teach-me-this-screen works
 
 ## Phase 4a — Product surfaces (added 25 Oct)
-- [ ] P1 Positioning and copy: phone = physical projects, Mac = software, Clicky-style
-- [ ] P2 Goal-first projects: steps from a goal; equipment and manual optional
-- [ ] P3 Mac: Show me without a job; Clicky-first panel; first-run setup
-- [ ] P4 Phone: intro, permissions, home ("What are you building or fixing?")
-- [ ] P5 Website: landing page + job report and share link (T23)
+- [x] P1 Positioning and copy: phone = physical projects, Mac = software, Clicky-style
+- [x] P2 Goal-first projects: steps from a goal; equipment and manual optional
+- [x] P3 Mac: Show me without a job; Clicky-first panel; first-run setup
+- [x] P4 Phone: intro, permissions, home ("What are you building or fixing?"); all phone flows pass
+- [ ] P5 Website: landing page done (Next.js, light and dark, phone width); report API and share links done; report page /r/[token] and the phone's Share report to do (T23)
 - [ ] P6 Known gaps: offline manual/reference caching, deploy readiness, Mac icons and packaging, design system additions
 - [ ] **Checkpoint 4a:** clear what each app does; project from a sentence; Mac teaches with no job
+
+- [ ] P7 Step visuals: each step shows an image: the cited manual page or figure, the user's own reference photo, or the latest photo of the step
+- [ ] P8 Mixed demo material: more than one product (electronics build, a bike repair, a home-network install) plus synthetic app screens for Show me and the T4 spike
 
 ## Phase 4 — Continuity (31 Oct)
 - [x] T21 Desktop pairing by QR (C): the Mac's live code approved on the simulator signs the panel in; pair-mac e2e passes; scanning with a physical iPhone is a manual check
