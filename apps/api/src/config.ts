@@ -13,8 +13,8 @@ const Env = z
     API_PORT: z.coerce.number().int().min(1).max(65535).default(8787),
     CORS_ORIGINS: z.string().default(""),
     TOKEN_SIGNING_SECRET: z.string().min(32, "TOKEN_SIGNING_SECRET must be at least 32 characters"),
-    /** Local only: canned procedure instead of the model, for UI work and e2e without billing. */
-    TANDRIX_FIXTURE_MODELS: z.enum(["0", "1"]).default("0"),
+    /** The models. Optional locally (model features then say they're unavailable); required in production. */
+    META_API_KEY: z.string().optional(),
   })
   .superRefine((e, ctx) => {
     // Never let a local run touch a hosted project, or production point at a laptop.
@@ -26,11 +26,11 @@ const Env = z
           "must point at this machine (localhost or host.docker.internal) when TANDRIX_ENV=local",
       });
     }
-    if (e.TANDRIX_ENV === "production" && e.TANDRIX_FIXTURE_MODELS === "1") {
+    if (e.TANDRIX_ENV === "production" && !e.META_API_KEY) {
       ctx.addIssue({
         code: "custom",
-        path: ["TANDRIX_FIXTURE_MODELS"],
-        message: "is for local development only",
+        path: ["META_API_KEY"],
+        message: "is required in production: every guide, check and answer needs the models",
       });
     }
     if (
@@ -53,7 +53,6 @@ export interface ApiConfig {
   port: number;
   corsOrigins: string[];
   tokenSigningSecret: string;
-  fixtureModels: boolean;
 }
 
 export function loadApiConfig(env: Record<string, string | undefined> = process.env): ApiConfig {
@@ -71,7 +70,6 @@ export function loadApiConfig(env: Record<string, string | undefined> = process.
     supabasePublishableKey: e.SUPABASE_PUBLISHABLE_KEY,
     port: e.API_PORT,
     tokenSigningSecret: e.TOKEN_SIGNING_SECRET,
-    fixtureModels: e.TANDRIX_FIXTURE_MODELS === "1",
     corsOrigins: e.CORS_ORIGINS.split(",")
       .map((s) => s.trim())
       .filter(Boolean),

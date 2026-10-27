@@ -13,17 +13,11 @@ import { supabaseEvidenceRepo, supabaseEvidenceStorage } from "./repos/evidence"
 import { supabaseJobsRepo } from "./repos/jobs";
 import { metaManualFinder, noModelFinder } from "./manual-finder";
 import { supabaseManualsRepo } from "./repos/manuals";
-import { fixtureHighlighter } from "./fixtures/highlight";
-import { fixtureVoice } from "./fixtures/voice";
-import { fixtureChecker } from "./fixtures/check";
-import { fixturePartsChecker } from "./fixtures/parts";
-import { fixtureScreenGuide } from "./fixtures/screen";
 import { metaScreenGuide, noModelScreenGuide } from "./screen-guide";
 import { metaPartsChecker, noModelPartsChecker } from "./parts-checker";
 import { supabasePartsChecksRepo } from "./repos/parts-checks";
 import { metaStepChecker, noModelChecker } from "./step-checker";
 import { metaVoice, noModelVoice } from "./voice";
-import { fixtureProcedureGenerator } from "./fixtures/procedure";
 import { metaHighlighter, noModelHighlighter } from "./highlighter";
 import { metaProcedureGenerator, noModelGenerator } from "./procedure-generator";
 import { supabaseProceduresRepo } from "./repos/procedures";
@@ -44,7 +38,7 @@ const log = (l: Record<string, unknown>) => console.log(JSON.stringify(l));
 // Models are optional: without a key, identification reports "unavailable" and users type details.
 const meta = process.env.META_API_KEY ? loadMetaConfig() : null;
 // Every model call is metered against a local cap, so testing can't run through the credit.
-if (meta && !config.fixtureModels) {
+if (meta) {
   const limit = Number(
     process.env.META_SPEND_LIMIT_USD ?? (config.env === "local" ? 10 : Infinity),
   );
@@ -59,33 +53,12 @@ if (meta && !config.fixtureModels) {
 }
 const nameplateReader = meta ? metaNameplateReader(meta, log) : noModelReader;
 const manualFinder = meta ? metaManualFinder(meta, log) : noModelFinder;
-const procedureGenerator = config.fixtureModels
-  ? fixtureProcedureGenerator
-  : meta
-    ? metaProcedureGenerator(meta, log)
-    : noModelGenerator;
-const highlighter = config.fixtureModels
-  ? fixtureHighlighter
-  : meta
-    ? metaHighlighter(meta, log)
-    : noModelHighlighter;
-const checker = config.fixtureModels
-  ? fixtureChecker
-  : meta
-    ? metaStepChecker(meta, log)
-    : noModelChecker;
-const partsChecker = config.fixtureModels
-  ? fixturePartsChecker
-  : meta
-    ? metaPartsChecker(meta, log)
-    : noModelPartsChecker;
-const screenGuide = config.fixtureModels
-  ? fixtureScreenGuide
-  : meta
-    ? metaScreenGuide(meta, log)
-    : noModelScreenGuide;
-const voice = config.fixtureModels ? fixtureVoice : meta ? metaVoice(meta, log) : noModelVoice;
-if (config.fixtureModels) log({ level: "warn", event: "fixture_models_on" });
+const procedureGenerator = meta ? metaProcedureGenerator(meta, log) : noModelGenerator;
+const highlighter = meta ? metaHighlighter(meta, log) : noModelHighlighter;
+const checker = meta ? metaStepChecker(meta, log) : noModelChecker;
+const partsChecker = meta ? metaPartsChecker(meta, log) : noModelPartsChecker;
+const screenGuide = meta ? metaScreenGuide(meta, log) : noModelScreenGuide;
+const voice = meta ? metaVoice(meta, log) : noModelVoice;
 if (!process.env.META_API_KEY)
   log({ level: "warn", event: "models_disabled", reason: "META_API_KEY not set" });
 

@@ -55,6 +55,14 @@ Tracks: **D** design, **A** mobile & glasses, **B** API & AI, **C** desktop (mac
 - [x] P7 Step visuals: each step shows the user's reference photo, the cited manual page (rendered once, zoomable) and the latest photo, on the phone and the Mac; the photo check compares against the reference. Open: crop to the cited figure; reference in the report (with T23)
 - [ ] P8 Mixed demo material: more than one product (electronics build, a bike repair, a home-network install) plus synthetic app screens for Show me and the T4 spike
 
+## Phase 4b — Real product, end to end (added 27 Oct)
+- [ ] R1 No demo data: fixture model mode removed (API, config, scripts, docs); production refuses to start without META_API_KEY; local test jobs, procedures, manuals and assets deleted (Pi 5 live job kept). Open: e2e flows rewritten for real model answers (with I1)
+- [ ] I1 Intake at project start: one screen asks for everything that saves a round trip (goal; photos of the label, the parts and where it stands; the manual as PDF, pages or search; notes), then sets up in one pass (identify, manual, steps, parts check) with visible progress
+- [ ] L1 Point the camera: live camera on the phone; ask "what is this?" or "where does this go?" by voice or tap, and Tandrix answers and highlights on the live view (frames on demand, not streamed)
+- [ ] L2 Learn software on the Mac: "teach me Photoshop" starts a software project with steps done on screen, each with Show me and a screen check
+- [ ] D1 Deploy: API container on Fly.io, hosted Supabase (migrations, buckets, auth), website on Vercel, EAS profiles, signed Mac build, production env checklist; deploy itself after the user's go-ahead
+- [ ] **Checkpoint 6b:** a new project from intake to report on real models, on the simulator and the Mac, against the deployed stack
+
 ## Phase 4 — Continuity (31 Oct)
 - [x] T21 Desktop pairing by QR (C): the Mac's live code approved on the simulator signs the panel in; pair-mac e2e passes; scanning with a physical iPhone is a manual check
 - [x] T22 Handoff between devices (A + C): phone → Mac and Mac → phone live on the simulator and this Mac; 5/5 handoffs under 0.6 s locally; handoff e2e passes; hosted latency at T32

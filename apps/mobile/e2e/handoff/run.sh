@@ -2,7 +2,7 @@
 # Handoff between the phone and the Mac, end to end on the booted simulator. mac.mjs plays the
 # Mac through the API. The phone sends step 5 to the Mac and waits; the Mac starts and checks
 # it; the phone's open step turns Verified without a refresh (Realtime).
-# Needs the dev build, Metro on :8081, and the API on :8787 with `dev:fixtures`.
+# Needs the dev build, Metro on :8081, and the API on :8787 (`pnpm --filter @tandrix/api dev`). To be rewritten for real model answers with I1.
 set -eu
 cd "$(dirname "$0")/.."
 set -a; . ../../../.env.local; set +a

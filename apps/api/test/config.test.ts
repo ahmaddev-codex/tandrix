@@ -7,7 +7,12 @@ const base = {
   TOKEN_SIGNING_SECRET: "x".repeat(32),
 };
 const local = { ...base, TANDRIX_ENV: "local", SUPABASE_URL: "http://127.0.0.1:54321" };
-const prod = { ...base, TANDRIX_ENV: "production", SUPABASE_URL: "https://abc.supabase.co" };
+const prod = {
+  ...base,
+  TANDRIX_ENV: "production",
+  SUPABASE_URL: "https://abc.supabase.co",
+  META_API_KEY: "k",
+};
 
 describe("loadApiConfig", () => {
   it("keeps local runs on this machine and production off it", () => {
@@ -19,12 +24,10 @@ describe("loadApiConfig", () => {
     );
   });
 
-  it("allows the fixture procedure locally and refuses it in production", () => {
-    expect(loadApiConfig({ ...local, TANDRIX_FIXTURE_MODELS: "1" }).fixtureModels).toBe(true);
-    expect(loadApiConfig(local).fixtureModels).toBe(false);
-    expect(() => loadApiConfig({ ...prod, TANDRIX_FIXTURE_MODELS: "1" })).toThrow(
-      /TANDRIX_FIXTURE_MODELS/,
-    );
+  it("needs the models in production, not locally", () => {
+    expect(() => loadApiConfig({ ...prod, META_API_KEY: undefined })).toThrow(/META_API_KEY/);
+    expect(loadApiConfig(prod).env).toBe("production");
+    expect(loadApiConfig(local).env).toBe("local");
   });
 
   it("requires a long token signing secret", () => {

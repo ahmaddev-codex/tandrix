@@ -1,7 +1,7 @@
 #!/bin/sh
 # Runs the end-to-end flows on the booted iOS simulator against the local stack.
 # Needs: the dev build installed (pnpm ios), Metro on :8081, and the API on :8787 started with
-# `pnpm --filter @tandrix/api dev:fixtures` (canned model answers until the model is live).
+# `pnpm --filter @tandrix/api dev`. Flows call the real models and spend credit (spend cap applies).
 set -eu
 cd "$(dirname "$0")"
 set -a; . ../../../.env.local; set +a

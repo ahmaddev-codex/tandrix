@@ -50,23 +50,9 @@ Local tools:
 - Studio (tables, auth users, storage): http://127.0.0.1:54323
 - Mailpit (magic links and OTP codes sent to local users): http://127.0.0.1:54324
 
-## Working without the model
+## Models and spend
 
-Until Meta billing is set up, every model call reports "unavailable" and the app falls back. To build and test the step screens anyway, start the API with canned model answers:
-
-```sh
-pnpm --filter @tandrix/api dev:fixtures   # TANDRIX_FIXTURE_MODELS=1; refused in production
-```
-
-The fixtures replace only these model calls; everything else (rules, transactions, storage) runs for real:
-
-- **Procedure:** a four-step pump procedure that cites real pages of the attached manual (or is Generic without one).
-- **Highlight:** the step's first part found mid-photo with a mask, the second as a lower-confidence box ("Possible match"), the rest reported missing with a framing hint.
-- **Voice:** every recording is heard as "Which way round does this go?" and answered from the step.
-- **Check:** a step's first check needs attention (a gap at the shoulder); the next passes.
-- **Parts check:** the last part on the list is missing and the second is a possible match; the rest are found.
-
-The e2e flows for steps need them.
+The API always uses the real models (there is no canned-answer mode). Without `META_API_KEY` locally, every model feature says it's unavailable and the app falls back (type the details, upload the manual, confirm steps yourself); in production the API refuses to start without it. Every model call is metered against a local cap (`META_SPEND_LIMIT_USD`, $10 by default); see the total with `pnpm --filter @tandrix/api spend`. Unit and integration tests use fakes inside the test code and never call the models.
 
 ## Database changes
 
@@ -104,7 +90,7 @@ End-to-end tests drive the simulator with [Maestro](https://maestro.mobile.dev) 
 pnpm --filter @tandrix/mobile e2e     # runs apps/mobile/e2e/run.sh; needs the simulator app and API running
 ```
 
-It runs ten flows (API started with `dev:fixtures`): sign in → create a uniquely named job → restart → still signed in and the job listed; the design-system gallery in every theme; and, with the camera denied at launch, add a photo to a job through the photo picker; photograph a nameplate, confirm or type the equipment details and see them on the job; and find the manual (search reports it can't run without the model), photograph its pages, see the private manual on the job and write the steps from it with page citations; and choose general steps without a manual, every one labelled Generic; open a step, highlight its parts on a photo, confirm one and reject a possible match; and confirm a step's two safety gates before it can start, mark it done, and enter a torque value that the manual's range refuses and then accepts; hold to talk on a step and see the transcript and the spoken answer; and check a step by photo, which needs attention first and is verified on the second photo. The gallery flow also covers every native design-system component (StepCard, PartHighlight, HighlightCorrection, Notice, ActionCard, SummaryCard, StepRow, ProgressState, SafetyGate, CheckResult, PartsList, HandoffBanner) in light, dark and sunlight. Results and screenshots land in `.maestro/` (git-ignored). Don't start Metro with `CI=1`: CI mode turns off reloads, so the app keeps running the old bundle after an edit. The simulator has no camera, so taking a photo with the shutter is a physical-device check.
+It runs ten flows (API started with `pnpm --filter @tandrix/api dev`, real models): sign in → create a uniquely named job → restart → still signed in and the job listed; the design-system gallery in every theme; and, with the camera denied at launch, add a photo to a job through the photo picker; photograph a nameplate, confirm or type the equipment details and see them on the job; and find the manual (search reports it can't run without the model), photograph its pages, see the private manual on the job and write the steps from it with page citations; and choose general steps without a manual, every one labelled Generic; open a step, highlight its parts on a photo, confirm one and reject a possible match; and confirm a step's two safety gates before it can start, mark it done, and enter a torque value that the manual's range refuses and then accepts; hold to talk on a step and see the transcript and the spoken answer; and check a step by photo, which needs attention first and is verified on the second photo. The gallery flow also covers every native design-system component (StepCard, PartHighlight, HighlightCorrection, Notice, ActionCard, SummaryCard, StepRow, ProgressState, SafetyGate, CheckResult, PartsList, HandoffBanner) in light, dark and sunlight. Results and screenshots land in `.maestro/` (git-ignored). Don't start Metro with `CI=1`: CI mode turns off reloads, so the app keeps running the old bundle after an edit. The simulator has no camera, so taking a photo with the shutter is a physical-device check.
 
 If the simulator shows code you've already changed, Metro is serving a stale bundle: stop it and run `pnpm exec expo start --dev-client --clear` in `apps/mobile`. The first screens after a cache clear take a few seconds to build; the flows wait for each screen.
 
@@ -118,7 +104,7 @@ Signing in a Mac from the phone is checked by `sh apps/mobile/e2e/pair-mac/run.s
 
 Handoff is checked by `sh apps/mobile/e2e/handoff/run.sh`: `handoff/mac.mjs` creates a job with the fixture steps and later plays the Mac through the API; the phone opens step 5 and taps Continue on Mac; the Mac starts and checks it; the phone's open step turns Verified without a refresh.
 
-Going offline mid-job is checked by `sh apps/mobile/e2e/offline/run.sh`: it opens a step, stops the local API, starts the step (kept, shown as Pending, the job says it's offline), restarts the API with `dev:fixtures`, and waits for the queued start to be sent.
+Going offline mid-job is checked by `sh apps/mobile/e2e/offline/run.sh`: it opens a step, stops the local API, starts the step (kept, shown as Pending, the job says it's offline), restarts the API, and waits for the queued start to be sent.
 
 ## Mac app
 
@@ -133,8 +119,8 @@ pnpm --filter @tandrix/desktop start  # runs the built app
 
 - Tandrix lives in the menu bar (a "Tandrix" title, no Dock icon). Click it to open the panel; it closes when it loses focus. Right-click for Quit. The panel opens by itself on launch.
 - Signed out, the panel shows a QR: scan it with the phone (the camera app opens Tandrix), or choose Sign in a Mac on the phone (the laptop icon on the jobs list) and type the code. "Sign in with email instead" gives the email code (from Mailpit) and, on the local stack, "Local test sign-in". The session is encrypted with `safeStorage` (Keychain) under the app's userData folder and survives restarts.
-- **Show me:** type a question in the panel, or press ⌃⌥Space, ask out loud and press it again. With `dev:fixtures` the API "clicks" a third of the way into the screenshot and says so, so the pointer can be checked without the model; screenshots are saved as job evidence. In dev, macOS asks about the microphone for the app that launched Electron.
-- **Desktop steps:** the fixture steps (`dev:fixtures`, "Use general steps" on the phone) end with step 5, "Set the drive ramp time", done in software. The panel offers it: start it, then "Check my screen"; the fixture checker fails the first check and passes the next.
+- **Show me:** type a question in the panel, or press ⌃⌥Space, ask out loud and press it again. In dev, macOS asks about the microphone for the app that launched Electron.
+- **Desktop steps:** a project whose steps include work on the computer offers them in the panel once handed to the Mac: start one, then "Check my screen".
 - "Test the pointer" draws the pointer at the centre of every display for four seconds. Checking it on two displays is a manual check.
 - Screen Recording: in dev, macOS asks about (and lists) the app that launched Electron, usually your terminal or editor, not Tandrix.
 - Editors built on Electron export `ELECTRON_RUN_AS_NODE` to their terminals; the dev script removes it. Run the built app with `env -u ELECTRON_RUN_AS_NODE pnpm --filter @tandrix/desktop start` from such a terminal.
