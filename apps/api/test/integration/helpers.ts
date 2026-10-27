@@ -21,6 +21,8 @@ import type { PartsChecker } from "../../src/parts-checker";
 import { noModelScreenGuide } from "../../src/screen-guide";
 import { supabasePairingsRepo } from "../../src/repos/pairings";
 import { supabaseReportsRepo } from "../../src/repos/reports";
+import { supabaseManualPagesRepo } from "../../src/repos/manual-pages";
+import { workerPageRenderer } from "../../src/pdf-render";
 import { supabaseSessionMinter } from "../../src/session-minter";
 import { supabasePartsChecksRepo } from "../../src/repos/parts-checks";
 import type { Transport } from "../../src/safe-fetch";
@@ -122,6 +124,8 @@ export const app = createApp({
   pairings: supabasePairingsRepo(admin),
   reports: supabaseReportsRepo(admin),
   sessionMinter: supabaseSessionMinter(admin),
+  manualPages: supabaseManualPagesRepo(admin),
+  pageRenderer: workerPageRenderer(),
   tokenSecret: config.tokenSigningSecret,
   manualFetch: { resolve: (h) => web.resolve(h), transport: web.transport },
   corsOrigins: [],

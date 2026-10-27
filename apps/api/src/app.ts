@@ -32,6 +32,8 @@ import { inlineScreenRoutes, screenRoutes } from "./routes/screen";
 import type { PairingsRepo } from "./repos/pairings";
 import type { SessionMinter } from "./session-minter";
 import { detectionRoutes, SURFACE_HEADER, stepRoutes } from "./routes/steps";
+import type { ManualPagesRepo } from "./repos/manual-pages";
+import type { PageRenderer } from "./pdf-render";
 import type { ScreenGuide } from "./screen-guide";
 
 export interface AppDeps {
@@ -58,6 +60,8 @@ export interface AppDeps {
   pairings: PairingsRepo;
   reports: ReportsRepo;
   sessionMinter: SessionMinter;
+  manualPages: ManualPagesRepo;
+  pageRenderer: PageRenderer;
   /** Who's calling, for rate limits on signed-out routes (the client's address). */
   clientKey?: (c: Context) => string;
   /** Signs manual search candidates (TOKEN_SIGNING_SECRET). */
@@ -194,6 +198,11 @@ export function createApp(deps: AppDeps) {
     answerer: deps.answerer,
     checker: deps.checker,
     assets: deps.assets,
+    manuals: deps.manuals,
+    manualStorage: deps.manualStorage,
+    manualPages: deps.manualPages,
+    renderer: deps.pageRenderer,
+    log,
     ...(deps.now ? { now: deps.now } : {}),
   };
   app.route("/jobs/:id/steps", stepRoutes(stepDeps));

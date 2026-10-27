@@ -8,3 +8,4 @@ export * from "./cards";
 export * from "./progress";
 export * from "./feedback";
 export * from "./voice";
+export * from "./visual";

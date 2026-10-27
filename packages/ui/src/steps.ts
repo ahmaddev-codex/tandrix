@@ -1,6 +1,6 @@
 // How job steps read on screen: status chip and source chip text, per the design system.
-import type { Citation, JobStepStatus } from "@tandrix/contracts";
-import type { StepStatus } from "./shared";
+import type { Citation, JobStepStatus, StepVisual } from "@tandrix/contracts";
+import type { SourceKind, StepStatus } from "./shared";
 
 /** The design system's chip for each job step status. "Verified" is only ever from a check. */
 export const stepChip: Record<JobStepStatus, { status: StepStatus; label?: string }> = {
@@ -19,3 +19,45 @@ export function citationLabel(c: Citation): string | null {
   const fig = c.figure?.replace(/^fig(ure)?\.?\s*/i, "").trim();
   return `Manual p.${c.page}${fig ? `, fig. ${fig}` : ""}`;
 }
+
+/** How a step visual is named on screen: its tab, its SourceChip, and its screen-reader text. */
+export function visualLabels(
+  v: StepVisual,
+  /** The app's clock format, e.g. "10:46". */
+  time: (iso: string) => string,
+): { label: string; source: string; sourceKind: SourceKind; alt: string } {
+  switch (v.kind) {
+    case "reference":
+      return {
+        label: "Your reference",
+        source: `Your reference ${time(v.capturedAt)}`,
+        sourceKind: v.evidenceKind === "screenshot" ? "screen" : "photo",
+        alt: "Your reference picture for this step",
+      };
+    case "manual_page":
+      return {
+        label: `Manual p.${v.page}`,
+        source: citationLabel({
+          kind: "manual",
+          manualId: v.manualId,
+          page: v.page,
+          figure: v.figure,
+        })!,
+        sourceKind: "manual",
+        alt: `Manual page ${v.page}${v.figure ? `, with ${v.figure}` : ""}`,
+      };
+    case "latest": {
+      const screen = v.evidenceKind === "screenshot";
+      return {
+        label: screen ? "Last screenshot" : "Last photo",
+        source: `${screen ? "Screenshot" : "Photo"} ${time(v.capturedAt)}`,
+        sourceKind: screen ? "screen" : "photo",
+        alt: `Your last ${screen ? "screenshot" : "photo"} of this step`,
+      };
+    }
+  }
+}
+
+/** Width over height when known. */
+export const visualAspect = (v: StepVisual): number | undefined =>
+  v.width && v.height ? v.width / v.height : undefined;

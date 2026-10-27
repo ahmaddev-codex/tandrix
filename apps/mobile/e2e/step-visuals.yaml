@@ -1,0 +1,86 @@
+# P7: a step's pictures. Add your own reference photo to a step, see it on the step and full
+# screen, then remove it. Needs the API with TANDRIX_FIXTURE_MODELS=1 (it writes the steps).
+appId: app.tandrix.mobile
+---
+- addMedia:
+    - assets/sample-part.jpg
+# Camera denied, so the photo comes from the picker.
+- launchApp:
+    permissions:
+      all: allow
+      camera: deny
+- runFlow: subflows/open-app.yaml
+- tapOn: Assemble a 12U home server rack
+- extendedWaitUntil:
+    visible:
+      id: create-job
+    timeout: 10000
+- tapOn:
+    id: create-job
+- extendedWaitUntil:
+    visible:
+      id: write-project-steps
+    timeout: 15000
+- tapOn:
+    id: write-project-steps
+- extendedWaitUntil:
+    visible: 4 steps
+    timeout: 60000
+- retry:
+    maxRetries: 2
+    commands:
+      - tapOn: "Step 1: Check every part is there,.*"
+      - extendedWaitUntil:
+          visible:
+            id: step-card
+          timeout: 10000
+# A generic step with no photos yet has no pictures, only the way to add one.
+- assertNotVisible:
+    id: step-visual
+- scrollUntilVisible:
+    element:
+      id: add-reference
+    centerElement: true
+- tapOn:
+    id: add-reference
+- extendedWaitUntil:
+    visible:
+      id: choose-photo
+    timeout: 10000
+- tapOn:
+    id: choose-photo
+- extendedWaitUntil:
+    visible:
+      text: "Photo, .*"
+    timeout: 15000
+- tapOn:
+    text: "Photo, .*"
+    index: 0
+- tapOn: Use as reference
+- extendedWaitUntil:
+    visible:
+      id: step-visual
+    timeout: 30000
+- scrollUntilVisible:
+    element:
+      id: remove-reference
+    centerElement: true
+- assertVisible: "Your reference .*"
+- takeScreenshot: step-reference
+- tapOn:
+    id: step-visual-frame
+- extendedWaitUntil:
+    visible:
+      id: close-image
+    timeout: 5000
+- tapOn:
+    id: close-image
+- tapOn:
+    id: remove-reference
+# The photo stays with the step: it's now shown as the step's latest photo, not the reference.
+- extendedWaitUntil:
+    visible: "Photo .*"
+    timeout: 15000
+- assertNotVisible: "Your reference .*"
+- assertVisible:
+    id: add-reference

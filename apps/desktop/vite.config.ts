@@ -5,11 +5,15 @@ import { defineConfig, loadEnv, type Plugin } from "vite";
 const repoRoot = resolve(import.meta.dirname, "../..");
 const renderer = resolve(import.meta.dirname, "src/renderer");
 
-/** Network access for the renderer: the Tandrix API and Supabase (HTTP and realtime) only. */
+/**
+ * Network access for the renderer: the Tandrix API and Supabase (HTTP and realtime) only. Images
+ * also load from Supabase: step pictures come as signed Storage URLs.
+ */
 function contentSecurityPolicy(env: Record<string, string>, dev: boolean): Plugin {
   const origins = [env.VITE_API_URL, env.VITE_SUPABASE_URL]
     .filter((u): u is string => !!u)
     .map((u) => new URL(u).origin);
+  const storage = env.VITE_SUPABASE_URL ? ` ${new URL(env.VITE_SUPABASE_URL).origin}` : "";
   const sockets = origins.map((o) => o.replace(/^http/, "ws"));
   const policy = [
     "default-src 'none'",
@@ -17,7 +21,7 @@ function contentSecurityPolicy(env: Record<string, string>, dev: boolean): Plugi
     `script-src 'self'${dev ? " 'unsafe-inline'" : ""}`,
     `style-src 'self'${dev ? " 'unsafe-inline'" : ""}`,
     "font-src 'self'",
-    "img-src 'self' data: blob:",
+    `img-src 'self' data: blob:${storage}`,
     `connect-src ${[...origins, ...sockets, ...(dev ? ["ws://localhost:5173"] : [])].join(" ")}`,
     "base-uri 'none'",
     "form-action 'none'",

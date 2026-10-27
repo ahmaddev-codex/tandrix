@@ -1,9 +1,9 @@
 // The step the Mac works on: start it, check the screen when it's done, or confirm what the
 // screen can't show.
-import type { Check, StepActionRequest } from "@tandrix/contracts";
-import { citationLabel, stepChip } from "@tandrix/ui";
-import { Button, CheckResult, Notice, StepCard } from "@tandrix/ui/web";
-import { useState, type ReactNode } from "react";
+import type { Check, StepActionRequest, StepVisual as Visual } from "@tandrix/contracts";
+import { citationLabel, stepChip, visualAspect, visualLabels } from "@tandrix/ui";
+import { Button, CheckResult, Icon, Notice, StepCard, StepVisual } from "@tandrix/ui/web";
+import { useEffect, useState, type ReactNode } from "react";
 import { api } from "../lib/api";
 import type { DesktopStep as Current } from "../lib/desktop-step";
 import { uploadScreenshot } from "../lib/screenshot";
@@ -35,6 +35,8 @@ export function DesktopStep({
 }) {
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<string>();
+  const visuals = useStepVisuals(jobId, current?.jobStep.id, current?.jobStep.updatedAt);
+  const [open, setOpen] = useState<Visual>();
   const result = lastCheck;
   if (!current)
     return result ? (
@@ -132,8 +134,27 @@ export function DesktopStep({
             ? { statusLabel: chip.label }
             : {})}
         {...(cite ? { source: cite } : {})}
+        {...(visuals.length
+          ? {
+              visual: (
+                <StepVisual
+                  items={visuals.map((v) => {
+                    const aspectRatio = visualAspect(v);
+                    return {
+                      id: v.kind,
+                      ...visualLabels(v, time),
+                      src: v.url,
+                      ...(aspectRatio ? { aspectRatio } : {}),
+                    };
+                  })}
+                  onOpen={(kind) => setOpen(visuals.find((v) => v.kind === kind))}
+                />
+              ),
+            }
+          : {})}
         actions={primary}
       />
+      {open ? <Lightbox visual={open} onClose={() => setOpen(undefined)} /> : null}
       {working && (step.verification === "photo" || step.verification === "measurement") ? (
         <Notice>Check this step on your phone.</Notice>
       ) : null}
@@ -173,5 +194,46 @@ function ScreenCheckResult({ result, actions }: { result: ScreenCheck; actions?:
       evidenceKind="screen"
       {...(actions ? { actions } : {})}
     />
+  );
+}
+
+/** The step's pictures; reloaded when the step changes (a check adds its screenshot). */
+function useStepVisuals(jobId: string, jobStepId?: string, updatedAt?: string): Visual[] {
+  const [visuals, setVisuals] = useState<Visual[]>([]);
+  useEffect(() => {
+    if (!jobStepId) return setVisuals([]);
+    let live = true;
+    // Pictures help but aren't needed to work the step: on failure the step shows without them.
+    api
+      .stepVisuals(jobId, jobStepId)
+      .then((r) => live && setVisuals(r.visuals))
+      .catch(() => live && setVisuals([]));
+    return () => {
+      live = false;
+    };
+  }, [jobId, jobStepId, updatedAt]);
+  return visuals;
+}
+
+/** One picture over the whole panel, at full width to read a manual page; Esc closes it. */
+function Lightbox({ visual, onClose }: { visual: Visual; onClose: () => void }) {
+  const l = visualLabels(visual, time);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+  return (
+    <div className="panel-lightbox" role="dialog" aria-modal="true" aria-label={l.alt}>
+      <div className="panel-lightbox-bar">
+        <span>{l.source}</span>
+        <button type="button" onClick={onClose} aria-label="Close" autoFocus>
+          <Icon name="x" size={20} />
+        </button>
+      </div>
+      <div className="panel-lightbox-scroll">
+        <img src={visual.url} alt={l.alt} />
+      </div>
+    </div>
   );
 }

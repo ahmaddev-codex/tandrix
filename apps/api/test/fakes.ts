@@ -29,6 +29,8 @@ import type { ProceduresRepo, SaveProcedure } from "../src/repos/procedures";
 import type { NameplateReader } from "../src/nameplate";
 import type { AssetsRepo, SaveAsset } from "../src/repos/assets";
 import type { ManualsRepo, PendingUpload } from "../src/repos/manuals";
+import type { ManualPage, ManualPagesRepo } from "../src/repos/manual-pages";
+import type { PageRenderer } from "../src/pdf-render";
 import type {
   EvidenceRepo,
   EvidenceStorage,
@@ -251,7 +253,37 @@ export const noManuals = () => ({
   pairings: memoryPairings(),
   reports: memoryReports(),
   sessionMinter: { mint: async () => null },
+  manualPages: memoryManualPages(),
+  pageRenderer: fakeRenderer(),
 });
+
+export function memoryManualPages() {
+  const rows = new Map<string, ManualPage>();
+  const repo: ManualPagesRepo & { rows: typeof rows } = {
+    rows,
+    async get(manualId, page) {
+      return rows.get(`${manualId}/${page}`) ?? null;
+    },
+    async save(p) {
+      if (!rows.has(`${p.manualId}/${p.page}`)) rows.set(`${p.manualId}/${p.page}`, p);
+    },
+  };
+  return repo;
+}
+
+/** Renders any page of any PDF as a tiny JPEG, counting renders; pages past `pages` don't exist. */
+export function fakeRenderer(pages = 100) {
+  const renderer: PageRenderer & { renders: number[] } = {
+    renders: [],
+    async render(_pdf, page) {
+      renderer.renders.push(page);
+      return page <= pages
+        ? { jpeg: new Uint8Array([0xff, 0xd8, 0xff]), width: 800, height: 1131 }
+        : null;
+    },
+  };
+  return renderer;
+}
 
 /** Report data: checks are recorded by tests; share links keep only token hashes, as in the database. */
 export function memoryReports(owners = new Map<string, string>()) {
@@ -400,7 +432,12 @@ export function memoryProcedures() {
           ...(s.measurement ? { measurement: s.measurement } : {}),
           citation:
             s.citation.kind === "manual" && input.manualId
-              ? { kind: "manual" as const, manualId: input.manualId, page: s.citation.page }
+              ? {
+                  kind: "manual" as const,
+                  manualId: input.manualId,
+                  page: s.citation.page,
+                  ...(s.citation.figure ? { figure: s.citation.figure } : {}),
+                }
               : { kind: "generic" as const },
         })),
       });
@@ -464,11 +501,20 @@ export function memoryStepState(jobOf: (jobStepId: string) => string = () => "")
     checks: typeof checks;
     steps: typeof steps;
     transitions: StepTransition[];
+    references: Map<string, string>;
   } = {
     confirmationsList: confirmations,
     checks,
     steps,
     transitions: [],
+    references: new Map(),
+    async reference(jobStepId) {
+      return repo.references.get(jobStepId) ?? null;
+    },
+    async setReference(jobStepId, evidenceId) {
+      if (evidenceId) repo.references.set(jobStepId, evidenceId);
+      else repo.references.delete(jobStepId);
+    },
     async confirmations(jobId) {
       return confirmations.filter((x) => jobOf(x.jobStepId) === jobId);
     },

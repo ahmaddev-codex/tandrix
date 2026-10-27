@@ -1,6 +1,7 @@
 // Typed client for the Tandrix API. Responses are validated with the shared contracts.
 import {
   CheckStepResponse,
+  StepVisualsResponse,
   CreateEvidenceResponse,
   Evidence,
   Job,
@@ -95,6 +96,8 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ evidenceId }),
     }),
+  stepVisuals: (jobId: string, jobStepId: string) =>
+    request(`/jobs/${jobId}/steps/${jobStepId}/visuals`, StepVisualsResponse),
   /** A question outside any job: the screenshot travels inline and isn't kept. */
   screenAskInline: (body: z.input<typeof ScreenAskInlineRequest>) =>
     request("/screen/ask", ScreenAskResponse, { method: "POST", body: JSON.stringify(body) }),

@@ -32,6 +32,8 @@ import { supabaseStepStateRepo } from "./repos/step-state";
 import { supabasePairingsRepo } from "./repos/pairings";
 import { supabaseReportsRepo } from "./repos/reports";
 import { supabaseSessionMinter } from "./session-minter";
+import { supabaseManualPagesRepo } from "./repos/manual-pages";
+import { workerPageRenderer } from "./pdf-render";
 
 const config = loadApiConfig();
 const admin = createClient(config.supabaseUrl, config.supabaseSecretKey, {
@@ -111,6 +113,8 @@ const app = createApp({
   pairings: supabasePairingsRepo(admin),
   reports: supabaseReportsRepo(admin),
   sessionMinter: supabaseSessionMinter(admin),
+  manualPages: supabaseManualPagesRepo(admin),
+  pageRenderer: workerPageRenderer(),
   clientKey: (c) => getConnInfo(c).remote.address ?? "unknown",
   tokenSecret: config.tokenSigningSecret,
   corsOrigins: config.corsOrigins,

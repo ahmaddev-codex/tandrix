@@ -20,6 +20,8 @@ export interface StepCardProps {
   /** Citation text, e.g. "Manual p.14, fig. 3". Generic steps pass sourceKind "generic". */
   source?: string;
   sourceKind?: SourceKind;
+  /** A StepVisual: the pictures that go with the step, under its words. */
+  visual?: ReactNode;
   /** Usually a field-size primary Button plus an icon-only mic Button. */
   actions?: ReactNode;
   testID?: string;
@@ -35,6 +37,7 @@ export function StepCard({
   statusLabel,
   source,
   sourceKind = "manual",
+  visual,
   actions,
   testID,
 }: StepCardProps) {
@@ -76,6 +79,7 @@ export function StepCard({
           {body}
         </Text>
       ) : null}
+      {visual}
       {caution ? (
         <View
           accessibilityRole="text"

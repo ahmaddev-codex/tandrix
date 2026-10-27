@@ -58,8 +58,30 @@ export interface StepCardProps {
   status?: StepStatus;
   source?: string;
   sourceKind?: SourceChipProps["kind"];
+  /** A StepVisual: the step's pictures, under its words. */
+  visual?: ReactNode;
   /** Usually a field-size primary Button plus an icon-only mic Button. */
   actions?: ReactNode;
+}
+
+export interface StepVisualItem {
+  id: string;
+  /** Tab label: "Your reference", "Manual p.4", "Last photo". */
+  label: string;
+  /** SourceChip text: "Manual p.4, fig. 2", "Your reference 10:46". */
+  source: string;
+  sourceKind: SourceChipProps["kind"];
+  src: string;
+  alt: string;
+  aspectRatio?: number;
+}
+
+export interface StepVisualProps {
+  items: StepVisualItem[];
+  value?: string;
+  onChange?: (id: string) => void;
+  /** Opens the picture full screen (phone) or over the panel (Mac). */
+  onOpen?: (id: string) => void;
 }
 
 export interface SafetyGateProps {

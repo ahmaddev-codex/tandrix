@@ -124,6 +124,8 @@ export interface StepCheckRequest {
   /** Defaults to "photo". */
   medium?: "photo" | "screen";
   reference?: InputPart;
+  /** What the reference is: the user's own picture of a correct result (default), or the manual page the step cites. */
+  referenceKind?: "reference" | "manual_page";
   instruction: string;
   expectedState: string;
 }
@@ -137,7 +139,14 @@ export function checkStep(client: MetaClient, models: Models, req: StepCheckRequ
     req.photo,
   ];
   if (req.reference)
-    parts.push(text("The next image is the reference for a correct result."), req.reference);
+    parts.push(
+      text(
+        req.referenceKind === "manual_page"
+          ? "The next image is the manual page this step comes from. Use its figures and text for how a correct result looks; it is not the user's work."
+          : "The next image is the user's reference for a correct result; it is not the work being checked.",
+      ),
+      req.reference,
+    );
   return generateStructured(client, {
     model: models.reasoning,
     name: "step_check",

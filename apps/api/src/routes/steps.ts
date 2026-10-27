@@ -19,8 +19,10 @@ import {
   HIGHLIGHT_CONFIDENT,
   HighlightRequest,
   Id,
+  SetStepReferenceRequest,
   Surface,
   type HighlightTarget,
+  type StepVisualsResponse,
 } from "@tandrix/contracts";
 import { Hono } from "hono";
 import type { z } from "zod";
@@ -35,6 +37,10 @@ import type { StepStateRepo } from "../repos/step-state";
 import type { AssetsRepo } from "../repos/assets";
 import type { StepAnswerer } from "../voice";
 import type { StepChecker } from "../step-checker";
+import type { ManualsRepo } from "../repos/manuals";
+import type { ManualPagesRepo } from "../repos/manual-pages";
+import type { PageRenderer } from "../pdf-render";
+import { canBeReference, checkReference, stepVisuals, type VisualDeps } from "../step-visuals";
 
 /** Offline actions may be replayed up to a day later. */
 export const MAX_ACTION_AGE_MS = 24 * 60 * 60 * 1000;
@@ -64,6 +70,11 @@ export interface StepDeps {
   answerer: StepAnswerer;
   checker: StepChecker;
   assets: AssetsRepo;
+  manuals: ManualsRepo;
+  manualStorage: EvidenceStorage;
+  manualPages: ManualPagesRepo;
+  renderer: PageRenderer;
+  log: (l: Record<string, unknown>) => void;
   now?: () => number;
 }
 
@@ -95,79 +106,278 @@ async function stepFor(d: StepDeps, ownerId: string, rawJobId?: string, rawStepI
 
 export function stepRoutes(d: StepDeps) {
   const now = d.now ?? Date.now;
-  return new Hono<AuthEnv>()
-    .post("/:stepId/check", async (c) => {
-      const user = c.get("user");
-      const { jobId, jobStep, step } = await stepFor(
-        d,
-        user.id,
-        c.req.param("id"),
-        c.req.param("stepId"),
-      );
-      const parsed = CheckStepRequest.safeParse(await c.req.json().catch(() => undefined));
-      if (!parsed.success) throw invalid(issues(parsed.error));
-      const reply = (r: CheckStepResponse) => c.json(r);
+  const visualDeps: VisualDeps = d;
+  return (
+    new Hono<AuthEnv>()
+      .get("/:stepId/visuals", async (c) => {
+        const user = c.get("user");
+        const { jobId, jobStep, step } = await stepFor(
+          d,
+          user.id,
+          c.req.param("id"),
+          c.req.param("stepId"),
+        );
+        const body: StepVisualsResponse = await stepVisuals(
+          visualDeps,
+          { ownerId: user.id, jobId, jobStepId: jobStep.id, step },
+          now(),
+        );
+        return c.json(body);
+      })
 
-      // Steps done in software are checked on a screenshot, everything else on a photo.
-      const medium = step.verification === "screen" ? "screen" : "photo";
-      const kind = medium === "screen" ? "screenshot" : "photo";
-      const ev = await d.evidence.getForOwner(user.id, jobId, parsed.data.evidenceId);
-      if (!ev || !ev.uploadedAt || ev.kind !== kind)
-        throw notFound(medium === "screen" ? "Screenshot" : "Photo");
+      // The user's own picture of how the step should look. Replaces any earlier one.
+      .put("/:stepId/reference", async (c) => {
+        const user = c.get("user");
+        const { jobId, jobStep, step } = await stepFor(
+          d,
+          user.id,
+          c.req.param("id"),
+          c.req.param("stepId"),
+        );
+        const parsed = SetStepReferenceRequest.safeParse(await c.req.json().catch(() => undefined));
+        if (!parsed.success) throw invalid(issues(parsed.error));
+        const ev = await d.evidence.getForOwner(user.id, jobId, parsed.data.evidenceId);
+        if (!ev || !canBeReference(ev)) throw notFound("Photo");
+        await d.stepState.setReference(
+          jobStep.id,
+          ev.id,
+          clientSurface(c.req.header(SURFACE_HEADER)),
+        );
+        const ref = { ownerId: user.id, jobId, jobStepId: jobStep.id, step };
+        return c.json(await stepVisuals(visualDeps, ref, now()));
+      })
 
-      const at = new Date(now()).toISOString();
-      const state = {
-        status: jobStep.status,
-        startedAt: jobStep.startedAt,
-        statusEvidenceId: jobStep.statusEvidenceId,
-        lastCheck: null,
-        ...(jobStep.note ? { note: jobStep.note } : {}),
-      };
-      const ctx = {
-        verification: step.verification,
-        hazardTags: step.hazardTags,
-        confirmedGates: [],
-        ...(step.measurement ? { measurement: step.measurement } : {}),
-      };
-      // Apply the rules before spending a model call: wrong step state or an old photo fail here.
-      const precheck = transitionStep(
-        state,
-        {
-          type: "check",
-          result: "not_verifiable",
+      .delete("/:stepId/reference", async (c) => {
+        const user = c.get("user");
+        const { jobId, jobStep, step } = await stepFor(
+          d,
+          user.id,
+          c.req.param("id"),
+          c.req.param("stepId"),
+        );
+        await d.stepState.setReference(
+          jobStep.id,
+          null,
+          clientSurface(c.req.header(SURFACE_HEADER)),
+        );
+        const ref = { ownerId: user.id, jobId, jobStepId: jobStep.id, step };
+        return c.json(await stepVisuals(visualDeps, ref, now()));
+      })
+
+      .post("/:stepId/check", async (c) => {
+        const user = c.get("user");
+        const { jobId, jobStep, step } = await stepFor(
+          d,
+          user.id,
+          c.req.param("id"),
+          c.req.param("stepId"),
+        );
+        const parsed = CheckStepRequest.safeParse(await c.req.json().catch(() => undefined));
+        if (!parsed.success) throw invalid(issues(parsed.error));
+        const reply = (r: CheckStepResponse) => c.json(r);
+
+        // Steps done in software are checked on a screenshot, everything else on a photo.
+        const medium = step.verification === "screen" ? "screen" : "photo";
+        const kind = medium === "screen" ? "screenshot" : "photo";
+        const ev = await d.evidence.getForOwner(user.id, jobId, parsed.data.evidenceId);
+        if (!ev || !ev.uploadedAt || ev.kind !== kind)
+          throw notFound(medium === "screen" ? "Screenshot" : "Photo");
+
+        const at = new Date(now()).toISOString();
+        const state = {
+          status: jobStep.status,
+          startedAt: jobStep.startedAt,
+          statusEvidenceId: jobStep.statusEvidenceId,
+          lastCheck: null,
+          ...(jobStep.note ? { note: jobStep.note } : {}),
+        };
+        const ctx = {
+          verification: step.verification,
+          hazardTags: step.hazardTags,
+          confirmedGates: [],
+          ...(step.measurement ? { measurement: step.measurement } : {}),
+        };
+        // Apply the rules before spending a model call: wrong step state or an old photo fail here.
+        const precheck = transitionStep(
+          state,
+          {
+            type: "check",
+            result: "not_verifiable",
+            evidenceId: ev.id,
+            evidenceCapturedAt: ev.capturedAt,
+            at,
+          },
+          ctx,
+        );
+        if (!precheck.ok)
+          return reply({ status: "rejected", code: precheck.code, message: precheck.message });
+
+        // A reference helps the check but is never required: without one it checks on words alone.
+        const reference = await checkReference(visualDeps, {
+          ownerId: user.id,
+          jobId,
+          jobStepId: jobStep.id,
+          step,
+        }).catch((e: Error) => {
+          d.log({ level: "warn", event: "check_reference_failed", error: e.message });
+          return null;
+        });
+        const outcome = await d.checker.check({
+          jobStepId: jobStep.id,
+          medium,
+          photo: { bytes: await d.storage.download(ev.storageKey), mimeType: ev.mimeType },
+          instruction: step.instruction,
+          expectedState: step.expectedState,
+          ...(reference ? { reference } : {}),
+        });
+        if (outcome.status === "unavailable") return reply(outcome);
+
+        const result = transitionStep(
+          state,
+          {
+            type: "check",
+            result: outcome.result,
+            evidenceId: ev.id,
+            evidenceCapturedAt: ev.capturedAt,
+            at,
+          },
+          ctx,
+        );
+        if (!result.ok)
+          return reply({ status: "rejected", code: result.code, message: result.message });
+        const saved = await d.stepState.recordCheck({
+          transition: {
+            ownerId: user.id,
+            jobStepId: jobStep.id,
+            fromStatus: jobStep.status,
+            to: {
+              status: result.state.status,
+              startedAt: result.state.startedAt,
+              statusEvidenceId: result.state.statusEvidenceId,
+              ...(result.state.note ? { note: result.state.note } : {}),
+            },
+            surface: ev.surface,
+            event: {},
+          },
           evidenceId: ev.id,
-          evidenceCapturedAt: ev.capturedAt,
-          at,
-        },
-        ctx,
-      );
-      if (!precheck.ok)
-        return reply({ status: "rejected", code: precheck.code, message: precheck.message });
-
-      const outcome = await d.checker.check({
-        jobStepId: jobStep.id,
-        medium,
-        photo: { bytes: await d.storage.download(ev.storageKey), mimeType: ev.mimeType },
-        instruction: step.instruction,
-        expectedState: step.expectedState,
-      });
-      if (outcome.status === "unavailable") return reply(outcome);
-
-      const result = transitionStep(
-        state,
-        {
-          type: "check",
           result: outcome.result,
-          evidenceId: ev.id,
-          evidenceCapturedAt: ev.capturedAt,
-          at,
-        },
-        ctx,
-      );
-      if (!result.ok)
-        return reply({ status: "rejected", code: result.code, message: result.message });
-      const saved = await d.stepState.recordCheck({
-        transition: {
+          reason: outcome.reason,
+          ...(outcome.whatToShowNext ? { whatToShowNext: outcome.whatToShowNext } : {}),
+        });
+        return reply({ status: "checked", check: saved.check, step: saved.step });
+      })
+      .post("/:stepId/ask", async (c) => {
+        const user = c.get("user");
+        const { job, step, parts, procedure } = await stepFor(
+          d,
+          user.id,
+          c.req.param("id"),
+          c.req.param("stepId"),
+        );
+        const parsed = AskStepRequest.safeParse(await c.req.json().catch(() => undefined));
+        if (!parsed.success) throw invalid(issues(parsed.error));
+        const reply = (r: AskStepResponse) => c.json(r);
+        const { text, stuck } = parsed.data;
+
+        // Safety first, without the model: wiring and live work are refused whatever is asked.
+        const refusal = refusalForRequest(text);
+        if (refusal) return reply({ status: "refused", message: refusal.reason });
+
+        const command = stuck ? null : parseVoiceCommand(text);
+        if (command && command.kind !== "stuck") return reply({ status: "command", command });
+
+        const asset = job.assetId ? await d.assets.getForOwner(user.id, job.assetId) : null;
+        const r = await d.answerer.answer({
+          step: {
+            title: step.title,
+            instruction: step.instruction,
+            ...(step.reason ? { reason: step.reason } : {}),
+            ...(step.caution ? { caution: step.caution } : {}),
+            parts: parts.map((p) => p.name),
+            hazards: step.hazardTags,
+          },
+          ...(asset ? { equipment: `${asset.make} ${asset.model}` } : {}),
+          otherSteps: procedure.steps
+            .filter((s) => s.id !== step.id)
+            .map((s) => ({ order: s.order, title: s.title, instruction: s.instruction })),
+          question:
+            command?.kind === "stuck" && command.detail ? `I'm stuck on ${command.detail}` : text,
+          stuck: stuck || command?.kind === "stuck",
+        });
+        return reply(r);
+      })
+      .post("/:stepId/actions", async (c) => {
+        const user = c.get("user");
+        const { jobId, jobStep, step } = await stepFor(
+          d,
+          user.id,
+          c.req.param("id"),
+          c.req.param("stepId"),
+        );
+        const parsed = StepActionRequest.safeParse(await c.req.json().catch(() => undefined));
+        if (!parsed.success) throw invalid(issues(parsed.error));
+        const action = parsed.data;
+        const surface = clientSurface(c.req.header(SURFACE_HEADER));
+        const reply = (r: StepActionResponse) => c.json(r);
+        const forStep = async () =>
+          (await d.stepState.confirmations(jobId)).filter((x) => x.jobStepId === jobStep.id);
+
+        if (action.action === "confirm_safety") {
+          // A refused step has nothing to confirm: Tandrix doesn't guide it at all.
+          const refusal = refusalFor(step.hazardTags);
+          if (refusal)
+            return reply({ status: "rejected", code: "refused", message: refusal.reason });
+          if (!requiredGates(step.hazardTags).includes(action.gate)) {
+            throw invalid([`gate: this step doesn't need ${action.gate}`]);
+          }
+          await d.stepState.confirmGate(user.id, jobStep.id, action.gate, surface);
+          return reply({ status: "applied", step: jobStep, confirmations: await forStep() });
+        }
+
+        const confirmations = await forStep();
+        // An action replayed from the offline queue keeps when it happened, within limits.
+        const at = actionTime(action.occurredAt, now());
+        const event: StepEvent =
+          action.action === "start"
+            ? { type: "start", at }
+            : action.action === "confirm_done"
+              ? {
+                  type: "confirm_done",
+                  at,
+                  ...(action.measuredValue !== undefined
+                    ? { measuredValue: action.measuredValue }
+                    : {}),
+                }
+              : action.action === "skip"
+                ? { type: "skip", reason: action.reason, at }
+                : { type: "reopen", at };
+        const result = transitionStep(
+          {
+            status: jobStep.status,
+            startedAt: jobStep.startedAt,
+            statusEvidenceId: jobStep.statusEvidenceId,
+            lastCheck: jobStep.startedAt
+              ? await d.stepState.lastCheckSince(jobStep.id, jobStep.startedAt)
+              : null,
+            ...(jobStep.note ? { note: jobStep.note } : {}),
+          },
+          event,
+          {
+            verification: step.verification,
+            hazardTags: step.hazardTags,
+            confirmedGates: confirmations.map((x) => x.gate),
+            ...(step.measurement ? { measurement: step.measurement } : {}),
+          },
+        );
+        if (!result.ok) {
+          return reply({
+            status: "rejected",
+            code: result.code,
+            message: result.message,
+            ...(result.gates ? { gates: result.gates } : {}),
+          });
+        }
+        const saved = await d.stepState.applyTransition({
           ownerId: user.id,
           jobStepId: jobStep.id,
           fromStatus: jobStep.status,
@@ -177,226 +387,97 @@ export function stepRoutes(d: StepDeps) {
             statusEvidenceId: result.state.statusEvidenceId,
             ...(result.state.note ? { note: result.state.note } : {}),
           },
-          surface: ev.surface,
-          event: {},
-        },
-        evidenceId: ev.id,
-        result: outcome.result,
-        reason: outcome.reason,
-        ...(outcome.whatToShowNext ? { whatToShowNext: outcome.whatToShowNext } : {}),
-      });
-      return reply({ status: "checked", check: saved.check, step: saved.step });
-    })
-    .post("/:stepId/ask", async (c) => {
-      const user = c.get("user");
-      const { job, step, parts, procedure } = await stepFor(
-        d,
-        user.id,
-        c.req.param("id"),
-        c.req.param("stepId"),
-      );
-      const parsed = AskStepRequest.safeParse(await c.req.json().catch(() => undefined));
-      if (!parsed.success) throw invalid(issues(parsed.error));
-      const reply = (r: AskStepResponse) => c.json(r);
-      const { text, stuck } = parsed.data;
-
-      // Safety first, without the model: wiring and live work are refused whatever is asked.
-      const refusal = refusalForRequest(text);
-      if (refusal) return reply({ status: "refused", message: refusal.reason });
-
-      const command = stuck ? null : parseVoiceCommand(text);
-      if (command && command.kind !== "stuck") return reply({ status: "command", command });
-
-      const asset = job.assetId ? await d.assets.getForOwner(user.id, job.assetId) : null;
-      const r = await d.answerer.answer({
-        step: {
-          title: step.title,
-          instruction: step.instruction,
-          ...(step.reason ? { reason: step.reason } : {}),
-          ...(step.caution ? { caution: step.caution } : {}),
-          parts: parts.map((p) => p.name),
-          hazards: step.hazardTags,
-        },
-        ...(asset ? { equipment: `${asset.make} ${asset.model}` } : {}),
-        otherSteps: procedure.steps
-          .filter((s) => s.id !== step.id)
-          .map((s) => ({ order: s.order, title: s.title, instruction: s.instruction })),
-        question:
-          command?.kind === "stuck" && command.detail ? `I'm stuck on ${command.detail}` : text,
-        stuck: stuck || command?.kind === "stuck",
-      });
-      return reply(r);
-    })
-    .post("/:stepId/actions", async (c) => {
-      const user = c.get("user");
-      const { jobId, jobStep, step } = await stepFor(
-        d,
-        user.id,
-        c.req.param("id"),
-        c.req.param("stepId"),
-      );
-      const parsed = StepActionRequest.safeParse(await c.req.json().catch(() => undefined));
-      if (!parsed.success) throw invalid(issues(parsed.error));
-      const action = parsed.data;
-      const surface = clientSurface(c.req.header(SURFACE_HEADER));
-      const reply = (r: StepActionResponse) => c.json(r);
-      const forStep = async () =>
-        (await d.stepState.confirmations(jobId)).filter((x) => x.jobStepId === jobStep.id);
-
-      if (action.action === "confirm_safety") {
-        // A refused step has nothing to confirm: Tandrix doesn't guide it at all.
-        const refusal = refusalFor(step.hazardTags);
-        if (refusal) return reply({ status: "rejected", code: "refused", message: refusal.reason });
-        if (!requiredGates(step.hazardTags).includes(action.gate)) {
-          throw invalid([`gate: this step doesn't need ${action.gate}`]);
-        }
-        await d.stepState.confirmGate(user.id, jobStep.id, action.gate, surface);
-        return reply({ status: "applied", step: jobStep, confirmations: await forStep() });
-      }
-
-      const confirmations = await forStep();
-      // An action replayed from the offline queue keeps when it happened, within limits.
-      const at = actionTime(action.occurredAt, now());
-      const event: StepEvent =
-        action.action === "start"
-          ? { type: "start", at }
-          : action.action === "confirm_done"
-            ? {
-                type: "confirm_done",
-                at,
-                ...(action.measuredValue !== undefined
-                  ? { measuredValue: action.measuredValue }
-                  : {}),
-              }
-            : action.action === "skip"
-              ? { type: "skip", reason: action.reason, at }
-              : { type: "reopen", at };
-      const result = transitionStep(
-        {
-          status: jobStep.status,
-          startedAt: jobStep.startedAt,
-          statusEvidenceId: jobStep.statusEvidenceId,
-          lastCheck: jobStep.startedAt
-            ? await d.stepState.lastCheckSince(jobStep.id, jobStep.startedAt)
-            : null,
-          ...(jobStep.note ? { note: jobStep.note } : {}),
-        },
-        event,
-        {
-          verification: step.verification,
-          hazardTags: step.hazardTags,
-          confirmedGates: confirmations.map((x) => x.gate),
-          ...(step.measurement ? { measurement: step.measurement } : {}),
-        },
-      );
-      if (!result.ok) {
-        return reply({
-          status: "rejected",
-          code: result.code,
-          message: result.message,
-          ...(result.gates ? { gates: result.gates } : {}),
+          surface,
+          event: {
+            action: action.action,
+            ...(action.action === "confirm_done" && action.measuredValue !== undefined
+              ? { measured_value: action.measuredValue }
+              : {}),
+            ...(action.action === "skip" ? { reason: action.reason } : {}),
+          },
         });
-      }
-      const saved = await d.stepState.applyTransition({
-        ownerId: user.id,
-        jobStepId: jobStep.id,
-        fromStatus: jobStep.status,
-        to: {
-          status: result.state.status,
-          startedAt: result.state.startedAt,
-          statusEvidenceId: result.state.statusEvidenceId,
-          ...(result.state.note ? { note: result.state.note } : {}),
-        },
-        surface,
-        event: {
-          action: action.action,
-          ...(action.action === "confirm_done" && action.measuredValue !== undefined
-            ? { measured_value: action.measuredValue }
-            : {}),
-          ...(action.action === "skip" ? { reason: action.reason } : {}),
-        },
-      });
-      return reply({ status: "applied", step: saved, confirmations });
-    })
-    .post("/:stepId/highlight", async (c) => {
-      const user = c.get("user");
-      const { jobId, step, parts } = await stepFor(
-        d,
-        user.id,
-        c.req.param("id"),
-        c.req.param("stepId"),
-      );
-      const parsed = HighlightRequest.safeParse(await c.req.json().catch(() => undefined));
-      if (!parsed.success) throw invalid(issues(parsed.error));
-
-      // Steps done in software are checked on a screenshot, everything else on a photo.
-      const medium = step.verification === "screen" ? "screen" : "photo";
-      const kind = medium === "screen" ? "screenshot" : "photo";
-      const ev = await d.evidence.getForOwner(user.id, jobId, parsed.data.evidenceId);
-      if (!ev || !ev.uploadedAt || ev.kind !== kind)
-        throw notFound(medium === "screen" ? "Screenshot" : "Photo");
-      if (!ev.width || !ev.height) {
-        throw new HttpError(
-          422,
-          "invalid_request",
-          "This photo has no size recorded. Take it again.",
+        return reply({ status: "applied", step: saved, confirmations });
+      })
+      .post("/:stepId/highlight", async (c) => {
+        const user = c.get("user");
+        const { jobId, step, parts } = await stepFor(
+          d,
+          user.id,
+          c.req.param("id"),
+          c.req.param("stepId"),
         );
-      }
-      if (!parts.length) return c.json({ status: "no_parts" as const });
+        const parsed = HighlightRequest.safeParse(await c.req.json().catch(() => undefined));
+        if (!parsed.success) throw invalid(issues(parsed.error));
 
-      const wanted = parts.slice(0, MAX_HIGHLIGHTS);
-      const size = { width: ev.width, height: ev.height };
-      const result = await d.highlighter.find({
-        photo: { bytes: await d.storage.download(ev.storageKey), mimeType: ev.mimeType },
-        size,
-        instruction: step.instruction,
-        parts: wanted.map((p) => ({ id: p.id, name: p.name })),
-      });
-      if (result.status === "unavailable") return c.json(result);
+        // Steps done in software are checked on a screenshot, everything else on a photo.
+        const medium = step.verification === "screen" ? "screen" : "photo";
+        const kind = medium === "screen" ? "screenshot" : "photo";
+        const ev = await d.evidence.getForOwner(user.id, jobId, parsed.data.evidenceId);
+        if (!ev || !ev.uploadedAt || ev.kind !== kind)
+          throw notFound(medium === "screen" ? "Screenshot" : "Photo");
+        if (!ev.width || !ev.height) {
+          throw new HttpError(
+            422,
+            "invalid_request",
+            "This photo has no size recorded. Take it again.",
+          );
+        }
+        if (!parts.length) return c.json({ status: "no_parts" as const });
 
-      // One highlight per part; ignore anything for a part that wasn't asked about.
-      const picks = wanted
-        .map((p) => ({ part: p, pick: result.picks.find((x) => x.partSpecId === p.id) }))
-        .filter((x) => x.pick !== undefined);
-      const saved = await d.detections.insertMany(
-        picks.map(({ part, pick }) => ({
+        const wanted = parts.slice(0, MAX_HIGHLIGHTS);
+        const size = { width: ev.width, height: ev.height };
+        const result = await d.highlighter.find({
+          photo: { bytes: await d.storage.download(ev.storageKey), mimeType: ev.mimeType },
+          size,
+          instruction: step.instruction,
+          parts: wanted.map((p) => ({ id: p.id, name: p.name })),
+        });
+        if (result.status === "unavailable") return c.json(result);
+
+        // One highlight per part; ignore anything for a part that wasn't asked about.
+        const picks = wanted
+          .map((p) => ({ part: p, pick: result.picks.find((x) => x.partSpecId === p.id) }))
+          .filter((x) => x.pick !== undefined);
+        const saved = await d.detections.insertMany(
+          picks.map(({ part, pick }) => ({
+            evidenceId: ev.id,
+            label: part.name,
+            partSpecId: part.id,
+            box: pick!.box,
+            mask: pick!.mask,
+            confidence: pick!.confidence,
+          })),
+        );
+        const targets: HighlightTarget[] = saved.map((det) => {
+          // Match by part, not position: one detection per part.
+          const part = wanted.find((p) => p.id === det.partSpecId)!;
+          return {
+            surface: "camera",
+            evidenceId: ev.id,
+            label: part.name,
+            confidence: det.confidence,
+            geometry: det.mask
+              ? { kind: "mask", box: det.box, mask: det.mask }
+              : { kind: "box", box: det.box },
+            detectionId: det.id,
+            partSpecId: part.id,
+            ...(part.partNumber ? { partNumber: part.partNumber } : {}),
+            possible: det.confidence < HIGHLIGHT_CONFIDENT,
+          };
+        });
+        const found = new Set(targets.map((t) => t.partSpecId));
+        return c.json({
+          status: "found" as const,
           evidenceId: ev.id,
-          label: part.name,
-          partSpecId: part.id,
-          box: pick!.box,
-          mask: pick!.mask,
-          confidence: pick!.confidence,
-        })),
-      );
-      const targets: HighlightTarget[] = saved.map((det) => {
-        // Match by part, not position: one detection per part.
-        const part = wanted.find((p) => p.id === det.partSpecId)!;
-        return {
-          surface: "camera",
-          evidenceId: ev.id,
-          label: part.name,
-          confidence: det.confidence,
-          geometry: det.mask
-            ? { kind: "mask", box: det.box, mask: det.mask }
-            : { kind: "box", box: det.box },
-          detectionId: det.id,
-          partSpecId: part.id,
-          ...(part.partNumber ? { partNumber: part.partNumber } : {}),
-          possible: det.confidence < HIGHLIGHT_CONFIDENT,
-        };
-      });
-      const found = new Set(targets.map((t) => t.partSpecId));
-      return c.json({
-        status: "found" as const,
-        evidenceId: ev.id,
-        size,
-        targets,
-        missing: wanted
-          .filter((p) => !found.has(p.id))
-          .map((p) => ({ partSpecId: p.id, name: p.name })),
-        ...(result.hint ? { hint: result.hint } : {}),
-      });
-    });
+          size,
+          targets,
+          missing: wanted
+            .filter((p) => !found.has(p.id))
+            .map((p) => ({ partSpecId: p.id, name: p.name })),
+          ...(result.hint ? { hint: result.hint } : {}),
+        });
+      })
+  );
 }
 
 export function detectionRoutes(d: StepDeps) {

@@ -155,7 +155,7 @@ Before saving, `normalizeDraft` (@tandrix/core) renumbers steps, drops unknown p
 1. Send the manual (PDF via Files API, or page images) + asset + task ("assembly", "seal replacement") to Spark.
 2. Structured output: `PartSpec[]` and `ProcedureStep[]`, each step with `citation` (page, figure) and `hazard_tags`.
 3. Validate; reject steps without citation unless `source_type = generic`.
-4. Crop referenced figures as `reference_image_key` where a page/figure is cited.
+4. Step visuals (P7): `GET /jobs/:id/steps/:stepId/visuals` returns the user's reference photo (`job_steps.reference_evidence_id`, set with `PUT`/`DELETE …/reference`), the cited manual page and the step's latest photo or screenshot, as signed URLs. Manual pages are rendered to JPEG on first use (pdf.js and @napi-rs/canvas in a worker thread with a 20 s limit, so an untrusted PDF can't block the API), stored in the manuals bucket and recorded in `manual_pages`. Cropping to the cited figure is not done yet.
 
 ### 6.3 Highlight parts on a frame
 1. Downscale frame (e.g. long edge 1280 px).
@@ -169,7 +169,7 @@ Before saving, `normalizeDraft` (@tandrix/core) renumbers steps, drops unknown p
 3. User corrections are stored on `Detection.confirmed_by_user`.
 
 ### 6.5 Step check
-- Input: check photo, step `expected_state`, reference image. Steps with `verification: screen` (done in software) are checked on a screenshot instead, with their own prompt (`prompts.checkScreen`); the route takes only a screenshot for them and only a photo for photo steps.
+- Input: check photo, step `expected_state`, reference image (the user's reference photo, else the cited manual page, labelled to the model as which it is). Steps with `verification: screen` (done in software) are checked on a screenshot instead, with their own prompt (`prompts.checkScreen`); the route takes only a screenshot for them and only a photo for photo steps.
 - Spark returns `{result: pass|fail|not_verifiable, reason, what_to_show_next?}`.
 - Prompt rule: `not_verifiable` for anything a photo can't show (torque, internal fit, electrical), or a screen can't show (a setting on another page, a change only visible on the equipment).
 - On the Mac the panel offers the current desktop step (the job's current step if it's done in software, else the first unfinished one): start it, "Check my screen" (the panel steps aside for a fresh screenshot of the display under the cursor, then returns with the `CheckResult`, also spoken), and "I've done it" after a not-verifiable answer. The phone shows screen steps with a notice to finish them on the Mac.

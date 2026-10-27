@@ -13,6 +13,7 @@ import {
   HighlightResponse,
   StepActionResponse,
   CheckStepResponse,
+  StepVisualsResponse,
   PartsCheckResponse,
   CorrectPartResponse,
   AskStepResponse,
@@ -182,6 +183,17 @@ export const api = {
     request(`/jobs/${jobId}/steps/${jobStepId}/check`, CheckStepResponse, {
       method: "POST",
       body: JSON.stringify({ evidenceId }),
+    }),
+  stepVisuals: (jobId: string, jobStepId: string) =>
+    request(`/jobs/${jobId}/steps/${jobStepId}/visuals`, StepVisualsResponse),
+  setStepReference: (jobId: string, jobStepId: string, evidenceId: string) =>
+    request(`/jobs/${jobId}/steps/${jobStepId}/reference`, StepVisualsResponse, {
+      method: "PUT",
+      body: JSON.stringify({ evidenceId }),
+    }),
+  clearStepReference: (jobId: string, jobStepId: string) =>
+    request(`/jobs/${jobId}/steps/${jobStepId}/reference`, StepVisualsResponse, {
+      method: "DELETE",
     }),
   partsCheck: (jobId: string, evidenceId: string) =>
     request(`/jobs/${jobId}/parts-check`, PartsCheckResponse, {

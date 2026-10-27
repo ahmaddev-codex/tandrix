@@ -21,7 +21,7 @@ import {
 } from "./entities";
 import { ManualSearchOutput, NameplateReading } from "./model-outputs";
 import { DesktopAction, ScreenGeometry } from "./desktop";
-import { ControlMode, Id, Language, Surface, Timestamp, text } from "./primitives";
+import { ControlMode, Id, Language, Surface, Timestamp, optionalText, text } from "./primitives";
 
 export const CreateJobRequest = z.strictObject({
   title: text(160),
@@ -421,6 +421,56 @@ export const CheckStepResponse = z.discriminatedUnion("status", [
   z.strictObject({ status: z.literal("unavailable"), message: text(300) }),
 ]);
 export type CheckStepResponse = z.infer<typeof CheckStepResponse>;
+
+// ---- Step visuals ----
+
+const visualSize = {
+  width: z.number().int().min(1).max(20_000).optional(),
+  height: z.number().int().min(1).max(20_000).optional(),
+};
+
+/** An image that helps with a step. URLs are signed and short-lived. */
+export const StepVisual = z.discriminatedUnion("kind", [
+  /** The user's own picture of how the result should look: from the box, a kit sheet, a past job. */
+  z.strictObject({
+    kind: z.literal("reference"),
+    evidenceId: Id,
+    evidenceKind: z.enum(["photo", "screenshot"]),
+    url: z.url(),
+    ...visualSize,
+    capturedAt: Timestamp,
+  }),
+  /** The manual page the step cites, as an image. */
+  z.strictObject({
+    kind: z.literal("manual_page"),
+    manualId: Id,
+    page: z.number().int().min(1).max(5000),
+    figure: optionalText(40),
+    url: z.url(),
+    width: z.number().int().min(1).max(20_000),
+    height: z.number().int().min(1).max(20_000),
+  }),
+  /** The latest photo or screenshot taken for the step. */
+  z.strictObject({
+    kind: z.literal("latest"),
+    evidenceId: Id,
+    evidenceKind: z.enum(["photo", "screenshot"]),
+    url: z.url(),
+    ...visualSize,
+    capturedAt: Timestamp,
+  }),
+]);
+export type StepVisual = z.infer<typeof StepVisual>;
+
+/** GET /jobs/:id/steps/:stepId/visuals: reference first, then the manual page, then the latest photo. */
+export const StepVisualsResponse = z.strictObject({
+  visuals: z.array(StepVisual).max(3),
+  urlExpiresAt: Timestamp,
+});
+export type StepVisualsResponse = z.infer<typeof StepVisualsResponse>;
+
+/** PUT /jobs/:id/steps/:stepId/reference: an uploaded photo or screenshot on this job. */
+export const SetStepReferenceRequest = z.strictObject({ evidenceId: Id });
 
 /** POST /jobs/:id/parts-check: match one photo of the laid-out parts to the parts list. */
 export const PartsCheckRequest = z.strictObject({ evidenceId: Id });

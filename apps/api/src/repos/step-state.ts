@@ -47,6 +47,9 @@ export interface StepStateRepo {
     reason: string;
     whatToShowNext?: string;
   }): Promise<{ check: Check; step: JobStep }>;
+  /** The evidence id of the step's reference photo, if the user set one. */
+  reference(jobStepId: string): Promise<string | null>;
+  setReference(jobStepId: string, evidenceId: string | null, surface: Surface): Promise<void>;
 }
 
 type Row = Record<string, unknown>;
@@ -64,6 +67,24 @@ const toConfirmation = (r: Row): SafetyConfirmation =>
 
 export function supabaseStepStateRepo(db: SupabaseClient): StepStateRepo {
   return {
+    async reference(jobStepId) {
+      const { data, error } = await db
+        .from("job_steps")
+        .select("reference_evidence_id")
+        .eq("id", jobStepId)
+        .maybeSingle();
+      if (error) throw dbError(error);
+      return (data?.reference_evidence_id as string | null | undefined) ?? null;
+    },
+
+    async setReference(jobStepId, evidenceId, surface) {
+      const { error } = await db
+        .from("job_steps")
+        .update({ reference_evidence_id: evidenceId, updated_by_surface: surface })
+        .eq("id", jobStepId);
+      if (error) throw dbError(error);
+    },
+
     async confirmations(jobId) {
       const { data, error } = await db
         .from("safety_confirmations")

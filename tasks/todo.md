@@ -52,7 +52,7 @@ Tracks: **D** design, **A** mobile & glasses, **B** API & AI, **C** desktop (mac
 - [ ] P6 Known gaps: offline manual/reference caching, deploy readiness, Mac icons and packaging, design system additions
 - [ ] **Checkpoint 4a:** clear what each app does; project from a sentence; Mac teaches with no job
 
-- [ ] P7 Step visuals: each step shows an image: the cited manual page or figure, the user's own reference photo, or the latest photo of the step
+- [x] P7 Step visuals: each step shows the user's reference photo, the cited manual page (rendered once, zoomable) and the latest photo, on the phone and the Mac; the photo check compares against the reference. Open: crop to the cited figure; reference in the report (with T23)
 - [ ] P8 Mixed demo material: more than one product (electronics build, a bike repair, a home-network install) plus synthetic app screens for Show me and the T4 spike
 
 ## Phase 4 — Continuity (31 Oct)

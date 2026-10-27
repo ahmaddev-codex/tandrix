@@ -8,19 +8,21 @@
     "dev:fixtures": "TANDRIX_FIXTURE_MODELS=1 tsx watch --env-file=../../.env.local src/server.ts",
     "typecheck": "tsc -p tsconfig.json",
     "test:integration": "vitest run -c vitest.integration.config.ts",
-    "build": "esbuild src/server.ts --bundle --platform=node --format=esm --target=node22 --outfile=dist/server.js --sourcemap --banner:js=\"import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);\"",
+    "build": "esbuild src/server.ts src/pdf-render-worker.ts --bundle --platform=node --format=esm --target=node22 --outdir=dist --sourcemap --external:pdfjs-dist --external:@napi-rs/canvas --banner:js=\"import { createRequire as __tandrixRequire } from 'node:module'; const require = __tandrixRequire(import.meta.url);\"",
     "start": "node --enable-source-maps dist/server.js",
     "spend": "tsx --env-file-if-exists=../../.env.local scripts/spend.ts",
     "live-check": "tsx --env-file=../../.env.local scripts/live-check.ts"
   },
   "dependencies": {
     "@hono/node-server": "2.1.5",
+    "@napi-rs/canvas": "1.0.11",
     "@supabase/supabase-js": "2.117.3",
     "@tandrix/ai": "workspace:*",
     "@tandrix/contracts": "workspace:*",
     "@tandrix/core": "workspace:*",
     "hono": "4.13.13",
     "pdf-lib": "1.17.1",
+    "pdfjs-dist": "6.4.299",
     "zod": "4.6.7"
   },
   "devDependencies": {

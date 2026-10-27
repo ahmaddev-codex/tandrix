@@ -10,6 +10,8 @@ export interface CheckInput {
   photo: { bytes: Uint8Array; mimeType: string };
   instruction: string;
   expectedState: string;
+  /** How a correct result looks: the user's reference photo or the cited manual page. */
+  reference?: { bytes: Uint8Array; mimeType: string; kind: "reference" | "manual_page" };
 }
 
 export type CheckOutcome =
@@ -38,14 +40,21 @@ export function metaStepChecker(
   }),
 ): StepChecker {
   return {
-    async check({ medium, photo, instruction, expectedState }) {
-      const mime = photo.mimeType === "image/png" ? "image/png" : "image/jpeg";
+    async check({ medium, photo, instruction, expectedState, reference }) {
+      const mimeOf = (m: string) => (m === "image/png" ? "image/png" : "image/jpeg");
+      const mime = mimeOf(photo.mimeType);
       try {
         const r = await checkStep(client, config.models, {
           photo: imageData(photo.bytes, mime),
           medium,
           instruction,
           expectedState,
+          ...(reference
+            ? {
+                reference: imageData(reference.bytes, mimeOf(reference.mimeType)),
+                referenceKind: reference.kind,
+              }
+            : {}),
         });
         if (!r.ok) {
           log({ level: "warn", event: "check_invalid_output", issues: r.issues.length });

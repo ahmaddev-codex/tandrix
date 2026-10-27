@@ -234,6 +234,52 @@
   flex: 1;
 }
 
+/* Step visual: the step's pictures, whole in a frame of at most 280px; open one to read it. */
+.tx-visual {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+}
+.tx-visual-frame {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-height: 280px;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--gray-100);
+  font: inherit;
+  color: inherit;
+}
+button.tx-visual-frame {
+  cursor: zoom-in;
+}
+button.tx-visual-frame:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+.tx-visual-frame img {
+  display: block;
+  max-width: 100%;
+  max-height: 278px;
+  object-fit: contain;
+}
+.tx-visual-open {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  background: var(--background-100);
+  box-shadow: var(--shadow-sm);
+}
+
 /* Safety gate */
 .tx-gate {
   display: grid;

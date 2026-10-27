@@ -76,3 +76,27 @@ describe("checkStep on a screenshot", () => {
     expect(s.calls[0]!.body.instructions).toBe(prompts.check);
   });
 });
+
+describe("checkStep with a reference", () => {
+  const withReference = async (referenceKind?: "reference" | "manual_page") => {
+    const s = scriptedFetch([responseWithText(JSON.stringify({ result: "pass", reason: "ok" }))]);
+    const client = new MetaClient({ apiKey: "k", fetch: s.fetch, sleep: noSleep });
+    await checkStep(client, models, {
+      ...req,
+      reference: imageUrl("https://example.com/reference.jpg"),
+      ...(referenceKind ? { referenceKind } : {}),
+    });
+    return JSON.stringify(s.calls[0]!.body.input);
+  };
+
+  it("sends the user's reference after the photo, saying it isn't the work", async () => {
+    const input = await withReference();
+    expect(input).toContain("the user's reference for a correct result");
+    expect(input.indexOf("check.jpg")).toBeLessThan(input.indexOf("reference.jpg"));
+  });
+
+  it("calls a manual page a manual page", async () => {
+    const input = await withReference("manual_page");
+    expect(input).toContain("the manual page this step comes from");
+  });
+});

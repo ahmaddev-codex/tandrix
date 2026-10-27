@@ -45,6 +45,8 @@ const map = {
   x: "x",
   pointer: "cursor",
   hand: "hand-pointing",
+  image: "image",
+  expand: "arrows-out-simple",
 } as const;
 
 type Path = { d: string; o?: number };

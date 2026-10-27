@@ -9,8 +9,9 @@ import type {
   SafetyConfirmation,
   PartSpec,
   ProcedureStep,
+  StepVisual as StepVisualData,
 } from "@tandrix/contracts";
-import { citationLabel, space, stepChip } from "@tandrix/ui";
+import { citationLabel, space, stepChip, visualAspect, visualLabels } from "@tandrix/ui";
 import {
   Button,
   CaptureView,
@@ -20,6 +21,7 @@ import {
   Notice,
   PartHighlight,
   StepCard,
+  StepVisual,
   Text,
   useTheme,
   type NativeHighlightTarget,
@@ -36,10 +38,14 @@ import { isOffline, keepPhoto, loadJob, offlineQueue } from "@/offline";
 import { preparePhoto, uploadPhoto, type PreparedPhoto } from "@/lib/evidence";
 import { useStepWork } from "@/components/step-work";
 import { useJobChanges } from "@/lib/realtime";
+import { ImageViewer, type ViewedImage } from "@/components/image-viewer";
 
 const finished = ["verified", "user_confirmed", "skipped"];
 
 type Phase = "live" | "preview" | "analyzing" | "result";
+
+const clock = (iso: string) =>
+  new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
 interface Loaded {
   step: ProcedureStep;
@@ -68,8 +74,12 @@ export default function StepScreen() {
   const [result, setResult] = useState<HighlightResponse>();
   const [targets, setTargets] = useState<HighlightTarget[]>([]);
   const [correcting, setCorrecting] = useState<HighlightTarget>();
-  // A photo either finds the step's parts or checks the finished work.
-  const [purpose, setPurpose] = useState<"find" | "check">("find");
+  // A photo finds the step's parts, checks the finished work, or becomes the step's reference.
+  const [purpose, setPurpose] = useState<"find" | "check" | "reference">("find");
+  // The step's pictures: the user's reference, the manual page it cites, the latest photo.
+  const [visuals, setVisuals] = useState<StepVisualData[]>([]);
+  const [visualId, setVisualId] = useState<string>();
+  const [viewing, setViewing] = useState<ViewedImage>();
   const [check, setCheck] = useState<Check | null>(null);
   const [offline, setOffline] = useState(false);
   const [notice, setNotice] = useState<string>();
@@ -121,9 +131,20 @@ export default function StepScreen() {
       })
       .catch((e: Error) => setError(e.message));
   }, [id, stepId]);
+  // Pictures help but aren't needed to work the step: offline or failing, the step shows without.
+  const loadVisuals = useCallback(() => {
+    api
+      .stepVisuals(id, stepId)
+      .then((r) => setVisuals(r.visuals))
+      .catch(() => {});
+  }, [id, stepId]);
   useEffect(load, [load]);
+  useEffect(loadVisuals, [loadVisuals]);
   // The Mac checking this step, or the job coming back from the Mac, shows here as it happens.
-  useJobChanges(id, load);
+  useJobChanges(id, () => {
+    load();
+    loadVisuals();
+  });
 
   const [handingOff, setHandingOff] = useState(false);
   const handOff = async (to: "desktop" | "phone") => {
@@ -215,6 +236,17 @@ export default function StepScreen() {
     setError(undefined);
     try {
       const evidence = await uploadPhoto(id, photo, stepId);
+      if (purpose === "reference") {
+        const r = await api.setStepReference(id, stepId, evidence.id);
+        setVisuals(r.visuals);
+        setVisualId(r.visuals[0]?.kind);
+        setPhoto(undefined);
+        setPurpose("find");
+        setPhase("live");
+        setNotice(undefined);
+        scroll.current?.scrollTo({ y: 0, animated: true });
+        return;
+      }
       if (purpose === "check") {
         const r = await api.checkStep(id, stepId, evidence.id);
         if (r.status !== "checked") {
@@ -225,9 +257,11 @@ export default function StepScreen() {
         setCheck(r.check);
         setData((d) => (d ? { ...d, jobStep: r.step } : d));
         setPhase("result");
+        loadVisuals();
         return;
       }
       const r = await api.highlight(id, stepId, evidence.id);
+      loadVisuals();
       setResult(r);
       setTargets(r.status === "found" ? r.targets : []);
       setPhase("result");
@@ -240,7 +274,9 @@ export default function StepScreen() {
       setOffline(true);
       // Offline: a check photo is kept and checked when the phone is back online; finding parts
       // needs an answer now, so it can't wait.
-      if (purpose === "check") {
+      if (purpose === "reference") {
+        setNotice("Adding a reference photo needs a connection. Try again when you're online.");
+      } else if (purpose === "check") {
         const kept = keepPhoto(
           photo.uri,
           {
@@ -266,7 +302,27 @@ export default function StepScreen() {
       setPurpose("find");
       setPhase("live");
     }
-  }, [photo, data, id, stepId, purpose]);
+  }, [photo, data, id, stepId, purpose, loadVisuals]);
+
+  const addReference = () => {
+    setPurpose("reference");
+    setPhoto(undefined);
+    setResult(undefined);
+    setTargets([]);
+    setCorrecting(undefined);
+    setPhase("live");
+    scroll.current?.scrollTo({ y: 0, animated: true });
+  };
+
+  const removeReference = async () => {
+    try {
+      const r = await api.clearStepReference(id, stepId);
+      setVisuals(r.visuals);
+      setVisualId(r.visuals[0]?.kind);
+    } catch (e) {
+      setNotice((e as Error).message);
+    }
+  };
 
   const retake = () => {
     setPhoto(undefined);
@@ -322,7 +378,8 @@ export default function StepScreen() {
   const cite = citationLabel(step.citation);
   const usable = permission?.granted && !cameraFailed;
   const canAskCamera = permission?.canAskAgain !== false && !cameraFailed;
-  const partWord = parts[0]?.name.toLowerCase() ?? "the parts";
+  // Names as written: many are proper nouns ("Raspberry Pi 5").
+  const partWord = parts[0]?.name ?? "the parts";
   const unavailable = result?.status === "unavailable" ? result.message : undefined;
   const missing =
     result?.status === "found"
@@ -383,10 +440,24 @@ export default function StepScreen() {
               ? undefined
               : purpose === "check"
                 ? "Show the finished step, close and in good light"
-                : `Show the ${partWord} in the frame`
+                : purpose === "reference"
+                  ? "Show how it should look when done: the box, a kit sheet, a finished one"
+                  : `Show the ${partWord} in the frame`
           }
-          analyzingLabel={purpose === "check" ? "Checking your work" : `Finding the ${partWord}`}
-          useLabel={purpose === "check" ? "Check this photo" : "Find the parts"}
+          analyzingLabel={
+            purpose === "check"
+              ? "Checking your work"
+              : purpose === "reference"
+                ? "Saving your reference"
+                : `Finding the ${partWord}`
+          }
+          useLabel={
+            purpose === "check"
+              ? "Check this photo"
+              : purpose === "reference"
+                ? "Use as reference"
+                : "Find the parts"
+          }
           canCapture={cameraReady}
           onCapture={take}
           onRetake={retake}
@@ -429,9 +500,11 @@ export default function StepScreen() {
       >
         {purpose === "check"
           ? "Check your work: take or choose a photo of the finished step."
-          : `Show Tandrix the parts: take or choose a photo and it highlights the ${partWord}${
-              parts.length > 1 ? " and the other parts" : ""
-            } for this step.`}
+          : purpose === "reference"
+            ? "Add a reference: take or choose a photo of how this step should look when it's done."
+            : `Show Tandrix the parts: take or choose a photo and it highlights the ${partWord}${
+                parts.length > 1 ? " and the other parts" : ""
+              } for this step.`}
       </Notice>
     );
 
@@ -469,7 +542,7 @@ export default function StepScreen() {
         {/* Design system: a SafetyGate stands before a hazardous step. */}
         {work.gates}
         {/* Photos are for finding parts; a step that names none has no frame. */}
-        {parts.length || purpose === "check" ? frame : null}
+        {parts.length || purpose !== "find" ? frame : null}
 
         {phase === "result" && purpose === "find" ? (
           <View style={{ gap: space["space-2"] }}>
@@ -538,10 +611,72 @@ export default function StepScreen() {
           status={queued ? "pending" : chip.status}
           {...(queued ? {} : chip.label ? { statusLabel: chip.label } : {})}
           {...(cite ? { source: cite } : { sourceKind: "generic" as const })}
+          visual={
+            visuals.length ? (
+              <StepVisual
+                testID="step-visual"
+                value={visualId ?? visuals[0]!.kind}
+                onChange={setVisualId}
+                onOpen={(kind) => {
+                  const v = visuals.find((x) => x.kind === kind);
+                  if (v) setViewing({ url: v.url, ...visualLabels(v, clock) });
+                }}
+                items={visuals.map((v) => {
+                  const l = visualLabels(v, clock);
+                  const aspectRatio = visualAspect(v);
+                  return {
+                    id: v.kind,
+                    ...l,
+                    ...(aspectRatio ? { aspectRatio } : {}),
+                    image: (
+                      <Image
+                        source={{
+                          uri: v.url,
+                          cacheKey:
+                            v.kind === "manual_page" ? `${v.manualId}/${v.page}` : v.evidenceId,
+                        }}
+                        style={{ flex: 1 }}
+                        contentFit="contain"
+                        transition={150}
+                        accessibilityIgnoresInvertColors
+                      />
+                    ),
+                  };
+                })}
+              />
+            ) : undefined
+          }
           actions={work.actions}
         />
+        {/* The user's own picture of the finished step, for them and for the photo check. */}
+        {purpose !== "reference" ? (
+          (visualId ?? visuals[0]?.kind) === "reference" ? (
+            <Button
+              variant="tertiary"
+              size="lg"
+              block
+              icon="x"
+              onPress={removeReference}
+              testID="remove-reference"
+            >
+              Remove reference
+            </Button>
+          ) : visuals.some((v) => v.kind === "reference") ? null : (
+            <Button
+              variant="tertiary"
+              size="lg"
+              block
+              icon="image"
+              onPress={addReference}
+              testID="add-reference"
+            >
+              Add a reference photo
+            </Button>
+          )
+        ) : null}
         {work.below}
       </ScrollView>
+      <ImageViewer image={viewing} onClose={() => setViewing(undefined)} />
     </SafeAreaView>
   );
 }
