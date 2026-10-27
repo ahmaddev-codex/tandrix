@@ -28,11 +28,22 @@ export function metaManualFinder(
       try {
         const r = await findManual(client, config.models, asset);
         if (!r.ok) {
-          log({ level: "warn", event: "manual_search_invalid_output" });
+          // Where the output broke the schema (paths and messages only, never the content).
+          log({
+            level: "warn",
+            event: "manual_search_invalid_output",
+            issues: r.issues.slice(0, 6),
+          });
           return { status: "unavailable", message: SEARCH_UNAVAILABLE };
         }
         if (r.dropped)
-          log({ level: "info", event: "manual_search_dropped_urls", count: r.dropped });
+          log({
+            level: "info",
+            event: "manual_search_dropped_urls",
+            count: r.dropped,
+            searched: "searchedCount" in r ? r.searchedCount : undefined,
+            dropped: "droppedUrls" in r ? r.droppedUrls?.slice(0, 5) : undefined,
+          });
         return { status: "found", candidates: r.data.candidates };
       } catch (e) {
         if (e instanceof MetaApiError) {

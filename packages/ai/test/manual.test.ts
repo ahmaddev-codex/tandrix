@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { findManual, MetaClient, searchedUrls, urlKey } from "../src";
-import { json, noSleep, scriptedFetch } from "./helpers";
+import { json, noSleep, responseWithText, scriptedFetch } from "./helpers";
 
 const models = { reasoning: "muse-spark-1.3", segmentation: "sam-3.1" };
 
@@ -56,16 +56,23 @@ describe("urlKey", () => {
 describe("findManual", () => {
   it("keeps only https URLs the search returned or cited, official first", async () => {
     const s = scriptedFetch([
+      // The search: prose with results and a citation.
       searchResponse(
         ["https://flowset.example/docs/cr3-10.pdf", "https://pumpparts.example/cr3.pdf"],
         ["https://mirror.example/manual.pdf"],
-        [
-          cand("https://pumpparts.example/cr3.pdf", false, 0.9),
-          cand("https://flowset.example/docs/cr3-10.pdf", true, 0.7),
-          cand("https://mirror.example/manual.pdf", false, 0.5),
-          cand("https://invented.example/made-up.pdf", true, 0.99), // not in results: dropped
-          cand("http://pumpparts.example/cr3.pdf", false, 0.9), // not https: dropped
-        ],
+        [],
+      ),
+      // The structuring call, no tools.
+      responseWithText(
+        JSON.stringify({
+          candidates: [
+            cand("https://pumpparts.example/cr3.pdf", false, 0.9),
+            cand("https://flowset.example/docs/cr3-10.pdf", true, 0.7),
+            cand("https://mirror.example/manual.pdf", false, 0.5),
+            cand("https://invented.example/made-up.pdf", true, 0.99), // not in results: dropped
+            cand("http://pumpparts.example/cr3.pdf", false, 0.9), // not https: dropped
+          ],
+        }),
       ),
     ]);
     const client = new MetaClient({ apiKey: "k", fetch: s.fetch, sleep: noSleep });
@@ -80,15 +87,22 @@ describe("findManual", () => {
     expect(s.calls[0]!.body).toMatchObject({
       tools: [{ type: "web_search" }],
       include: ["web_search_call.results"],
+    });
+    expect(s.calls[0]!.body.text).toBeUndefined();
+    // The structuring call gets the search's URLs and no tools.
+    expect(s.calls[1]!.body).toMatchObject({
       text: { format: { type: "json_schema", name: "manual_search" } },
     });
+    expect(s.calls[1]!.body.tools).toBeUndefined();
+    expect(JSON.stringify(s.calls[1]!.body.input)).toContain("https://flowset.example/docs/cr3-10");
   });
 
-  it("returns nothing when the search found nothing", async () => {
-    const s = scriptedFetch([searchResponse([], [], [cand("https://x.example/a.pdf", true, 0.9)])]);
+  it("returns nothing, without a second call, when the search found nothing", async () => {
+    const s = scriptedFetch([searchResponse([], [], [])]);
     const client = new MetaClient({ apiKey: "k", fetch: s.fetch, sleep: noSleep });
     const r = await findManual(client, models, { make: "A", model: "B" });
     expect(r.ok && r.data.candidates).toEqual([]);
+    expect(s.calls).toHaveLength(1);
   });
 });
 

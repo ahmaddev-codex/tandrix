@@ -18,12 +18,17 @@ Task: read what this equipment or product is from the photo: a nameplate, rating
 
   manualSearch: `${shared}
 Task: find the manufacturer's manual for this equipment using web search.
-- Prefer the manufacturer's own site, and installation, operation or service manuals as PDFs.
-- Only list URLs that appeared in your search results. Never construct or guess a URL.
+- Prefer the manufacturer's own site, and installation, operation or service manuals, product briefs and datasheets as PDFs.
+- List each document you found with its exact URL from the search results, who publishes it, what kind of document it is, and whether it is for this exact model. Never construct or guess a URL.
+- If nothing suitable is found, say so.`,
+
+  manualCandidates: `${shared}
+Task: turn the search notes into a list of candidate manuals.
+- Use only URLs from the list of URLs the search returned, copied exactly.
 - Set official to true only for the manufacturer's own domain.
 - documentType: installation_manual, service_manual, datasheet or other.
 - confidence is how sure you are that the document is for this exact model (0 to 1).
-- If nothing suitable is found, return an empty list.`,
+- If the notes found nothing suitable, return an empty list.`,
 
   procedure: `${shared}
 Task: turn the attached manufacturer manual into a step-by-step procedure for the job described.

@@ -1,7 +1,7 @@
 // Find manufacturer manuals with Muse Spark web search. Only URLs the search actually returned are
 // kept: a model can invent plausible manual links, and we must never fetch one of those.
 import { ManualSearchOutput } from "@tandrix/contracts";
-import type { MetaClient, MetaResponse } from "./client";
+import { outputText, type MetaClient, type MetaResponse } from "./client";
 import { text, user } from "./content";
 import type { Models } from "./pipelines";
 import { prompts } from "./prompts";
@@ -41,25 +41,42 @@ export function searchedUrls(res: MetaResponse): Set<string> {
   return urls;
 }
 
+/**
+ * Two calls: a web search in plain words (with the search tool on, the model doesn't keep to a
+ * JSON format), then a small call with no tools that turns those notes into candidates. Only URLs
+ * the search actually returned or cited are kept.
+ */
 export async function findManual(
   client: MetaClient,
   models: Models,
   asset: { make: string; model: string },
 ) {
+  const search = await client.respond({
+    model: models.reasoning,
+    instructions: prompts.manualSearch,
+    input: [user(text(`Make: ${asset.make}\nModel: ${asset.model}`))],
+    tools: [{ type: "web_search", search_context_size: "medium" }],
+    include: ["web_search_call.results"],
+    reasoning: { effort: "low" },
+  });
+  const seen = searchedUrls(search);
+  if (!seen.size) return { ok: true as const, data: { candidates: [] }, dropped: 0, raw: search };
+
   const r = await generateStructured(client, {
     model: models.reasoning,
     name: "manual_search",
     schema: ManualSearchOutput,
-    instructions: prompts.manualSearch,
-    input: [user(text(`Make: ${asset.make}\nModel: ${asset.model}`))],
+    instructions: prompts.manualCandidates,
+    input: [
+      user(
+        text(
+          `Make: ${asset.make}\nModel: ${asset.model}\n\nSearch notes:\n${outputText(search).slice(0, 6000)}\n\nURLs the search returned:\n${[...seen].join("\n")}`,
+        ),
+      ),
+    ],
     effort: "low",
-    extra: {
-      tools: [{ type: "web_search", search_context_size: "medium" }],
-      include: ["web_search_call.results"],
-    },
   });
   if (!r.ok) return r;
-  const seen = searchedUrls(r.raw);
   const candidates = r.data.candidates
     .filter((c) => c.url.startsWith("https://"))
     .filter((c) => {
@@ -67,5 +84,13 @@ export async function findManual(
       return k !== null && seen.has(k);
     })
     .sort((a, b) => Number(b.official) - Number(a.official) || b.confidence - a.confidence);
-  return { ...r, data: { candidates }, dropped: r.data.candidates.length - candidates.length };
+  const kept = new Set(candidates.map((c) => c.url));
+  return {
+    ...r,
+    data: { candidates },
+    dropped: r.data.candidates.length - candidates.length,
+    // For the log: where dropped URLs pointed, and how many URLs the search returned.
+    droppedUrls: r.data.candidates.filter((c) => !kept.has(c.url)).map((c) => c.url),
+    searchedCount: seen.size,
+  };
 }
