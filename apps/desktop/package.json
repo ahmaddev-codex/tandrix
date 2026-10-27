@@ -6,11 +6,12 @@
   "main": "dist/main/index.cjs",
   "scripts": {
     "dev": "tsx scripts/dev.ts",
-    "build": "vite build && pnpm run build:main",
+    "build": "vite build && pnpm run build:main && pnpm run build:native",
     "build:main": "esbuild src/main/index.ts src/preload/index.ts --bundle --platform=node --format=cjs --target=node22 --external:electron --external:uiohook-napi --outbase=src --outdir=dist --out-extension:.js=.cjs --sourcemap",
     "start": "electron .",
     "test": "vitest run",
-    "typecheck": "tsc -p tsconfig.json"
+    "typecheck": "tsc -p tsconfig.json",
+    "build:native": "mkdir -p dist/native && swiftc -O -o dist/native/tandrix-input native/input/main.swift"
   },
   "dependencies": {
     "@expo-google-fonts/geist": "^0.4.2",

@@ -13,6 +13,18 @@ const kind = (keycode: number): TalkKey =>
   OPTION.has(keycode) ? "option" : COMMAND.has(keycode) ? "command" : "other";
 
 let started = false;
+/** Called on any key, click or mouse movement, for Do it for me to hand control back. */
+const userInput = new Set<() => void>();
+
+/** Subscribes to the user's own input (from the same hook); returns the unsubscribe. */
+export function onUserInput(listener: () => void): () => void {
+  userInput.add(listener);
+  return () => userInput.delete(listener);
+}
+const notify = () => userInput.forEach((l) => l());
+
+/** Whether the hook is running, so the user's input can be noticed. */
+export const inputWatched = () => started;
 
 /** Whether Tandrix may notice ⌥⌘ in other apps; `ask` shows macOS's prompt. */
 export function talkKeysAccess(ask: boolean): boolean {
@@ -33,8 +45,14 @@ export function setupPushToTalk(on: { start(): void; send(channel: string): void
   const tryStart = async () => {
     if (started || !talkKeysAccess(false)) return false;
     const { uIOhook } = await import("uiohook-napi");
-    uIOhook.on("keydown", (e) => keys.down(kind(e.keycode)));
+    uIOhook.on("keydown", (e) => {
+      keys.down(kind(e.keycode));
+      notify();
+    });
     uIOhook.on("keyup", (e) => keys.up(kind(e.keycode)));
+    uIOhook.on("mousedown", notify);
+    uIOhook.on("mousemove", notify);
+    uIOhook.on("wheel", notify);
     uIOhook.start();
     started = true;
     return true;

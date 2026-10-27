@@ -4,7 +4,8 @@
  * Serves the renderer with Vite (hot reload), rebuilds the main process and preload on change,
  * and restarts Electron when they change.
  */
-import { spawn, type ChildProcess } from "node:child_process";
+import { execFileSync, spawn, type ChildProcess } from "node:child_process";
+import { mkdirSync } from "node:fs";
 import { createRequire } from "node:module";
 import { resolve } from "node:path";
 import { context } from "esbuild";
@@ -47,6 +48,19 @@ async function startElectron() {
 // Rebuilds can land back to back; restart one at a time.
 let restarting = Promise.resolve();
 const restart = () => (restarting = restarting.then(startElectron));
+
+// The input helper Do it for me drives (native/input/main.swift), built once per dev session.
+mkdirSync(resolve(appDir, "dist/native"), { recursive: true });
+execFileSync(
+  "swiftc",
+  [
+    "-O",
+    "-o",
+    resolve(appDir, "dist/native/tandrix-input"),
+    resolve(appDir, "native/input/main.swift"),
+  ],
+  { stdio: "inherit" },
+);
 
 const main = await context({
   entryPoints: [resolve(appDir, "src/main/index.ts"), resolve(appDir, "src/preload/index.ts")],

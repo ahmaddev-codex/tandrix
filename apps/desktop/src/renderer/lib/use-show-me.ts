@@ -1,7 +1,7 @@
 // Show me in the panel: listen (hotkey or held mic), or take a typed question; screenshot what the
 // user is looking at; ask; point at the answer and say it.
 import { TAP_MS } from "@tandrix/core";
-import type { Evidence } from "@tandrix/contracts";
+import type { ControlMode, Evidence } from "@tandrix/contracts";
 import type { VoiceTurn } from "@tandrix/ui/web";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ScreenCapture } from "../../shared/bridge";
@@ -35,6 +35,23 @@ export function useShowMe(jobId: string | undefined) {
   const [phase, setPhase] = useState<ShowMePhase>("idle");
   const [turns, setTurns] = useState<VoiceTurn[]>([]);
   const [problem, setProblem] = useState<string>();
+  // How Tandrix helps; held by the main process, which alone can act.
+  const [mode, setModeState] = useState<ControlMode>("show");
+  const modeRef = useRef(mode);
+  modeRef.current = mode;
+  useEffect(() => {
+    void window.tandrix.doing.mode().then(setModeState);
+  }, []);
+  /** Returns the mode in force: Do it for me needs Accessibility, so it may stay Show me. */
+  const setMode = useCallback(async (next: ControlMode) => {
+    const now = await window.tandrix.doing.setMode(next);
+    setModeState(now);
+    if (next === "do" && now !== "do")
+      setProblem(
+        "Do it for me needs Tandrix allowed under Accessibility in System Settings. Allow it, then switch again.",
+      );
+    return now;
+  }, []);
   const recording = useRef<Recording | undefined>(undefined);
   const held = useRef(false);
   const phaseRef = useRef(phase);
@@ -59,8 +76,46 @@ export function useShowMe(jobId: string | undefined) {
 
   const turnsRef = useRef(turns);
   turnsRef.current = turns;
+  /**
+   * Do it for me: the task runs turn by turn. The API says what to do on the screen shown; the
+   * main process checks each action with the guard, asks the user where needed, and runs it;
+   * then a fresh screenshot goes back. Any stop or refusal ends the task with control back.
+   */
+  const doTask = useCallback(async (task: string, shot: Promise<Shot>) => {
+    await window.tandrix.doing.begin();
+    try {
+      let { capture } = await shot;
+      const inline = (c: ScreenCapture) => ({
+        mimeType: c.mimeType,
+        data: base64(c.image),
+      });
+      let r = await api.doStart({ screenshot: inline(capture), task, geometry: capture.geometry });
+      for (;;) {
+        if (r.status === "unavailable") return reply(r.message);
+        if (r.status === "done") return reply(r.reply || "Done.");
+        const ran = await window.tandrix.doing.run({
+          actions: r.actions,
+          geometry: capture.geometry,
+          intent: r.reply,
+          safetyChecks: r.safetyChecks,
+        });
+        if (ran.status !== "ran") return reply(ran.message);
+        capture = await window.tandrix.screen.capture();
+        r = await api.doContinue({
+          session: r.session,
+          screenshot: inline(capture),
+          geometry: capture.geometry,
+          acknowledged: ran.acknowledged,
+        });
+      }
+    } finally {
+      await window.tandrix.doing.end();
+    }
+  }, []);
+
   const answer = useCallback(
     async (job: string | undefined, question: string, shot: Promise<Shot>) => {
+      if (modeRef.current === "do") return doTask(question, shot);
       const { capture, evidence } = await shot;
       const r =
         job && evidence
@@ -84,7 +139,7 @@ export function useShowMe(jobId: string | undefined) {
       reply(r.reply);
       markTried();
     },
-    [],
+    [doTask],
   );
 
   /** Does the work with the presence bar showing it's busy from the start. */
@@ -239,5 +294,5 @@ export function useShowMe(jobId: string | undefined) {
     else void finish();
   }, [finish]);
 
-  return { phase, turns, problem, ask, press, release, cancel };
+  return { phase, turns, problem, ask, press, release, cancel, mode, setMode };
 }

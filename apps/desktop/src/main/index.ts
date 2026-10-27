@@ -33,6 +33,17 @@ import {
 import { speak, stopSpeaking } from "./speech";
 import { setPresence } from "./presence";
 import { stopPushToTalk, talkKeysAccess } from "./push-to-talk";
+import {
+  beginTask,
+  controlMode,
+  endTask,
+  runDoBatch,
+  setControlMode,
+  shutdownDoing,
+  stopDoing,
+} from "./do-session";
+import { ControlMode, DesktopAction, SafetyCheck, ScreenGeometry } from "@tandrix/contracts";
+import { z } from "zod";
 
 let tray: Tray | undefined;
 
@@ -54,6 +65,15 @@ const keyValue = (a: unknown[]): a is [string, string] =>
   a.length === 2 && typeof a[0] === "string" && typeof a[1] === "string";
 /** Checked in detail by the handler itself. */
 const one = (a: unknown[]): a is [unknown] => a.length === 1;
+const modeArg = (a: unknown[]): a is [ControlMode] =>
+  a.length === 1 && ControlMode.safeParse(a[0]).success;
+/** A batch from the panel, checked before anything runs. */
+const DoBatchSchema = z.strictObject({
+  actions: z.array(DesktopAction).max(16),
+  geometry: ScreenGeometry,
+  intent: z.string().max(600),
+  safetyChecks: z.array(SafetyCheck).max(10),
+});
 const flag = (a: unknown[]): a is [boolean] => a.length === 1 && typeof a[0] === "boolean";
 /** Checked in detail by the handler itself. */
 const three = (a: unknown[]): a is [unknown, unknown, unknown] => a.length === 3;
@@ -136,6 +156,12 @@ function registerIpc() {
   handle(channels.listening, setListening, flag);
   handle(channels.speak, speak, key);
   handle(channels.setPresence, setPresence, one);
+  handle(channels.controlMode, controlMode, none);
+  handle(channels.setControlMode, setControlMode, modeArg);
+  handle(channels.doBegin, beginTask, none);
+  handle(channels.doRun, (raw) => runDoBatch(DoBatchSchema.parse(raw)), one);
+  handle(channels.doEnd, endTask, none);
+  handle(channels.doStop, stopDoing, none);
   handle(channels.talkKeysAccess, talkKeysAccess, flag);
   handle(channels.stopSpeaking, stopSpeaking, none);
 }
@@ -175,6 +201,7 @@ void app.whenReady().then(() => {
 app.on("will-quit", () => {
   globalShortcut.unregisterAll();
   void stopPushToTalk();
+  shutdownDoing();
 });
 app.on("second-instance", () => tray && togglePanel(tray.getBounds()));
 // A menu-bar app keeps running with its windows hidden.

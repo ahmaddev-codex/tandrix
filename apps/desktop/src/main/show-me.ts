@@ -7,6 +7,7 @@ import { captureDisplayUnderCursor } from "./capture";
 import { captureToGlobal } from "./displays";
 import { registerAskHotkey, setCancelKey } from "./hotkey";
 import { setupPushToTalk } from "./push-to-talk";
+import { doingTask, stopDoing } from "./do-session";
 import { clearPointer, hidePanelForCapture, sendToPanel, showPointer } from "./windows";
 
 /** A hotkey screenshot older than this is stale; the question gets a fresh one. */
@@ -27,6 +28,8 @@ function beginQuestion(channel: string) {
 export function setupShowMe(): boolean {
   setupPushToTalk({ start: () => beginQuestion(channels.talkStart), send: sendToPanel });
   return registerAskHotkey(() => {
+    // While Tandrix is in control, the hotkey takes control back.
+    if (doingTask()) return stopDoing();
     if (listening) return sendToPanel(channels.askHotkey);
     beginQuestion(channels.askHotkey);
   });

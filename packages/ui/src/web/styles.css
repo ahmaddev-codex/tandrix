@@ -595,6 +595,13 @@ button.tx-visual-frame:focus-visible {
   .tx-presence[data-state="answering"] .tx-ctl-dot {
     animation: tx-pulse 1.6s ease-in-out infinite;
   }
+  /* In control: a slower turn, and the dot keeps pulsing for as long as it lasts. */
+  .tx-presence[data-state="doing"] .tx-presence-pill::before {
+    animation: tx-presence-turn 3.2s linear infinite;
+  }
+  .tx-presence[data-state="doing"] .tx-ctl-dot {
+    animation: tx-pulse 1.6s ease-in-out infinite;
+  }
 }
 @keyframes tx-presence-in {
   from {

@@ -1,6 +1,6 @@
 // The only surface the renderer has into the main process (exposed by the preload as
 // window.tandrix). Channel names and payloads live here so both sides agree.
-import type { ScreenGeometry } from "@tandrix/contracts";
+import type { ControlMode, DesktopAction, SafetyCheck, ScreenGeometry } from "@tandrix/contracts";
 
 export const channels = {
   storageGet: "storage:get",
@@ -27,6 +27,12 @@ export const channels = {
   talkEnd: "voice:talk-end",
   talkKeysAccess: "voice:talk-keys-access",
   setPresence: "presence:set",
+  controlMode: "do:mode",
+  setControlMode: "do:set-mode",
+  doBegin: "do:begin",
+  doRun: "do:run",
+  doEnd: "do:end",
+  doStop: "do:stop",
   presence: "overlay:presence",
 } as const;
 
@@ -48,7 +54,7 @@ export interface OverlayPointer {
 
 /** What Tandrix is doing, for the presence bar at the top of the screen. Null: idle, nothing shown. */
 export interface Presence {
-  state: "listening" | "thinking" | "looking" | "answering";
+  state: "listening" | "thinking" | "looking" | "answering" | "doing";
   label: string;
   keys?: string;
   keysHint?: string;
@@ -68,7 +74,29 @@ export interface ScreenCapture {
   capturedAt: string;
 }
 
+/** One batch of model-proposed actions for the main process to check and run. */
+export interface DoBatch {
+  actions: DesktopAction[];
+  geometry: ScreenGeometry;
+  intent: string;
+  safetyChecks: SafetyCheck[];
+}
+
+export type DoBatchResult =
+  | { status: "ran"; ran: number; acknowledged: SafetyCheck[] }
+  | { status: "stopped" | "refused"; ran: number; message: string };
+
 export interface TandrixBridge {
+  /** Do it for me: the mode lives in the main process, which alone runs actions. */
+  doing: {
+    mode(): Promise<ControlMode>;
+    /** Returns the mode in force: "do" needs Accessibility, so it may stay "show". */
+    setMode(mode: ControlMode): Promise<ControlMode>;
+    begin(): Promise<void>;
+    run(batch: DoBatch): Promise<DoBatchResult>;
+    end(): Promise<void>;
+    stop(): Promise<void>;
+  };
   /** Encrypted on disk by the main process (macOS Keychain-backed `safeStorage`). */
   storage: {
     getItem(key: string): Promise<string | null>;

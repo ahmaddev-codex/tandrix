@@ -1,4 +1,12 @@
-import { Button, Input, Notice, VoiceTranscript } from "@tandrix/ui/web";
+import {
+  Button,
+  ConfirmDialog,
+  doItForMeConfirmation,
+  Input,
+  ModeToggle,
+  Notice,
+  VoiceTranscript,
+} from "@tandrix/ui/web";
 import { useState, type FormEvent } from "react";
 import { TALK_KEYS } from "../../shared/bridge";
 import { useShowMe } from "../lib/use-show-me";
@@ -8,12 +16,21 @@ const examples = [
   "Where do I change my Wi-Fi password?",
   "How do I make a pivot table here?",
 ];
+/** Do it for me takes tasks, not questions. */
+const tasks = [
+  "Turn on notifications for Calendar",
+  "Make this window full screen",
+  "Sort this table by date",
+];
 
 /** Ask about whatever is on screen. Inside a job, the screenshot is kept as its evidence. */
 export function ShowMe({ jobId }: { jobId?: string }) {
   const s = useShowMe(jobId);
   const [question, setQuestion] = useState("");
+  // Turning on Do it for me asks first (design system: ModeToggle).
+  const [confirming, setConfirming] = useState(false);
   const busy = s.phase !== "idle";
+  const doing = s.mode === "do";
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
@@ -25,13 +42,29 @@ export function ShowMe({ jobId }: { jobId?: string }) {
     <section className="panel-stack-4" aria-labelledby="show-me-title">
       <header className="panel-stack-1">
         <h2 className="heading-16" id="show-me-title">
-          Ask about your screen
+          {doing ? "Tell Tandrix what to do" : "Ask about your screen"}
         </h2>
         <p className="copy-13 panel-muted">
-          Tandrix points at the control and tells you what to do. In any app, hold{" "}
-          <kbd className="panel-kbd">{TALK_KEYS}</kbd>, ask out loud, and let go.
+          {doing
+            ? "Tandrix clicks and types for you, one step at a time, and asks before anything that sends, pays or deletes. "
+            : "Tandrix points at the control and tells you what to do. "}
+          In any app, hold <kbd className="panel-kbd">{TALK_KEYS}</kbd>, ask out loud, and let go.
         </p>
       </header>
+      <ModeToggle
+        mode={s.mode}
+        onChange={(next) => (next === "do" ? setConfirming(true) : void s.setMode("show"))}
+      />
+      {confirming ? (
+        <ConfirmDialog
+          {...doItForMeConfirmation}
+          onConfirm={() => {
+            setConfirming(false);
+            void s.setMode("do");
+          }}
+          onCancel={() => setConfirming(false)}
+        />
+      ) : null}
       {s.problem ? <Notice tone="error">{s.problem}</Notice> : null}
       <VoiceTranscript
         state={s.phase}
@@ -44,7 +77,7 @@ export function ShowMe({ jobId }: { jobId?: string }) {
             label="Your question"
             value={question}
             onChange={setQuestion}
-            placeholder="How do I…?"
+            placeholder={doing ? "Turn on notifications for…" : "How do I…?"}
             disabled={busy}
           />
           <Button
@@ -60,7 +93,7 @@ export function ShowMe({ jobId }: { jobId?: string }) {
         </div>
         {!s.turns.length && !question ? (
           <div className="ask-examples" aria-label="Examples">
-            {examples.map((e) => (
+            {(doing ? tasks : examples).map((e) => (
               <Button key={e} size="sm" onClick={() => setQuestion(e)}>
                 {e}
               </Button>
@@ -68,7 +101,7 @@ export function ShowMe({ jobId }: { jobId?: string }) {
           </div>
         ) : null}
         <Button type="submit" variant="primary" block disabled={busy || !question.trim()}>
-          {s.phase === "working" ? "Looking…" : "Show me"}
+          {s.phase === "working" ? (doing ? "Working…" : "Looking…") : doing ? "Do it" : "Show me"}
         </Button>
       </form>
     </section>

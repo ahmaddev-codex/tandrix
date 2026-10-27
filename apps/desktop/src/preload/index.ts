@@ -15,6 +15,14 @@ const subscribe = (channel: string, listener: () => void) => {
 };
 
 const bridge: TandrixBridge = {
+  doing: {
+    mode: () => ipcRenderer.invoke(channels.controlMode),
+    setMode: (mode) => ipcRenderer.invoke(channels.setControlMode, mode),
+    begin: () => ipcRenderer.invoke(channels.doBegin),
+    run: (batch) => ipcRenderer.invoke(channels.doRun, batch),
+    end: () => ipcRenderer.invoke(channels.doEnd),
+    stop: () => ipcRenderer.invoke(channels.doStop),
+  },
   storage: {
     getItem: (key) => ipcRenderer.invoke(channels.storageGet, key),
     setItem: (key, value) => ipcRenderer.invoke(channels.storageSet, key, value),

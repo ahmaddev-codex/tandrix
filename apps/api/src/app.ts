@@ -35,6 +35,7 @@ import { detectionRoutes, SURFACE_HEADER, stepRoutes } from "./routes/steps";
 import type { ManualPagesRepo } from "./repos/manual-pages";
 import type { PageRenderer } from "./pdf-render";
 import type { Speaker } from "./speech";
+import type { ScreenDoer } from "./screen-doer";
 import type { ScreenGuide } from "./screen-guide";
 
 export interface AppDeps {
@@ -65,6 +66,8 @@ export interface AppDeps {
   pageRenderer: PageRenderer;
   /** Tandrix's spoken voice; without it the apps use a natural device voice or text only. */
   speaker?: Speaker;
+  /** Do it for me; without it the Mac says it can't work on the screen right now. */
+  screenDoer?: ScreenDoer;
   /** Who's calling, for rate limits on signed-out routes (the client's address). */
   clientKey?: (c: Context) => string;
   /** Signs manual search candidates (TOKEN_SIGNING_SECRET). */
@@ -149,7 +152,15 @@ export function createApp(deps: AppDeps) {
   app.use("/jobs/*", requireUser(deps.verifyToken));
   app.use("/voice/*", requireUser(deps.verifyToken));
   app.use("/screen/*", requireUser(deps.verifyToken));
-  app.route("/screen", inlineScreenRoutes({ guide: deps.screenGuide }));
+  app.route(
+    "/screen",
+    inlineScreenRoutes({
+      guide: deps.screenGuide,
+      ...(deps.screenDoer ? { doer: deps.screenDoer } : {}),
+      tokenSecret: deps.tokenSecret,
+      ...(deps.now ? { now: deps.now } : {}),
+    }),
+  );
   app.route("/voice", voiceRoutes(deps.transcriber, deps.speaker));
   app.use("/jobs", requireUser(deps.verifyToken));
   // Evidence first: the more specific path must win over /jobs/:id.

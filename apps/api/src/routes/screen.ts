@@ -1,9 +1,13 @@
 // POST /jobs/:id/screen/ask: Show me on the Mac. The screenshot is the job's evidence; the answer
 // is words plus where to point. Proposed actions are returned for drawing, never executed here.
 import {
+  DO_MAX_TURNS,
+  DoContinueRequest,
+  DoStartRequest,
   Id,
   INLINE_SCREENSHOT_MAX_BYTES,
   ScreenAskInlineRequest,
+  type DoTurnResponse,
   ScreenAskRequest,
   type DesktopAction,
   type PointerTarget,
@@ -21,6 +25,8 @@ import type { EvidenceRepo, EvidenceStorage } from "../repos/evidence";
 import type { JobsRepo } from "../repos/jobs";
 import type { ProceduresRepo } from "../repos/procedures";
 import type { ScreenGuide, ScreenGuideOutcome } from "../screen-guide";
+import { noModelScreenDoer, type DoOutcome, type ScreenDoer } from "../screen-doer";
+import { signToken, verifyToken } from "../signed-token";
 
 export interface ScreenDeps {
   jobs: JobsRepo;
@@ -130,32 +136,103 @@ function answered(
 export const historyContext = (history: Array<{ question: string; reply: string }>) =>
   history.map((t) => `Earlier the user asked: "${t.question}" You answered: "${t.reply}"`);
 
+const screenshotLimit = bodyLimit({
+  maxSize: Math.ceil((INLINE_SCREENSHOT_MAX_BYTES * 4) / 3) + 64 * 1024,
+  onError: () => {
+    throw new HttpError(
+      413 as ContentfulStatusCode,
+      "invalid_request",
+      "That screenshot is too large.",
+    );
+  },
+});
+
+/** The inline screenshot's bytes, checked. */
+function shotBytes(shot: { data: string }) {
+  const bytes = Uint8Array.from(Buffer.from(shot.data, "base64"));
+  if (bytes.length === 0 || bytes.length > INLINE_SCREENSHOT_MAX_BYTES)
+    throw invalid(["screenshot: Empty or too large"]);
+  return bytes;
+}
+
+/** A Do it for me task stays usable this long between turns. */
+export const DO_SESSION_MS = 15 * 60 * 1000;
+
 /**
- * POST /screen/ask: a question about the screen outside any job ("teach me Photoshop"). The
- * screenshot comes inline, goes to the model and is never stored.
+ * The session a Mac continues a task with: the model's response and call, the turn number, and a
+ * signature binding them to the user, so no one else can continue it or skip the turn limit.
  */
-export function inlineScreenRoutes(d: { guide: ScreenGuide; limiter?: RateLimiter }) {
+export function doSession(
+  secret: string,
+  userId: string,
+  responseId: string,
+  callId: string,
+  turn: number,
+  now: number,
+) {
+  const token = signToken(
+    secret,
+    ["do", userId, responseId, callId, String(turn)],
+    now + DO_SESSION_MS,
+  );
+  return [responseId, callId, String(turn), token].join("~");
+}
+
+export function readDoSession(secret: string, userId: string, session: string, now: number) {
+  const [responseId, callId, turn, token] = session.split("~");
+  if (!responseId || !callId || !turn || !token || !/^\d+$/.test(turn)) return null;
+  if (!verifyToken(secret, ["do", userId, responseId, callId, turn], token, now)) return null;
+  return { responseId, callId, turn: Number(turn) };
+}
+
+/**
+ * The screen outside any job: POST /screen/ask, a question ("teach me Photoshop"), and
+ * POST /screen/do and /screen/do/continue, Do it for me. Screenshots come inline, go to the model
+ * and are never stored here.
+ */
+export function inlineScreenRoutes(d: {
+  guide: ScreenGuide;
+  doer?: ScreenDoer;
+  tokenSecret: string;
+  limiter?: RateLimiter;
+  /** Do it for me turns: up to two a second while a task runs. */
+  doLimiter?: RateLimiter;
+  now?: () => number;
+}) {
   const limiter = d.limiter ?? rateLimiter(30, 60_000);
-  return new Hono<AuthEnv>().post(
-    "/ask",
-    bodyLimit({
-      maxSize: Math.ceil((INLINE_SCREENSHOT_MAX_BYTES * 4) / 3) + 64 * 1024,
-      onError: () => {
-        throw new HttpError(
-          413 as ContentfulStatusCode,
-          "invalid_request",
-          "That screenshot is too large.",
-        );
-      },
-    }),
-    async (c) => {
+  const doLimiter = d.doLimiter ?? rateLimiter(120, 60_000);
+  const doer = d.doer ?? noModelScreenDoer;
+  const now = d.now ?? Date.now;
+
+  /** A model turn as the Mac sees it: actions to run with a session to continue, or done. */
+  const turnResponse = (userId: string, outcome: DoOutcome, turn: number): DoTurnResponse => {
+    if (outcome.status === "unavailable") return outcome;
+    const t = outcome.turn;
+    if (!t.callId || turn > DO_MAX_TURNS)
+      return {
+        status: "done",
+        reply:
+          (t.callId
+            ? "That took more steps than Tandrix takes at once. You have control back."
+            : t.reply) || "Done.",
+      };
+    return {
+      status: "act",
+      session: doSession(d.tokenSecret, userId, t.responseId, t.callId, turn, now()),
+      turn,
+      actions: t.actions.slice(0, 16),
+      safetyChecks: t.safetyChecks.slice(0, 10),
+      reply: t.reply.slice(0, 600),
+    };
+  };
+
+  return new Hono<AuthEnv>()
+    .post("/ask", screenshotLimit, async (c) => {
       if (!limiter.allow(c.get("user").id)) throw tooMany();
       const parsed = ScreenAskInlineRequest.safeParse(await c.req.json().catch(() => undefined));
       if (!parsed.success) throw invalid(issues(parsed.error));
       const req = parsed.data;
-      const bytes = Uint8Array.from(Buffer.from(req.screenshot.data, "base64"));
-      if (bytes.length === 0 || bytes.length > INLINE_SCREENSHOT_MAX_BYTES)
-        throw invalid(["screenshot: Empty or too large"]);
+      const bytes = shotBytes(req.screenshot);
       const size = { width: req.geometry.imageWidth, height: req.geometry.imageHeight };
       const outcome = await d.guide.ask({
         screenshot: { bytes, mimeType: req.screenshot.mimeType, ...size },
@@ -164,6 +241,40 @@ export function inlineScreenRoutes(d: { guide: ScreenGuide; limiter?: RateLimite
       });
       if (outcome.status === "unavailable") return c.json(outcome satisfies ScreenAskResponse);
       return c.json(answered(outcome, null, size));
-    },
-  );
+    })
+    .post("/do", screenshotLimit, async (c) => {
+      const user = c.get("user");
+      if (!doLimiter.allow(user.id)) throw tooMany();
+      const parsed = DoStartRequest.safeParse(await c.req.json().catch(() => undefined));
+      if (!parsed.success) throw invalid(issues(parsed.error));
+      const outcome = await doer.start({
+        screenshot: {
+          bytes: shotBytes(parsed.data.screenshot),
+          mimeType: parsed.data.screenshot.mimeType,
+        },
+        task: parsed.data.task,
+      });
+      return c.json(turnResponse(user.id, outcome, 1));
+    })
+    .post("/do/continue", screenshotLimit, async (c) => {
+      const user = c.get("user");
+      if (!doLimiter.allow(user.id)) throw tooMany();
+      const parsed = DoContinueRequest.safeParse(await c.req.json().catch(() => undefined));
+      if (!parsed.success) throw invalid(issues(parsed.error));
+      const session = readDoSession(d.tokenSecret, user.id, parsed.data.session, now());
+      if (!session)
+        throw invalid([
+          "session: this task has ended or isn't yours; ask again to start a new one",
+        ]);
+      const outcome = await doer.continue({
+        previousResponseId: session.responseId,
+        callId: session.callId,
+        screenshot: {
+          bytes: shotBytes(parsed.data.screenshot),
+          mimeType: parsed.data.screenshot.mimeType,
+        },
+        acknowledged: parsed.data.acknowledged,
+      });
+      return c.json(turnResponse(user.id, outcome, session.turn + 1));
+    });
 }

@@ -292,16 +292,19 @@ export const ScreenTurn = z.strictObject({ question: text(2000), reply: text(600
  * POST /screen/ask: a question about the screen outside any job ("teach me Photoshop"). The
  * screenshot travels inline and is never stored.
  */
+/** A screenshot sent inline (base64), never stored. */
+export const InlineScreenshot = z.strictObject({
+  mimeType: z.enum(["image/jpeg", "image/png"]),
+  /** Base64 of the image bytes. */
+  data: z
+    .string()
+    .min(1)
+    .max(Math.ceil((INLINE_SCREENSHOT_MAX_BYTES * 4) / 3) + 4)
+    .regex(/^[A-Za-z0-9+/]+=*$/),
+});
+
 export const ScreenAskInlineRequest = z.strictObject({
-  screenshot: z.strictObject({
-    mimeType: z.enum(["image/jpeg", "image/png"]),
-    /** Base64 of the image bytes. */
-    data: z
-      .string()
-      .min(1)
-      .max(Math.ceil((INLINE_SCREENSHOT_MAX_BYTES * 4) / 3) + 4)
-      .regex(/^[A-Za-z0-9+/]+=*$/),
-  }),
+  screenshot: InlineScreenshot,
   transcript: text(2000),
   geometry: ScreenGeometry,
   mode: ControlMode,
@@ -324,6 +327,51 @@ export const ScreenAskResponse = z.discriminatedUnion("status", [
   z.strictObject({ status: z.literal("unavailable"), message: text(300) }),
 ]);
 export type ScreenAskResponse = z.infer<typeof ScreenAskResponse>;
+
+// ---- Do it for me ----
+
+/** A check the model attaches to an action that needs the user's sign-off. */
+export const SafetyCheck = z.strictObject({
+  id: text(200),
+  code: text(100),
+  message: z.string().max(1000),
+});
+export type SafetyCheck = z.infer<typeof SafetyCheck>;
+
+/** Turns in one Do it for me task before Tandrix stops and hands back. */
+export const DO_MAX_TURNS = 30;
+
+/** POST /screen/do: start doing a task on the screen shown. The screenshot isn't stored here. */
+export const DoStartRequest = z.strictObject({
+  screenshot: InlineScreenshot,
+  task: text(2000),
+  geometry: ScreenGeometry,
+});
+
+/** POST /screen/do/continue: the screen after the last batch ran, with the checks accepted. */
+export const DoContinueRequest = z.strictObject({
+  /** From the last turn; it ties the task to this user and counts its turns. */
+  session: z.string().min(1).max(800),
+  screenshot: InlineScreenshot,
+  geometry: ScreenGeometry,
+  acknowledged: z.array(SafetyCheck).max(10).default([]),
+});
+
+export const DoTurnResponse = z.discriminatedUnion("status", [
+  /** Run these (each through the action guard), then continue with a fresh screenshot. */
+  z.strictObject({
+    status: z.literal("act"),
+    session: z.string().min(1).max(800),
+    turn: z.number().int().min(1).max(DO_MAX_TURNS),
+    actions: z.array(DesktopAction).max(16),
+    safetyChecks: z.array(SafetyCheck).max(10),
+    reply: z.string().max(600),
+  }),
+  /** Finished, or can't be done: what the model said. */
+  z.strictObject({ status: z.literal("done"), reply: z.string().max(600) }),
+  z.strictObject({ status: z.literal("unavailable"), message: text(300) }),
+]);
+export type DoTurnResponse = z.infer<typeof DoTurnResponse>;
 
 /** POST /jobs/:id/steps/:stepId/highlight: find the step's parts in an uploaded photo. */
 export const HighlightRequest = z.strictObject({ evidenceId: Id });

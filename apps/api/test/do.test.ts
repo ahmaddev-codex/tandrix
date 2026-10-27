@@ -1,0 +1,160 @@
+// Do it for me turns: sessions are bound to the user and count turns; nothing runs on the server.
+import { DO_MAX_TURNS, DoTurnResponse } from "@tandrix/contracts";
+import type { DoTurn } from "@tandrix/ai";
+import { Hono } from "hono";
+import { describe, expect, it } from "vitest";
+import type { AuthEnv } from "../src/auth";
+import { HttpError } from "../src/errors";
+import { DO_SESSION_MS, inlineScreenRoutes } from "../src/routes/screen";
+import type { ScreenDoer } from "../src/screen-doer";
+import { noModelScreenGuide } from "../src/screen-guide";
+import { PNG } from "./fixtures";
+
+const SECRET = "test-secret-test-secret-test-secret!";
+const turn = (over: Partial<DoTurn> = {}): DoTurn => ({
+  responseId: "resp_1",
+  callId: "call_1",
+  actions: [{ type: "click", x: 10, y: 20, button: "left" }],
+  dropped: 0,
+  safetyChecks: [],
+  reply: "",
+  ...over,
+});
+
+function setup(script: DoTurn[] = [turn()]) {
+  let clock = Date.UTC(2026, 9, 27, 12);
+  const seen: Array<Record<string, unknown>> = [];
+  const doer: ScreenDoer = {
+    async start(i) {
+      seen.push({ kind: "start", task: i.task });
+      return { status: "turn", turn: script.shift() ?? turn({ callId: null, actions: [] }) };
+    },
+    async continue(i) {
+      seen.push({ kind: "continue", ...i, screenshot: undefined });
+      return { status: "turn", turn: script.shift() ?? turn({ callId: null, actions: [] }) };
+    },
+  };
+  const app = (user: string) => {
+    const a = new Hono<AuthEnv>();
+    a.use(async (c, next) => {
+      c.set("user", { id: user } as never);
+      await next();
+    });
+    a.route(
+      "/screen",
+      inlineScreenRoutes({
+        guide: noModelScreenGuide,
+        doer,
+        tokenSecret: SECRET,
+        now: () => clock,
+      }),
+    );
+    a.onError((e, c) => c.json({ error: e.message }, e instanceof HttpError ? e.status : 500));
+    return a;
+  };
+  const geometry = {
+    displayId: "1",
+    imageWidth: 10,
+    imageHeight: 10,
+    originX: 0,
+    originY: 0,
+    displayWidth: 10,
+    displayHeight: 10,
+  };
+  const screenshot = { mimeType: "image/png", data: Buffer.from(PNG).toString("base64") };
+  const post = async (user: string, path: string, body: object) => {
+    const res = await app(user).request(path, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    return { status: res.status, body: res.ok ? DoTurnResponse.parse(await res.json()) : null };
+  };
+  const start = (user = "u1") =>
+    post(user, "/screen/do", { screenshot, geometry, task: "Turn on notifications" });
+  const next = (session: string, user = "u1", acknowledged: object[] = []) =>
+    post(user, "/screen/do/continue", { session, screenshot, geometry, acknowledged });
+  return { start, next, seen, advance: (ms: number) => (clock += ms) };
+}
+
+const act = (b: DoTurnResponse | null) => {
+  if (b?.status !== "act") throw new Error(`expected act, got ${JSON.stringify(b)}`);
+  return b;
+};
+
+describe("POST /screen/do", () => {
+  it("returns the actions to run and a session to continue with", async () => {
+    const s = setup();
+    const r = act((await s.start()).body);
+    expect(r).toMatchObject({ turn: 1, actions: [{ type: "click", x: 10, y: 20 }] });
+    expect(r.session.startsWith("resp_1~call_1~1~")).toBe(true);
+    expect(s.seen[0]).toEqual({ kind: "start", task: "Turn on notifications" });
+  });
+
+  it("continues with the next screen and the checks the user accepted", async () => {
+    const check = { id: "sc_1", code: "sensitive", message: "Sends an email" };
+    const s = setup([turn(), turn({ responseId: "resp_2", callId: "call_2" })]);
+    const first = act((await s.start()).body);
+    const second = act((await s.next(first.session, "u1", [check])).body);
+    expect(second.turn).toBe(2);
+    expect(s.seen[1]).toMatchObject({
+      kind: "continue",
+      previousResponseId: "resp_1",
+      callId: "call_1",
+      acknowledged: [check],
+    });
+  });
+
+  it("is done when the model stops proposing actions", async () => {
+    const s = setup([turn(), turn({ callId: null, actions: [], reply: "Notifications are on." })]);
+    const first = act((await s.start()).body);
+    expect((await s.next(first.session)).body).toEqual({
+      status: "done",
+      reply: "Notifications are on.",
+    });
+  });
+
+  it("refuses another user's session, a forged one and an expired one", async () => {
+    const s = setup([turn(), turn(), turn()]);
+    const first = act((await s.start()).body);
+    expect((await s.next(first.session, "u2")).status).toBe(400);
+    expect((await s.next(first.session.replace("~1~", "~0~"))).status).toBe(400);
+    s.advance(DO_SESSION_MS + 1);
+    expect((await s.next(first.session)).status).toBe(400);
+  });
+
+  it("hands control back after the turn limit", async () => {
+    const s = setup(Array.from({ length: DO_MAX_TURNS + 2 }, () => turn()));
+    let r = act((await s.start()).body);
+    for (let i = 1; i < DO_MAX_TURNS; i++) r = act((await s.next(r.session)).body);
+    const last = (await s.next(r.session)).body;
+    expect(last).toMatchObject({ status: "done", reply: expect.stringContaining("control back") });
+  });
+
+  it("says plainly when the model isn't available", async () => {
+    const a = new Hono<AuthEnv>();
+    a.use(async (c, next) => {
+      c.set("user", { id: "u1" } as never);
+      await next();
+    });
+    a.route("/screen", inlineScreenRoutes({ guide: noModelScreenGuide, tokenSecret: SECRET }));
+    const res = await a.request("/screen/do", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        screenshot: { mimeType: "image/png", data: Buffer.from(PNG).toString("base64") },
+        geometry: {
+          displayId: "1",
+          imageWidth: 1,
+          imageHeight: 1,
+          originX: 0,
+          originY: 0,
+          displayWidth: 1,
+          displayHeight: 1,
+        },
+        task: "x",
+      }),
+    });
+    expect(DoTurnResponse.parse(await res.json())).toMatchObject({ status: "unavailable" });
+  });
+});

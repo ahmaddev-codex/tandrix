@@ -29,6 +29,7 @@ import { supabaseSessionMinter } from "./session-minter";
 import { supabaseManualPagesRepo } from "./repos/manual-pages";
 import { workerPageRenderer } from "./pdf-render";
 import { kokoroSpeaker } from "./speech";
+import { metaScreenDoer, noModelScreenDoer } from "./screen-doer";
 
 const config = loadApiConfig();
 const admin = createClient(config.supabaseUrl, config.supabaseSecretKey, {
@@ -94,6 +95,7 @@ const app = createApp({
   manualPages: supabaseManualPagesRepo(admin),
   pageRenderer: workerPageRenderer(),
   speaker,
+  screenDoer: meta ? metaScreenDoer(meta, log) : noModelScreenDoer,
   clientKey: (c) => getConnInfo(c).remote.address ?? "unknown",
   tokenSecret: config.tokenSigningSecret,
   corsOrigins: config.corsOrigins,

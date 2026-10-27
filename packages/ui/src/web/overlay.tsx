@@ -38,7 +38,7 @@ export function PointerBuddy({ x, y, caption }: PointerBuddyProps) {
   );
 }
 
-export type PresenceState = "listening" | "thinking" | "looking" | "answering";
+export type PresenceState = "listening" | "thinking" | "looking" | "answering" | "doing";
 
 export interface PresenceBarProps {
   state: PresenceState;
