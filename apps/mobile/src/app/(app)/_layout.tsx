@@ -1,6 +1,5 @@
 import { nativeFontNames, useTheme } from "@tandrix/ui/native";
 import { Stack } from "expo-router";
-import { isLocal } from "@/lib/env";
 import { useOfflineSync } from "@/offline";
 
 export default function AppLayout() {
@@ -26,9 +25,6 @@ export default function AppLayout() {
         name="job/[id]/capture"
         options={{ title: "Add photo", presentation: "fullScreenModal" }}
       />
-      <Stack.Protected guard={isLocal}>
-        <Stack.Screen name="gallery" options={{ title: "Design system" }} />
-      </Stack.Protected>
     </Stack>
   );
 }

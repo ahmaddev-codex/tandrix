@@ -48,7 +48,6 @@ flow() {
 }
 
 flow sign-in-create-job.yaml -
-flow design-gallery.yaml -
 # These deny the camera at launch (launchApp permissions) to drive the photo picker.
 flow photo-evidence.yaml empty "$PHOTOS/board-top.jpg"
 flow identify-equipment.yaml empty "$PHOTOS/box-label.jpg"

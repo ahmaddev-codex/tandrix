@@ -15,5 +15,5 @@ export const env = Env.parse({
   supabasePublishableKey: process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
 });
 
-/** Local-only conveniences (password sign-in, design gallery) are gated on this. */
+/** Local-only conveniences (such as password sign-in) are gated on this. */
 export const isLocal = env.tandrixEnv === "local";
