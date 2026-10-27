@@ -16,6 +16,9 @@ import { TALK_KEYS, type Presence } from "../../shared/bridge";
 
 export type ShowMePhase = "idle" | "listening" | "working";
 
+/** How long the screen gets to settle after a batch before the next screenshot. */
+const SETTLE_MS = 700;
+
 export const NOTHING_HEARD = "Didn't hear anything. Hold ⌥⌘ while you talk, or type your question.";
 
 export const NO_MIC =
@@ -123,6 +126,8 @@ export function useShowMe(jobId: string | undefined) {
           safetyChecks: r.safetyChecks,
         });
         if (ran.status !== "ran") return reply(ran.message);
+        // Let the app react (menus open, pages load) before looking again.
+        await new Promise((r) => setTimeout(r, SETTLE_MS));
         capture = await window.tandrix.screen.capture();
         r = await api.doContinue({
           session: r.session,

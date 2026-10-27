@@ -198,6 +198,7 @@ export function inlineScreenRoutes(d: {
   /** Do it for me turns: up to two a second while a task runs. */
   doLimiter?: RateLimiter;
   now?: () => number;
+  log?: (l: Record<string, unknown>) => void;
 }) {
   const limiter = d.limiter ?? rateLimiter(30, 60_000);
   const doLimiter = d.doLimiter ?? rateLimiter(120, 60_000);
@@ -208,6 +209,14 @@ export function inlineScreenRoutes(d: {
   const turnResponse = (userId: string, outcome: DoOutcome, turn: number): DoTurnResponse => {
     if (outcome.status === "unavailable") return outcome;
     const t = outcome.turn;
+    // What happened each turn (never the screen or the words): enough to see where tasks stall.
+    d.log?.({
+      event: "do_turn",
+      turn,
+      actions: t.actions.map((a) => a.type).join(","),
+      checks: t.safetyChecks.map((c) => c.code).join(","),
+      finished: !t.callId,
+    });
     if (!t.callId || turn > DO_MAX_TURNS)
       return {
         status: "done",

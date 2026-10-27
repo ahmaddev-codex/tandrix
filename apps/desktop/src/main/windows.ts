@@ -109,6 +109,8 @@ function createOverlay(d: DisplayInfo): BrowserWindow {
     webPreferences: secure,
   });
   win.setIgnoreMouseEvents(true);
+  // Never in screenshots: the model should see the user's screen, not Tandrix's pointer and pill.
+  win.setContentProtection(true);
   win.setAlwaysOnTop(true, "screen-saver");
   win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
   // macOS keeps new windows below the menu bar; place it again once it exists.

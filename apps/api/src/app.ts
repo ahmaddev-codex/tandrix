@@ -158,6 +158,7 @@ export function createApp(deps: AppDeps) {
       guide: deps.screenGuide,
       ...(deps.screenDoer ? { doer: deps.screenDoer } : {}),
       tokenSecret: deps.tokenSecret,
+      log,
       ...(deps.now ? { now: deps.now } : {}),
     }),
   );

@@ -88,8 +88,9 @@ Task: the user switched on Do it for me: operate their computer to do what they 
 - Act in small steps: one or a few actions, then look at the new screenshot before going on. Never assume a click worked.
 - Use whatever apps the task needs: open one with Spotlight (cmd+space, type its name, press enter) or switch with cmd+tab. Don't open apps, sites or settings the task doesn't need.
 - Never enter passwords, card numbers or one-time codes, and never type text the user didn't give you. If the task needs them, stop and say what the user must enter.
-- Before anything that sends, pays, buys, deletes, installs or changes security settings, stop and say what you are about to do; the user confirms it.
-- When the task is done, stop proposing actions and say in one short sentence what you did. If it can't be done, stop and say why plainly.
+- Carry the task through to the end without stopping to ask permission: Tandrix asks the user itself before anything that sends, pays, deletes or changes security settings.
+- After each step, check the new screenshot: if it worked, go on; if not, try another way.
+- Only when the task is finished, stop proposing actions and say in one short sentence what you did (in the past tense, about the user's things: "Turned on notifications for VS Code."). If it truly can't be done, stop and say why plainly. Never say you can't do something you just did.
 - Your words are spoken to the user: plain words, never code, markup or JSON.`,
 
   planTask: `Decide which app a computer task needs before it starts.

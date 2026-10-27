@@ -117,7 +117,7 @@ export async function runDoBatch(batch: Batch): Promise<BatchResult> {
     if (!driving()) stopRequested = true;
   });
   try {
-    return await runBatch(batch, {
+    const result = await runBatch(batch, {
       mode: controlMode,
       drive,
       confirm,
@@ -127,6 +127,17 @@ export async function runDoBatch(batch: Batch): Promise<BatchResult> {
       now: Date.now,
       history,
     });
+    // Status and counts only: never the screen, the text typed or the model's words.
+    console.log(
+      JSON.stringify({
+        event: "do_batch",
+        status: result.status,
+        ran: result.ran,
+        of: batch.actions.length,
+        ...(result.status !== "ran" ? { message: result.message } : {}),
+      }),
+    );
+    return result;
   } finally {
     off();
   }

@@ -332,10 +332,19 @@ export type ScreenAskResponse = z.infer<typeof ScreenAskResponse>;
 
 /** A check the model attaches to an action that needs the user's sign-off. */
 export const SafetyCheck = z.strictObject({
-  id: text(200),
-  code: text(100),
-  message: z.string().max(1000),
+  /** Opaque, and long: the model's ids run to about a thousand characters. */
+  id: z.string().min(1).max(8000),
+  code: text(200),
+  message: z.string().max(2000),
 });
+
+/**
+ * The check the model puts on every computer action ("Review and confirm before executing this
+ * computer action"). Tandrix's own action guard is that review: it classifies every action, asks
+ * the user before anything sensitive, and announces each one with time to stop it. Other checks
+ * always go to the user.
+ */
+export const ROUTINE_ACTION_CHECK = "computer_action_requires_confirmation";
 export type SafetyCheck = z.infer<typeof SafetyCheck>;
 
 /** Turns in one Do it for me task before Tandrix stops and hands back. */

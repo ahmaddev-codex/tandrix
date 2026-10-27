@@ -3,6 +3,7 @@
 // confirmed by the user in a native alert when the guard or the model asks, announced with the
 // pointer for about a second, then run. Any input from the user, Esc or the hotkey stops it.
 import { guardAction, type GuardDecision } from "@tandrix/core";
+import { ROUTINE_ACTION_CHECK } from "@tandrix/contracts";
 import type { ControlMode, DesktopAction, SafetyCheck, ScreenGeometry } from "@tandrix/contracts";
 
 type Point = { x: number; y: number };
@@ -111,8 +112,10 @@ export async function runBatch(b: Batch, d: BatchDeps): Promise<BatchResult> {
     return { status: "stopped", ran, message };
   };
 
-  // The model's own checks first: the user accepts them or the task stops.
+  // The model's own checks first: the user accepts them or the task stops. The routine check on
+  // every action is the guard's to answer (ROUTINE_ACTION_CHECK).
   for (const check of b.safetyChecks) {
+    if (check.code === ROUTINE_ACTION_CHECK) continue;
     if (!(await d.confirm(check.message || "Tandrix wants to do something that needs your OK.")))
       return stop("Stopped. You said no, so nothing more was done.");
   }

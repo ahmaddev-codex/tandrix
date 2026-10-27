@@ -1,3 +1,4 @@
+"use client";
 // Panel and report building blocks (design system: Notice, StepRow).
 import { useState, type ReactNode } from "react";
 import {

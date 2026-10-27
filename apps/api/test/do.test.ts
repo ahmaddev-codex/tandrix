@@ -118,7 +118,12 @@ describe("POST /screen/do", () => {
   });
 
   it("continues with the next screen and the checks the user accepted", async () => {
-    const check = { id: "sc_1", code: "sensitive", message: "Sends an email" };
+    // Real check ids run to about a thousand characters.
+    const check = {
+      id: `cu_sc_${"Q".repeat(1000)}`,
+      code: "computer_action_requires_confirmation",
+      message: "Review",
+    };
     const s = setup([turn(), turn({ responseId: "resp_2", callId: "call_2" })]);
     const first = act((await s.start()).body);
     const second = act((await s.next(first.session, "u1", [check])).body);

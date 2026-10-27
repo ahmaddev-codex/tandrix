@@ -51,7 +51,16 @@ export function setupPushToTalk(on: { start(): void; send(channel: string): void
     });
     uIOhook.on("keyup", (e) => keys.up(kind(e.keycode)));
     uIOhook.on("mousedown", notify);
-    uIOhook.on("mousemove", notify);
+    // A hand resting on the trackpad jitters; only a real movement means the user is acting.
+    let anchor: { x: number; y: number; at: number } | undefined;
+    uIOhook.on("mousemove", (e) => {
+      const now = Date.now();
+      if (!anchor || now - anchor.at > 600) anchor = { x: e.x, y: e.y, at: now };
+      if (Math.abs(e.x - anchor.x) + Math.abs(e.y - anchor.y) > 12) {
+        anchor = undefined;
+        notify();
+      }
+    });
     uIOhook.on("wheel", notify);
     uIOhook.start();
     started = true;

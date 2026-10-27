@@ -98,6 +98,22 @@ describe("runBatch", () => {
     expect(r).toMatchObject({ status: "ran", acknowledged: [check] });
   });
 
+  it("leaves the routine per-action check to the guard, and asks about any other", async () => {
+    const routine = {
+      id: "x".repeat(1200),
+      code: "computer_action_requires_confirmation",
+      message: "Review",
+    };
+    const other = { id: "sc_2", code: "sensitive_domain", message: "This site handles payments" };
+    const s = deps();
+    const r = await runBatch(
+      { ...batch([{ type: "move", x: 1, y: 1 }]), safetyChecks: [routine, other] },
+      s.d,
+    );
+    expect(s.asked).toEqual(["This site handles payments"]);
+    expect(r).toMatchObject({ status: "ran", acknowledged: [routine, other] });
+  });
+
   it("never types into a password field", async () => {
     const s = deps({
       drive: async (cmd) => (cmd.op === "focus" ? { ok: true, secure: true } : { ok: true }),
