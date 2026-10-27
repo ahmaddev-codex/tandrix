@@ -44,6 +44,10 @@ function computerCalls(output: ResponseOutputItem[]) {
   return output.filter((o) => o.type === "computer_call");
 }
 
+/** Restated next to the question: the model otherwise narrates ("I'll point to…"). */
+export const REPLY_RULE =
+  'Your text reply is read aloud to the user as the instruction. Write it as the instruction itself, in the imperative, naming the control as labelled on screen, for example "Click Export, then choose PDF." Never describe what you are doing, never "I\'ll" or "Got it".';
+
 export async function askScreen(
   client: MetaClient,
   model: string,
@@ -56,7 +60,10 @@ export async function askScreen(
       instructions: prompts.showMe,
       tools: [{ type: "computer" }],
       input: [
-        user(text(`${context ? `${context}\n\n` : ""}The user asks: ${q.question}`), q.screenshot),
+        user(
+          text(`${context ? `${context}\n\n` : ""}The user asks: ${q.question}\n\n${REPLY_RULE}`),
+          q.screenshot,
+        ),
       ],
     },
     q.signal,

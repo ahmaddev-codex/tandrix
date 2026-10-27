@@ -7,6 +7,7 @@ import {
   ProcedureDraft,
   StepAnswer,
   StepCheckOutput,
+  VisualConcepts,
 } from "@tandrix/contracts";
 import type { MetaClient } from "./client";
 import { text, user, type InputPart } from "./content";
@@ -76,6 +77,8 @@ export interface StepQuestion {
     hazards: string[];
   };
   equipment?: string;
+  /** The procedure's other steps, so an answer can point to the step that covers the question. */
+  otherSteps?: Array<{ order: number; title: string; instruction: string }>;
   question: string;
   /** "I'm stuck": ask for the next physical thing to do. */
   stuck?: boolean;
@@ -92,6 +95,9 @@ export function answerStepQuestion(client: MetaClient, models: Models, q: StepQu
     s.caution ? `Caution: ${s.caution}` : "",
     s.parts.length ? `Parts: ${s.parts.join(", ")}` : "",
     s.hazards.length ? `Hazards: ${s.hazards.join(", ")}` : "",
+    q.otherSteps?.length
+      ? `Other steps in this job:\n${q.otherSteps.map((o) => `${o.order}. ${o.title}: ${o.instruction}`).join("\n")}`
+      : "",
   ]
     .filter(Boolean)
     .join("\n");
@@ -163,6 +169,42 @@ export interface HighlightOutcome {
 }
 
 /** SAM per part name, then Spark picks among candidates unless every part is unambiguous. */
+/**
+ * What each part looks like in plain words, for the segmenter: names like "Raspberry Pi 5" or
+ * "Active Cooler" mean nothing to it, "circuit board" does. One small text-only call.
+ */
+export async function visualConceptsFor(
+  client: MetaClient,
+  models: Models,
+  instruction: string,
+  parts: Array<{ ref: string; name: string }>,
+): Promise<Map<string, string>> {
+  const out = new Map<string, string>();
+  if (!parts.length) return out;
+  const r = await generateStructured(client, {
+    model: models.reasoning,
+    name: "visual_concepts",
+    schema: VisualConcepts,
+    instructions: prompts.visualConcepts,
+    input: [
+      user(
+        text(`Job: ${instruction}\nParts:\n${parts.map((p) => `${p.ref}: ${p.name}`).join("\n")}`),
+      ),
+    ],
+    effort: "low",
+  });
+  if (!r.ok) return out;
+  for (const { ref, concept } of r.data.concepts) {
+    if (!parts.some((p) => p.ref === ref)) continue;
+    try {
+      out.set(ref, normalizeConcept(concept));
+    } catch {
+      // A description with no usable words is skipped.
+    }
+  }
+  return out;
+}
+
 export async function highlightParts(
   client: MetaClient,
   models: Models,
@@ -181,6 +223,23 @@ export async function highlightParts(
     const cands = segments.map((s) => ({ ...s, concept, index: all.length + segments.indexOf(s) }));
     all.push(...cands);
     byRef.set(part.ref, cands);
+  }
+
+  // Names like "Raspberry Pi 5" or "Active Cooler" mean nothing to the segmenter. For parts their
+  // name didn't find, ask once for what each looks like ("circuit board"), and look again.
+  const unfound = req.parts.filter((p) => !byRef.get(p.ref)!.length);
+  if (unfound.length) {
+    const looks = await visualConceptsFor(client, models, req.instruction, unfound);
+    for (const [ref, concept] of looks) {
+      const { segments } = await segment(client, {
+        model: models.segmentation,
+        image: req.photo,
+        concept,
+      });
+      const cands = segments.map((s, i) => ({ ...s, concept, index: all.length + i }));
+      all.push(...cands);
+      byRef.set(ref, cands);
+    }
   }
 
   const unambiguous = req.parts.every((p) => {
@@ -245,12 +304,37 @@ export interface PartsCheckRequest {
   concept?: string;
 }
 
+/** Most distinct descriptions a parts check segments for, to bound cost on long parts lists. */
+const MAX_PART_CONCEPTS = 8;
+
+const overlap = (a: Segment["box"], b: Segment["box"]) => {
+  const w = Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x));
+  const h = Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y));
+  const inter = w * h;
+  return inter / (a.w * a.h + b.w * b.h - inter);
+};
+
 export async function checkParts(client: MetaClient, models: Models, req: PartsCheckRequest) {
-  const { segments } = await segment(client, {
-    model: models.segmentation,
-    image: req.photo,
-    concept: req.concept ?? "mechanical part",
-  });
+  // A generic word ("object", "mechanical part") finds nothing; look for each kind of part on
+  // the list by what it looks like, and merge what's found.
+  const concepts = req.concept
+    ? [req.concept]
+    : [
+        ...new Set(
+          (
+            await visualConceptsFor(client, models, "Lay out the parts for a job", req.parts)
+          ).values(),
+        ),
+      ].slice(0, MAX_PART_CONCEPTS);
+  const segments: Segment[] = [];
+  for (const concept of concepts) {
+    const found = await segment(client, { model: models.segmentation, image: req.photo, concept });
+    for (const seg of found.segments) {
+      const same = segments.findIndex((x) => overlap(x.box, seg.box) > 0.7);
+      if (same < 0) segments.push(seg);
+      else if ((seg.confidence ?? 0) > (segments[same]!.confidence ?? 0)) segments[same] = seg;
+    }
+  }
   const list = segments
     .map((s, i) => `Box ${i}: x=${s.box.x} y=${s.box.y} w=${s.box.w} h=${s.box.h}`)
     .join("\n");

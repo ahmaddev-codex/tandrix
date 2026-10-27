@@ -1,0 +1,37 @@
+<!doctype html>
+<!-- A synthetic desktop app for Show me checks: writing an OS image to a storage card. Rendered
+     at 1280×800 by apps/api/scripts/live-check.ts; the expected target for "pick the card" is the
+     Choose storage button (id="storage"). -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>OS Writer</title>
+<style>
+  body { margin: 0; width: 1280px; height: 800px; font: 15px -apple-system, "Helvetica Neue", Arial, sans-serif; background: #e9e9ef; display: grid; place-items: center; }
+  .win { width: 760px; height: 470px; background: #fff; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,.25); overflow: hidden; display: grid; grid-template-rows: 36px 1fr; }
+  .bar { background: #f3f3f6; border-bottom: 1px solid #ddd; display: flex; align-items: center; gap: 8px; padding: 0 14px; color: #555; font-size: 13px; }
+  .bar i { width: 12px; height: 12px; border-radius: 50%; background: #c9c9cf; display: inline-block; }
+  .main { background: #b9314f; color: #fff; display: grid; align-content: center; justify-items: center; gap: 28px; }
+  h1 { margin: 0; font-size: 26px; font-weight: 600; }
+  .row { display: flex; gap: 22px; }
+  .col { display: grid; gap: 8px; justify-items: center; }
+  .col span { font-size: 12px; letter-spacing: .04em; text-transform: uppercase; opacity: .85; }
+  button { width: 190px; height: 42px; border: 0; border-radius: 6px; background: #fff; color: #b9314f; font-weight: 600; font-size: 14px; }
+  .next { background: transparent; color: #fff; border: 2px solid rgba(255,255,255,.6); }
+</style>
+</head>
+<body>
+<div class="win">
+  <div class="bar"><i></i><i></i><i></i> OS Writer v1.8</div>
+  <div class="main">
+    <h1>Write an operating system to a card</h1>
+    <div class="row">
+      <div class="col"><span>Device</span><button id="device">Choose device</button></div>
+      <div class="col"><span>Operating system</span><button id="os">Choose OS</button></div>
+      <div class="col"><span>Storage</span><button id="storage">Choose storage</button></div>
+    </div>
+    <button class="next" disabled>Next</button>
+  </div>
+</div>
+</body>
+</html>

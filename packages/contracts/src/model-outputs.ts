@@ -144,3 +144,11 @@ export const ScreenReply = z.strictObject({
   targetNotVisible: z.boolean().default(false),
 });
 export type ScreenReply = z.infer<typeof ScreenReply>;
+
+/** What each part looks like in plain words, for the segmenter when its name finds nothing. */
+export const VisualConcepts = z.strictObject({
+  concepts: z.array(
+    z.strictObject({ ref: z.string().max(20), concept: z.string().min(1).max(60) }),
+  ),
+});
+export type VisualConcepts = z.infer<typeof VisualConcepts>;

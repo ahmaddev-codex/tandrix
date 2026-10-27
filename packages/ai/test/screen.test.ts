@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { askScreen, imageUrl, MetaClient, prompts } from "../src";
+import { askScreen, imageUrl, MetaClient, prompts, REPLY_RULE } from "../src";
 import { json, noSleep, scriptedFetch } from "./helpers";
 
 const screenshot = imageUrl("data:image/jpeg;base64,AAAA");
@@ -42,7 +42,7 @@ describe("askScreen", () => {
     expect(body.store).toBe(false);
     const input = body.input as Array<{ content: Array<Record<string, unknown>> }>;
     expect(input[0]!.content[0]!.text).toBe(
-      "Step: Save the drive settings\n\nThe user asks: How do I save this?",
+      `Step: Save the drive settings\n\nThe user asks: How do I save this?\n\n${REPLY_RULE}`,
     );
     expect(input[0]!.content[1]).toEqual(screenshot);
   });

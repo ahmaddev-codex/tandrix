@@ -90,7 +90,7 @@ async function stepFor(d: StepDeps, ownerId: string, rawJobId?: string, rawStepI
   const parts = step.partSpecIds
     .map((id) => detail.parts.find((p) => p.id === id))
     .filter((p) => p !== undefined);
-  return { jobId: jobId.data, job: found.job, jobStep, step, parts };
+  return { jobId: jobId.data, job: found.job, jobStep, step, parts, procedure: detail };
 }
 
 export function stepRoutes(d: StepDeps) {
@@ -189,7 +189,7 @@ export function stepRoutes(d: StepDeps) {
     })
     .post("/:stepId/ask", async (c) => {
       const user = c.get("user");
-      const { job, step, parts } = await stepFor(
+      const { job, step, parts, procedure } = await stepFor(
         d,
         user.id,
         c.req.param("id"),
@@ -218,6 +218,9 @@ export function stepRoutes(d: StepDeps) {
           hazards: step.hazardTags,
         },
         ...(asset ? { equipment: `${asset.make} ${asset.model}` } : {}),
+        otherSteps: procedure.steps
+          .filter((s) => s.id !== step.id)
+          .map((s) => ({ order: s.order, title: s.title, instruction: s.instruction })),
         question:
           command?.kind === "stuck" && command.detail ? `I'm stuck on ${command.detail}` : text,
         stuck: stuck || command?.kind === "stuck",

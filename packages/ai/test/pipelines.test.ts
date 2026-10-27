@@ -280,6 +280,27 @@ describe("highlightParts", () => {
     expect(calls).toHaveLength(1);
   });
 
+  it("looks again with a plain description when a part's name finds nothing", async () => {
+    const oneObject = DOC_SAM_LINE.split(",1<|")[0]!;
+    const { client, calls } = clientWith([
+      samStream(""),
+      responseWithText(JSON.stringify({ concepts: [{ ref: "P1", concept: "Circuit board" }] })),
+      samStream(conf(oneObject)),
+    ]);
+    const r = await highlightParts(client, models, {
+      photo,
+      size: { width: 320, height: 334 },
+      instruction: "Fit the cooler to the board",
+      parts: [{ ref: "P1", name: "Raspberry Pi 5" }],
+    });
+    if (!("picks" in r)) throw new Error("expected picks");
+    expect(r.picks[0]!.candidate?.concept).toBe("circuit board");
+    expect(r.usedReasoning).toBe(false);
+    expect(calls).toHaveLength(3);
+    expect(JSON.stringify(calls[0]!.body)).toContain("raspberry pi");
+    expect(JSON.stringify(calls[2]!.body)).toContain("circuit board");
+  });
+
   it("asks Spark to pick when ambiguous, and drops invented refs and indexes", async () => {
     const { client } = clientWith([
       samStream(DOC_SAM_LINE),
@@ -307,8 +328,17 @@ describe("highlightParts", () => {
 
 describe("checkParts", () => {
   it("reports every listed part once, missing when the model skipped it", async () => {
-    const { client } = clientWith([
+    const { client, calls } = clientWith([
+      responseWithText(
+        JSON.stringify({
+          concepts: [
+            { ref: "P1", concept: "pump housing" },
+            { ref: "P7", concept: "rubber ring" },
+          ],
+        }),
+      ),
       samStream(DOC_SAM_LINE),
+      samStream(""),
       responseWithText(
         JSON.stringify({
           assignments: [
@@ -330,6 +360,9 @@ describe("checkParts", () => {
       { partRef: "P1", status: "found", boxIndexes: [0] },
       { partRef: "P7", status: "missing", boxIndexes: [] },
     ]);
+    // Each kind of part is looked for by what it looks like, not its name.
+    expect(JSON.stringify(calls[1]!.body)).toContain("pump housing");
+    expect(JSON.stringify(calls[2]!.body)).toContain("rubber ring");
   });
 });
 

@@ -117,6 +117,12 @@ const app = createApp({
   log,
 });
 
-serve({ fetch: app.fetch, port: config.port }, (info) => {
+const server = serve({ fetch: app.fetch, port: config.port }, (info) => {
   console.log(`Tandrix API (${config.env}) on http://localhost:${info.port}`);
 });
+// Keep idle connections longer than clients and load balancers do (Node's default is 5 s), so a
+// client never sends a request down a connection the server has just closed.
+if ("keepAliveTimeout" in server) {
+  server.keepAliveTimeout = 65_000;
+  server.headersTimeout = 66_000;
+}
