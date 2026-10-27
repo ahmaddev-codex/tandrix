@@ -142,7 +142,7 @@ export function DesktopStep({
                     const aspectRatio = visualAspect(v);
                     return {
                       id: v.kind,
-                      ...visualLabels(v, time),
+                      ...visualLabels(v),
                       src: v.url,
                       ...(aspectRatio ? { aspectRatio } : {}),
                     };
@@ -217,7 +217,7 @@ function useStepVisuals(jobId: string, jobStepId?: string, updatedAt?: string): 
 
 /** One picture over the whole panel, at full width to read a manual page; Esc closes it. */
 function Lightbox({ visual, onClose }: { visual: Visual; onClose: () => void }) {
-  const l = visualLabels(visual, time);
+  const l = visualLabels(visual);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", onKey);

@@ -2,6 +2,7 @@
 import type {
   CorrectDetectionRequest,
   CreateEvidenceRequest,
+  GenerateProcedureRequest,
   SaveAssetRequest,
   StepActionRequest,
 } from "@tandrix/contracts";
@@ -152,7 +153,7 @@ export const api = {
     }).then((r) => r.manual),
   manualUrl: (jobId: string, manualId: string) =>
     request(`/jobs/${jobId}/manual/${manualId}/url`, z.object({ url: z.url() })).then((r) => r.url),
-  generateProcedure: (jobId: string, body: { allowGeneric?: boolean } = {}) =>
+  generateProcedure: (jobId: string, body: z.input<typeof GenerateProcedureRequest> = {}) =>
     request(`/jobs/${jobId}/procedure`, GenerateProcedureResponse, {
       method: "POST",
       body: JSON.stringify(body),

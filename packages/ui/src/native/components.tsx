@@ -104,7 +104,7 @@ const buttonColors: Record<
 
 export interface ButtonProps extends Omit<PressableProps, "children" | "style"> {
   variant?: ButtonVariant;
-  /** md 40, lg 48, field 56. Phone primary actions use field; nothing on the phone is below lg. */
+  /** md 40, lg 48, field 48 (full-width phone actions, 15px semibold). Nothing on the phone is below lg. */
   size?: ButtonSize;
   icon?: IconName;
   /** Icon-only buttons must pass accessibilityLabel. */
@@ -264,7 +264,7 @@ export interface InputProps {
   /** Unit shown inside the field, e.g. "Nm". */
   suffix?: string;
   mono?: boolean;
-  /** field 56 (default on phone) or lg 48. */
+  /** field (default on phone) or lg, both 48. */
   size?: "field" | "lg";
   keyboardType?: TextInputProps["keyboardType"];
   autoComplete?: TextInputProps["autoComplete"];

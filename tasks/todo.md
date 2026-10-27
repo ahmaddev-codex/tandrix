@@ -57,7 +57,7 @@ Tracks: **D** design, **A** mobile & glasses, **B** API & AI, **C** desktop (mac
 
 ## Phase 4b — Real product, end to end (added 27 Oct)
 - [ ] R1 No demo data: fixture model mode removed (API, config, scripts, docs); production refuses to start without META_API_KEY; local test jobs, procedures, manuals and assets deleted (Pi 5 live job kept). Open: e2e flows rewritten for real model answers (with I1)
-- [ ] I1 Intake at project start: one screen asks for everything that saves a round trip (goal; photos of the label, the parts and where it stands; the manual as PDF, pages or search; notes), then sets up in one pass (identify, manual, steps, parts check) with visible progress
+- [ ] I1 Intake at project start: built. One screen takes the goal, label photo, where-it-stands photos, the manual (PDF or pages, else search), the parts photo and notes; one pass sets it up with visible stages and resumes from a stopped stage. Live run on the Pi 5: label read, manual found, 10 steps (9 cited), parts flagged, about $0.20 and 2 min. Open: e2e flows rewritten for intake on real models
 - [ ] L1 Point the camera: live camera on the phone; ask "what is this?" or "where does this go?" by voice or tap, and Tandrix answers and highlights on the live view (frames on demand, not streamed)
 - [ ] L2 Learn software on the Mac: "teach me Photoshop" starts a software project with steps done on screen, each with Show me and a screen check
 - [ ] D1 Deploy: API container on Fly.io, hosted Supabase (migrations, buckets, auth), website on Vercel, EAS profiles, signed Mac build, production env checklist; deploy itself after the user's go-ahead

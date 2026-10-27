@@ -65,7 +65,7 @@ appId: app.tandrix.mobile
     element:
       id: remove-reference
     centerElement: true
-- assertVisible: "Your reference .*"
+- assertVisible: "Your reference"
 - takeScreenshot: step-reference
 - tapOn:
     id: step-visual-frame
@@ -79,8 +79,8 @@ appId: app.tandrix.mobile
     id: remove-reference
 # The photo stays with the step: it's now shown as the step's latest photo, not the reference.
 - extendedWaitUntil:
-    visible: "Photo .*"
+    visible: "Your last photo"
     timeout: 15000
-- assertNotVisible: "Your reference .*"
+- assertNotVisible: "Your reference"
 - assertVisible:
     id: add-reference

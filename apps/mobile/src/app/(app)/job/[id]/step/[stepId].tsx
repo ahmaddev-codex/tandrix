@@ -44,9 +44,6 @@ const finished = ["verified", "user_confirmed", "skipped"];
 
 type Phase = "live" | "preview" | "analyzing" | "result";
 
-const clock = (iso: string) =>
-  new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-
 interface Loaded {
   step: ProcedureStep;
   jobStep: JobStep;
@@ -619,10 +616,10 @@ export default function StepScreen() {
                 onChange={setVisualId}
                 onOpen={(kind) => {
                   const v = visuals.find((x) => x.kind === kind);
-                  if (v) setViewing({ url: v.url, ...visualLabels(v, clock) });
+                  if (v) setViewing({ url: v.url, ...visualLabels(v) });
                 }}
                 items={visuals.map((v) => {
-                  const l = visualLabels(v, clock);
+                  const l = visualLabels(v);
                   const aspectRatio = visualAspect(v);
                   return {
                     id: v.kind,

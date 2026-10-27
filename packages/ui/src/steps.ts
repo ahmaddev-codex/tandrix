@@ -21,16 +21,17 @@ export function citationLabel(c: Citation): string | null {
 }
 
 /** How a step visual is named on screen: its tab, its SourceChip, and its screen-reader text. */
-export function visualLabels(
-  v: StepVisual,
-  /** The app's clock format, e.g. "10:46". */
-  time: (iso: string) => string,
-): { label: string; source: string; sourceKind: SourceKind; alt: string } {
+export function visualLabels(v: StepVisual): {
+  label: string;
+  source: string;
+  sourceKind: SourceKind;
+  alt: string;
+} {
   switch (v.kind) {
     case "reference":
       return {
         label: "Your reference",
-        source: `Your reference ${time(v.capturedAt)}`,
+        source: "Your reference",
         sourceKind: v.evidenceKind === "screenshot" ? "screen" : "photo",
         alt: "Your reference picture for this step",
       };
@@ -50,7 +51,7 @@ export function visualLabels(
       const screen = v.evidenceKind === "screenshot";
       return {
         label: screen ? "Last screenshot" : "Last photo",
-        source: `${screen ? "Screenshot" : "Photo"} ${time(v.capturedAt)}`,
+        source: screen ? "Your last screenshot" : "Your last photo",
         sourceKind: screen ? "screen" : "photo",
         alt: `Your last ${screen ? "screenshot" : "photo"} of this step`,
       };

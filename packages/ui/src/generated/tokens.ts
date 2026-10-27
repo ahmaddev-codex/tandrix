@@ -280,7 +280,7 @@ export const size = {
   "control-sm": 32,
   "control-md": 40,
   "control-lg": 48,
-  "control-field": 56,
+  "control-field": 48,
   "control-shutter": 72
 } as const;
 export type SizeToken = keyof typeof size;
