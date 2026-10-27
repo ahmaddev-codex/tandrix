@@ -28,8 +28,13 @@ export interface Recording {
 }
 
 /** `onEnd` fires once when the turn ends by itself: a pause after a tapped question, or the limit. */
+/** A chunk's level as 0 (room) to 1 (loud speech), for the presence bar's meter. */
+export const meterLevel = (db: number) => Math.max(0, Math.min(1, (db + 60) / 45));
+const LEVEL_EVERY_MS = 66;
+
 export async function startRecording(
   onEnd: (step: Exclude<TurnStep, "listen">) => void,
+  onLevel?: (level: number) => void,
 ): Promise<Recording> {
   const stream = await navigator.mediaDevices.getUserMedia({
     audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true },
@@ -54,10 +59,21 @@ export async function startRecording(
     done = true;
     onEnd(step);
   };
+  let sinceLevel = 0;
+  let loudest = -160;
   node.port.onmessage = (e: MessageEvent<Float32Array>) => {
     chunks.push(e.data);
     samples += e.data.length;
-    levels = addLevel(levels, chunkDb(e.data), (e.data.length / SAMPLE_RATE) * 1000);
+    const db = chunkDb(e.data);
+    const ms = (e.data.length / SAMPLE_RATE) * 1000;
+    levels = addLevel(levels, db, ms);
+    loudest = Math.max(loudest, db);
+    sinceLevel += ms;
+    if (onLevel && sinceLevel >= LEVEL_EVERY_MS) {
+      onLevel(meterLevel(loudest));
+      sinceLevel = 0;
+      loudest = -160;
+    }
     if (tapped) {
       const step = tappedTurn(levels);
       if (step !== "listen") endBy(step);

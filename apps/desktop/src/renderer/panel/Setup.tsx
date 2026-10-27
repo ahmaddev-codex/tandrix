@@ -1,7 +1,7 @@
-// First run on the Mac: screen access, the microphone, and one question with the hotkey.
+// First run on the Mac: screen access, the microphone, holding ⌥⌘ to talk, and one question.
 import { Button, Icon } from "@tandrix/ui/web";
 import { useCallback, useEffect, useState } from "react";
-import { ASK_KEYS, type ScreenAccess } from "../../shared/bridge";
+import { TALK_KEYS, type ScreenAccess } from "../../shared/bridge";
 import { skipSetup, useSetupFlags } from "../lib/setup";
 
 interface Item {
@@ -15,21 +15,31 @@ export function useSetupStatus() {
   const flags = useSetupFlags();
   const [screen, setScreen] = useState<ScreenAccess>();
   const [mic, setMic] = useState<ScreenAccess>();
+  const [keys, setKeys] = useState<boolean>();
   const refresh = useCallback(() => {
     void window.tandrix.screen.access().then(setScreen);
     void window.tandrix.voice.micStatus().then(setMic);
+    void window.tandrix.voice.talkKeysAccess(false).then(setKeys);
   }, []);
   useEffect(() => {
     refresh();
     window.addEventListener("focus", refresh);
     return () => window.removeEventListener("focus", refresh);
   }, [refresh]);
-  const done = screen === "granted" && mic === "granted" && flags.tried;
-  return { screen, mic, refresh, flags, done, show: !done && !flags.skipped && !!screen && !!mic };
+  const done = screen === "granted" && mic === "granted" && !!keys && flags.tried;
+  return {
+    screen,
+    mic,
+    keys,
+    refresh,
+    flags,
+    done,
+    show: !done && !flags.skipped && !!screen && !!mic && keys !== undefined,
+  };
 }
 
 export function Setup({ status }: { status: ReturnType<typeof useSetupStatus> }) {
-  const { screen, mic, refresh, flags } = status;
+  const { screen, mic, keys, refresh, flags } = status;
   const items: Item[] = [
     {
       title: "Let Tandrix see your screen",
@@ -56,8 +66,17 @@ export function Setup({ status }: { status: ReturnType<typeof useSetupStatus> })
       },
     },
     {
+      title: `Hold ${TALK_KEYS} to talk`,
+      body: `Turn on Tandrix under Accessibility in System Settings, so holding ${TALK_KEYS} works in any app. Tandrix only notices those two keys.`,
+      done: !!keys,
+      action: {
+        label: "Allow in Accessibility",
+        run: () => void window.tandrix.voice.talkKeysAccess(true).then(refresh),
+      },
+    },
+    {
       title: "Ask your first question",
-      body: `Switch to any app, press ${ASK_KEYS}, ask "How do I…?", then press ${ASK_KEYS} again. Or type below.`,
+      body: `In any app, hold ${TALK_KEYS}, ask "How do I…?", and let go. Or type below.`,
       done: flags.tried,
     },
   ];
@@ -68,7 +87,7 @@ export function Setup({ status }: { status: ReturnType<typeof useSetupStatus> })
         <h2 className="heading-16" id="setup-title">
           Set up Tandrix
         </h2>
-        <p className="copy-13 panel-muted">Three things, about a minute.</p>
+        <p className="copy-13 panel-muted">Four things, about a minute.</p>
       </header>
       <ol className="setup-list">
         {items.map((item, i) => (

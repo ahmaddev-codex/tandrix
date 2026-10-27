@@ -31,6 +31,8 @@ import {
 } from "./windows";
 
 import { speak, stopSpeaking } from "./speech";
+import { setPresence } from "./presence";
+import { stopPushToTalk, talkKeysAccess } from "./push-to-talk";
 
 let tray: Tray | undefined;
 
@@ -50,6 +52,8 @@ const none = (a: unknown[]): a is [] => a.length === 0;
 const key = (a: unknown[]): a is [string] => a.length === 1 && typeof a[0] === "string";
 const keyValue = (a: unknown[]): a is [string, string] =>
   a.length === 2 && typeof a[0] === "string" && typeof a[1] === "string";
+/** Checked in detail by the handler itself. */
+const one = (a: unknown[]): a is [unknown] => a.length === 1;
 const flag = (a: unknown[]): a is [boolean] => a.length === 1 && typeof a[0] === "boolean";
 /** Checked in detail by the handler itself. */
 const three = (a: unknown[]): a is [unknown, unknown, unknown] => a.length === 3;
@@ -131,6 +135,8 @@ function registerIpc() {
   );
   handle(channels.listening, setListening, flag);
   handle(channels.speak, speak, key);
+  handle(channels.setPresence, setPresence, one);
+  handle(channels.talkKeysAccess, talkKeysAccess, flag);
   handle(channels.stopSpeaking, stopSpeaking, none);
 }
 
@@ -159,15 +165,17 @@ void app.whenReady().then(() => {
   registerIpc();
   createPanel().once("ready-to-show", () => tray && togglePanel(tray.getBounds()));
   createTray();
-  if (!setupShowMe(() => tray?.getBounds()))
-    console.warn("The Show me hotkey is taken by another app.");
+  if (!setupShowMe()) console.warn("The Show me hotkey is taken by another app.");
   syncOverlays();
   screen.on("display-added", syncOverlays);
   screen.on("display-removed", syncOverlays);
   screen.on("display-metrics-changed", syncOverlays);
 });
 
-app.on("will-quit", () => globalShortcut.unregisterAll());
+app.on("will-quit", () => {
+  globalShortcut.unregisterAll();
+  void stopPushToTalk();
+});
 app.on("second-instance", () => tray && togglePanel(tray.getBounds()));
 // A menu-bar app keeps running with its windows hidden.
 app.on("window-all-closed", () => undefined);

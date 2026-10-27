@@ -87,12 +87,6 @@ export function showPanel(anchor: Rectangle) {
   togglePanel(anchor);
 }
 
-/** Shows the panel under the menu-bar icon without taking focus from the app in use. */
-export function showPanelInactive(anchor: Rectangle) {
-  if (!panel || panel.isVisible()) return;
-  togglePanel(anchor, false);
-}
-
 export function sendToPanel(channel: string) {
   panel?.webContents.send(channel);
 }
@@ -136,6 +130,14 @@ export function syncOverlays() {
   }
   for (const d of current) if (!overlays.has(d.id)) overlays.set(d.id, createOverlay(d));
 }
+
+/** Sends to one display's overlay. */
+export function sendToOverlay(displayId: number, channel: string, payload: unknown) {
+  overlays.get(displayId)?.webContents.send(channel, payload);
+}
+
+/** Every display that has an overlay. */
+export const overlayDisplayIds = () => [...overlays.keys()];
 
 function send(displayId: number, pointer: OverlayPointer | null) {
   overlays.get(displayId)?.webContents.send(channels.pointer, pointer);

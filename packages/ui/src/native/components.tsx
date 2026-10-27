@@ -205,9 +205,10 @@ export function StatusChip({ status, children }: StatusChipProps) {
         alignItems: "center",
         alignSelf: "flex-start",
         gap: space["space-1"],
-        height: 32,
-        paddingLeft: 10,
-        paddingRight: 12,
+        // As on the web: 24px with 12px text, so the status reads without shouting.
+        height: 24,
+        paddingLeft: 8,
+        paddingRight: 10,
         borderRadius: radius["radius-full"],
         backgroundColor: t.color[c.bg],
         borderWidth: c.border ? 1 : 0,
@@ -215,7 +216,7 @@ export function StatusChip({ status, children }: StatusChipProps) {
       }}
     >
       <Icon name={meta.icon} color={c.fg} />
-      <Text variant="label-13" color={c.fg}>
+      <Text variant="label-12" color={c.fg}>
         {children ?? meta.label}
       </Text>
     </View>
@@ -238,7 +239,7 @@ export function SourceChip({ kind = "manual", children }: SourceChipProps) {
         alignItems: "center",
         alignSelf: "flex-start",
         gap: 6,
-        minHeight: 28,
+        minHeight: 24,
         paddingHorizontal: space["space-2"],
         borderRadius: radius["radius-sm"],
         backgroundColor: generic ? t.color["amber-100"] : t.color["background-100"],

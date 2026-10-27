@@ -38,6 +38,73 @@ export function PointerBuddy({ x, y, caption }: PointerBuddyProps) {
   );
 }
 
+export type PresenceState = "listening" | "looking" | "answering";
+
+export interface PresenceBarProps {
+  state: PresenceState;
+  /** One short line: "Listening", "Looking at your screen". */
+  label: string;
+  /** The keys that end this state, shown as keycaps after the label ("⌃⇧"). */
+  keys?: string;
+  /** What to do with the keys: "Let go to ask". */
+  keysHint?: string;
+  /** The reply while it's spoken, at most two lines. */
+  text?: string;
+  /** Microphone level while listening, 0 to 1. */
+  level?: number;
+  /** Space from the display's top edge to below the menu bar (and the notch), in points. */
+  top?: number;
+}
+
+const BARS = [0.55, 0.85, 1, 0.8, 0.5];
+
+/**
+ * Tandrix is active: a light along the top edge of the display and a pill under the menu bar
+ * saying what it's doing. Click-through, and gone when Tandrix is idle, so the screen stays free.
+ */
+export function PresenceBar({
+  state,
+  label,
+  keys,
+  keysHint,
+  text,
+  level = 0,
+  top = 0,
+}: PresenceBarProps) {
+  return (
+    <div
+      className="tx-presence"
+      data-state={state}
+      role="status"
+      aria-live="polite"
+      style={{ ["--tx-level" as string]: Math.max(0, Math.min(1, level)) }}
+    >
+      <div className="tx-presence-edge" aria-hidden />
+      <div className="tx-presence-stack" style={{ top: top + 8 }}>
+        <div className="tx-presence-pill">
+          {state === "listening" ? (
+            <span className="tx-presence-meter" aria-hidden>
+              {BARS.map((b, i) => (
+                <span key={i} style={{ ["--tx-bar" as string]: b }} />
+              ))}
+            </span>
+          ) : (
+            <span className="tx-ctl-dot" aria-hidden />
+          )}
+          <span>{label}</span>
+          {keys ? (
+            <span className="tx-presence-keys">
+              <kbd>{keys}</kbd>
+              {keysHint ? <span>{keysHint}</span> : null}
+            </span>
+          ) : null}
+        </div>
+        {text ? <p className="tx-presence-text">{text}</p> : null}
+      </div>
+    </div>
+  );
+}
+
 export interface ControlIndicatorProps {
   children?: ReactNode;
   stopLabel?: string;

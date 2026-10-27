@@ -54,7 +54,8 @@ const main = await context({
   platform: "node",
   format: "cjs",
   target: "node22",
-  external: ["electron"],
+  // Native modules load their own binaries, so they stay outside the bundle.
+  external: ["electron", "uiohook-napi"],
   outbase: resolve(appDir, "src"),
   outdir: resolve(appDir, "dist"),
   outExtension: { ".js": ".cjs" },

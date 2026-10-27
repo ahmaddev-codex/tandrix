@@ -11,11 +11,12 @@ import { uploadScreenshot } from "./screenshot";
 import { recentExchanges } from "./exchanges";
 import { markTried } from "./setup";
 import { speak, stopSpeaking } from "./speech";
+import { present, presentAnswer, presenceState } from "./presence";
+import { TALK_KEYS } from "../../shared/bridge";
 
 export type ShowMePhase = "idle" | "listening" | "working";
 
-export const NOTHING_HEARD =
-  "Didn't hear anything. Press ⌃⌥Space and ask, hold the mic while you talk, or type your question.";
+export const NOTHING_HEARD = "Didn't hear anything. Hold ⌥⌘ while you talk, or type your question.";
 
 export const NO_MIC =
   "Tandrix can't use the microphone. Allow it in System Settings > Privacy & Security > Microphone, or type your question.";
@@ -43,6 +44,12 @@ export function useShowMe(jobId: string | undefined) {
   const reply = (text: string) => {
     add({ speaker: "tandrix", text });
     speak(text);
+    presentAnswer(text);
+  };
+  /** A problem shows in the panel and, briefly, at the top of the screen. */
+  const fail = (message: string) => {
+    setProblem(message);
+    presentAnswer(message);
   };
 
   const shoot = useCallback(async (job: string | undefined): Promise<Shot> => {
@@ -82,12 +89,15 @@ export function useShowMe(jobId: string | undefined) {
 
   const run = useCallback(async (work: () => Promise<void>) => {
     setPhase("working");
+    present({ state: "looking", label: "Looking at your screen" });
     try {
       await work();
     } catch (e) {
-      setProblem((e as Error).message);
+      fail((e as Error).message);
     } finally {
       setPhase("idle");
+      // Work that ended without a reply leaves the screen clear.
+      if (presenceState() === "looking") present(null);
     }
   }, []);
 
@@ -129,21 +139,39 @@ export function useShowMe(jobId: string | undefined) {
     [jobId, run, shoot, answer],
   );
 
-  /** Starts listening. `tapped`: the question ends itself after a pause (hotkey, wake word). */
+  /**
+   * Starts listening. "tap": the question ends itself after a pause, or the hotkey again (⌃⌥Space,
+   * a wake word). "keys": ⌥⌘ held, letting go asks. "hold": the panel's mic button.
+   */
   const listen = useCallback(
-    async (tapped = false) => {
+    async (how: "tap" | "keys" | "hold" = "hold") => {
       if (phaseRef.current !== "idle") return;
       setProblem(undefined);
       stopSpeaking();
-      if (!(await window.tandrix.voice.micAccess())) return setProblem(NO_MIC);
+      if (!(await window.tandrix.voice.micAccess())) return fail(NO_MIC);
+      const shown = {
+        state: "listening" as const,
+        label: "Listening",
+        ...(how === "keys"
+          ? { keys: TALK_KEYS, keysHint: "Let go to ask" }
+          : how === "tap"
+            ? { keys: "⌃⌥Space", keysHint: "Pause, or press again to ask" }
+            : {}),
+      };
       try {
-        recording.current = await startRecording((step) => void finish(step));
-        if (tapped) recording.current.tap();
+        recording.current = await startRecording(
+          (step) => void finish(step),
+          (level) => {
+            if (recording.current) present({ ...shown, level });
+          },
+        );
+        if (how === "tap") recording.current.tap();
       } catch {
-        return setProblem("Tandrix couldn't start the microphone. Type your question instead.");
+        return fail("Tandrix couldn't start the microphone. Type your question instead.");
       }
       void window.tandrix.voice.setListening(true);
       setPhase("listening");
+      present(shown);
     },
     [jobId, finish],
   );
@@ -154,17 +182,25 @@ export function useShowMe(jobId: string | undefined) {
     held.current = false;
     void window.tandrix.voice.setListening(false);
     setPhase("idle");
+    present(null);
   }, []);
 
   // The hotkey: tap to listen; a pause asks (or tap again); Esc cancels.
   useEffect(() => {
     const offKey = window.tandrix.voice.onHotkey(() => {
-      if (phaseRef.current === "idle") void listen(true);
+      if (phaseRef.current === "idle") void listen("tap");
       else if (phaseRef.current === "listening") void finish();
+    });
+    // ⌥⌘: held to talk, let go to ask.
+    const offTalk = window.tandrix.voice.onTalkStart(() => void listen("keys"));
+    const offTalkEnd = window.tandrix.voice.onTalkEnd(() => {
+      if (recording.current) void finish();
     });
     const offCancel = window.tandrix.voice.onCancel(cancel);
     return () => {
       offKey();
+      offTalk();
+      offTalkEnd();
       offCancel();
     };
   }, [listen, finish, cancel]);

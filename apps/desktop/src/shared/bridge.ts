@@ -23,7 +23,15 @@ export const channels = {
   askCancel: "voice:ask-cancel",
   speak: "voice:speak",
   stopSpeaking: "voice:stop-speaking",
+  talkStart: "voice:talk-start",
+  talkEnd: "voice:talk-end",
+  talkKeysAccess: "voice:talk-keys-access",
+  setPresence: "presence:set",
+  presence: "overlay:presence",
 } as const;
+
+/** Hold these to talk; let go to ask. */
+export const TALK_KEYS = "⌥⌘";
 
 /** The Show me hotkey, as macOS writes it. */
 export const ASK_KEYS = "⌃⌥Space";
@@ -37,6 +45,20 @@ export interface OverlayPointer {
   y: number;
   caption?: string;
 }
+
+/** What Tandrix is doing, for the presence bar at the top of the screen. Null: idle, nothing shown. */
+export interface Presence {
+  state: "listening" | "looking" | "answering";
+  label: string;
+  keys?: string;
+  keysHint?: string;
+  text?: string;
+  /** Microphone level, 0 to 1. */
+  level?: number;
+}
+
+/** A presence as an overlay draws it: with the room the menu bar (and notch) takes at the top. */
+export type OverlayPresence = Presence & { top: number };
 
 /** A screenshot of the display under the cursor, downsized, with how to map it back. */
 export interface ScreenCapture {
@@ -84,6 +106,10 @@ export interface TandrixBridge {
     clear(): Promise<void>;
     /** Overlay windows only: called with the pointer to draw, or null to clear it. */
     onPointer(listener: (pointer: OverlayPointer | null) => void): () => void;
+    /** Shows what Tandrix is doing at the top of the screen; null hides it. */
+    setPresence(presence: Presence | null): Promise<void>;
+    /** Overlay windows only: the presence to draw, or null. */
+    onPresence(listener: (presence: OverlayPresence | null) => void): () => void;
   };
   voice: {
     /** Asks macOS for the microphone the first time; true when Tandrix may use it. */
@@ -99,5 +125,11 @@ export interface TandrixBridge {
     /** Speaks a reply in the best macOS voice installed; false if it can't. */
     speak(text: string): Promise<boolean>;
     stopSpeaking(): Promise<void>;
+    /** ⌥⌘ held: start listening (the screen is captured as it is now). */
+    onTalkStart(listener: () => void): () => void;
+    /** ⌥⌘ let go: ask. */
+    onTalkEnd(listener: () => void): () => void;
+    /** Whether macOS lets Tandrix notice ⌥⌘ in other apps (Accessibility); asks when `ask`. */
+    talkKeysAccess(ask: boolean): Promise<boolean>;
   };
 }

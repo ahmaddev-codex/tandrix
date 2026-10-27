@@ -1,6 +1,6 @@
 import { Button, Input, Notice, VoiceTranscript } from "@tandrix/ui/web";
 import { useState, type FormEvent } from "react";
-import { ASK_KEYS } from "../../shared/bridge";
+import { TALK_KEYS } from "../../shared/bridge";
 import { useShowMe } from "../lib/use-show-me";
 
 const examples = [
@@ -28,15 +28,15 @@ export function ShowMe({ jobId }: { jobId?: string }) {
           Ask about your screen
         </h2>
         <p className="copy-13 panel-muted">
-          Tandrix points at the control and tells you what to do. Press{" "}
-          <kbd className="panel-kbd">{ASK_KEYS}</kbd> in any app to ask out loud, and again to send.
+          Tandrix points at the control and tells you what to do. In any app, hold{" "}
+          <kbd className="panel-kbd">{TALK_KEYS}</kbd>, ask out loud, and let go.
         </p>
       </header>
       {s.problem ? <Notice tone="error">{s.problem}</Notice> : null}
       <VoiceTranscript
         state={s.phase}
         turns={s.turns}
-        listeningLabel={`Listening. Press ${ASK_KEYS} to ask, or Esc to cancel.`}
+        listeningLabel="Listening. Let go to ask, or press Esc to cancel."
       />
       <form className="panel-stack-2" onSubmit={submit} noValidate>
         <div className="panel-ask">

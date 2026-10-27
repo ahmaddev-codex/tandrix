@@ -27,7 +27,7 @@ export interface SafetyGateProps {
 function SafetyDisc({ stop }: { stop: boolean }) {
   const t = useTheme();
   return (
-    <Svg width={36} height={36} viewBox="0 0 36 36" accessibilityElementsHidden>
+    <Svg width={28} height={28} viewBox="0 0 36 36" accessibilityElementsHidden>
       <Circle cx={18} cy={18} r={18} fill={stop ? t.color["red-700"] : t.color.mandatory} />
       {stop ? (
         <Path d="M10 10l16 16" stroke={t.color["on-red"]} strokeWidth={3.5} strokeLinecap="round" />

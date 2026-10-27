@@ -1,18 +1,13 @@
-// Show me in the main process: the hotkey, the screenshot the question is about, and pointing
-// at the answer. The panel's renderer does the listening, the API calls and the speaking.
+// Show me in the main process: the hotkey and ⌥⌘, the screenshot the question is about, and
+// pointing at the answer. The panel's renderer does the listening, the API calls and the speaking,
+// without showing itself: the presence bar at the top of the screen says what's happening.
 import { Point, ScreenGeometry } from "@tandrix/contracts";
-import type { Rectangle } from "electron";
 import { channels, type ScreenCapture } from "../shared/bridge";
 import { captureDisplayUnderCursor } from "./capture";
 import { captureToGlobal } from "./displays";
 import { registerAskHotkey, setCancelKey } from "./hotkey";
-import {
-  clearPointer,
-  hidePanelForCapture,
-  sendToPanel,
-  showPanelInactive,
-  showPointer,
-} from "./windows";
+import { setupPushToTalk } from "./push-to-talk";
+import { clearPointer, hidePanelForCapture, sendToPanel, showPointer } from "./windows";
 
 /** A hotkey screenshot older than this is stale; the question gets a fresh one. */
 const PENDING_MAX_AGE_MS = 60_000;
@@ -20,19 +15,20 @@ const PENDING_MAX_AGE_MS = 60_000;
 let listening = false;
 let pending: { capture: ScreenCapture; at: number } | undefined;
 
-export function setupShowMe(trayBounds: () => Rectangle | undefined): boolean {
+/** Captures what the user is looking at now, then tells the panel to start listening. */
+function beginQuestion(channel: string) {
+  clearPointer();
+  void captureDisplayUnderCursor()
+    .then((capture) => (pending = { capture, at: Date.now() }))
+    .catch(() => (pending = undefined))
+    .finally(() => sendToPanel(channel));
+}
+
+export function setupShowMe(): boolean {
+  setupPushToTalk({ start: () => beginQuestion(channels.talkStart), send: sendToPanel });
   return registerAskHotkey(() => {
     if (listening) return sendToPanel(channels.askHotkey);
-    // Capture what the user is looking at now, before the panel appears over it.
-    clearPointer();
-    void captureDisplayUnderCursor()
-      .then((capture) => (pending = { capture, at: Date.now() }))
-      .catch(() => (pending = undefined))
-      .finally(() => {
-        const anchor = trayBounds();
-        if (anchor) showPanelInactive(anchor);
-        sendToPanel(channels.askHotkey);
-      });
+    beginQuestion(channels.askHotkey);
   });
 }
 

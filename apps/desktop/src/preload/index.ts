@@ -1,5 +1,10 @@
 import { contextBridge, ipcRenderer } from "electron";
-import { channels, type OverlayPointer, type TandrixBridge } from "../shared/bridge";
+import {
+  channels,
+  type OverlayPointer,
+  type OverlayPresence,
+  type TandrixBridge,
+} from "../shared/bridge";
 
 const subscribe = (channel: string, listener: () => void) => {
   const fn = () => listener();
@@ -32,6 +37,14 @@ const bridge: TandrixBridge = {
     pointAt: (geometry, point, caption) =>
       ipcRenderer.invoke(channels.pointAt, geometry, point, caption),
     clear: () => ipcRenderer.invoke(channels.clearPointer),
+    setPresence: (presence) => ipcRenderer.invoke(channels.setPresence, presence),
+    onPresence: (listener) => {
+      const fn = (_e: unknown, p: OverlayPresence | null) => listener(p);
+      ipcRenderer.on(channels.presence, fn);
+      return () => {
+        ipcRenderer.off(channels.presence, fn);
+      };
+    },
     onPointer: (listener) => {
       const fn = (_e: unknown, pointer: OverlayPointer | null) => listener(pointer);
       ipcRenderer.on(channels.pointer, fn);
@@ -41,6 +54,9 @@ const bridge: TandrixBridge = {
     },
   },
   voice: {
+    onTalkStart: (listener) => subscribe(channels.talkStart, listener),
+    onTalkEnd: (listener) => subscribe(channels.talkEnd, listener),
+    talkKeysAccess: (ask) => ipcRenderer.invoke(channels.talkKeysAccess, ask),
     micAccess: () => ipcRenderer.invoke(channels.micAccess),
     micStatus: () => ipcRenderer.invoke(channels.micStatus),
     setListening: (listening) => ipcRenderer.invoke(channels.listening, listening),
