@@ -6,6 +6,7 @@ import {
   imageData,
   MetaApiError,
   MetaClient,
+  planTask,
   startDoing,
   type DoTurn,
   type MetaConfig,
@@ -21,6 +22,8 @@ export type DoOutcome =
   { status: "turn"; turn: DoTurn } | { status: "unavailable"; message: string };
 
 export interface ScreenDoer {
+  /** Which installed app the task needs, if not the one in front; null on any failure. */
+  plan(input: { task: string; frontApp?: string; apps: string[] }): Promise<string | null>;
   start(input: { screenshot: Shot; task: string }): Promise<DoOutcome>;
   continue(input: {
     previousResponseId: string;
@@ -58,6 +61,20 @@ export function metaScreenDoer(
     }
   };
   return {
+    async plan({ task, frontApp, apps }) {
+      if (!apps.length) return null;
+      try {
+        const r = await planTask(client, config.models, {
+          task,
+          apps,
+          ...(frontApp ? { frontApp } : {}),
+        });
+        return r.ok ? r.data.openApp : null;
+      } catch (e) {
+        if (e instanceof MetaApiError) return null;
+        throw e;
+      }
+    },
     start: ({ screenshot, task }) =>
       run(() =>
         startDoing(client, config.models.computerUse, {
@@ -78,6 +95,9 @@ export function metaScreenDoer(
 }
 
 export const noModelScreenDoer: ScreenDoer = {
+  async plan() {
+    return null;
+  },
   async start() {
     return { status: "unavailable", message: DO_UNAVAILABLE };
   },

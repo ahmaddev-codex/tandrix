@@ -84,12 +84,13 @@ const blockedShortcuts = [
   ["cmd", "option", "shift", "delete"],
 ] as const;
 
-/** Shortcuts that are fine but consequential enough to ask. */
+/**
+ * Shortcuts that are fine but consequential enough to ask. ⌘Space (Spotlight) and ⌘Tab only move
+ * between apps, which tasks need, so they run without asking.
+ */
 const confirmShortcuts = [
   ["cmd", "w"],
   ["cmd", "delete"],
-  ["cmd", "space"],
-  ["cmd", "tab"],
   ["cmd", "enter"],
 ] as const;
 

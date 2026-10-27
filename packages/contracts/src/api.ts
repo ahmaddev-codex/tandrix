@@ -346,6 +346,12 @@ export const DoStartRequest = z.strictObject({
   screenshot: InlineScreenshot,
   task: text(2000),
   geometry: ScreenGeometry,
+  /** Apps installed on the Mac, so the task can start in the one it needs. */
+  apps: z.array(text(120)).max(500).default([]),
+  /** The app in front when the task was asked. */
+  frontApp: optionalText(120),
+  /** The Mac already opened the app the plan chose: start on this screen. */
+  planned: z.boolean().default(false),
 });
 
 /** POST /screen/do/continue: the screen after the last batch ran, with the checks accepted. */
@@ -367,6 +373,8 @@ export const DoTurnResponse = z.discriminatedUnion("status", [
     safetyChecks: z.array(SafetyCheck).max(10),
     reply: z.string().max(600),
   }),
+  /** Open this installed app first, then start again with `planned: true` on the new screen. */
+  z.strictObject({ status: z.literal("open_app"), app: text(120) }),
   /** Finished, or can't be done: what the model said. */
   z.strictObject({ status: z.literal("done"), reply: z.string().max(600) }),
   z.strictObject({ status: z.literal("unavailable"), message: text(300) }),

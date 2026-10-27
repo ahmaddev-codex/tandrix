@@ -3,6 +3,7 @@
 // Every event it posts carries TANDRIX_MARK in eventSourceUserData, so Tandrix can tell its own
 // input from the user's. It runs only what the main process sends, after the action guard.
 // Coordinates are global display points with the origin at the top left of the main display.
+import AppKit
 import ApplicationServices
 import CoreGraphics
 import Foundation
@@ -179,9 +180,10 @@ func focusedIsSecure() -> Bool {
   return false
 }
 
-func reply(_ ok: Bool, _ error: String? = nil, secure: Bool? = nil) {
+func reply(_ ok: Bool, _ error: String? = nil, secure: Bool? = nil, app: String? = nil) {
   var out = ok ? "{\"ok\":true" : "{\"ok\":false,\"error\":\(String(reflecting: error ?? "failed"))"
   if let secure { out += ",\"secure\":\(secure)" }
+  if let app { out += ",\"app\":\(String(reflecting: app))" }
   FileHandle.standardOutput.write((out + "}\n").data(using: .utf8)!)
 }
 
@@ -191,6 +193,10 @@ while let line = readLine() {
   do {
     let c = try JSONDecoder().decode(Command.self, from: data)
     if c.op == "focus" { reply(true, secure: focusedIsSecure()); continue }
+    if c.op == "front" {
+      reply(true, app: NSWorkspace.shared.frontmostApplication?.localizedName ?? "")
+      continue
+    }
     try run(c)
     reply(true)
   } catch {

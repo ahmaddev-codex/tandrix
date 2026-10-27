@@ -116,9 +116,10 @@ describe("shortcuts", () => {
       });
     }
   });
-  it("asks before closing windows or switching apps", () => {
+  it("asks before closing windows, but moves between apps freely", () => {
     expect(guardAction({ type: "keypress", keys: ["cmd", "w"] }, ctx()).decision).toBe("confirm");
-    expect(guardAction({ type: "keypress", keys: ["cmd", "tab"] }, ctx()).decision).toBe("confirm");
+    expect(guardAction({ type: "keypress", keys: ["cmd", "tab"] }, ctx()).decision).toBe("allow");
+    expect(guardAction({ type: "keypress", keys: ["cmd", "space"] }, ctx()).decision).toBe("allow");
   });
   it("allows plain keys", () => {
     expect(guardAction({ type: "keypress", keys: ["tab"] }, ctx()).decision).toBe("allow");

@@ -89,10 +89,33 @@ export function useShowMe(jobId: string | undefined) {
         mimeType: c.mimeType,
         data: base64(c.image),
       });
-      let r = await api.doStart({ screenshot: inline(capture), task, geometry: capture.geometry });
+      // Start in the app the task needs: the API names one from this Mac's list; the Mac opens it.
+      const { apps, front } = await window.tandrix.doing.apps();
+      let r = await api.doStart({
+        screenshot: inline(capture),
+        task,
+        geometry: capture.geometry,
+        apps,
+        ...(front ? { frontApp: front } : {}),
+      });
+      if (r.status === "open_app") {
+        if (!(await window.tandrix.doing.openApp(r.app)))
+          return reply(`Tandrix couldn't open ${r.app}. Open it yourself, then ask again.`);
+        capture = await window.tandrix.screen.capture();
+        r = await api.doStart({
+          screenshot: inline(capture),
+          task,
+          geometry: capture.geometry,
+          apps,
+          frontApp: r.app,
+          planned: true,
+        });
+      }
       for (;;) {
         if (r.status === "unavailable") return reply(r.message);
         if (r.status === "done") return reply(r.reply || "Done.");
+        // The app is chosen once, at the start.
+        if (r.status === "open_app") return reply("Tandrix lost track of the task. Ask again.");
         const ran = await window.tandrix.doing.run({
           actions: r.actions,
           geometry: capture.geometry,

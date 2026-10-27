@@ -3,7 +3,9 @@
 // screenshot, and sends it back with the call it answers; the turn ends when the model stops
 // proposing actions. Turns are chained with previous_response_id, so the model's side of the
 // session is stored by the API for the length of the task. Nothing here executes anything.
-import { DesktopAction } from "@tandrix/contracts";
+import { DesktopAction, TaskPlan } from "@tandrix/contracts";
+import type { Models } from "./pipelines";
+import { generateStructured } from "./structured";
 import { outputText, type MetaClient, type MetaResponse } from "./client";
 import { text, user, type InputPart } from "./content";
 import { prompts } from "./prompts";
@@ -138,4 +140,30 @@ export async function continueDoing(
     c.signal,
   );
   return readTurn(res);
+}
+
+/**
+ * Before the first step: which app the task needs. Opening it directly is quicker and steadier
+ * than finding it on screen. Null when the app in front will do.
+ */
+export function planTask(
+  client: MetaClient,
+  models: Models,
+  q: { task: string; frontApp?: string; apps: string[]; signal?: AbortSignal },
+) {
+  return generateStructured(client, {
+    model: models.reasoning,
+    name: "task_plan",
+    schema: TaskPlan,
+    instructions: prompts.planTask,
+    input: [
+      user(
+        text(
+          `Task: ${q.task}\nApp in front: ${q.frontApp ?? "unknown"}\nInstalled apps:\n${q.apps.join("\n")}`,
+        ),
+      ),
+    ],
+    effort: "low",
+    ...(q.signal ? { signal: q.signal } : {}),
+  });
 }

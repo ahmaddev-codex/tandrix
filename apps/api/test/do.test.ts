@@ -21,10 +21,14 @@ const turn = (over: Partial<DoTurn> = {}): DoTurn => ({
   ...over,
 });
 
-function setup(script: DoTurn[] = [turn()]) {
+function setup(script: DoTurn[] = [turn()], planned: string | null = null) {
   let clock = Date.UTC(2026, 9, 27, 12);
   const seen: Array<Record<string, unknown>> = [];
   const doer: ScreenDoer = {
+    async plan(i) {
+      seen.push({ kind: "plan", apps: i.apps, frontApp: i.frontApp });
+      return planned;
+    },
     async start(i) {
       seen.push({ kind: "start", task: i.task });
       return { status: "turn", turn: script.shift() ?? turn({ callId: null, actions: [] }) };
@@ -70,8 +74,8 @@ function setup(script: DoTurn[] = [turn()]) {
     });
     return { status: res.status, body: res.ok ? DoTurnResponse.parse(await res.json()) : null };
   };
-  const start = (user = "u1") =>
-    post(user, "/screen/do", { screenshot, geometry, task: "Turn on notifications" });
+  const start = (user = "u1", extra: object = {}) =>
+    post(user, "/screen/do", { screenshot, geometry, task: "Turn on notifications", ...extra });
   const next = (session: string, user = "u1", acknowledged: object[] = []) =>
     post(user, "/screen/do/continue", { session, screenshot, geometry, acknowledged });
   return { start, next, seen, advance: (ms: number) => (clock += ms) };
@@ -88,7 +92,29 @@ describe("POST /screen/do", () => {
     const r = act((await s.start()).body);
     expect(r).toMatchObject({ turn: 1, actions: [{ type: "click", x: 10, y: 20 }] });
     expect(r.session.startsWith("resp_1~call_1~1~")).toBe(true);
-    expect(s.seen[0]).toEqual({ kind: "start", task: "Turn on notifications" });
+    expect(s.seen).toContainEqual({ kind: "start", task: "Turn on notifications" });
+  });
+
+  it("opens the app the task needs first, then starts once it's open", async () => {
+    const apps = ["Calendar", "System Settings"];
+    const s = setup([turn()], "system settings");
+    const first = await s.start("u1", { apps, frontApp: "Finder" });
+    expect(first.body).toEqual({ status: "open_app", app: "System Settings" });
+    expect(s.seen.some((x) => x.kind === "start")).toBe(false);
+    const again = act(
+      (await s.start("u1", { apps, frontApp: "System Settings", planned: true })).body,
+    );
+    expect(again.turn).toBe(1);
+  });
+
+  it("never names an app the Mac didn't list, or the one already in front", async () => {
+    expect(
+      (await setup([turn()], "Terminal").start("u1", { apps: ["Calendar"] })).body?.status,
+    ).toBe("act");
+    expect(
+      (await setup([turn()], "Calendar").start("u1", { apps: ["Calendar"], frontApp: "Calendar" }))
+        .body?.status,
+    ).toBe("act");
   });
 
   it("continues with the next screen and the checks the user accepted", async () => {
@@ -97,7 +123,7 @@ describe("POST /screen/do", () => {
     const first = act((await s.start()).body);
     const second = act((await s.next(first.session, "u1", [check])).body);
     expect(second.turn).toBe(2);
-    expect(s.seen[1]).toMatchObject({
+    expect(s.seen.find((x) => x.kind === "continue")).toMatchObject({
       kind: "continue",
       previousResponseId: "resp_1",
       callId: "call_1",

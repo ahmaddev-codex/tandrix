@@ -33,6 +33,8 @@ export const channels = {
   doRun: "do:run",
   doEnd: "do:end",
   doStop: "do:stop",
+  doApps: "do:apps",
+  doOpenApp: "do:open-app",
   presence: "overlay:presence",
 } as const;
 
@@ -96,6 +98,10 @@ export interface TandrixBridge {
     run(batch: DoBatch): Promise<DoBatchResult>;
     end(): Promise<void>;
     stop(): Promise<void>;
+    /** Installed apps, and the one in front (not Tandrix), for the task's plan. */
+    apps(): Promise<{ apps: string[]; front?: string }>;
+    /** Opens an installed app during a task; false if it isn't installed or no task runs. */
+    openApp(name: string): Promise<boolean>;
   };
   /** Encrypted on disk by the main process (macOS Keychain-backed `safeStorage`). */
   storage: {

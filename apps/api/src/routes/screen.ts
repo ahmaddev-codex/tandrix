@@ -247,6 +247,18 @@ export function inlineScreenRoutes(d: {
       if (!doLimiter.allow(user.id)) throw tooMany();
       const parsed = DoStartRequest.safeParse(await c.req.json().catch(() => undefined));
       if (!parsed.success) throw invalid(issues(parsed.error));
+      // First, the app the task needs, if it isn't the one in front: the Mac opens it and asks
+      // again. Only an app from the Mac's own list is ever named.
+      if (!parsed.data.planned) {
+        const wanted = await doer.plan({
+          task: parsed.data.task,
+          apps: parsed.data.apps,
+          ...(parsed.data.frontApp ? { frontApp: parsed.data.frontApp } : {}),
+        });
+        const app = parsed.data.apps.find((a) => a.toLowerCase() === wanted?.toLowerCase());
+        if (app && app.toLowerCase() !== parsed.data.frontApp?.toLowerCase())
+          return c.json({ status: "open_app", app } satisfies DoTurnResponse);
+      }
       const outcome = await doer.start({
         screenshot: {
           bytes: shotBytes(parsed.data.screenshot),

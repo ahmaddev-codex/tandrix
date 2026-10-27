@@ -37,11 +37,13 @@ import {
   beginTask,
   controlMode,
   endTask,
+  openTaskApp,
   runDoBatch,
   setControlMode,
   shutdownDoing,
   stopDoing,
 } from "./do-session";
+import { frontApp, installedApps } from "./apps";
 import { ControlMode, DesktopAction, SafetyCheck, ScreenGeometry } from "@tandrix/contracts";
 import { z } from "zod";
 
@@ -162,6 +164,15 @@ function registerIpc() {
   handle(channels.doRun, (raw) => runDoBatch(DoBatchSchema.parse(raw)), one);
   handle(channels.doEnd, endTask, none);
   handle(channels.doStop, stopDoing, none);
+  handle(
+    channels.doApps,
+    async () => {
+      const front = await frontApp();
+      return { apps: installedApps(), ...(front ? { front } : {}) };
+    },
+    none,
+  );
+  handle(channels.doOpenApp, openTaskApp, key);
   handle(channels.talkKeysAccess, talkKeysAccess, flag);
   handle(channels.stopSpeaking, stopSpeaking, none);
 }

@@ -13,12 +13,15 @@ export type DriverCommand =
   | { op: "scroll"; x: number; y: number; dx: number; dy: number }
   | { op: "type"; text: string }
   | { op: "keys"; keys: string[] }
-  | { op: "focus" };
+  | { op: "focus" }
+  | { op: "front" };
 
 export interface DriverReply {
   ok: boolean;
   error?: string;
   secure?: boolean;
+  /** For "front": the app in front. */
+  app?: string;
 }
 
 /** Input arriving this soon after one of ours is ours. */

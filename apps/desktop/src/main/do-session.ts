@@ -9,6 +9,25 @@ import { inputWatched, onUserInput, talkKeysAccess } from "./push-to-talk";
 import { setPresence } from "./presence";
 import { setCancelKey } from "./hotkey";
 import { clearPointer, showPointer } from "./windows";
+import { openApp } from "./apps";
+
+const IN_CONTROL = {
+  state: "doing",
+  label: "Tandrix is in control",
+  keys: "Esc",
+  keysHint: "or move the mouse to stop",
+} as const;
+
+/** Opens an installed app for the task in progress, saying so at the top of the screen. */
+export async function openTaskApp(name: string): Promise<boolean> {
+  if (mode !== "do" || !active || stopRequested) return false;
+  setPresence({ ...IN_CONTROL, label: `Opening ${name.slice(0, 60)}` });
+  try {
+    return await openApp(name);
+  } finally {
+    setPresence(IN_CONTROL);
+  }
+}
 
 let mode: ControlMode = "show";
 let active = false;

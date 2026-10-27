@@ -152,3 +152,10 @@ export const VisualConcepts = z.strictObject({
   ),
 });
 export type VisualConcepts = z.infer<typeof VisualConcepts>;
+
+/** Do it for me: which installed app a task needs, when it isn't the one in front. */
+export const TaskPlan = z.strictObject({
+  /** Exactly as named in the list of installed apps; null to start in the app in front. */
+  openApp: z.string().max(120).nullable(),
+});
+export type TaskPlan = z.infer<typeof TaskPlan>;
