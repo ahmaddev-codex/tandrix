@@ -34,6 +34,7 @@ import type { SessionMinter } from "./session-minter";
 import { detectionRoutes, SURFACE_HEADER, stepRoutes } from "./routes/steps";
 import type { ManualPagesRepo } from "./repos/manual-pages";
 import type { PageRenderer } from "./pdf-render";
+import type { Speaker } from "./speech";
 import type { ScreenGuide } from "./screen-guide";
 
 export interface AppDeps {
@@ -62,6 +63,8 @@ export interface AppDeps {
   sessionMinter: SessionMinter;
   manualPages: ManualPagesRepo;
   pageRenderer: PageRenderer;
+  /** Tandrix's spoken voice; without it the apps use a natural device voice or text only. */
+  speaker?: Speaker;
   /** Who's calling, for rate limits on signed-out routes (the client's address). */
   clientKey?: (c: Context) => string;
   /** Signs manual search candidates (TOKEN_SIGNING_SECRET). */
@@ -147,7 +150,7 @@ export function createApp(deps: AppDeps) {
   app.use("/voice/*", requireUser(deps.verifyToken));
   app.use("/screen/*", requireUser(deps.verifyToken));
   app.route("/screen", inlineScreenRoutes({ guide: deps.screenGuide }));
-  app.route("/voice", voiceRoutes(deps.transcriber));
+  app.route("/voice", voiceRoutes(deps.transcriber, deps.speaker));
   app.use("/jobs", requireUser(deps.verifyToken));
   // Evidence first: the more specific path must win over /jobs/:id.
   app.route("/jobs/:id/evidence", evidenceRoutes(deps.evidence, deps.storage));

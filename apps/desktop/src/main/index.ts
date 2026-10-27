@@ -30,6 +30,8 @@ import {
   togglePanel,
 } from "./windows";
 
+import { speak, stopSpeaking } from "./speech";
+
 let tray: Tray | undefined;
 
 function handle<A extends unknown[], R>(
@@ -128,6 +130,8 @@ function registerIpc() {
     none,
   );
   handle(channels.listening, setListening, flag);
+  handle(channels.speak, speak, key);
+  handle(channels.stopSpeaking, stopSpeaking, none);
 }
 
 function createTray() {

@@ -352,8 +352,8 @@ export function useStepWork(input: StepWorkInput | null): StepWork {
         variant={talk.state === "listening" ? "primary" : "secondary"}
         icon="mic"
         iconOnly
-        accessibilityLabel="Hold to talk"
-        accessibilityHint="Hold, speak, then let go"
+        accessibilityLabel="Talk to Tandrix"
+        accessibilityHint="Hold and speak, then let go. Or tap once and speak; a pause sends it."
         disabled={talk.state === "working"}
         onPressIn={talk.start}
         onPressOut={talk.finish}
@@ -364,7 +364,16 @@ export function useStepWork(input: StepWorkInput | null): StepWork {
 
   const below = (
     <View style={{ gap: space["space-3"] }}>
-      <VoiceTranscript testID="voice-transcript" state={talk.state} turns={turns} />
+      <VoiceTranscript
+        testID="voice-transcript"
+        state={talk.state}
+        turns={turns}
+        listeningLabel={
+          talk.mode === "tap"
+            ? "Listening. Pause or tap the mic to send."
+            : "Listening. Let go to send."
+        }
+      />
 
       {measuring && step.measurement ? (
         // The value and its save sit together, above the keyboard; Done saves too.

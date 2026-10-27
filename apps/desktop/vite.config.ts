@@ -22,6 +22,8 @@ function contentSecurityPolicy(env: Record<string, string>, dev: boolean): Plugi
     `style-src 'self'${dev ? " 'unsafe-inline'" : ""}`,
     "font-src 'self'",
     `img-src 'self' data: blob:${storage}`,
+    // Spoken replies are fetched as audio and played from a blob URL.
+    "media-src blob:",
     `connect-src ${[...origins, ...sockets, ...(dev ? ["ws://localhost:5173"] : [])].join(" ")}`,
     "base-uri 'none'",
     "form-action 'none'",

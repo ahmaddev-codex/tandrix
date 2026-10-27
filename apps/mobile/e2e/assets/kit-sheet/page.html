@@ -1,37 +1,126 @@
 <!doctype html>
 <!-- A two-page kit sheet written for Tandrix's e2e flows (not a manufacturer's manual). Rendered to
      page-1.png and page-2.png at 1240×1754 with headless Chrome; ?page=2 shows the second page. -->
-<html lang="en"><head><meta charset="utf-8"><title>Cooler kit sheet</title>
-<style>
-  body { margin: 0; width: 1240px; height: 1754px; font: 30px/1.45 Georgia, serif; color: #111; background: #fff; }
-  .page { padding: 120px 130px; box-sizing: border-box; height: 1754px; position: relative; }
-  h1 { font: 700 54px/1.2 Helvetica, Arial, sans-serif; margin: 0 0 12px; }
-  h2 { font: 700 38px/1.2 Helvetica, Arial, sans-serif; margin: 56px 0 18px; }
-  .sub { font: 28px Helvetica, Arial, sans-serif; color: #555; margin-bottom: 40px; }
-  ol { padding-left: 46px; } li { margin: 0 0 22px; }
-  .note { border-left: 8px solid #c33; padding: 14px 26px; background: #fbeaea; margin: 30px 0; }
-  .foot { position: absolute; bottom: 70px; left: 130px; right: 130px; display: flex; justify-content: space-between; font: 24px Helvetica, Arial, sans-serif; color: #777; border-top: 2px solid #ddd; padding-top: 18px; }
-  .p2 { display: none; }
-  body.second .p1 { display: none; } body.second .p2 { display: block; }
-</style></head>
-<body>
-<script>if (location.search.includes("page=2")) document.body.className = "second";</script>
-<div class="page p1">
-  <h1>Cooler kit for single-board computers</h1>
-  <div class="sub">Fitting sheet, kit CK-5</div>
-  <h2>In the box</h2>
-  <ol><li>Heatsink with fan and fan cable</li><li>Two spring-loaded push pins (fitted)</li><li>Thermal pads (fitted, with backing film)</li></ol>
-  <div class="note">Power off the board and unplug its power cable before you start.</div>
-  <h2>Fit the cooler</h2>
-  <ol><li>Peel the backing film off the thermal pads.</li><li>Hold the cooler over the board with the fan above the processor and the pins over the two mounting holes.</li><li>Press both pins down at the same time until they click.</li></ol>
-  <div class="foot"><span>Cooler kit CK-5</span><span>1</span></div>
-</div>
-<div class="page p2">
-  <h1>Connect and check</h1>
-  <h2>Connect the fan</h2>
-  <ol><li>Lift the latch on the connector marked FAN.</li><li>Push the fan cable in, contacts facing the board, and close the latch.</li></ol>
-  <h2>Check</h2>
-  <ol><li>The cooler sits flat, with no gap at the pads.</li><li>Both pins are clipped through the board.</li><li>Power on: the fan spins up briefly, then slows.</li></ol>
-  <div class="foot"><span>Cooler kit CK-5</span><span>2</span></div>
-</div>
-</body></html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Cooler kit sheet</title>
+    <style>
+      body {
+        margin: 0;
+        width: 1240px;
+        height: 1754px;
+        font:
+          30px/1.45 Georgia,
+          serif;
+        color: #111;
+        background: #fff;
+      }
+      .page {
+        padding: 120px 130px;
+        box-sizing: border-box;
+        height: 1754px;
+        position: relative;
+      }
+      h1 {
+        font:
+          700 54px/1.2 Helvetica,
+          Arial,
+          sans-serif;
+        margin: 0 0 12px;
+      }
+      h2 {
+        font:
+          700 38px/1.2 Helvetica,
+          Arial,
+          sans-serif;
+        margin: 56px 0 18px;
+      }
+      .sub {
+        font:
+          28px Helvetica,
+          Arial,
+          sans-serif;
+        color: #555;
+        margin-bottom: 40px;
+      }
+      ol {
+        padding-left: 46px;
+      }
+      li {
+        margin: 0 0 22px;
+      }
+      .note {
+        border-left: 8px solid #c33;
+        padding: 14px 26px;
+        background: #fbeaea;
+        margin: 30px 0;
+      }
+      .foot {
+        position: absolute;
+        bottom: 70px;
+        left: 130px;
+        right: 130px;
+        display: flex;
+        justify-content: space-between;
+        font:
+          24px Helvetica,
+          Arial,
+          sans-serif;
+        color: #777;
+        border-top: 2px solid #ddd;
+        padding-top: 18px;
+      }
+      .p2 {
+        display: none;
+      }
+      body.second .p1 {
+        display: none;
+      }
+      body.second .p2 {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <script>
+      if (location.search.includes("page=2")) document.body.className = "second";
+    </script>
+    <div class="page p1">
+      <h1>Cooler kit for single-board computers</h1>
+      <div class="sub">Fitting sheet, kit CK-5</div>
+      <h2>In the box</h2>
+      <ol>
+        <li>Heatsink with fan and fan cable</li>
+        <li>Two spring-loaded push pins (fitted)</li>
+        <li>Thermal pads (fitted, with backing film)</li>
+      </ol>
+      <div class="note">Power off the board and unplug its power cable before you start.</div>
+      <h2>Fit the cooler</h2>
+      <ol>
+        <li>Peel the backing film off the thermal pads.</li>
+        <li>
+          Hold the cooler over the board with the fan above the processor and the pins over the two
+          mounting holes.
+        </li>
+        <li>Press both pins down at the same time until they click.</li>
+      </ol>
+      <div class="foot"><span>Cooler kit CK-5</span><span>1</span></div>
+    </div>
+    <div class="page p2">
+      <h1>Connect and check</h1>
+      <h2>Connect the fan</h2>
+      <ol>
+        <li>Lift the latch on the connector marked FAN.</li>
+        <li>Push the fan cable in, contacts facing the board, and close the latch.</li>
+      </ol>
+      <h2>Check</h2>
+      <ol>
+        <li>The cooler sits flat, with no gap at the pads.</li>
+        <li>Both pins are clipped through the board.</li>
+        <li>Power on: the fan spins up briefly, then slows.</li>
+      </ol>
+      <div class="foot"><span>Cooler kit CK-5</span><span>2</span></div>
+    </div>
+  </body>
+</html>

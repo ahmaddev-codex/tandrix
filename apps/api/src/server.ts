@@ -28,6 +28,7 @@ import { supabaseReportsRepo } from "./repos/reports";
 import { supabaseSessionMinter } from "./session-minter";
 import { supabaseManualPagesRepo } from "./repos/manual-pages";
 import { workerPageRenderer } from "./pdf-render";
+import { kokoroSpeaker } from "./speech";
 
 const config = loadApiConfig();
 const admin = createClient(config.supabaseUrl, config.supabaseSecretKey, {
@@ -62,6 +63,10 @@ const voice = meta ? metaVoice(meta, log) : noModelVoice;
 if (!process.env.META_API_KEY)
   log({ level: "warn", event: "models_disabled", reason: "META_API_KEY not set" });
 
+// Loads the voice model in the background so the first reply isn't slow.
+const speaker = kokoroSpeaker(log);
+speaker.warm();
+
 const app = createApp({
   verifyToken: supabaseVerifier(admin),
   jobs: supabaseJobsRepo(admin),
@@ -88,6 +93,7 @@ const app = createApp({
   sessionMinter: supabaseSessionMinter(admin),
   manualPages: supabaseManualPagesRepo(admin),
   pageRenderer: workerPageRenderer(),
+  speaker,
   clientKey: (c) => getConnInfo(c).remote.address ?? "unknown",
   tokenSecret: config.tokenSigningSecret,
   corsOrigins: config.corsOrigins,

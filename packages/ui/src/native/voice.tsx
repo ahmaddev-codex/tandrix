@@ -17,12 +17,19 @@ export interface VoiceTranscriptProps {
   state?: "idle" | "listening" | "working";
   /** Oldest first; the last few are shown. */
   turns: VoiceTurn[];
+  /** What ends the turn, shown while listening. Defaults to "Listening. Let go to send." */
+  listeningLabel?: string;
   testID?: string;
 }
 
 const SHOWN = 4;
 
-export function VoiceTranscript({ state = "idle", turns, testID }: VoiceTranscriptProps) {
+export function VoiceTranscript({
+  state = "idle",
+  turns,
+  listeningLabel = "Listening. Let go to send.",
+  testID,
+}: VoiceTranscriptProps) {
   const t = useTheme();
   if (state === "idle" && !turns.length) return null;
   return (
@@ -65,7 +72,7 @@ export function VoiceTranscript({ state = "idle", turns, testID }: VoiceTranscri
         >
           <ListeningDot />
           <Text variant="label-13" color="text-secondary">
-            Listening. Let go to send.
+            {listeningLabel}
           </Text>
         </View>
       ) : state === "working" ? (

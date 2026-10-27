@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { encodeWav, joinChunks } from "../src/renderer/lib/wav";
+import { chunkDb, encodeWav, joinChunks } from "../src/renderer/lib/wav";
 
 const text = (b: Uint8Array, at: number, n: number) =>
   String.fromCharCode(...b.subarray(at, at + n));
@@ -33,5 +33,16 @@ describe("joinChunks", () => {
     expect([
       ...joinChunks([new Float32Array([1, 2]), new Float32Array([]), new Float32Array([3])]),
     ]).toEqual([1, 2, 3]);
+  });
+});
+
+describe("chunkDb", () => {
+  it("is 0 dB at full scale and very low for silence", () => {
+    expect(chunkDb(new Float32Array(160).fill(1))).toBeCloseTo(0);
+    expect(chunkDb(new Float32Array(160))).toBeLessThan(-100);
+  });
+  it("puts quiet speech above the room and a hum below it", () => {
+    expect(chunkDb(new Float32Array(160).fill(0.05))).toBeGreaterThan(-42);
+    expect(chunkDb(new Float32Array(160).fill(0.002))).toBeLessThan(-42);
   });
 });

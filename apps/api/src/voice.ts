@@ -10,9 +10,13 @@ import {
 } from "@tandrix/ai";
 import type { TranscribeResponse } from "@tandrix/contracts";
 import { Hono } from "hono";
+import { rateLimiter, type RateLimiter } from "./rate-limit";
+import { MAX_SPEAK_CHARS, noSpeaker, type Speaker } from "./speech";
+
+const SpeakRequest = z.strictObject({ text: z.string().trim().min(1).max(MAX_SPEAK_CHARS) });
 import { z } from "zod";
 import type { AuthEnv } from "./auth";
-import { HttpError, invalid } from "./errors";
+import { HttpError, invalid, tooMany } from "./errors";
 
 /** One minute of 24 kHz mono 16-bit audio, with room for the header. */
 export const MAX_TURN_BYTES = 3 * 1024 * 1024;
@@ -92,53 +96,76 @@ export const noModelVoice: Transcriber & StepAnswerer = {
 
 const Keywords = z.array(z.string().trim().min(1).max(40)).max(20);
 
-export function voiceRoutes(transcriber: Transcriber) {
-  return new Hono<AuthEnv>().post("/transcribe", async (c) => {
-    // Refuse oversized bodies before reading them.
-    const declared = Number(c.req.header("content-length") ?? 0);
-    if (declared > MAX_TURN_BYTES + 64 * 1024) {
-      throw new HttpError(
-        413,
-        "invalid_request",
-        "That recording is too long. Keep it under a minute.",
-      );
-    }
-    const body = await c.req.parseBody().catch(() => null);
-    const audio = body?.audio;
-    if (!(audio instanceof File)) throw invalid(["audio: a WAV recording is required"]);
-    if (audio.size > MAX_TURN_BYTES) {
-      throw new HttpError(
-        413,
-        "invalid_request",
-        "That recording is too long. Keep it under a minute.",
-      );
-    }
-    const wav = new Uint8Array(await audio.arrayBuffer());
-    const check = wavInfo(wav);
-    if (!check.ok) throw invalid([`audio: ${check.reason}`]);
-    if (check.info.durationMs > MAX_TURN_MS) {
-      throw new HttpError(
-        413,
-        "invalid_request",
-        "That recording is too long. Keep it under a minute.",
-      );
-    }
-    // A tap without speech: don't spend a model call on it.
-    if (check.info.durationMs < 300) {
-      return c.json({ status: "unclear" as const, message: HEAR_UNCLEAR });
-    }
-    let keywords: string[] = [];
-    if (typeof body?.keywords === "string") {
-      let raw: unknown;
-      try {
-        raw = JSON.parse(body.keywords || "[]");
-      } catch {
-        throw invalid(["keywords: a JSON array of short terms"]);
-      }
-      const parsed = Keywords.safeParse(raw);
-      if (!parsed.success) throw invalid(["keywords: up to 20 short terms"]);
-      keywords = parsed.data;
-    }
-    return c.json(await transcriber.transcribe(wav, keywords));
-  });
+/** Spoken replies: twenty a minute per user covers a conversation. */
+const SPEAK_PER_MINUTE = 20;
+
+export function voiceRoutes(
+  transcriber: Transcriber,
+  speaker: Speaker = noSpeaker,
+  limiter: RateLimiter = rateLimiter(SPEAK_PER_MINUTE, 60_000),
+) {
+  return (
+    new Hono<AuthEnv>()
+      // POST /voice/speak {text}: the reply as a WAV in Tandrix's voice, or 204 when speech isn't
+      // available (the app then uses a natural device voice, or shows the text only).
+      .post("/speak", async (c) => {
+        const parsed = SpeakRequest.safeParse(await c.req.json().catch(() => undefined));
+        if (!parsed.success) throw invalid(["text: 1 to 600 characters"]);
+        if (!limiter.allow(c.get("user").id)) throw tooMany();
+        const wav = await speaker.speak(parsed.data.text);
+        if (!wav) return c.body(null, 204);
+        return c.body(wav as Uint8Array<ArrayBuffer>, 200, {
+          "content-type": "audio/wav",
+          "cache-control": "private, max-age=3600",
+        });
+      })
+      .post("/transcribe", async (c) => {
+        // Refuse oversized bodies before reading them.
+        const declared = Number(c.req.header("content-length") ?? 0);
+        if (declared > MAX_TURN_BYTES + 64 * 1024) {
+          throw new HttpError(
+            413,
+            "invalid_request",
+            "That recording is too long. Keep it under a minute.",
+          );
+        }
+        const body = await c.req.parseBody().catch(() => null);
+        const audio = body?.audio;
+        if (!(audio instanceof File)) throw invalid(["audio: a WAV recording is required"]);
+        if (audio.size > MAX_TURN_BYTES) {
+          throw new HttpError(
+            413,
+            "invalid_request",
+            "That recording is too long. Keep it under a minute.",
+          );
+        }
+        const wav = new Uint8Array(await audio.arrayBuffer());
+        const check = wavInfo(wav);
+        if (!check.ok) throw invalid([`audio: ${check.reason}`]);
+        if (check.info.durationMs > MAX_TURN_MS) {
+          throw new HttpError(
+            413,
+            "invalid_request",
+            "That recording is too long. Keep it under a minute.",
+          );
+        }
+        // A tap without speech: don't spend a model call on it.
+        if (check.info.durationMs < 300) {
+          return c.json({ status: "unclear" as const, message: HEAR_UNCLEAR });
+        }
+        let keywords: string[] = [];
+        if (typeof body?.keywords === "string") {
+          let raw: unknown;
+          try {
+            raw = JSON.parse(body.keywords || "[]");
+          } catch {
+            throw invalid(["keywords: a JSON array of short terms"]);
+          }
+          const parsed = Keywords.safeParse(raw);
+          if (!parsed.success) throw invalid(["keywords: up to 20 short terms"]);
+          keywords = parsed.data;
+        }
+        return c.json(await transcriber.transcribe(wav, keywords));
+      })
+  );
 }

@@ -21,6 +21,8 @@ export const channels = {
   listening: "voice:listening",
   askHotkey: "voice:ask-hotkey",
   askCancel: "voice:ask-cancel",
+  speak: "voice:speak",
+  stopSpeaking: "voice:stop-speaking",
 } as const;
 
 /** The Show me hotkey, as macOS writes it. */
@@ -94,5 +96,8 @@ export interface TandrixBridge {
     onHotkey(listener: () => void): () => void;
     /** Esc while listening. */
     onCancel(listener: () => void): () => void;
+    /** Speaks a reply in the best macOS voice installed; false if it can't. */
+    speak(text: string): Promise<boolean>;
+    stopSpeaking(): Promise<void>;
   };
 }

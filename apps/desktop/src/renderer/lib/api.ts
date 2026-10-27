@@ -67,7 +67,29 @@ async function request<T>(
   return schema.parse(body);
 }
 
+/**
+ * A reply in Tandrix's voice as WAV audio, or null when the voice isn't available (no model, rate
+ * limited, offline) so the caller falls back.
+ */
+async function speech(text: string, signal: AbortSignal): Promise<Blob | null> {
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+  if (!token) return null;
+  try {
+    const res = await fetch(`${env.apiUrl}/voice/speak`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ text }),
+      signal,
+    });
+    return res.status === 200 ? await res.blob() : null;
+  } catch {
+    return null;
+  }
+}
+
 export const api = {
+  speech,
   listJobs: () => request("/jobs", z.object({ jobs: z.array(Job) })).then((r) => r.jobs),
   getJob: (id: string) => request(`/jobs/${id}`, JobDetailResponse),
   createEvidence: (jobId: string, body: z.input<typeof CreateEvidenceRequest>) =>

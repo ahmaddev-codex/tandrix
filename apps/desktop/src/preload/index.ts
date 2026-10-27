@@ -46,6 +46,8 @@ const bridge: TandrixBridge = {
     setListening: (listening) => ipcRenderer.invoke(channels.listening, listening),
     onHotkey: (listener) => subscribe(channels.askHotkey, listener),
     onCancel: (listener) => subscribe(channels.askCancel, listener),
+    speak: (text) => ipcRenderer.invoke(channels.speak, text),
+    stopSpeaking: () => ipcRenderer.invoke(channels.stopSpeaking),
   },
 };
 

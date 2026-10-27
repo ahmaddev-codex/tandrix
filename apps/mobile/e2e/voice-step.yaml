@@ -1,7 +1,7 @@
-# Hold to talk on a step: record, transcribe on the real model, and reply aloud and on screen.
-# The simulator's microphone can't be given real speech here, so the reply is an answer or
-# "Tandrix didn't catch that"; either way a Tandrix turn appears. Speech itself is a physical-
-# device check. Needs JOB_ID and JOB_TITLE (the seeded Raspberry Pi 5 project); see run.sh.
+# Talking on a step. A tap keeps listening (a pause or a second tap sends); a hold sends on
+# letting go. The simulator's microphone can't be given real speech here, so a turn ends in an
+# answer or "Didn't hear anything" (silence is never sent); either way a Tandrix turn appears.
+# Speech itself is a physical-device check. Needs JOB_ID and JOB_TITLE (the seeded Raspberry Pi 5 project); see run.sh.
 appId: app.tandrix.mobile
 env:
   STEP: "Step 2: Fit the Active Cooler"
@@ -17,7 +17,19 @@ env:
       id: talk
     direction: DOWN
     timeout: 20000
-# Hold to talk, then let go.
+# A tap: Tandrix keeps listening and says how the turn ends; a second tap ends it.
+- tapOn:
+    id: talk
+- extendedWaitUntil:
+    visible: "Listening. Pause or tap the mic to send."
+    timeout: 10000
+- takeScreenshot: voice-tap-listening
+- tapOn:
+    id: talk
+- extendedWaitUntil:
+    visible: "Tandrix"
+    timeout: 60000
+# A hold: talk, then let go.
 - longPressOn:
     id: talk
 - extendedWaitUntil:

@@ -17,6 +17,7 @@
     "@expo-google-fonts/geist-mono": "^0.4.3",
     "@supabase/supabase-js": "2.117.3",
     "@tandrix/contracts": "workspace:*",
+    "@tandrix/core": "workspace:*",
     "@tandrix/ui": "workspace:*",
     "react": "19.3.0",
     "react-dom": "19.3.0",

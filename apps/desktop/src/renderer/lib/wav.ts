@@ -36,3 +36,10 @@ export function joinChunks(chunks: readonly Float32Array[]): Float32Array {
   }
   return out;
 }
+
+/** Loudness of one chunk in dBFS. */
+export function chunkDb(samples: Float32Array): number {
+  let sum = 0;
+  for (const v of samples) sum += v * v;
+  return 20 * Math.log10(Math.sqrt(sum / Math.max(1, samples.length)) || 1e-8);
+}
