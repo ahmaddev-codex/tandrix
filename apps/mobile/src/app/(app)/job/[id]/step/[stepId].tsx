@@ -11,7 +11,14 @@ import type {
   ProcedureStep,
   StepVisual as StepVisualData,
 } from "@tandrix/contracts";
-import { citationLabel, space, stepChip, visualAspect, visualLabels } from "@tandrix/ui";
+import {
+  citationLabel,
+  space,
+  stepChip,
+  visualAspect,
+  visualLabels,
+  formatTime,
+} from "@tandrix/ui";
 import {
   Button,
   CaptureView,
@@ -390,7 +397,7 @@ export default function StepScreen() {
         testID="check-result"
         result={check.result}
         reason={check.whatToShowNext ? `${check.reason} ${check.whatToShowNext}` : check.reason}
-        evidence={`Photo ${new Date(photo.capturedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`}
+        evidence={`Photo ${formatTime(photo.capturedAt)}`}
         thumbnail={
           <Image
             source={{ uri: photo.uri }}

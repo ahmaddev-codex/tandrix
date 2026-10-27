@@ -1,5 +1,5 @@
 import type { Job } from "@tandrix/contracts";
-import { radius, space } from "@tandrix/ui";
+import { radius, space, formatDateTime } from "@tandrix/ui";
 import { Button, Icon, Text, useTheme, Notice } from "@tandrix/ui/native";
 import { Link, router, Stack, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
@@ -16,13 +16,7 @@ const statusLabel: Record<Job["status"], string> = {
   stopped: "Stopped",
 };
 
-const when = (iso: string) =>
-  new Date(iso).toLocaleString(undefined, {
-    day: "numeric",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+const when = formatDateTime;
 
 export default function Jobs() {
   const t = useTheme();

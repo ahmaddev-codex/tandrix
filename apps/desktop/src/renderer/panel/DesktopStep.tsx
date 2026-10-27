@@ -1,7 +1,7 @@
 // The step the Mac works on: start it, check the screen when it's done, or confirm what the
 // screen can't show.
 import type { Check, StepActionRequest, StepVisual as Visual } from "@tandrix/contracts";
-import { citationLabel, stepChip, visualAspect, visualLabels } from "@tandrix/ui";
+import { citationLabel, stepChip, visualAspect, visualLabels, formatTime } from "@tandrix/ui";
 import { Button, CheckResult, Icon, Notice, StepCard, StepVisual } from "@tandrix/ui/web";
 import { useEffect, useState, type ReactNode } from "react";
 import { api } from "../lib/api";
@@ -17,8 +17,7 @@ export interface ScreenCheck {
   stepOrder: number;
 }
 
-const time = (iso: string) =>
-  new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+const time = formatTime;
 
 export function DesktopStep({
   jobId,

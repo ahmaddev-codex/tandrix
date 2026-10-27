@@ -13,7 +13,7 @@ import type {
   StepActionResponse,
   VoiceCommand,
 } from "@tandrix/contracts";
-import { space } from "@tandrix/ui";
+import { space, formatTime } from "@tandrix/ui";
 import {
   Button,
   Input,
@@ -32,8 +32,7 @@ import { speak, stopSpeaking } from "@/voice/tts";
 const active = ["in_progress", "needs_attention"];
 const done = ["verified", "user_confirmed", "skipped"];
 
-const confirmedAt = (iso: string) =>
-  `Confirmed at ${new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+const confirmedAt = (iso: string) => `Confirmed at ${formatTime(iso)}`;
 
 export interface StepWork {
   /** Safety gates or the refusal, shown before the step's content. */

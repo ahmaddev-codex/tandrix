@@ -7,7 +7,7 @@ import type {
   PartsCheck,
   ProcedureDetail,
 } from "@tandrix/contracts";
-import { citationLabel, radius, space, stepChip } from "@tandrix/ui";
+import { citationLabel, radius, space, stepChip, formatDateTime } from "@tandrix/ui";
 import {
   ActionCard,
   Button,
@@ -365,7 +365,7 @@ export default function JobScreen() {
         renderItem={({ item }) => (
           <Image
             source={{ uri: item.url, cacheKey: item.evidence.id }}
-            accessibilityLabel={`Photo taken ${new Date(item.evidence.capturedAt).toLocaleString()}`}
+            accessibilityLabel={`Photo taken ${formatDateTime(item.evidence.capturedAt)}`}
             testID="evidence-photo"
             contentFit="cover"
             style={{
