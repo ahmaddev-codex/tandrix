@@ -6,7 +6,7 @@
 <div id="root" style="display:grid;gap:12px;padding:16px"></div>
 <script>
   var T = window.Tandrix, h = React.createElement;
-  var names = ['check','user','alert','info','eyeOff','stop','clock','book','video','camera','monitor','file','mic','power','gauge','arrowRight','retake','glasses','laptop','phone','x','pointer','hand'];
+  var names = ['check','user','alert','info','eyeOff','stop','clock','book','video','camera','monitor','file','mic','power','gauge','arrowRight','gear','retake','glasses','laptop','phone','x','pointer','hand'];
   var row = function (size) {
     return h('div', { className: 'tx-row', style: { gap: 16, padding: 0, alignItems: 'center' } },
       h('span', { className: 'label-12', style: { width: 72, color: 'var(--text-secondary)' } }, size === 16 ? 'Solid 16' : 'Outline 24'),

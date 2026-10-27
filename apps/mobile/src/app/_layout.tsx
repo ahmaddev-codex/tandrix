@@ -13,8 +13,10 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AuthProvider, useAuth } from "@/lib/auth";
+import { PreferencesProvider, usePreferences } from "@/lib/preferences";
 
 SplashScreen.preventAutoHideAsync();
+SplashScreen.setOptions({ duration: 250, fade: true });
 
 // Each weight is its own family on React Native; names come from @tandrix/ui.
 const fonts = {
@@ -30,19 +32,27 @@ export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts(fonts);
   return (
     <SafeAreaProvider>
-      <ThemeProvider>
-        <AuthProvider>
-          <Navigator ready={fontsLoaded || !!fontError} />
-        </AuthProvider>
-      </ThemeProvider>
+      <PreferencesProvider>
+        <ThemeRoot>
+          <AuthProvider>
+            <Navigator ready={fontsLoaded || !!fontError} />
+          </AuthProvider>
+        </ThemeRoot>
+      </PreferencesProvider>
     </SafeAreaProvider>
   );
 }
 
+function ThemeRoot({ children }: { children: React.ReactNode }) {
+  const { theme } = usePreferences();
+  return <ThemeProvider override={theme}>{children}</ThemeProvider>;
+}
+
 function Navigator({ ready }: { ready: boolean }) {
   const { session } = useAuth();
+  const preferences = usePreferences();
   const t = useTheme();
-  const loaded = ready && session !== undefined;
+  const loaded = ready && session !== undefined && preferences.ready;
 
   useEffect(() => {
     if (loaded) SplashScreen.hideAsync();

@@ -38,6 +38,7 @@ const map = {
   power: "power",
   gauge: "gauge",
   arrowRight: "arrow-right",
+  gear: "gear",
   retake: "arrow-counter-clockwise",
   glasses: "eyeglasses",
   laptop: "laptop",

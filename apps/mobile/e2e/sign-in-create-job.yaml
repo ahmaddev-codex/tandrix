@@ -26,10 +26,12 @@ env:
 - runFlow:
     when:
       visible:
-        id: sign-out
+        id: open-settings
     commands:
       - tapOn:
-          id: sign-out
+          id: open-settings
+      - tapOn:
+          id: settings-sign-out
 # Signed out on a fresh install: the welcome screen first.
 - extendedWaitUntil:
     visible: "(Local test sign-in|Get started)"

@@ -28,7 +28,19 @@
       "expo-status-bar",
       "expo-secure-store",
       "expo-font",
-      "expo-splash-screen",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#FAFAFA",
+          "image": "./assets/android-icon-foreground.png",
+          "imageWidth": 136,
+          "resizeMode": "contain",
+          "dark": {
+            "backgroundColor": "#0A0A0A",
+            "image": "./assets/android-icon-foreground.png"
+          }
+        }
+      ],
       "expo-image",
       [
         "expo-camera",

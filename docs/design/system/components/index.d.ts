@@ -2,7 +2,7 @@ import type { ReactNode, MouseEventHandler } from "react";
 
 export type IconName =
   | "check" | "user" | "alert" | "info" | "eyeOff" | "stop" | "clock" | "progress" | "book" | "video"
-  | "camera" | "monitor" | "file" | "mic" | "power" | "gauge" | "arrowRight"
+  | "camera" | "monitor" | "file" | "mic" | "power" | "gauge" | "arrowRight" | "gear"
   | "retake" | "glasses" | "laptop" | "phone" | "x" | "pointer" | "hand";
 
 export interface IconProps {

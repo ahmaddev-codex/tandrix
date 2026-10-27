@@ -2,7 +2,7 @@
 // code), check which Mac it is, and approve it.
 import { normalizePairingCode, PairingCode } from "@tandrix/contracts";
 import { space } from "@tandrix/ui";
-import { ActionCard, Button, Input, Notice, Text } from "@tandrix/ui/native";
+import { Button, Icon, Input, Notice, ProgressState, Text, useTheme } from "@tandrix/ui/native";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -22,6 +22,7 @@ const NOT_FOUND =
   "That code didn't work. It may have run out: your Mac shows a new one every two minutes.";
 
 export default function Pair() {
+  const t = useTheme();
   const params = useLocalSearchParams<{ code?: string }>();
   const [phase, setPhase] = useState<Phase>({ kind: "find" });
   const [typed, setTyped] = useState("");
@@ -63,7 +64,7 @@ export default function Pair() {
   return (
     <SafeAreaView style={{ flex: 1 }} edges={["bottom"]}>
       <ScrollView
-        contentContainerStyle={{ padding: space["space-4"], gap: space["space-6"] }}
+        contentContainerStyle={{ padding: space["space-4"], gap: space["space-3"], flexGrow: 1 }}
         keyboardShouldPersistTaps="handled"
         automaticallyAdjustKeyboardInsets
       >
@@ -75,11 +76,15 @@ export default function Pair() {
 
         {phase.kind === "find" || phase.kind === "checking" ? (
           <>
-            <Text variant="copy-14" color="text-secondary">
-              Open Tandrix on your Mac and scan the code it shows.
-            </Text>
             {permission?.granted ? (
-              <View style={{ height: 280, borderRadius: 12, overflow: "hidden" }}>
+              <View
+                style={{
+                  height: 188,
+                  borderRadius: 20,
+                  overflow: "hidden",
+                  backgroundColor: t.color["gray-100"],
+                }}
+              >
                 <CameraView
                   testID="pair-scanner"
                   style={{ flex: 1 }}
@@ -93,62 +98,128 @@ export default function Pair() {
                     void check(code);
                   }}
                 />
+                <View
+                  pointerEvents="none"
+                  style={{
+                    position: "absolute",
+                    left: space["space-3"],
+                    right: space["space-3"],
+                    bottom: space["space-3"],
+                    padding: space["space-2"],
+                    borderRadius: 12,
+                    backgroundColor: t.color["overlay-scrim"],
+                  }}
+                >
+                  <Text variant="label-13" color="overlay-ink">
+                    Point at the code on your Mac
+                  </Text>
+                </View>
               </View>
             ) : permission?.canAskAgain !== false ? (
-              <Button variant="secondary" size="lg" icon="camera" onPress={requestPermission}>
-                Allow camera to scan
-              </Button>
-            ) : (
-              <Notice testID="pair-no-camera">
-                The camera is off for Tandrix, so it can't scan. Enter the code instead, or turn the
-                camera on in Settings.
-              </Notice>
-            )}
-            <View style={{ gap: space["space-3"] }}>
-              <Input
-                testID="pair-code"
-                label="Or enter the code"
-                value={typed}
-                onChangeText={(v) => setTyped(normalizePairingCode(v).slice(0, 8))}
-                placeholder="K7P4QXJ9"
-                autoCapitalize="characters"
-                mono
-                returnKeyType="go"
-                onSubmitEditing={() => void check(typed)}
-              />
-              <Button
-                variant="primary"
-                block
-                disabled={phase.kind === "checking" || typed.length !== 8}
-                onPress={() => void check(typed)}
-                testID="pair-continue"
+              <View
+                style={{
+                  minHeight: 104,
+                  borderRadius: 20,
+                  padding: space["space-4"],
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: space["space-2"],
+                  backgroundColor: t.color["background-100"],
+                  borderWidth: 1,
+                  borderColor: t.color.border,
+                }}
               >
-                {phase.kind === "checking" ? "Checking…" : "Continue"}
-              </Button>
-            </View>
+                <Icon name="camera" color="text-secondary" />
+                <Button variant="secondary" size="md" onPress={requestPermission}>
+                  Turn on camera
+                </Button>
+              </View>
+            ) : (
+              <Notice testID="pair-no-camera">Camera off. Enter the code from your Mac.</Notice>
+            )}
+            {phase.kind === "checking" ? (
+              <ProgressState label="Checking the code" testID="pair-checking" />
+            ) : (
+              <View style={{ flexDirection: "row", alignItems: "flex-end", gap: space["space-2"] }}>
+                <View style={{ flex: 1 }}>
+                  <Input
+                    testID="pair-code"
+                    label="Code from Mac"
+                    value={typed}
+                    onChangeText={(v) => setTyped(normalizePairingCode(v).slice(0, 8))}
+                    placeholder="K7P4QXJ9"
+                    autoCapitalize="characters"
+                    mono
+                    returnKeyType="go"
+                    onSubmitEditing={() => void check(typed)}
+                  />
+                </View>
+                <Button
+                  variant="primary"
+                  size="lg"
+                  disabled={typed.length !== 8}
+                  onPress={() => void check(typed)}
+                  testID="pair-continue"
+                >
+                  Continue
+                </Button>
+              </View>
+            )}
           </>
         ) : phase.kind === "confirm" || phase.kind === "approving" ? (
-          <ActionCard
+          <View
             testID="pair-confirm"
-            icon="laptop"
-            title={`Sign in ${phase.deviceName}?`}
-            body="It will see and change your Tandrix projects. Only approve a Mac you're using right now."
-            actionLabel={phase.kind === "approving" ? "Signing in…" : "Sign in this Mac"}
-            actionTestID="pair-approve"
-            onAction={() =>
-              phase.kind === "confirm" ? void approve(phase.code, phase.deviceName) : undefined
-            }
-            secondaryLabel="Cancel"
-            onSecondary={() => router.back()}
-          />
+            style={{
+              alignItems: "center",
+              gap: space["space-3"],
+              padding: space["space-5"],
+              borderRadius: 20,
+              backgroundColor: t.color["background-100"],
+              borderWidth: 1,
+              borderColor: t.color.border,
+            }}
+          >
+            <View
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: 24,
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: t.color["blue-100"],
+              }}
+            >
+              <Icon name="laptop" color="blue-900" />
+            </View>
+            <Text variant="heading-18" style={{ textAlign: "center" }}>
+              Sign in {phase.deviceName}?
+            </Text>
+            <Text variant="copy-13" color="text-secondary" style={{ textAlign: "center" }}>
+              It can access your projects. Only approve a Mac you’re using.
+            </Text>
+            <Button
+              variant="primary"
+              block
+              disabled={phase.kind === "approving"}
+              onPress={() =>
+                phase.kind === "confirm" ? void approve(phase.code, phase.deviceName) : undefined
+              }
+              testID="pair-approve"
+            >
+              {phase.kind === "approving" ? "Signing in…" : "Approve this Mac"}
+            </Button>
+            <Button variant="tertiary" size="md" onPress={() => router.back()}>
+              Cancel
+            </Button>
+          </View>
         ) : (
-          <View style={{ gap: space["space-4"] }} testID="pair-done">
+          <View style={{ alignItems: "center", gap: space["space-3"] }} testID="pair-done">
             <Text variant="heading-18">{phase.deviceName} is signed in</Text>
-            <Text variant="copy-14" color="text-secondary">
-              Your projects are on your Mac now. You can sign it out from there.
+            <Text variant="copy-13" color="text-secondary" style={{ textAlign: "center" }}>
+              Your projects are ready on your Mac.
             </Text>
             <Button variant="primary" block onPress={() => router.back()} testID="pair-back">
-              Back to projects
+              Done
             </Button>
           </View>
         )}

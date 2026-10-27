@@ -181,6 +181,7 @@ export default function StepScreen() {
             router.replace({ pathname: "/job/[id]/step/[stepId]", params: { id, stepId: target } });
             return true;
           },
+          ...(data.nextId ? { nextId: data.nextId } : {}),
           onShow: () => {
             setPurpose("find");
             setPhoto(undefined);
@@ -189,6 +190,7 @@ export default function StepScreen() {
             setCorrecting(undefined);
             setPhase("live");
           },
+          onFinish: () => router.replace({ pathname: "/job/[id]", params: { id } }),
           keywords: data.keywords,
           language: data.language,
           onCheck: () => {
@@ -517,7 +519,13 @@ export default function StepScreen() {
       edges={["bottom"]}
       style={{ flex: 1, backgroundColor: t.color["background-200"] }}
     >
-      <Stack.Screen options={{ title: `Step ${data.index}` }} />
+      <Stack.Screen
+        options={{
+          title: `Step ${data.index}`,
+          animation: "slide_from_right",
+          animationTypeForReplace: "push",
+        }}
+      />
       <ScrollView
         ref={scroll}
         contentContainerStyle={{ padding: space["space-4"], gap: space["space-3"] }}

@@ -6,7 +6,6 @@ import { useCallback, useState } from "react";
 import { FlatList, Pressable, RefreshControl, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "@/lib/api";
-import { useAuth } from "@/lib/auth";
 import { exampleGoals } from "@/lib/goals";
 
 const statusLabel: Record<Job["status"], string> = {
@@ -14,6 +13,7 @@ const statusLabel: Record<Job["status"], string> = {
   completed: "Completed",
   stopped: "Paused",
 };
+const MAX_VISIBLE = 3;
 
 interface HomeAction {
   job: Job;
@@ -103,10 +103,11 @@ function actionFor(detail: JobDetailResponse): HomeAction {
 
 export default function Jobs() {
   const t = useTheme();
-  const { signOut } = useAuth();
   const [jobs, setJobs] = useState<Job[]>();
   const [actions, setActions] = useState<HomeAction[]>([]);
   const [actionsLoading, setActionsLoading] = useState(false);
+  const [showAllActions, setShowAllActions] = useState(false);
+  const [showAllProjects, setShowAllProjects] = useState(false);
   const [error, setError] = useState<string>();
   const [refreshing, setRefreshing] = useState(false);
 
@@ -138,7 +139,8 @@ export default function Jobs() {
   );
 
   const activeJobs = (jobs ?? []).filter((job) => job.status === "active");
-  const otherJobs = (jobs ?? []).filter((job) => job.status !== "active");
+  const visibleActions = showAllActions ? actions : actions.slice(0, MAX_VISIBLE);
+  const visibleJobs = showAllProjects ? (jobs ?? []) : (jobs ?? []).slice(0, MAX_VISIBLE);
 
   const openAction = (action: HomeAction) => {
     router.push(
@@ -158,27 +160,21 @@ export default function Jobs() {
       <Stack.Screen
         options={{
           headerRight: () => (
-            <View style={{ flexDirection: "row", gap: space["space-1"] }}>
-              <Link href="/pair" asChild>
-                <Button
-                  variant="tertiary"
-                  size="md"
-                  icon="laptop"
-                  accessibilityLabel="Sign in a Mac"
-                  testID="sign-in-mac"
-                >
-                  Mac
-                </Button>
-              </Link>
-              <Button variant="tertiary" size="md" onPress={signOut} testID="sign-out">
-                Sign out
-              </Button>
-            </View>
+            <Link href="/settings" asChild>
+              <Button
+                variant="tertiary"
+                size="md"
+                icon="gear"
+                iconOnly
+                accessibilityLabel="Settings"
+                testID="open-settings"
+              />
+            </Link>
           ),
         }}
       />
       <FlatList
-        data={activeJobs}
+        data={visibleJobs}
         keyExtractor={(job) => job.id}
         contentContainerStyle={{ padding: space["space-4"], gap: space["space-3"], flexGrow: 1 }}
         refreshControl={
@@ -248,7 +244,7 @@ export default function Jobs() {
                   {actionsLoading ? (
                     <ProgressState label="Finding your next steps" testID="actions-loading" />
                   ) : actions.length ? (
-                    actions.map((action) => (
+                    visibleActions.map((action) => (
                       <HomeActionRow
                         key={action.job.id}
                         action={action}
@@ -259,9 +255,20 @@ export default function Jobs() {
                     <Notice icon="check" testID="actions-empty">
                       {activeJobs.length
                         ? "Open a project below to see its next step."
-                        : "Your next step will show up here when you start a project."}
+                        : jobs?.length
+                          ? "No open actions. Start a project whenever you’re ready to work on something new."
+                          : "Your next step will show up here when you start a project."}
                     </Notice>
                   )}
+                  {actions.length > MAX_VISIBLE ? (
+                    <Button
+                      variant="tertiary"
+                      size="md"
+                      onPress={() => setShowAllActions((show) => !show)}
+                    >
+                      {showAllActions ? "Show fewer actions" : `See all ${actions.length} actions`}
+                    </Button>
+                  ) : null}
                 </View>
                 <Text variant="heading-18">Your projects</Text>
                 {activeJobs.length ? (
@@ -273,35 +280,18 @@ export default function Jobs() {
             )}
           </View>
         }
-        ListEmptyComponent={
-          jobs === undefined || error || !otherJobs.length ? undefined : (
-            <Text variant="copy-13" color="text-secondary">
-              You don’t have a project in progress.
-            </Text>
-          )
-        }
         ListFooterComponent={
-          <View style={{ gap: space["space-3"], marginTop: space["space-4"] }}>
-            {otherJobs.some((job) => job.status === "completed") ? (
-              <Text variant="label-14" color="text-secondary">
-                Finished
-              </Text>
+          <View style={{ gap: space["space-3"], marginTop: space["space-1"] }}>
+            {(jobs?.length ?? 0) > MAX_VISIBLE ? (
+              <Button
+                variant="tertiary"
+                size="md"
+                onPress={() => setShowAllProjects((show) => !show)}
+                testID="toggle-projects"
+              >
+                {showAllProjects ? "Show fewer projects" : `See all ${jobs!.length} projects`}
+              </Button>
             ) : null}
-            {otherJobs
-              .filter((job) => job.status === "completed")
-              .map((job) => (
-                <ProjectRow key={job.id} job={job} onPress={() => openJob(job.id)} />
-              ))}
-            {otherJobs.some((job) => job.status === "stopped") ? (
-              <Text variant="label-14" color="text-secondary">
-                Paused
-              </Text>
-            ) : null}
-            {otherJobs
-              .filter((job) => job.status === "stopped")
-              .map((job) => (
-                <ProjectRow key={job.id} job={job} onPress={() => openJob(job.id)} />
-              ))}
           </View>
         }
         renderItem={({ item }) => <ProjectRow job={item} onPress={() => openJob(item.id)} />}
@@ -337,8 +327,25 @@ function HomeActionRow({ action, onPress }: { action: HomeAction; onPress: () =>
           {action.detail}
         </Text>
       </View>
-      <Icon name="arrowRight" color="text-secondary" />
+      <Chevron color={t.color["text-tertiary"]} />
     </Pressable>
+  );
+}
+
+function Chevron({ color }: { color: string }) {
+  return (
+    <View
+      accessible={false}
+      style={{
+        width: 9,
+        height: 9,
+        marginRight: 3,
+        borderTopWidth: 1.5,
+        borderRightWidth: 1.5,
+        borderColor: color,
+        transform: [{ rotate: "45deg" }],
+      }}
+    />
   );
 }
 

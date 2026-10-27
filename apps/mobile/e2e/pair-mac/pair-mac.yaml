@@ -5,7 +5,9 @@ appId: app.tandrix.mobile
 ---
 - runFlow: ../subflows/open-app.yaml
 - tapOn:
-    id: sign-in-mac
+    id: open-settings
+- tapOn:
+    id: settings-pair-mac
 - extendedWaitUntil:
     visible:
       id: pair-code
@@ -36,4 +38,4 @@ appId: app.tandrix.mobile
 - tapOn:
     id: pair-back
 - assertVisible:
-    id: new-job
+    id: settings-pair-mac
