@@ -62,6 +62,10 @@ Tracks: **D** design, **A** mobile & glasses, **B** API & AI, **C** desktop (mac
 - [x] V1 Voice: natural voice (Kokoro on the API, Premium/Enhanced device voice fallback, never robotic); mic held or tapped on phone and Mac, silence never sent; hold ⌥⌘ to talk on the Mac; presence bar at the top of the screen instead of the panel. Open: wake word ("Tandrix")
 - [ ] L2 Learn software on the Mac: "teach me Photoshop" starts a software project with steps done on screen, each with Show me and a screen check
 - [ ] D1 Deploy: API container on Fly.io, hosted Supabase (migrations, buckets, auth), website on Vercel, EAS profiles, signed Mac build, production env checklist; deploy itself after the user's go-ahead
+- [ ] T27a Do it for me on the Mac: a switch in the panel and by voice ("do it for me"), the in-control pill with Stop, actions run one at a time through the action guard, a confirm before anything that sends, buys, deletes or types a password, any key or mouse movement takes control back
+- [ ] U1 UI pass on every surface (phone, Mac panel and overlay, website): hierarchy, spacing, motion and empty, loading and error states, to the design system; published back to the design system
+- [ ] A1 Loophole audit: every screen's dead ends, missing ways back, states with no action, copy that promises what isn't built; fixed or removed
+- [ ] W1 Wake word "Tandrix" / "Wake up Tandrix": on-device recognition (Mac and phone), opt-in, presence shown while listening
 - [ ] **Checkpoint 6b:** a new project from intake to report on real models, on the simulator and the Mac, against the deployed stack
 
 ## Phase 4 — Continuity (31 Oct)
@@ -70,7 +74,7 @@ Tracks: **D** design, **A** mobile & glasses, **B** API & AI, **C** desktop (mac
 - [ ] T23 Job report and share link (B)
 - [ ] **Checkpoint 6:** full spine twice; human review
 
-## Phase 5 — Glasses (1 Nov)
+## Phase 5 — Glasses (last, after everything else)
 - [ ] T24 Glasses module: shared interface + iOS (A)
 - [ ] T24b Glasses module: Android (A)
 - [ ] T25 Glasses audio + voice capture trigger, both platforms (A)
