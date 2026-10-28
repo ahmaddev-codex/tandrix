@@ -123,6 +123,8 @@ export interface JobReportStep {
   index: number;
   title: string;
   status: StepStatus;
+  statusLabel?: string;
+  note?: string;
   source?: string;
   sourceKind?: SourceKind;
   time?: string;
@@ -180,8 +182,9 @@ export function JobReport({
             )}
             <span className="tx-report-body">
               <span className="tx-report-step-title">{st.title}</span>
+              {st.note ? <span className="tx-report-step-note">{st.note}</span> : null}
               <span className="tx-report-tags">
-                <StatusChip status={st.status} />
+                <StatusChip status={st.status}>{st.statusLabel}</StatusChip>
                 {st.source ? (
                   <SourceChip kind={st.sourceKind ?? "manual"}>{st.source}</SourceChip>
                 ) : null}

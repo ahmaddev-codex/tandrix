@@ -1,5 +1,39 @@
 "use client";
 import {
+  ArrowRight,
+  Ban,
+  BookOpen,
+  Camera,
+  Check,
+  CircleDashed,
+  Clock3,
+  Expand,
+  EyeOff,
+  FileText,
+  FolderKanban,
+  Gauge,
+  Glasses,
+  House,
+  Hand,
+  Image,
+  Info,
+  Laptop,
+  ListChecks,
+  Mic,
+  Monitor,
+  Menu,
+  MousePointer2,
+  Power,
+  Plus,
+  RotateCcw,
+  Settings,
+  Smartphone,
+  TriangleAlert,
+  UserRound,
+  Video,
+  X,
+} from "lucide-react";
+import {
   useId,
   useState,
   type ButtonHTMLAttributes,
@@ -8,7 +42,6 @@ import {
 } from "react";
 import {
   genericSourceLabel,
-  iconPathsFor,
   sourceIcon,
   statusMeta,
   type IconName,
@@ -21,27 +54,59 @@ import { cx } from "./cx";
 export interface IconProps {
   name: IconName;
   size?: 16 | 20 | 24;
-  /** Defaults to the design system's rule: solid (fill) below 20 px, outline at 20 px and up. */
+  /** Kept for API compatibility; Lucide uses a consistent outline style. */
   weight?: IconWeight;
   /** Accessible name; omit for decorative icons. */
   label?: string;
   className?: string;
 }
 
-export function Icon({ name, size = 16, weight, label, className }: IconProps) {
+const iconGlyphs = {
+  check: Check,
+  user: UserRound,
+  alert: TriangleAlert,
+  eyeOff: EyeOff,
+  stop: Ban,
+  clock: Clock3,
+  progress: CircleDashed,
+  info: Info,
+  book: BookOpen,
+  video: Video,
+  camera: Camera,
+  monitor: Monitor,
+  file: FileText,
+  mic: Mic,
+  power: Power,
+  gauge: Gauge,
+  arrowRight: ArrowRight,
+  actions: ListChecks,
+  projects: FolderKanban,
+  home: House,
+  plus: Plus,
+  menu: Menu,
+  gear: Settings,
+  retake: RotateCcw,
+  glasses: Glasses,
+  laptop: Laptop,
+  phone: Smartphone,
+  x: X,
+  pointer: MousePointer2,
+  hand: Hand,
+  image: Image,
+  expand: Expand,
+} as const;
+
+export function Icon({ name, size = 16, label, className }: IconProps) {
+  const Glyph = iconGlyphs[name];
   return (
-    <svg
+    <Glyph
       className={cx("tx-ico", size === 20 && "tx-ico-20", size === 24 && "tx-ico-24", className)}
-      viewBox="0 0 256 256"
-      fill="currentColor"
+      size={size}
+      strokeWidth={size === 16 ? 2 : 1.8}
       aria-hidden={label ? undefined : true}
       role={label ? "img" : undefined}
       aria-label={label}
-    >
-      {iconPathsFor(name, size, weight).map((p) => (
-        <path key={p.d} d={p.d} opacity={p.o} />
-      ))}
-    </svg>
+    />
   );
 }
 

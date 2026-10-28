@@ -375,17 +375,25 @@ button.tx-visual-frame:focus-visible {
   pointer-events: none;
   cursor: pointer;
 }
-.tx-ptr .tx-ptr-hand {
-  width: 28px;
-  height: 28px;
-  color: var(--highlight);
-  filter: drop-shadow(0 0 1px var(--highlight-halo)) drop-shadow(0 1px 1px var(--highlight-keyline));
-  transform: rotate(-45deg);
+.tx-ptr .tx-ptr-arrow {
+  display: block;
+  width: 26px;
+  height: 26px;
+  overflow: visible;
+  filter: drop-shadow(0 1px 2px var(--highlight-keyline));
+}
+.tx-ptr .tx-ptr-arrow path {
+  fill: var(--highlight);
+  stroke: var(--highlight-halo);
+  stroke-width: 2px;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  paint-order: stroke fill;
 }
 .tx-ptr-cap {
   position: absolute;
-  left: 22px;
-  top: 24px;
+  left: 20px;
+  top: 20px;
   max-width: 280px;
   width: max-content;
   padding: 6px 10px;
@@ -1191,6 +1199,11 @@ button.tx-visual-frame:focus-visible {
   font-size: 13px;
   line-height: 18px;
   font-weight: 500;
+}
+.tx-report-step-note {
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--text-secondary);
 }
 .tx-report-tags {
   display: flex;

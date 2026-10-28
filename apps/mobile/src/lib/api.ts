@@ -127,7 +127,19 @@ export const api = {
       method: "POST",
       body: JSON.stringify(body),
     }).then((r) => r.job),
-  listJobs: () => request("/jobs", z.object({ jobs: z.array(Job) })).then((r) => r.jobs),
+  listJobs: (options?: { limit?: number; offset?: number }) => {
+    const query = options ? `?limit=${options.limit ?? 50}&offset=${options.offset ?? 0}` : "";
+    return request(`/jobs${query}`, z.object({ jobs: z.array(Job) })).then((r) => r.jobs);
+  },
+  listAllJobs: async () => {
+    const all: Job[] = [];
+    const limit = 100;
+    for (let offset = 0; ; offset += limit) {
+      const page = await api.listJobs({ limit, offset });
+      all.push(...page);
+      if (page.length < limit) return all;
+    }
+  },
   getJob: (id: string) => request(`/jobs/${id}`, JobDetailResponse),
   identifyAsset: (jobId: string, evidenceId: string) =>
     request(`/jobs/${jobId}/asset/identify`, IdentifyAssetResponse, {

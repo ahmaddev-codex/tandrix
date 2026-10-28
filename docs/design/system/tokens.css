@@ -40,6 +40,12 @@
   --link: var(--blue-900);
   --mandatory: var(--blue-700);
   --on-mandatory: var(--on-blue);
+  --surface-paper: #f2f2f2;
+  --ink-on-paper: #171717;
+  --ink-on-paper-secondary: #4d4d4d;
+  --surface-ink: #171717;
+  --ink-on-surface: #ffffff;
+  --ink-on-surface-secondary: #b8b8b8;
   --highlight: #2e7dff;
   --highlight-halo: #ffffff;
   --highlight-keyline: #000000;
@@ -100,6 +106,12 @@
   --link: var(--blue-900);
   --mandatory: var(--blue-700);
   --on-mandatory: var(--on-blue);
+  --surface-paper: #ededed;
+  --ink-on-paper: #0a0a0a;
+  --ink-on-paper-secondary: #4d4d4d;
+  --surface-ink: #1a1a1a;
+  --ink-on-surface: #ededed;
+  --ink-on-surface-secondary: #b0b0b0;
   --highlight: #2e7dff;
   --highlight-halo: #ffffff;
   --highlight-keyline: #000000;
@@ -160,6 +172,12 @@
   --link: var(--blue-900);
   --mandatory: var(--blue-700);
   --on-mandatory: var(--on-blue);
+  --surface-paper: #f0f0f0;
+  --ink-on-paper: #000000;
+  --ink-on-paper-secondary: #262626;
+  --surface-ink: #000000;
+  --ink-on-surface: #ffffff;
+  --ink-on-surface-secondary: #d6d6d6;
   --highlight: #2e7dff;
   --highlight-halo: #ffffff;
   --highlight-keyline: #000000;

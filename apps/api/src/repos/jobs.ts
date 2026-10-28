@@ -13,7 +13,7 @@ export interface NewJob {
 
 export interface JobsRepo {
   create(input: NewJob): Promise<Job>;
-  listForOwner(ownerId: string, limit: number): Promise<Job[]>;
+  listForOwner(ownerId: string, limit: number, offset?: number): Promise<Job[]>;
   getForOwner(ownerId: string, jobId: string): Promise<{ job: Job; steps: JobStep[] } | null>;
   /** True when the asset exists and belongs to the owner. */
   ownsAsset(ownerId: string, assetId: string): Promise<boolean>;
@@ -98,13 +98,13 @@ export function supabaseJobsRepo(db: SupabaseClient): JobsRepo {
       return toJob(data as Row);
     },
 
-    async listForOwner(ownerId, limit) {
+    async listForOwner(ownerId, limit, offset = 0) {
       const { data, error } = await db
         .from("jobs")
         .select(JOB_COLUMNS)
         .eq("owner_id", ownerId)
         .order("created_at", { ascending: false })
-        .limit(limit);
+        .range(offset, offset + limit - 1);
       if (error) throw dbError(error);
       return data.map(toJob);
     },

@@ -456,5 +456,5 @@ The apps worked end to end but read as a pump-job tool: both opened on a jobs li
 ## Open questions
 
 1. Which desktop software is the handoff target (controller config, VFD tool, monitoring dashboard)? Blocks T4 and T19.
-2. ~~Design direction~~ Decided: Geist-style system, documented at https://claude.ai/artifact/JXT7ErJARYzNkiv8EQjpvp.
+2. Decided: Geist-style system, documented at https://claude.ai/artifact/JXT7ErJARYzNkiv8EQjpvp.
 3. Once the system is documented, `docs/product/Design_Brief.md` is reduced to product requirements and links to the design system.

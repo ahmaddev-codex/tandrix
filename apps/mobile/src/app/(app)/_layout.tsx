@@ -17,18 +17,10 @@ export default function AppLayout() {
       }}
     >
       <Stack.Screen name="index" options={{ title: "Tandrix" }} />
-      <Stack.Screen name="new-job" options={{ title: "New project", presentation: "modal" }} />
-      <Stack.Screen
-        name="pair"
-        options={{
-          title: "Sign in a Mac",
-          presentation: "formSheet",
-          sheetAllowedDetents: [0.48, 0.9],
-          sheetInitialDetentIndex: 0,
-          sheetGrabberVisible: true,
-          sheetCornerRadius: 24,
-        }}
-      />
+      <Stack.Screen name="actions" options={{ title: "Actions" }} />
+      <Stack.Screen name="projects" options={{ title: "Projects" }} />
+      <Stack.Screen name="new-job" options={{ title: "New project" }} />
+      <Stack.Screen name="pair" options={{ title: "Sign in a Mac" }} />
       <Stack.Screen name="settings" options={{ title: "Settings" }} />
       <Stack.Screen name="job/[id]/index" options={{ title: "Project" }} />
       <Stack.Screen name="job/[id]/identify" options={{ title: "Equipment" }} />

@@ -45,6 +45,8 @@
     "react-native-svg": "15.16.0"
   },
   "dependencies": {
-    "@tandrix/contracts": "workspace:*"
+    "@tandrix/contracts": "workspace:*",
+    "lucide-react": "^1.62.0",
+    "lucide-react-native": "^1.62.0"
   }
 }

@@ -6,6 +6,7 @@ import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "@/lib/auth";
 import { usePreferences, type ThemePreference } from "@/lib/preferences";
+import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 
 const themes: Array<{ value: ThemePreference; label: string }> = [
   { value: "system", label: "System" },
@@ -28,9 +29,10 @@ export default function Settings() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1 }} edges={["bottom"]}>
-      <Stack.Screen options={{ title: "Settings" }} />
+    <SafeAreaView style={{ flex: 1 }} edges={["top", "bottom"]}>
+      <Stack.Screen options={{ headerShown: false }} />
       <ScrollView contentContainerStyle={{ padding: space["space-4"], gap: space["space-6"] }}>
+        <Text variant="heading-24">Settings</Text>
         {error ? <Notice tone="error">{error}</Notice> : null}
         <View style={{ gap: space["space-2"] }}>
           <Text variant="heading-18">Account</Text>
@@ -84,6 +86,7 @@ export default function Settings() {
           Tandrix settings apply to this phone.
         </Text>
       </ScrollView>
+      <MobileBottomNav />
     </SafeAreaView>
   );
 }

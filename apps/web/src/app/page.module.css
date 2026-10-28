@@ -1,11 +1,11 @@
-/* The Tandrix site. Tokens from @tandrix/ui only; one width, left-aligned, photos full-bleed
-   where they open a section. */
+/* The Tandrix site. Tokens from @tandrix/ui only; one width, left-aligned. */
 .nav,
 .hero,
-.sequence,
+.bench,
 .screen,
 .handoff,
 .careful,
+.closing,
 .footer {
   --page: min(1180px, calc(100vw - var(--space-6) - var(--space-6)));
 }
@@ -113,111 +113,31 @@
   gap: var(--space-3);
 }
 
-/* On the bench: a full-height photo beside the promise. */
+/* On the bench: aligned to the page container, not edge-to-edge across the viewport. */
 .bench {
+  width: var(--page);
+  margin: 0 auto;
   display: grid;
-  grid-template-columns: 42fr 58fr;
-  min-height: 520px;
+  grid-template-columns: 44fr 56fr;
+  min-height: 460px;
   background: var(--background-200);
-  border-block: 1px solid var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
 }
 .benchPhoto {
   position: relative;
-  min-height: 360px;
+  min-height: 320px;
 }
 .benchCopy {
   display: grid;
   gap: var(--space-4);
   align-content: center;
-  padding: var(--space-12) max(var(--space-6), (100vw - 1180px) / 2) var(--space-12) var(--space-12);
+  padding: var(--space-10);
 }
 .benchCopy h2 {
   max-width: 15em;
   text-wrap: balance;
-}
-
-/* The sequence: three real stages, each with what Tandrix shows at that stage. */
-.sequence {
-  width: var(--page);
-  margin: 0 auto;
-  padding: var(--space-12) 0;
-  list-style: none;
-  display: grid;
-  gap: var(--space-16);
-}
-.stage {
-  display: grid;
-  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1fr);
-  gap: var(--space-12);
-  align-items: start;
-}
-.stageText {
-  display: grid;
-  gap: var(--space-3);
-  align-content: start;
-  padding-top: var(--space-8);
-}
-.num {
-  display: grid;
-  place-items: center;
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius-full);
-  border: 1px solid var(--border-control);
-  font: 500 13px/1 var(--font-mono);
-  color: var(--text-secondary);
-}
-.stageVisual {
-  max-width: 520px;
-  width: 100%;
-  justify-self: end;
-}
-.intake {
-  display: grid;
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  background: var(--background-100);
-  box-shadow: var(--shadow-md);
-}
-.intakePhoto {
-  display: block;
-  width: 100%;
-  height: 220px;
-  object-fit: cover;
-}
-.stages {
-  list-style: none;
-  padding: var(--space-5);
-  margin: 0;
-  display: grid;
-  gap: var(--space-3);
-  font-size: 14px;
-}
-.stages li {
-  display: grid;
-  grid-template-columns: 20px 1fr;
-  gap: var(--space-3);
-}
-.stages li > span {
-  display: grid;
-  gap: 2px;
-}
-.stages li span span {
-  color: var(--text-secondary);
-  font-size: 13px;
-}
-.stages .warn {
-  color: var(--amber-900);
-}
-.checks {
-  display: grid;
-  gap: var(--space-3);
-}
-.checks img {
-  display: block;
-  width: 88px;
-  height: 66px;
-  object-fit: cover;
 }
 
 /* On screen */
@@ -310,12 +230,16 @@
   align-content: start;
 }
 
-/* Closing */
+/* Closing: aligned to the page container so it doesn't bleed edge-to-edge. */
 .closing {
   position: relative;
-  min-height: 420px;
+  width: var(--page);
+  margin: 0 auto;
+  min-height: 380px;
   display: grid;
   align-items: end;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
   overflow: hidden;
   color: var(--overlay-ink);
 }
@@ -332,9 +256,7 @@
 .closingInner {
   position: relative;
   z-index: 1;
-  width: min(1180px, calc(100vw - var(--space-6) - var(--space-6)));
-  margin: 0 auto;
-  padding: var(--space-12) 0;
+  padding: var(--space-10);
   display: grid;
   gap: var(--space-3);
 }
@@ -359,7 +281,6 @@
 
 @media (max-width: 900px) {
   .hero,
-  .stage,
   .screenPair,
   .handoff,
   .bench {
@@ -380,10 +301,6 @@
   .benchCopy {
     padding: var(--space-8) var(--space-6);
   }
-  .stageVisual {
-    justify-self: stretch;
-    max-width: none;
-  }
   .carefulList {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -398,8 +315,5 @@
   }
   .carefulList {
     grid-template-columns: minmax(0, 1fr);
-  }
-  .sequence {
-    gap: var(--space-12);
   }
 }

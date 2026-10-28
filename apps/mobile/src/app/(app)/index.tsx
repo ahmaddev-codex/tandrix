@@ -1,129 +1,34 @@
-import type { Job, JobDetailResponse, JobStep } from "@tandrix/contracts";
-import { formatDateTime, radius, space } from "@tandrix/ui";
+import type { Job } from "@tandrix/contracts";
+import { radius, space } from "@tandrix/ui";
 import { Button, Icon, Notice, ProgressState, Text, useTheme } from "@tandrix/ui/native";
-import { Link, router, Stack, useFocusEffect } from "expo-router";
-import { useCallback, useState } from "react";
-import { FlatList, Pressable, RefreshControl, View } from "react-native";
+import { router, Stack, useFocusEffect } from "expo-router";
+import { useCallback, useRef, useState } from "react";
+import { Animated, Easing, Pressable, RefreshControl, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { HomeActionRow, OverviewTile, ProjectRow } from "@/components/home-rows";
+import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { api } from "@/lib/api";
-import { exampleGoals } from "@/lib/goals";
+import { loadHomeActions, type HomeAction } from "@/lib/home";
 
-const statusLabel: Record<Job["status"], string> = {
-  active: "In progress",
-  completed: "Completed",
-  stopped: "Paused",
-};
 const MAX_VISIBLE = 3;
-
-interface HomeAction {
-  job: Job;
-  title: string;
-  detail: string;
-  stepId?: string;
-}
-
-function isFinished(step: JobStep) {
-  return ["verified", "user_confirmed", "skipped"].includes(step.status);
-}
-
-function actionFor(detail: JobDetailResponse): HomeAction {
-  const { job, procedure, steps } = detail;
-  if (job.activeSurface === "desktop") {
-    return { job, title: "See your progress on Mac", detail: "This project is open on your Mac." };
-  }
-  if (!procedure) {
-    if (detail.asset && !detail.manual) {
-      return {
-        job,
-        title: "Find the equipment manual",
-        detail: `${detail.asset.make} ${detail.asset.model}`,
-      };
-    }
-    return {
-      job,
-      title: "Create the project steps",
-      detail: detail.manual
-        ? "Use the manual saved to this project."
-        : "Turn this idea into a clear plan.",
-    };
-  }
-
-  const priority: Record<JobStep["status"], number> = {
-    blocked: 0,
-    needs_attention: 0,
-    in_progress: 1,
-    todo: 2,
-    user_confirmed: 3,
-    verified: 3,
-    skipped: 3,
-  };
-  const candidates = procedure.steps
-    .map((step) => ({
-      step,
-      jobStep: steps.find((candidate) => candidate.procedureStepId === step.id),
-    }))
-    .filter(
-      (item): item is typeof item & { jobStep: JobStep } =>
-        !!item.jobStep && !isFinished(item.jobStep),
-    )
-    .sort(
-      (a, b) =>
-        priority[a.jobStep.status] - priority[b.jobStep.status] || a.step.order - b.step.order,
-    );
-  const next = candidates[0];
-  if (!next) {
-    return { job, title: "Review this project", detail: "Open the project to see the full plan." };
-  }
-
-  const label: Record<JobStep["status"], string> = {
-    blocked: "Resolve",
-    needs_attention: "Review",
-    in_progress: "Continue",
-    todo: "Start",
-    user_confirmed: "Review",
-    verified: "Continue",
-    skipped: "Continue",
-  };
-  const message: Record<JobStep["status"], string> = {
-    blocked: next.jobStep.note ?? "This step is blocked.",
-    needs_attention: "This step needs your attention.",
-    in_progress: "Pick up where you left off.",
-    todo: "Ready when you are.",
-    user_confirmed: "Review this step.",
-    verified: "This step is complete.",
-    skipped: "This step was skipped.",
-  };
-  return {
-    job,
-    title: `${label[next.jobStep.status]}: ${next.step.title}`,
-    detail: message[next.jobStep.status],
-    stepId: next.jobStep.id,
-  };
-}
 
 export default function Jobs() {
   const t = useTheme();
   const [jobs, setJobs] = useState<Job[]>();
   const [actions, setActions] = useState<HomeAction[]>([]);
   const [actionsLoading, setActionsLoading] = useState(false);
-  const [showAllActions, setShowAllActions] = useState(false);
-  const [showAllProjects, setShowAllProjects] = useState(false);
   const [error, setError] = useState<string>();
   const [refreshing, setRefreshing] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [menuMounted, setMenuMounted] = useState(false);
+  const menuProgress = useRef(new Animated.Value(0)).current;
 
   const load = useCallback(async () => {
     try {
-      const listed = await api.listJobs();
-      const sorted = [...listed].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
-      setJobs(sorted);
-      const active = sorted.filter((job) => job.status === "active");
-      setActionsLoading(active.length > 0);
-      const results = await Promise.allSettled(active.map((job) => api.getJob(job.id)));
-      setActions(
-        results.flatMap((result) =>
-          result.status === "fulfilled" ? [actionFor(result.value)] : [],
-        ),
-      );
+      const allJobs = await api.listAllJobs();
+      setJobs(allJobs);
+      setActionsLoading(allJobs.some((job) => job.status === "active"));
+      setActions(await loadHomeActions(allJobs));
       setError(undefined);
     } catch (e) {
       setError((e as Error).message);
@@ -132,15 +37,7 @@ export default function Jobs() {
     }
   }, []);
 
-  useFocusEffect(
-    useCallback(() => {
-      load();
-    }, [load]),
-  );
-
-  const activeJobs = (jobs ?? []).filter((job) => job.status === "active");
-  const visibleActions = showAllActions ? actions : actions.slice(0, MAX_VISIBLE);
-  const visibleJobs = showAllProjects ? (jobs ?? []) : (jobs ?? []).slice(0, MAX_VISIBLE);
+  useFocusEffect(useCallback(() => void load(), [load]));
 
   const openAction = (action: HomeAction) => {
     router.push(
@@ -153,30 +50,53 @@ export default function Jobs() {
     );
   };
 
-  const openJob = (jobId: string) => router.push({ pathname: "/job/[id]", params: { id: jobId } });
+  const closeMenu = () => {
+    setMenuOpen(false);
+    Animated.timing(menuProgress, {
+      toValue: 0,
+      duration: 140,
+      easing: Easing.in(Easing.quad),
+      useNativeDriver: true,
+    }).start(({ finished }) => {
+      if (finished) setMenuMounted(false);
+    });
+  };
+
+  const toggleMenu = () => {
+    if (menuOpen) {
+      closeMenu();
+      return;
+    }
+    menuProgress.setValue(0);
+    setMenuMounted(true);
+    setMenuOpen(true);
+    requestAnimationFrame(() =>
+      Animated.timing(menuProgress, {
+        toValue: 1,
+        duration: 180,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }).start(),
+    );
+  };
+
+  const menuItems = [
+    { label: "Start a project", icon: "plus", href: "/new-job" },
+    { label: "Actions", icon: "actions", href: "/actions" },
+    { label: "Projects", icon: "projects", href: "/projects" },
+    { label: "Settings", icon: "gear", href: "/settings" },
+  ] as const;
+
+  const activeCount = (jobs ?? []).filter((job) => job.status === "active").length;
 
   return (
-    <SafeAreaView style={{ flex: 1 }} edges={["bottom"]}>
-      <Stack.Screen
-        options={{
-          headerRight: () => (
-            <Link href="/settings" asChild>
-              <Button
-                variant="tertiary"
-                size="md"
-                icon="gear"
-                iconOnly
-                accessibilityLabel="Settings"
-                testID="open-settings"
-              />
-            </Link>
-          ),
-        }}
-      />
-      <FlatList
-        data={visibleJobs}
-        keyExtractor={(job) => job.id}
-        contentContainerStyle={{ padding: space["space-4"], gap: space["space-3"], flexGrow: 1 }}
+    <SafeAreaView
+      style={{ flex: 1, backgroundColor: t.color["background-200"] }}
+      edges={["top", "bottom"]}
+    >
+      <Stack.Screen options={{ headerShown: false }} />
+      <ScrollView
+        contentContainerStyle={{ padding: space["space-4"], gap: space["space-6"], flexGrow: 1 }}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -188,197 +108,257 @@ export default function Jobs() {
             }}
           />
         }
-        ListHeaderComponent={
-          <View style={{ gap: space["space-5"], marginBottom: space["space-2"] }}>
-            {error ? (
-              <Notice
-                tone="error"
-                action={
-                  <Button variant="secondary" size="lg" onPress={load}>
-                    Try again
-                  </Button>
-                }
-              >
-                {error}
-              </Notice>
-            ) : null}
-            {jobs === undefined && !error ? (
-              <ProgressState label="Loading your projects" testID="projects-loading" />
-            ) : (
-              <>
-                <View style={{ gap: space["space-2"] }}>
-                  <Text variant="heading-24">What are you working on?</Text>
-                  <Text variant="field-body" color="text-secondary">
-                    Pick up where you left off, or start something new.
-                  </Text>
-                </View>
-                <Button
-                  variant="primary"
-                  block
-                  onPress={() => router.push("/new-job")}
-                  testID="new-job"
-                >
-                  Start a project
-                </Button>
-                {!jobs?.length && jobs !== undefined ? (
-                  <View style={{ gap: space["space-2"] }}>
-                    <Text variant="label-12" color="text-secondary">
-                      Try a starting point
+      >
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            zIndex: 10,
+          }}
+        >
+          <View style={{ gap: space["space-1"] }}>
+            <Text variant="heading-18">Tandrix</Text>
+            <Text variant="copy-12" color="text-secondary">
+              Your workspace
+            </Text>
+          </View>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={menuOpen ? "Close menu" : "Open menu"}
+            accessibilityState={{ expanded: menuOpen }}
+            testID="dashboard-menu"
+            onPress={toggleMenu}
+            style={({ pressed }) => ({
+              minWidth: 92,
+              height: 44,
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: space["space-2"],
+              paddingHorizontal: space["space-3"],
+              borderRadius: radius["radius-full"],
+              backgroundColor: pressed ? t.color["gray-300"] : t.color["gray-100"],
+              borderWidth: 1,
+              borderColor: t.color["gray-300"],
+            })}
+          >
+            <HamburgerMark color={t.color.text} />
+            <Text variant="label-14">Menu</Text>
+          </Pressable>
+          {menuMounted ? (
+            <Animated.View
+              testID="dashboard-menu-items"
+              pointerEvents={menuOpen ? "auto" : "none"}
+              style={{
+                position: "absolute",
+                zIndex: 20,
+                top: 50,
+                right: 0,
+                width: 256,
+                padding: space["space-2"],
+                gap: space["space-1"],
+                borderRadius: radius["radius-lg"],
+                backgroundColor: t.color["background-100"],
+                borderWidth: 1,
+                borderColor: t.color["gray-400"],
+                opacity: menuProgress,
+                transform: [
+                  {
+                    translateY: menuProgress.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [-5, 0],
+                    }),
+                  },
+                  {
+                    scale: menuProgress.interpolate({ inputRange: [0, 1], outputRange: [0.98, 1] }),
+                  },
+                ],
+              }}
+            >
+              {menuItems.map((item, index) => {
+                const primary = index === 0;
+                return (
+                  <Pressable
+                    key={item.href}
+                    accessibilityRole="button"
+                    onPress={() => {
+                      closeMenu();
+                      router.push(item.href);
+                    }}
+                    style={({ pressed }) => ({
+                      minHeight: 48,
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: space["space-3"],
+                      marginTop: index === 1 ? space["space-1"] : 0,
+                      paddingHorizontal: space["space-3"],
+                      borderRadius: primary ? radius["radius-full"] : radius["radius-md"],
+                      backgroundColor: primary
+                        ? pressed
+                          ? t.color["gray-100"]
+                          : t.color["surface-paper"]
+                        : pressed
+                          ? t.color["gray-200"]
+                          : "transparent",
+                      borderTopWidth: index === 1 ? 1 : 0,
+                      borderColor: t.color["gray-300"],
+                    })}
+                  >
+                    <Icon
+                      name={item.icon}
+                      color={primary ? "ink-on-paper" : "text-secondary"}
+                      size={20}
+                    />
+                    <Text variant="label-14" color={primary ? "ink-on-paper" : "text"}>
+                      {item.label}
                     </Text>
-                    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space["space-2"] }}>
-                      {exampleGoals.map((goal) => (
-                        <Button
-                          key={goal}
-                          variant="secondary"
-                          size="md"
-                          onPress={() => router.push({ pathname: "/new-job", params: { goal } })}
-                        >
-                          {goal}
-                        </Button>
-                      ))}
-                    </View>
-                  </View>
-                ) : null}
-                <View style={{ gap: space["space-3"] }} testID="dashboard-actions">
-                  <Text variant="heading-18">Actions</Text>
-                  {actionsLoading ? (
-                    <ProgressState label="Finding your next steps" testID="actions-loading" />
-                  ) : actions.length ? (
-                    visibleActions.map((action) => (
-                      <HomeActionRow
-                        key={action.job.id}
-                        action={action}
-                        onPress={() => openAction(action)}
-                      />
-                    ))
-                  ) : (
-                    <Notice icon="check" testID="actions-empty">
-                      {activeJobs.length
-                        ? "Open a project below to see its next step."
-                        : jobs?.length
-                          ? "No open actions. Start a project whenever you’re ready to work on something new."
-                          : "Your next step will show up here when you start a project."}
-                    </Notice>
-                  )}
-                  {actions.length > MAX_VISIBLE ? (
-                    <Button
-                      variant="tertiary"
-                      size="md"
-                      onPress={() => setShowAllActions((show) => !show)}
-                    >
-                      {showAllActions ? "Show fewer actions" : `See all ${actions.length} actions`}
-                    </Button>
-                  ) : null}
-                </View>
-                <Text variant="heading-18">Your projects</Text>
-                {activeJobs.length ? (
-                  <Text variant="label-14" color="text-secondary">
-                    In progress
-                  </Text>
-                ) : null}
-              </>
-            )}
+                  </Pressable>
+                );
+              })}
+            </Animated.View>
+          ) : null}
+        </View>
+
+        <View style={{ gap: space["space-4"] }}>
+          <Text variant="heading-24">Pick up where you left off.</Text>
+          <View style={{ flexDirection: "row", gap: space["space-3"] }}>
+            <OverviewTile
+              title="Next actions"
+              value={
+                jobs === undefined || actionsLoading ? "—" : String(actions.length).padStart(2, "0")
+              }
+              detail={
+                actions.length
+                  ? "Ready across your projects"
+                  : jobs === undefined || actionsLoading
+                    ? "Loading your next steps"
+                    : jobs.length
+                      ? "No open actions right now"
+                      : "Your next step will show here"
+              }
+              icon="actions"
+              tone="light"
+              onPress={() => router.navigate("/actions")}
+            />
+            <OverviewTile
+              title="Projects"
+              value={jobs ? String(jobs.length).padStart(2, "0") : "—"}
+              detail={jobs ? `${activeCount} in progress` : "Loading projects"}
+              icon="projects"
+              tone="dark"
+              onPress={() => router.navigate("/projects")}
+            />
           </View>
-        }
-        ListFooterComponent={
-          <View style={{ gap: space["space-3"], marginTop: space["space-1"] }}>
-            {(jobs?.length ?? 0) > MAX_VISIBLE ? (
-              <Button
-                variant="tertiary"
-                size="md"
-                onPress={() => setShowAllProjects((show) => !show)}
-                testID="toggle-projects"
-              >
-                {showAllProjects ? "Show fewer projects" : `See all ${jobs!.length} projects`}
+        </View>
+
+        {error ? (
+          <Notice
+            tone="error"
+            action={
+              <Button variant="secondary" size="lg" onPress={load}>
+                Try again
               </Button>
-            ) : null}
-          </View>
-        }
-        renderItem={({ item }) => <ProjectRow job={item} onPress={() => openJob(item.id)} />}
-      />
+            }
+          >
+            {error}
+          </Notice>
+        ) : null}
+
+        {jobs === undefined && !error ? (
+          <ProgressState label="Loading your projects" testID="projects-loading" />
+        ) : (
+          <>
+            <View testID="dashboard-actions" style={{ gap: space["space-3"] }}>
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <Text variant="heading-18" style={{ flex: 1 }}>
+                  To do next
+                </Text>
+                <Button variant="tertiary" size="md" onPress={() => router.navigate("/actions")}>
+                  See all
+                </Button>
+              </View>
+              {actionsLoading ? (
+                <ProgressState label="Finding your next steps" testID="actions-loading" />
+              ) : actions.length ? (
+                actions
+                  .slice(0, MAX_VISIBLE)
+                  .map((action, index) => (
+                    <HomeActionRow
+                      key={action.job.id}
+                      action={action}
+                      onPress={() => openAction(action)}
+                      featured={index === 0}
+                    />
+                  ))
+              ) : (
+                <Notice icon="check" testID="actions-empty">
+                  {(jobs ?? []).some((job) => job.status === "active")
+                    ? "Open a project below to see its next step."
+                    : jobs?.length
+                      ? "No open actions. Start a project whenever you’re ready to work on something new."
+                      : "Your next step will show up here when you start a project."}
+                </Notice>
+              )}
+            </View>
+
+            <View testID="dashboard-projects" style={{ gap: space["space-3"] }}>
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <Text variant="heading-18" style={{ flex: 1 }}>
+                  Projects
+                </Text>
+                <Button variant="tertiary" size="md" onPress={() => router.navigate("/projects")}>
+                  See all
+                </Button>
+              </View>
+              {jobs?.length ? (
+                jobs
+                  .slice(0, 2)
+                  .map((job) => (
+                    <ProjectRow
+                      key={job.id}
+                      job={job}
+                      onPress={() => router.push({ pathname: "/job/[id]", params: { id: job.id } })}
+                    />
+                  ))
+              ) : (
+                <View
+                  style={{
+                    padding: space["space-4"],
+                    gap: space["space-3"],
+                    borderRadius: radius["radius-lg"],
+                    backgroundColor: t.color["background-100"],
+                  }}
+                >
+                  <Text variant="label-14">Start with one thing you want to get done.</Text>
+                  <Button variant="secondary" size="md" onPress={() => router.push("/new-job")}>
+                    Start a project
+                  </Button>
+                </View>
+              )}
+            </View>
+          </>
+        )}
+      </ScrollView>
+      <MobileBottomNav />
     </SafeAreaView>
   );
 }
 
-function HomeActionRow({ action, onPress }: { action: HomeAction; onPress: () => void }) {
-  const t = useTheme();
+function HamburgerMark({ color }: { color: string }) {
   return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={`${action.title} for ${action.job.title}`}
-      style={({ pressed }) => ({
-        flexDirection: "row",
-        alignItems: "center",
-        gap: space["space-3"],
-        padding: space["space-4"],
-        borderRadius: radius["radius-lg"],
-        backgroundColor: pressed ? t.color["gray-100"] : t.color["background-100"],
-        borderWidth: 1,
-        borderColor: t.color.border,
-      })}
-    >
-      <View style={{ flex: 1, gap: space["space-1"] }}>
-        <Text variant="label-13" color="text-secondary" numberOfLines={1}>
-          {action.job.title}
-        </Text>
-        <Text variant="label-14">{action.title}</Text>
-        <Text variant="copy-13" color="text-secondary">
-          {action.detail}
-        </Text>
-      </View>
-      <Chevron color={t.color["text-tertiary"]} />
-    </Pressable>
-  );
-}
-
-function Chevron({ color }: { color: string }) {
-  return (
-    <View
-      accessible={false}
-      style={{
-        width: 9,
-        height: 9,
-        marginRight: 3,
-        borderTopWidth: 1.5,
-        borderRightWidth: 1.5,
-        borderColor: color,
-        transform: [{ rotate: "45deg" }],
-      }}
-    />
-  );
-}
-
-function ProjectRow({ job, onPress }: { job: Job; onPress: () => void }) {
-  const t = useTheme();
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={`${job.title}, ${statusLabel[job.status]}`}
-      style={({ pressed }) => ({
-        padding: space["space-3"],
-        borderRadius: radius["radius-md"],
-        backgroundColor: pressed ? t.color["gray-100"] : t.color["background-100"],
-        borderWidth: 1,
-        borderColor: t.color.border,
-        gap: space["space-1"],
-      })}
-    >
-      <Text variant="label-14" numberOfLines={2}>
-        {job.title}
-      </Text>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: space["space-2"] }}>
-        <Icon
-          name={
-            job.status === "completed" ? "check" : job.status === "stopped" ? "stop" : "progress"
-          }
-          color="text-secondary"
-        />
-        <Text variant="copy-13" color="text-secondary">
-          {statusLabel[job.status]} · updated {formatDateTime(job.updatedAt)}
-        </Text>
-      </View>
-    </Pressable>
+    <View accessible={false} style={{ width: 18, gap: 4 }}>
+      <View style={{ width: 18, height: 1.5, borderRadius: 1, backgroundColor: color }} />
+      <View
+        style={{
+          width: 12,
+          height: 1.5,
+          alignSelf: "flex-end",
+          borderRadius: 1,
+          backgroundColor: color,
+        }}
+      />
+      <View style={{ width: 18, height: 1.5, borderRadius: 1, backgroundColor: color }} />
+    </View>
   );
 }

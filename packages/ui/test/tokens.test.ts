@@ -41,6 +41,10 @@ describe("contrast", () => {
   }
   pairs.push(
     ["on-primary", "primary", 4.5],
+    ["ink-on-paper", "surface-paper", 4.5],
+    ["ink-on-paper-secondary", "surface-paper", 4.5],
+    ["ink-on-surface", "surface-ink", 4.5],
+    ["ink-on-surface-secondary", "surface-ink", 4.5],
     ["toggle-thumb", "gray-600", 3],
     ["toggle-thumb", "blue-700", 3],
     ["overlay-ink", "overlay-ground", 7],

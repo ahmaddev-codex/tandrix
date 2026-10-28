@@ -25,7 +25,8 @@ Tandrix is one AI engineer for the physical and digital worlds. It runs on the p
 - **Primary:** `primary` fill (`gray-1000`) with `on-primary` text. Blue is never the primary button colour.
 - **Blue** (`blue-700`, `blue-900`, `blue-100`): focus, links, selection, in-progress and mandatory actions (ISO 7010 blue). Text on `blue-700` uses `on-blue`.
 - **Green:** only `verified` (and a confirmed `SafetyGate`). Never for a reading, a found manual or any other success message. **Amber:** needs attention, cautions, generic sources. **Red:** stop, errors, refusals, destructive actions. Each always comes with an icon and a word.
-- **Themes:** `light` is the default on Mac and web. `dark` follows the system. `sunlight` is an added high-contrast theme (7:1 text, 3:1 borders) that the phone offers outdoors and switches to automatically above a light-sensor threshold.
+- **Themes:** `light` is the default on Mac and web. Mobile defaults to `dark`; people can choose `system`, `light`, or `sunlight` in Settings. `sunlight` is a high-contrast theme (7:1 text, 3:1 borders) for outdoor phone use.
+- **Mobile overview tiles:** use `surface-paper` with `ink-on-paper` for the light tile and `surface-ink` with `ink-on-surface` for the dark tile. Keep task and project cards monochrome.
 
 ## Field tokens
 

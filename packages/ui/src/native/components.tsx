@@ -4,6 +4,40 @@
 // HandoffBanner (feedback.tsx).
 import { useState, type ReactNode } from "react";
 import {
+  ArrowRight,
+  Ban,
+  BookOpen,
+  Camera,
+  Check,
+  CircleDashed,
+  Clock3,
+  Expand,
+  EyeOff,
+  FileText,
+  FolderKanban,
+  Gauge,
+  Glasses,
+  House,
+  Hand,
+  Image,
+  Info,
+  Laptop,
+  ListChecks,
+  Mic,
+  Monitor,
+  Menu,
+  MousePointer2,
+  Power,
+  Plus,
+  RotateCcw,
+  Settings,
+  Smartphone,
+  TriangleAlert,
+  UserRound,
+  Video,
+  X,
+} from "lucide-react-native";
+import {
   ActivityIndicator,
   Pressable,
   Text as RNText,
@@ -15,7 +49,6 @@ import {
   type TextStyle,
   type ViewStyle,
 } from "react-native";
-import Svg, { Path } from "react-native-svg";
 import {
   radius,
   size as sizes,
@@ -25,7 +58,6 @@ import {
 } from "../generated/tokens";
 import {
   genericSourceLabel,
-  iconPathsFor,
   sourceIcon,
   statusMeta,
   type IconName,
@@ -65,26 +97,58 @@ export interface IconProps {
   name: IconName;
   size?: 16 | 20 | 24;
   color?: ColorToken;
-  /** Defaults to the design system's rule: solid (fill) below 20 px, outline at 20 px and up. */
+  /** Kept for API compatibility; Lucide uses a consistent outline style. */
   weight?: IconWeight;
   label?: string;
 }
 
-export function Icon({ name, size = 16, color = "text", weight, label }: IconProps) {
+const iconGlyphs = {
+  check: Check,
+  user: UserRound,
+  alert: TriangleAlert,
+  eyeOff: EyeOff,
+  stop: Ban,
+  clock: Clock3,
+  progress: CircleDashed,
+  info: Info,
+  book: BookOpen,
+  video: Video,
+  camera: Camera,
+  monitor: Monitor,
+  file: FileText,
+  mic: Mic,
+  power: Power,
+  gauge: Gauge,
+  arrowRight: ArrowRight,
+  actions: ListChecks,
+  projects: FolderKanban,
+  home: House,
+  plus: Plus,
+  menu: Menu,
+  gear: Settings,
+  retake: RotateCcw,
+  glasses: Glasses,
+  laptop: Laptop,
+  phone: Smartphone,
+  x: X,
+  pointer: MousePointer2,
+  hand: Hand,
+  image: Image,
+  expand: Expand,
+} as const;
+
+export function Icon({ name, size = 16, color = "text", label }: IconProps) {
   const t = useTheme();
+  const Glyph = iconGlyphs[name];
   return (
-    <Svg
-      width={size}
-      height={size}
-      viewBox="0 0 256 256"
-      fill={t.color[color]}
+    <Glyph
+      size={size}
+      color={t.color[color]}
+      strokeWidth={size === 16 ? 2 : 1.8}
       accessible={!!label}
       accessibilityLabel={label}
-    >
-      {iconPathsFor(name, size, weight).map((p) => (
-        <Path key={p.d} d={p.d} {...(p.o !== undefined ? { opacity: p.o } : {})} />
-      ))}
-    </Svg>
+      accessibilityRole={label ? "image" : undefined}
+    />
   );
 }
 

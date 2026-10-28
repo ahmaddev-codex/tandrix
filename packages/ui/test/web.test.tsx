@@ -152,6 +152,38 @@ describe("JobReport", () => {
     render(<JobReport title="Pump P-100 assembly" counts={{ verified: 9 }} steps={[]} />);
     expect(screen.getByText(/does not certify the installation/)).toBeTruthy();
   });
+
+  it("renders step status overrides and check notes", () => {
+    render(
+      <JobReport
+        title="Raspberry Pi 5 build"
+        counts={{ verified: 1, confirmed: 0, attention: 0, unresolved: 1 }}
+        steps={[
+          {
+            index: 1,
+            title: "Press both pins down until they click",
+            status: "verified",
+            note: "Both pins sit flush.",
+            source: "Manual p.1",
+            sourceKind: "manual",
+            time: "10:46",
+          },
+          {
+            index: 2,
+            title: "Connect the optional Ethernet cable",
+            status: "pending",
+            statusLabel: "Skipped",
+            note: "Using Wi-Fi instead.",
+            sourceKind: "generic",
+            source: "Generic, not from the manufacturer",
+          },
+        ]}
+      />,
+    );
+    expect(screen.getByText("Both pins sit flush.")).toBeTruthy();
+    expect(screen.getByText("Skipped")).toBeTruthy();
+    expect(screen.getByText("Using Wi-Fi instead.")).toBeTruthy();
+  });
 });
 
 describe("Notice", () => {

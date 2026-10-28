@@ -16,7 +16,6 @@ import {
 import { IntakeRow } from "@/components/intake-row";
 import { api } from "@/lib/api";
 import { preparePhoto, uploadPhoto, type PreparedPhoto } from "@/lib/evidence";
-import { exampleGoals } from "@/lib/goals";
 import { pickPdf, titleFromFileName, uploadManualPdf, type PickedPdf } from "@/lib/manual";
 import {
   newSetupState,
@@ -206,19 +205,6 @@ export default function NewJob() {
           returnKeyType="done"
           {...(error ? { error } : {})}
         />
-        {!goal ? (
-          <View style={{ gap: space["space-2"] }}>
-            <Text variant="label-13" color="text-secondary">
-              For example
-            </Text>
-            {exampleGoals.map((g) => (
-              <Button key={g} variant="tertiary" size="md" onPress={() => setGoal(g)}>
-                {g}
-              </Button>
-            ))}
-          </View>
-        ) : null}
-
         <View style={{ gap: space["space-1"], marginTop: space["space-2"] }}>
           <Text variant="heading-18">Add details</Text>
           <Text variant="copy-14" color="text-secondary">

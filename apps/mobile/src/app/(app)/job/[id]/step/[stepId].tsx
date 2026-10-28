@@ -62,6 +62,7 @@ interface Loaded {
   /** Neighbouring job steps, for spoken "next" and "back". */
   previousId?: string;
   nextId?: string;
+  nextTitle?: string;
   keywords: string[];
   language: string;
   /** The job is open on the Mac (handed off there). */
@@ -111,6 +112,10 @@ export default function StepScreen() {
         const parts = step.partSpecIds
           .map((pid) => procedure.parts.find((p) => p.id === pid))
           .filter((p) => p !== undefined);
+        const nextJobStep = detail.steps[detail.steps.indexOf(jobStep) + 1];
+        const nextStep = nextJobStep
+          ? procedure.steps.find((candidate) => candidate.id === nextJobStep.procedureStepId)
+          : undefined;
         setData({
           step,
           jobStep,
@@ -122,9 +127,8 @@ export default function StepScreen() {
           ...(detail.steps[detail.steps.indexOf(jobStep) - 1]
             ? { previousId: detail.steps[detail.steps.indexOf(jobStep) - 1]!.id }
             : {}),
-          ...(detail.steps[detail.steps.indexOf(jobStep) + 1]
-            ? { nextId: detail.steps[detail.steps.indexOf(jobStep) + 1]!.id }
-            : {}),
+          ...(nextJobStep ? { nextId: nextJobStep.id } : {}),
+          ...(nextStep ? { nextTitle: nextStep.title } : {}),
           keywords: [
             ...parts.map((p) => p.name),
             ...(detail.asset ? [detail.asset.make, detail.asset.model] : []),
@@ -182,6 +186,7 @@ export default function StepScreen() {
             return true;
           },
           ...(data.nextId ? { nextId: data.nextId } : {}),
+          ...(data.nextTitle ? { nextTitle: data.nextTitle } : {}),
           onShow: () => {
             setPurpose("find");
             setPhoto(undefined);
@@ -688,6 +693,19 @@ export default function StepScreen() {
         ) : null}
         {work.below}
       </ScrollView>
+      {work.next ? (
+        <View
+          testID="step-next-footer"
+          style={{
+            padding: space["space-4"],
+            borderTopWidth: 1,
+            borderColor: t.color.border,
+            backgroundColor: t.color["background-100"],
+          }}
+        >
+          {work.next}
+        </View>
+      ) : null}
       <ImageViewer image={viewing} onClose={() => setViewing(undefined)} />
     </SafeAreaView>
   );

@@ -15,7 +15,15 @@ export interface PointerBuddyProps {
 export function PointerBuddy({ x, y, caption }: PointerBuddyProps) {
   return (
     <div className="tx-ptr" style={{ left: x, top: y }} role="status" aria-live="polite">
-      <Icon name="hand" size={24} className="tx-ptr-hand" />
+      <svg
+        className="tx-ptr-arrow"
+        viewBox="0 0 24 24"
+        width={26}
+        height={26}
+        aria-hidden="true"
+      >
+        <path d="M4.9 3.3C3.7 2.8 2.8 3.7 3.3 4.9L9.1 19.3C9.6 20.6 11.5 20.5 11.9 19.1L13.2 15.1C13.5 14.1 14.1 13.5 15.1 13.2L19.1 11.9C20.5 11.5 20.6 9.6 19.3 9.1L4.9 3.3Z" />
+      </svg>
       {caption ? <div className="tx-ptr-cap">{caption}</div> : null}
     </div>
   );

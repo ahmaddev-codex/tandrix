@@ -1,10 +1,11 @@
 // Sign in a Mac: scan the QR the Mac shows (or open its link from the camera app, or type the
 // code), check which Mac it is, and approve it.
 import { normalizePairingCode, PairingCode } from "@tandrix/contracts";
-import { space } from "@tandrix/ui";
+import { colors, space } from "@tandrix/ui";
 import { Button, Icon, Input, Notice, ProgressState, Text, useTheme } from "@tandrix/ui/native";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { router, useLocalSearchParams } from "expo-router";
+import Svg, { Path } from "react-native-svg";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -17,6 +18,126 @@ type Phase =
   | { kind: "confirm"; code: string; deviceName: string }
   | { kind: "approving"; code: string; deviceName: string }
   | { kind: "done"; deviceName: string };
+
+const previewQr = [
+  "000000000000000000000000000000000",
+  "000000000000000000000000000000000",
+  "001111111000101111000010111111100",
+  "001000001000010111101010100000100",
+  "001011101010001101001110101110100",
+  "001011101010011011011010101110100",
+  "001011101010001001100100101110100",
+  "001000001011001000000010100000100",
+  "001111111010101010101010111111100",
+  "000000000010011010101100000000000",
+  "001011111000110000100100111110000",
+  "000011010010010111000011111101100",
+  "001111101010010111101011111000000",
+  "001011000110011101000010001101100",
+  "001111101011011011000110000110100",
+  "001001010001001001110100111001100",
+  "001100101100100000001011001010000",
+  "000010000100001010101011101100000",
+  "000111101011101000100001010011000",
+  "001110000011010111011110111011100",
+  "001000111011001111111000110100000",
+  "001010100111100101001010110101000",
+  "001010011111011011011011111110000",
+  "000000000011100001110010001010100",
+  "001111111001010000001110101000000",
+  "001000001011011010100110001001000",
+  "001011101011111000101011111110100",
+  "001011101010111111011110000010000",
+  "001011101010010001110111101011000",
+  "001000001001011101011011010001000",
+  "001111111011010111000100110010000",
+  "000000000000000000000000000000000",
+  "000000000000000000000000000000000",
+];
+const qrSize = previewQr.length;
+const previewQrPath = previewQr
+  .flatMap((row, y) => [...row].map((on, x) => (on === "1" ? `M${x} ${y}h1v1h-1z` : "")))
+  .join("");
+
+function MacQrMark() {
+  const paper = colors.light;
+  return (
+    <View style={{ width: "100%", alignItems: "center" }}>
+      <View
+        style={{
+          width: 216,
+          height: 190,
+          padding: 9,
+          borderWidth: 1,
+          borderColor: paper.border,
+          borderTopLeftRadius: 10,
+          borderTopRightRadius: 10,
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: paper["background-100"],
+        }}
+      >
+        <View
+          style={{
+            alignItems: "center",
+            justifyContent: "center",
+            flex: 1,
+          }}
+        >
+          <View
+            style={{
+              width: 118,
+              height: 118,
+              padding: 6,
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: paper["background-100"],
+            }}
+          >
+            <Svg
+              width={106}
+              height={106}
+              viewBox={`0 0 ${qrSize} ${qrSize}`}
+              accessibilityLabel="Example Tandrix QR code"
+              accessibilityRole="image"
+            >
+              <Path d={previewQrPath} fill={paper.text} />
+            </Svg>
+          </View>
+        </View>
+        <Text
+          variant="mono-12"
+          color="text"
+          style={{ fontSize: 13, lineHeight: 17, color: paper.text }}
+        >
+          K7P4-QXJ9
+        </Text>
+        <Text
+          variant="label-12"
+          color="text-secondary"
+          style={{ fontSize: 9, lineHeight: 12, color: paper["text-tertiary"] }}
+        >
+          New code in 1:59
+        </Text>
+      </View>
+      <View
+        style={{
+          width: 244,
+          height: 8,
+          borderBottomLeftRadius: 10,
+          borderBottomRightRadius: 10,
+          backgroundColor: paper.border,
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <View
+          style={{ width: 42, height: 2, borderRadius: 2, backgroundColor: paper["gray-500"] }}
+        />
+      </View>
+    </View>
+  );
+}
 
 const NOT_FOUND =
   "That code didn't work. It may have run out: your Mac shows a new one every two minutes.";
@@ -75,58 +196,45 @@ export default function Pair() {
         ) : null}
 
         {phase.kind === "find" || phase.kind === "checking" ? (
-          <>
+          <View
+            style={{
+              height: 270,
+              borderRadius: 20,
+              backgroundColor: t.color["gray-100"],
+              borderWidth: 1,
+              borderColor: t.color.border,
+              overflow: "hidden",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
             {permission?.granted ? (
-              <View
+              <CameraView
+                testID="pair-scanner"
                 style={{
-                  height: 188,
-                  borderRadius: 20,
-                  overflow: "hidden",
-                  backgroundColor: t.color["gray-100"],
+                  position: "absolute",
+                  top: 0,
+                  right: 0,
+                  bottom: 0,
+                  left: 0,
                 }}
-              >
-                <CameraView
-                  testID="pair-scanner"
-                  style={{ flex: 1 }}
-                  facing="back"
-                  barcodeScannerSettings={{ barcodeTypes: ["qr"] }}
-                  onBarcodeScanned={({ data }) => {
-                    if (scanned.current) return;
-                    const code = codeFromScan(data);
-                    if (!code) return setProblem("That isn't a Tandrix sign-in code.");
-                    scanned.current = true;
-                    void check(code);
-                  }}
-                />
-                <View
-                  pointerEvents="none"
-                  style={{
-                    position: "absolute",
-                    left: space["space-3"],
-                    right: space["space-3"],
-                    bottom: space["space-3"],
-                    padding: space["space-2"],
-                    borderRadius: 12,
-                    backgroundColor: t.color["overlay-scrim"],
-                  }}
-                >
-                  <Text variant="label-13" color="overlay-ink">
-                    Point at the code on your Mac
-                  </Text>
-                </View>
-              </View>
+                facing="back"
+                barcodeScannerSettings={{ barcodeTypes: ["qr"] }}
+                onBarcodeScanned={({ data }) => {
+                  if (scanned.current) return;
+                  const code = codeFromScan(data);
+                  if (!code) return setProblem("That isn't a Tandrix sign-in code.");
+                  scanned.current = true;
+                  void check(code);
+                }}
+              />
             ) : permission?.canAskAgain !== false ? (
               <View
                 style={{
-                  minHeight: 104,
-                  borderRadius: 20,
-                  padding: space["space-4"],
+                  position: "absolute",
+                  bottom: space["space-3"],
                   alignItems: "center",
-                  justifyContent: "center",
                   gap: space["space-2"],
-                  backgroundColor: t.color["background-100"],
-                  borderWidth: 1,
-                  borderColor: t.color.border,
                 }}
               >
                 <Icon name="camera" color="text-secondary" />
@@ -134,9 +242,19 @@ export default function Pair() {
                   Turn on camera
                 </Button>
               </View>
-            ) : (
-              <Notice testID="pair-no-camera">Camera off. Enter the code from your Mac.</Notice>
-            )}
+            ) : null}
+            <View pointerEvents="none" style={{ alignItems: "center" }}>
+              <MacQrMark />
+            </View>
+            {permission?.canAskAgain === false && !permission.granted ? (
+              <View style={{ position: "absolute", bottom: space["space-3"] }}>
+                <Notice testID="pair-no-camera">Camera off. Enter the code below.</Notice>
+              </View>
+            ) : null}
+          </View>
+        ) : null}
+        {phase.kind === "find" || phase.kind === "checking" ? (
+          <>
             {phase.kind === "checking" ? (
               <ProgressState label="Checking the code" testID="pair-checking" />
             ) : (
@@ -157,6 +275,7 @@ export default function Pair() {
                 <Button
                   variant="primary"
                   size="lg"
+                  style={{ alignSelf: "flex-end" }}
                   disabled={typed.length !== 8}
                   onPress={() => void check(typed)}
                   testID="pair-continue"

@@ -1,25 +1,12 @@
 // The Tandrix site: what it does on the bench (phone) and on screen (Mac), shown with the real
 // product: design-system components, a real part outline from a test run, and real photos.
-import {
-  CheckResult,
-  HandoffBanner,
-  Icon,
-  ModeToggle,
-  StepCard,
-  StepVisual,
-} from "@tandrix/ui/web";
+import { HandoffBanner, Icon, ModeToggle } from "@tandrix/ui/web";
 import type { IconName } from "@tandrix/ui";
 import Image from "next/image";
 import { AppWindow } from "../components/AppWindow";
+import { StackedSequence } from "../components/StackedSequence";
 import { Viewfinder } from "../components/Viewfinder";
 import styles from "./page.module.css";
-
-const intake: Array<{ title: string; note: string }> = [
-  { title: "Read the label", note: "Raspberry Pi 5" },
-  { title: "Get the manual", note: "Build kit, 22 pages" },
-  { title: "Write the steps", note: "10 steps, 9 from the manual" },
-  { title: "Check the parts", note: "Ethernet cable missing" },
-];
 
 const careful: Array<{ icon: IconName; title: string; body: string }> = [
   {
@@ -91,7 +78,7 @@ export default function Home() {
               src="/photos/technician-rack.jpg"
               alt="A technician in a hi-vis vest working at an open server rack, tools on the floor"
               fill
-              sizes="(max-width: 900px) 100vw, 42vw"
+              sizes="(max-width: 900px) 100vw, 480px"
               className={styles.cover}
             />
           </div>
@@ -107,117 +94,7 @@ export default function Home() {
           </div>
         </section>
 
-        <ol className={styles.sequence} aria-label="How a project goes">
-          <li className={styles.stage}>
-            <div className={styles.stageText}>
-              <span className={styles.num}>1</span>
-              <h3 className="heading-18">Show it what you have</h3>
-              <p className={styles.body}>
-                A photo of the label, the parts laid out, where you've got to. Tandrix reads the
-                model, finds the manual and checks nothing's missing, before you pick up a tool.
-              </p>
-            </div>
-            <div className={styles.stageVisual}>
-              <div className={styles.intake}>
-                <Image
-                  src="/photos/fitting-ssd.jpg"
-                  alt="Hands fitting an SSD into a computer case"
-                  width={2000}
-                  height={1333}
-                  sizes="(max-width: 900px) 100vw, 520px"
-                  className={styles.intakePhoto}
-                />
-                <ul className={styles.stages} aria-label="Setting up">
-                  {intake.map((s, i) => (
-                    <li key={s.title}>
-                      <Icon name={i === 3 ? "alert" : "check"} size={20} />
-                      <span>
-                        <b>{s.title}</b>
-                        <span className={i === 3 ? styles.warn : undefined}>{s.note}</span>
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </li>
-
-          <li className={styles.stage}>
-            <div className={styles.stageText}>
-              <span className={styles.num}>2</span>
-              <h3 className="heading-18">Every step from the manual</h3>
-              <p className={styles.body}>
-                One action per step, with the page it came from and the picture that goes with it.
-                Steps the manual doesn't cover say so.
-              </p>
-            </div>
-            <div className={styles.stageVisual}>
-              <StepCard
-                index={3}
-                total={10}
-                title="Press both pins down until they click"
-                body="Hold the cooler over the board with the fan above the processor and the pins over the two holes."
-                status="pending"
-                statusLabel="To do"
-                source="Manual p.1"
-                visual={
-                  <StepVisual
-                    items={[
-                      {
-                        id: "manual",
-                        label: "Manual p.1",
-                        source: "Manual p.1",
-                        sourceKind: "manual",
-                        src: "/photos/kit-sheet-p1.jpg",
-                        alt: "The kit sheet's page 1: what's in the box and how to fit the cooler",
-                        aspectRatio: 1240 / 1754,
-                      },
-                    ]}
-                  />
-                }
-              />
-            </div>
-          </li>
-
-          <li className={styles.stage}>
-            <div className={styles.stageText}>
-              <span className={styles.num}>3</span>
-              <h3 className="heading-18">It checks your work</h3>
-              <p className={styles.body}>
-                Take a photo when you're done. Tandrix says whether it looks right and why, and says
-                plainly when a photo can't show it.
-              </p>
-            </div>
-            <div className={`${styles.stageVisual} ${styles.checks}`}>
-              <CheckResult
-                result="fail"
-                reason="The Active Cooler isn't on the board yet. Fit it over the processor, then check again."
-                evidence="Photo 10:41"
-                thumbnail={
-                  <Image
-                    src="/photos/pi5-board.jpg"
-                    alt="The bare board"
-                    width={176}
-                    height={130}
-                  />
-                }
-              />
-              <CheckResult
-                result="pass"
-                reason="The cooler sits flat over the processor with both pins through the board."
-                evidence="Photo 10:46"
-                thumbnail={
-                  <Image
-                    src="/photos/pi5-board-cooler.jpg"
-                    alt="The board with the cooler fitted"
-                    width={176}
-                    height={130}
-                  />
-                }
-              />
-            </div>
-          </li>
-        </ol>
+        <StackedSequence />
 
         <section id="screen" className={styles.screen} aria-labelledby="screen-title">
           <div className={styles.screenCopy}>

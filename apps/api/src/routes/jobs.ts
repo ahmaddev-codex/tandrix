@@ -11,7 +11,10 @@ import type { StepStateRepo } from "../repos/step-state";
 import type { PartsChecksRepo } from "../repos/parts-checks";
 import { clientSurface, SURFACE_HEADER } from "./steps";
 
-const ListQuery = z.object({ limit: z.coerce.number().int().min(1).max(100).default(50) });
+const ListQuery = z.object({
+  limit: z.coerce.number().int().min(1).max(100).default(50),
+  offset: z.coerce.number().int().min(0).default(0),
+});
 
 const issues = (e: z.ZodError) =>
   e.issues.map((i) => `${i.path.join(".") || "body"}: ${i.message}`);
@@ -59,7 +62,7 @@ export function jobsRoutes(
     .get("/", async (c) => {
       const q = ListQuery.safeParse(c.req.query());
       if (!q.success) throw invalid(issues(q.error));
-      const jobs = await repo.listForOwner(c.get("user").id, q.data.limit);
+      const jobs = await repo.listForOwner(c.get("user").id, q.data.limit, q.data.offset);
       return c.json({ jobs });
     })
     .get("/:id", async (c) => {

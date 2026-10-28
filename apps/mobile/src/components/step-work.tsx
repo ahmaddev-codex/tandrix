@@ -19,6 +19,7 @@ import {
   Input,
   Notice,
   SafetyGate,
+  Text,
   VoiceTranscript,
   type VoiceTurn,
 } from "@tandrix/ui/native";
@@ -39,6 +40,8 @@ export interface StepWork {
   gates: ReactNode;
   /** The StepCard's actions: one primary, at most, and the mic. */
   actions: ReactNode;
+  /** Persistent next-step or finish action shown after the current step is complete. */
+  next: ReactNode;
   /** Under the StepCard: what was said, the measurement field, skip and reopen. */
   below: ReactNode;
   /** Turns said so far, so the screen can bring a new reply into view. */
@@ -54,6 +57,7 @@ export interface StepWorkInput {
   /** Spoken "next" / "back". */
   onNavigate: (to: "next" | "previous") => boolean;
   nextId?: string;
+  nextTitle?: string;
   /** Spoken "show me again": back to the camera. */
   onShow: () => void;
   /** Last step: return to the project after it is finished. */
@@ -269,7 +273,7 @@ export function useStepWork(input: StepWorkInput | null): StepWork {
     onProblem: (m) => say(m),
   });
 
-  if (!input) return { gates: null, actions: null, below: null, turnCount: 0 };
+  if (!input) return { gates: null, actions: null, next: null, below: null, turnCount: 0 };
   const { step, jobStep, confirmations } = input;
 
   const refusal = refusalFor(step.hazardTags);
@@ -313,45 +317,57 @@ export function useStepWork(input: StepWorkInput | null): StepWork {
 
   // Steps done on a computer are started and checked on the Mac; the step screen offers the
   // handoff as its one primary action instead.
-  const primary = done.includes(status) ? (
-    <Button
-      variant="primary"
-      block
-      onPress={() => (input.onNavigate("next") ? undefined : input.onFinish())}
-      testID={input.nextId ? "next-step" : "finish-project"}
-    >
-      {input.nextId ? "Next step" : "Back to project"}
-    </Button>
-  ) : refusal || step.surface === "desktop" ? null : status === "todo" ? (
-    missing.length ? null : (
+  const next = done.includes(status) ? (
+    <View style={{ gap: space["space-2"] }}>
+      {input.nextId && input.nextTitle ? (
+        <Text variant="copy-14" color="text-secondary">
+          Next: {input.nextTitle}
+        </Text>
+      ) : null}
+      <Button
+        variant="primary"
+        block
+        onPress={() => (input.onNavigate("next") ? undefined : input.onFinish())}
+        testID={input.nextId ? "next-step" : "finish-project"}
+      >
+        {input.nextId ? "Continue to next step" : "Back to project"}
+      </Button>
+    </View>
+  ) : null;
+
+  const primary =
+    refusal || step.surface === "desktop" ? null : status === "todo" ? (
+      missing.length ? null : (
+        <Button
+          variant="primary"
+          block
+          disabled={busy}
+          onPress={() => send({ action: "start" })}
+          testID="start-step"
+        >
+          Start step
+        </Button>
+      )
+    ) : active.includes(status) && step.verification === "screen" ? null : active.includes(
+        status,
+      ) &&
+      step.verification === "photo" &&
+      input.lastCheck !== "not_verifiable" ? (
+      <Button variant="primary" block disabled={busy} onPress={input.onCheck} testID="check-work">
+        {/* After a check found a problem, the one action is to check again. */}
+        {status === "needs_attention" ? "Check again" : "Check my work"}
+      </Button>
+    ) : active.includes(status) && step.verification !== "measurement" ? (
       <Button
         variant="primary"
         block
         disabled={busy}
-        onPress={() => send({ action: "start" })}
-        testID="start-step"
+        onPress={() => send({ action: "confirm_done" })}
+        testID="mark-done"
       >
-        Start step
+        Mark as done
       </Button>
-    )
-  ) : active.includes(status) && step.verification === "screen" ? null : active.includes(status) &&
-    step.verification === "photo" &&
-    input.lastCheck !== "not_verifiable" ? (
-    <Button variant="primary" block disabled={busy} onPress={input.onCheck} testID="check-work">
-      {/* After a check found a problem, the one action is to check again. */}
-      {status === "needs_attention" ? "Check again" : "Check my work"}
-    </Button>
-  ) : active.includes(status) && step.verification !== "measurement" ? (
-    <Button
-      variant="primary"
-      block
-      disabled={busy}
-      onPress={() => send({ action: "confirm_done" })}
-      testID="mark-done"
-    >
-      Mark as done
-    </Button>
-  ) : null;
+    ) : null;
 
   // Design system: StepCard actions are one field primary plus the icon-only mic.
   const actions = (
@@ -470,5 +486,5 @@ export function useStepWork(input: StepWorkInput | null): StepWork {
     </View>
   );
 
-  return { gates: gateViews, actions, below, turnCount: turns.length };
+  return { gates: gateViews, actions, next, below, turnCount: turns.length };
 }
