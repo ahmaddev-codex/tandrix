@@ -20,7 +20,18 @@ export default function AppLayout() {
       <Stack.Screen name="actions" options={{ title: "Actions" }} />
       <Stack.Screen name="projects" options={{ title: "Projects" }} />
       <Stack.Screen name="new-job" options={{ title: "New project" }} />
-      <Stack.Screen name="pair" options={{ title: "Sign in a Mac" }} />
+      {/* Signing in a Mac is a sheet over the screen you came from, not a new page. */}
+      <Stack.Screen
+        name="pair"
+        options={{
+          title: "Sign in a Mac",
+          presentation: "formSheet",
+          // Compact; it grows when the keyboard opens for the code.
+          sheetAllowedDetents: [0.62, 0.95],
+          sheetGrabberVisible: true,
+          sheetCornerRadius: 28,
+        }}
+      />
       <Stack.Screen name="settings" options={{ title: "Settings" }} />
       <Stack.Screen name="job/[id]/index" options={{ title: "Project" }} />
       <Stack.Screen name="job/[id]/identify" options={{ title: "Equipment" }} />

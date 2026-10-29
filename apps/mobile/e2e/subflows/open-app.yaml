@@ -38,5 +38,5 @@ appId: app.tandrix.mobile
           id: password-sign-in
 - extendedWaitUntil:
     visible:
-      id: dashboard-menu
+      id: new-job
     timeout: 15000

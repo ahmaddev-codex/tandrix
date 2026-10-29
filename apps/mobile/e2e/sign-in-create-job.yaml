@@ -58,7 +58,7 @@ env:
     id: password-sign-in
 - extendedWaitUntil:
     visible:
-      id: dashboard-menu
+      id: new-job
     timeout: 15000
 - takeScreenshot: home
 - runFlow: subflows/new-job.yaml
@@ -98,7 +98,7 @@ env:
 # Signed in on relaunch: home loads, then the project row (below the sky header) is there.
 - extendedWaitUntil:
     visible:
-      id: dashboard-menu
+      id: new-job
     timeout: 30000
 - scrollUntilVisible:
     # Project rows expose one accessibility label: "<title>, <status>".

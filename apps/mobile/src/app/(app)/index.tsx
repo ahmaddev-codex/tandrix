@@ -2,16 +2,8 @@ import type { Job } from "@tandrix/contracts";
 import { radius, space } from "@tandrix/ui";
 import { BrandMark, Button, Icon, Notice, ProgressState, Text, useTheme } from "@tandrix/ui/native";
 import { router, Stack, useFocusEffect } from "expo-router";
-import { useCallback, useRef, useState } from "react";
-import {
-  Animated,
-  Easing,
-  ImageBackground,
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  View,
-} from "react-native";
+import { useCallback, useState } from "react";
+import { ImageBackground, Pressable, RefreshControl, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { HomeActionRow, OverviewTile, ProjectRow } from "@/components/home-rows";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
@@ -28,9 +20,6 @@ export default function Jobs() {
   const [actionsLoading, setActionsLoading] = useState(false);
   const [error, setError] = useState<string>();
   const [refreshing, setRefreshing] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [menuMounted, setMenuMounted] = useState(false);
-  const menuProgress = useRef(new Animated.Value(0)).current;
 
   const load = useCallback(async () => {
     try {
@@ -58,43 +47,6 @@ export default function Jobs() {
         : { pathname: "/job/[id]", params: { id: action.job.id } },
     );
   };
-
-  const closeMenu = () => {
-    setMenuOpen(false);
-    Animated.timing(menuProgress, {
-      toValue: 0,
-      duration: 140,
-      easing: Easing.in(Easing.quad),
-      useNativeDriver: true,
-    }).start(({ finished }) => {
-      if (finished) setMenuMounted(false);
-    });
-  };
-
-  const toggleMenu = () => {
-    if (menuOpen) {
-      closeMenu();
-      return;
-    }
-    menuProgress.setValue(0);
-    setMenuMounted(true);
-    setMenuOpen(true);
-    requestAnimationFrame(() =>
-      Animated.timing(menuProgress, {
-        toValue: 1,
-        duration: 180,
-        easing: Easing.out(Easing.quad),
-        useNativeDriver: true,
-      }).start(),
-    );
-  };
-
-  const menuItems = [
-    { label: "Start a project", icon: "plus", href: "/new-job", testID: "menu-new-job" },
-    { label: "Actions", icon: "actions", href: "/actions", testID: "menu-actions" },
-    { label: "Projects", icon: "projects", href: "/projects", testID: "menu-projects" },
-    { label: "Settings", icon: "gear", href: "/settings", testID: "menu-settings" },
-  ] as const;
 
   const activeCount = (jobs ?? []).filter((job) => job.status === "active").length;
 
@@ -146,106 +98,6 @@ export default function Jobs() {
                 Tandrix
               </Text>
             </View>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={menuOpen ? "Close menu" : "Open menu"}
-              accessibilityState={{ expanded: menuOpen }}
-              testID="dashboard-menu"
-              onPress={toggleMenu}
-              style={({ pressed }) => ({
-                minWidth: 92,
-                height: 44,
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: space["space-2"],
-                paddingHorizontal: space["space-3"],
-                borderRadius: radius["radius-full"],
-                backgroundColor: t.color["surface-ink"],
-                opacity: pressed ? 0.8 : 1,
-              })}
-            >
-              <HamburgerMark color={t.color["ink-on-surface"]} />
-              <Text variant="label-14" color="ink-on-surface">
-                Menu
-              </Text>
-            </Pressable>
-            {menuMounted ? (
-              <Animated.View
-                testID="dashboard-menu-items"
-                pointerEvents={menuOpen ? "auto" : "none"}
-                style={{
-                  position: "absolute",
-                  zIndex: 20,
-                  top: 50,
-                  right: 0,
-                  width: 256,
-                  padding: space["space-2"],
-                  gap: space["space-1"],
-                  borderRadius: radius["radius-lg"],
-                  backgroundColor: t.color["background-100"],
-                  borderWidth: 1,
-                  borderColor: t.color["gray-400"],
-                  opacity: menuProgress,
-                  transform: [
-                    {
-                      translateY: menuProgress.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [-5, 0],
-                      }),
-                    },
-                    {
-                      scale: menuProgress.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [0.98, 1],
-                      }),
-                    },
-                  ],
-                }}
-              >
-                {menuItems.map((item, index) => {
-                  const primary = index === 0;
-                  return (
-                    <Pressable
-                      key={item.href}
-                      accessibilityRole="button"
-                      testID={item.testID}
-                      onPress={() => {
-                        closeMenu();
-                        router.push(item.href);
-                      }}
-                      style={({ pressed }) => ({
-                        minHeight: 48,
-                        flexDirection: "row",
-                        alignItems: "center",
-                        gap: space["space-3"],
-                        marginTop: index === 1 ? space["space-1"] : 0,
-                        paddingHorizontal: space["space-3"],
-                        borderRadius: primary ? radius["radius-full"] : radius["radius-md"],
-                        backgroundColor: primary
-                          ? pressed
-                            ? t.color["gray-100"]
-                            : t.color["surface-paper"]
-                          : pressed
-                            ? t.color["gray-200"]
-                            : "transparent",
-                        borderTopWidth: index === 1 ? 1 : 0,
-                        borderColor: t.color["gray-300"],
-                      })}
-                    >
-                      <Icon
-                        name={item.icon}
-                        color={primary ? "ink-on-paper" : "text-secondary"}
-                        size={20}
-                      />
-                      <Text variant="label-14" color={primary ? "ink-on-paper" : "text"}>
-                        {item.label}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-              </Animated.View>
-            ) : null}
           </View>
 
           <View style={{ gap: space["space-3"], alignItems: "flex-start" }}>
@@ -426,23 +278,5 @@ export default function Jobs() {
       </ScrollView>
       <MobileBottomNav />
     </SafeAreaView>
-  );
-}
-
-function HamburgerMark({ color }: { color: string }) {
-  return (
-    <View accessible={false} style={{ width: 18, gap: 4 }}>
-      <View style={{ width: 18, height: 1.5, borderRadius: 1, backgroundColor: color }} />
-      <View
-        style={{
-          width: 12,
-          height: 1.5,
-          alignSelf: "flex-end",
-          borderRadius: 1,
-          backgroundColor: color,
-        }}
-      />
-      <View style={{ width: 18, height: 1.5, borderRadius: 1, backgroundColor: color }} />
-    </View>
   );
 }

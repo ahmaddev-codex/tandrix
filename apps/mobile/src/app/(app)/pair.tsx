@@ -185,9 +185,11 @@ export default function Pair() {
   return (
     <SafeAreaView style={{ flex: 1 }} edges={["bottom"]}>
       <ScrollView
-        contentContainerStyle={{ padding: space["space-4"], gap: space["space-3"], flexGrow: 1 }}
+        contentContainerStyle={{ padding: space["space-4"], gap: space["space-3"] }}
         keyboardShouldPersistTaps="handled"
         automaticallyAdjustKeyboardInsets
+        // In the sheet the header floats over the content: start below it.
+        contentInsetAdjustmentBehavior="automatic"
       >
         {problem ? (
           <Notice tone="error" testID="pair-problem">
