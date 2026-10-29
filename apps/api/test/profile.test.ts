@@ -28,10 +28,7 @@ function setup() {
     corsOrigins: [],
     log: () => {},
   });
-  const call = (
-    path: string,
-    init: { method?: string; token?: string; body?: object } = {},
-  ) =>
+  const call = (path: string, init: { method?: string; token?: string; body?: object } = {}) =>
     app.request(path, {
       method: init.method ?? "GET",
       headers: {
