@@ -9,6 +9,9 @@ import AVFoundation
 import Foundation
 import Speech
 
+/// TANDRIX_WAKE_DEBUG=1 prints what's heard to stderr (development only).
+let debug = ProcessInfo.processInfo.environment["TANDRIX_WAKE_DEBUG"] != nil
+
 func emit(_ obj: [String: Any]) {
   guard let data = try? JSONSerialization.data(withJSONObject: obj),
     let line = String(data: data, encoding: .utf8)
@@ -24,7 +27,7 @@ func fail(_ message: String) -> Never {
 /// The wake phrase and what follows it, matching how recognisers spell an unusual name.
 let wake = try! NSRegularExpression(
   pattern:
-    "\\b(?:(?:hey|hi|ok|okay|wake\\s*up)[\\s,]+)?(?:tandrix|tandrics|tandrex|tandrik|tantrix|tendrix|ten\\s+tricks|tan\\s+tricks|sandrix)\\b[\\s,.!?]*(.*)$",
+    "\\b(?:(?:hey|hi|ok|okay|wake\\s*up)[\\s,]+)?(?:tandrix|tandrics|tandrex|tandrik|tantrix|tendrix|ten\\s+tricks|tan\\s+tricks|tan\\s*drix|sandrix|hendrix|handrix|trendix|candrix|tandreks)\\b[\\s,.!?]*(.*)$",
   options: [.caseInsensitive])
 
 final class Listener {
@@ -35,6 +38,10 @@ final class Listener {
   /// How much of the current transcript was already acted on, so one phrase wakes once.
   var handled = 0
   var restartTimer: Timer?
+  /// The wake phrase was heard; fires after a short pause unless more words keep coming.
+  var pendingWake: Timer?
+  /// Which recognition task is current.
+  var generation = 0
 
   init() {
     guard let r = SFSpeechRecognizer(locale: Locale(identifier: "en-US")) else {
@@ -58,6 +65,10 @@ final class Listener {
 
   /// One recognition task; Apple ends them after about a minute, so they're renewed often.
   func begin() {
+    // Callbacks from a task that has been replaced are ignored, so a cancel can't restart again.
+    generation += 1
+    let gen = generation
+    pendingWake?.invalidate()
     task?.cancel()
     let req = SFSpeechAudioBufferRecognitionRequest()
     req.requiresOnDeviceRecognition = true
@@ -66,22 +77,36 @@ final class Listener {
     request = req
     handled = 0
     task = recognizer.recognitionTask(with: req) { [weak self] result, error in
-      guard let self else { return }
+      guard let self, gen == self.generation else { return }
       if let result {
         let text = result.bestTranscription.formattedString
+        if debug { FileHandle.standardError.write("heard: \(text)\n".data(using: .utf8)!) }
         if text.count > self.handled {
           let fresh = String(text.dropFirst(self.handled))
           let range = NSRange(fresh.startIndex..., in: fresh)
-          // Only a finished phrase counts, so "Tandrix, open Calendar" arrives whole.
-          if result.isFinal, let m = wake.firstMatch(in: fresh, range: range) {
+          // Act on the live (partial) result: on a continuous stream a result is only final
+          // when the task ends, a minute later. Once the name is heard, wait for a short pause
+          // so "Tandrix, open Calendar" arrives whole, then answer and start listening afresh.
+          if let m = wake.firstMatch(in: fresh, range: range) {
             let rest =
               Range(m.range(at: 1), in: fresh).map { String(fresh[$0]) }?
               .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-            self.handled = text.count
-            emit(["wake": true, "rest": rest])
+            self.pendingWake?.invalidate()
+            self.pendingWake = Timer.scheduledTimer(withTimeInterval: 0.9, repeats: false) {
+              [weak self] _ in
+              guard let self else { return }
+              guard gen == self.generation else { return }
+              self.handled = text.count
+              emit(["wake": true, "rest": rest])
+              // A fresh task, so the same words can't wake it twice.
+              self.renew()
+            }
           }
         }
-        if result.isFinal { self.renew() }
+        if result.isFinal {
+          self.pendingWake?.invalidate()
+          self.renew()
+        }
       } else if error != nil {
         self.renew()
       }
