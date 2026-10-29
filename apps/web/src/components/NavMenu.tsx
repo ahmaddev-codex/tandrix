@@ -5,8 +5,8 @@ import styles from "./NavMenu.module.css";
 
 const links: Array<[string, string]> = [
   ["#what", "What it does"],
-  ["#uses", "Uses"],
-  ["#how", "How it works"],
+  ["#day", "A day with it"],
+  ["#explore", "Uses"],
   ["#faq", "Questions"],
   ["#get", "Download"],
 ];

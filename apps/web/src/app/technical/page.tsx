@@ -100,9 +100,15 @@ export default function Technical() {
             gates confirm risky steps before anything acts, on a workbench or in your apps.
           </p>
           <div className={styles.ctaRow}>
-            <Cta href={SOURCE_URL} tone="ink" external>
-              Read the source
-            </Cta>
+            {SOURCE_URL ? (
+              <Cta href={SOURCE_URL} tone="ink" external>
+                Read the source
+              </Cta>
+            ) : (
+              <Cta href="/#get" tone="ink">
+                Get Tandrix
+              </Cta>
+            )}
             <Cta href="/" tone="light" arrow={false}>
               Back to Tandrix
             </Cta>

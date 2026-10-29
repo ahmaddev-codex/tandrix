@@ -84,40 +84,34 @@
   height: min(620px, 74vh);
 }
 .layer {
+  /* --d: how far this moment is from the current one (negative: earlier). */
+  --past: min(var(--d), 0);
+  --next: max(var(--d), 0);
   position: absolute;
-  inset: 0;
-  opacity: 0;
-  transform: translateY(14px) scale(0.985);
+  inset: 70px 0 0;
+  transform-origin: 50% 0;
+  transform: translateY(calc(var(--past) * 30px + var(--next) * 90px))
+    scale(calc(1 + var(--past) * 0.06));
+  opacity: clamp(0, calc(1 + var(--past) * 0.34 - var(--next)), 1);
+  filter: saturate(calc(1 + var(--past) * 0.25));
   transition:
-    opacity 380ms ease,
-    transform 480ms cubic-bezier(0.2, 0.7, 0.2, 1);
+    transform 900ms cubic-bezier(0.2, 0.7, 0.15, 1),
+    opacity 700ms ease,
+    filter 700ms ease;
   pointer-events: none;
 }
 .layerOn {
-  opacity: 1;
-  transform: none;
+  pointer-events: auto;
+}
+@media (prefers-reduced-motion: reduce) {
+  .layer {
+    transition: opacity 200ms ease;
+    transform: none;
+  }
 }
 .stage {
   position: relative;
   height: 100%;
-  padding-top: 30px;
-}
-/* Two lighter sheets behind the card, as if the day's work were stacked. */
-.sheetBack,
-.sheetMid {
-  position: absolute;
-  left: 7%;
-  right: 7%;
-  top: 0;
-  height: 40px;
-  border-radius: 16px 16px 0 0;
-  background: color-mix(in srgb, var(--highlight) 22%, #fff);
-}
-.sheetMid {
-  left: 3.5%;
-  right: 3.5%;
-  top: 14px;
-  background: color-mix(in srgb, var(--highlight) 45%, #fff);
 }
 .sky {
   position: relative;
@@ -129,8 +123,8 @@
   border-radius: 20px;
   overflow: hidden;
   background:
-    linear-gradient(180deg, rgba(10, 92, 220, 0.82), rgba(46, 125, 255, 0.35)),
-    url("/photos/sky-close.jpg") center / cover no-repeat,
+    linear-gradient(180deg, rgba(18, 104, 214, 0.55), rgba(46, 125, 255, 0.1) 60%),
+    url("/photos/sky-bright.jpg") center / cover no-repeat,
     var(--highlight);
 }
 .ask {

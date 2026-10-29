@@ -1,7 +1,8 @@
 "use client";
 // A day with Tandrix: the moments scroll by on the left while the picture beside them changes to
-// match. On narrow screens each moment shows its own picture inline.
-import { useEffect, useRef, useState, type ReactNode } from "react";
+// match: earlier moments slide back into a stack, as on the reference. On narrow screens each
+// moment shows its own picture inline.
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import styles from "./DayTimeline.module.css";
 
 export interface Moment {
@@ -60,8 +61,14 @@ export function DayTimeline({ moments }: { moments: Moment[] }) {
         ))}
       </div>
       <div className={styles.sticky}>
+        {/* Earlier moments recede into a stack behind the current one; the next rises in. */}
         {moments.map((m, i) => (
-          <div key={m.time} className={`${styles.layer} ${i === active ? styles.layerOn : ""}`}>
+          <div
+            key={m.time}
+            className={`${styles.layer} ${i === active ? styles.layerOn : ""}`}
+            style={{ "--d": i - active, zIndex: 10 - Math.abs(i - active) } as CSSProperties}
+            aria-hidden={i !== active || undefined}
+          >
             <Stage moment={m} />
           </div>
         ))}
@@ -73,8 +80,6 @@ export function DayTimeline({ moments }: { moments: Moment[] }) {
 function Stage({ moment }: { moment: Moment }) {
   return (
     <div className={styles.stage}>
-      <span className={styles.sheetBack} />
-      <span className={styles.sheetMid} />
       <div className={styles.sky}>
         <p className={styles.ask}>
           <span className={styles.askDot} />“{moment.ask}”

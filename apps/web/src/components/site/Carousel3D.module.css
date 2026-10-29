@@ -1,0 +1,58 @@
+/* A ring of cards seen from outside, as on the reference: the front half faces you and turns;
+   the back half is hidden. Narrower than the page, centred under the copy. */
+.stage {
+  --r: clamp(260px, 30vw, 470px);
+  --size: clamp(132px, 13vw, 196px);
+  position: relative;
+  width: min(100%, 1100px);
+  height: calc(var(--size) * 1.75);
+  margin-top: 12px;
+  margin-left: auto;
+  margin-right: auto;
+  perspective: 2600px;
+  perspective-origin: 50% 20%;
+}
+.ring {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: 0;
+  transform-style: preserve-3d;
+  transform: rotateX(-9deg) rotateY(0deg);
+}
+.card {
+  position: absolute;
+  left: calc(var(--size) / -2);
+  top: calc(var(--size) / -2);
+  width: var(--size);
+  height: var(--size);
+  border-radius: 20px;
+  overflow: hidden;
+  background: #fff;
+  transform: rotateY(var(--a)) translateZ(var(--r));
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.6),
+    0 26px 40px -22px rgba(9, 40, 90, 0.55);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .ring {
+    animation: spin 64s linear infinite;
+  }
+}
+@keyframes spin {
+  from {
+    transform: rotateX(-9deg) rotateY(0deg);
+  }
+  to {
+    transform: rotateX(-9deg) rotateY(-360deg);
+  }
+}
+@media (max-width: 720px) {
+  .stage {
+    --r: 64vw;
+    --size: 27vw;
+  }
+}

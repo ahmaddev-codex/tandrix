@@ -1,94 +1,111 @@
 "use client";
-// Everything Tandrix does, as a map around it. The lines draw themselves the first time the map
-// scrolls into view; on narrow screens it becomes grouped lists.
-import { useEffect, useRef, useState } from "react";
+// Everything Tandrix does, around it: six groups in two columns, joined to the mark by curves
+// measured from the real layout (so they meet each card exactly at any size). The curves draw in
+// the first time the map is on screen, then a pulse runs along each one.
+import { BrandMark, Icon, type IconProps } from "@tandrix/ui/web";
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import styles from "./CapabilityMap.module.css";
 
-type Pt = [number, number];
-interface Hub {
+interface Group {
   name: string;
-  at: Pt;
-  leaves: Array<[string, Pt]>;
+  icon: IconProps["name"];
+  items: string[];
 }
 
-const W = 1200;
-const H = 640;
-const CENTER: Pt = [600, 310];
-
-const hubs: Hub[] = [
+const left: Group[] = [
   {
     name: "Sees what you see",
-    at: [300, 130],
-    leaves: [
-      ["Your screen", [110, 60]],
-      ["The camera", [100, 170]],
-      ["Labels and nameplates", [330, 32]],
-      ["Manuals and PDFs", [470, 205]],
-    ],
+    icon: "camera",
+    items: ["Your screen", "The camera", "Labels and nameplates", "Manuals and PDFs"],
   },
   {
     name: "Shows you the way",
-    at: [910, 120],
-    leaves: [
-      ["Rings the control", [1090, 55]],
-      ["Says the next step", [1095, 175]],
-      ["Teach me, step by step", [760, 32]],
-    ],
-  },
-  {
-    name: "Does it for you",
-    at: [1000, 330],
-    leaves: [
-      ["Opens your apps", [1120, 270]],
-      ["Queues the next task", [1110, 395]],
-    ],
+    icon: "pointer",
+    items: ["Rings the control", "Says the next step", "Teach me, one step at a time"],
   },
   {
     name: "Checks the work",
-    at: [270, 420],
-    leaves: [
-      ["Photo checks", [90, 360]],
-      ["Parts check", [110, 480]],
-      ["Safety gates", [330, 560]],
+    icon: "check",
+    items: ["Photo checks", "Parts check", "Safety gates"],
+  },
+];
+const right: Group[] = [
+  {
+    name: "Does it for you",
+    icon: "laptop",
+    items: ["Opens your apps", "Takes the steps", "Queues the next task"],
+  },
+  {
+    name: "Keeps you in control",
+    icon: "hand",
+    items: [
+      "Asks before it sends or pays",
+      "Esc or the mouse stops it",
+      "Wake word stays on the Mac",
     ],
   },
   {
     name: "Works where you are",
-    at: [600, 520],
-    leaves: [
-      ["Mac", [500, 610]],
-      ["iPhone", [610, 615]],
-      ["Shared report", [720, 605]],
-    ],
-  },
-  {
-    name: "Keeps you in control",
-    at: [880, 470],
-    leaves: [
-      ["Asks before it acts", [1050, 520]],
-      ["Esc or the mouse to stop", [940, 590]],
-      ["Wake word heard on the Mac", [800, 395]],
-    ],
+    icon: "phone",
+    items: ["Mac", "iPhone", "A shared report"],
   },
 ];
 
-const pct = ([x, y]: Pt) => ({ left: `${(x / W) * 100}%`, top: `${(y / H) * 100}%` });
-/** Lines stop short of the labels so they don't run through the text. */
-function trim(a: Pt, b: Pt, ra: number, rb: number): [Pt, Pt] {
-  const dx = b[0] - a[0];
-  const dy = b[1] - a[1];
-  const len = Math.hypot(dx, dy) || 1;
-  return [
-    [a[0] + (dx / len) * ra, a[1] + (dy / len) * ra],
-    [b[0] - (dx / len) * rb, b[1] - (dy / len) * rb],
-  ];
+function Card({ g, side }: { g: Group; side: "l" | "r" }) {
+  return (
+    <article className={styles.card} data-side={side}>
+      <header>
+        <span className={styles.icon}>
+          <Icon name={g.icon} size={20} />
+        </span>
+        <h3>{g.name}</h3>
+      </header>
+      <ul>
+        {g.items.map((it) => (
+          <li key={it}>{it}</li>
+        ))}
+      </ul>
+    </article>
+  );
 }
 
 export function CapabilityMap() {
-  const ref = useRef<HTMLDivElement>(null);
+  const wrap = useRef<HTMLDivElement>(null);
+  const [paths, setPaths] = useState<string[]>([]);
+  const [size, setSize] = useState({ w: 0, h: 0 });
   const [shown, setShown] = useState(false);
+
+  // Curves from the mark to the inner edge of each card, from where they really are.
+  useLayoutEffect(() => {
+    const el = wrap.current;
+    if (!el) return;
+    const measure = () => {
+      const box = el.getBoundingClientRect();
+      const core = el.querySelector(`.${styles.core}`)?.getBoundingClientRect();
+      if (!core) return;
+      const cx = core.left + core.width / 2 - box.left;
+      const cy = core.top + core.height / 2 - box.top;
+      const next: string[] = [];
+      el.querySelectorAll<HTMLElement>(`.${styles.card}`).forEach((card) => {
+        const r = card.getBoundingClientRect();
+        const leftSide = card.dataset.side === "l";
+        const x = (leftSide ? r.right : r.left) - box.left;
+        const y = r.top + r.height / 2 - box.top;
+        const sx = cx + (leftSide ? -1 : 1) * (core.width / 2 - 6);
+        const mx = (sx + x) / 2;
+        next.push(`M ${sx} ${cy} C ${mx} ${cy}, ${mx} ${y}, ${x} ${y}`);
+      });
+      setPaths(next);
+      setSize({ w: box.width, h: box.height });
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   useEffect(() => {
-    const el = ref.current;
+    const el = wrap.current;
     if (!el) return;
     const io = new IntersectionObserver(
       ([e]) => {
@@ -97,82 +114,47 @@ export function CapabilityMap() {
           io.disconnect();
         }
       },
-      { threshold: 0.25 },
+      { threshold: 0.3 },
     );
     io.observe(el);
     return () => io.disconnect();
   }, []);
 
-  let n = 0;
   return (
-    <>
-      <div ref={ref} className={`${styles.map} ${shown ? styles.shown : ""}`} aria-hidden="true">
-        <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className={styles.lines}>
-          {hubs.map((h) => {
-            const [a, b] = trim(CENTER, h.at, 110, 40);
-            return (
-              <g key={h.name}>
-                <line
-                  x1={a[0]}
-                  y1={a[1]}
-                  x2={b[0]}
-                  y2={b[1]}
-                  className={styles.main}
-                  style={{ ["--d" as string]: `${n++ * 60}ms` }}
-                  pathLength={1}
-                />
-                {h.leaves.map(([name, at]) => {
-                  const [c, d] = trim(h.at, at, 34, 26);
-                  return (
-                    <line
-                      key={name}
-                      x1={c[0]}
-                      y1={c[1]}
-                      x2={d[0]}
-                      y2={d[1]}
-                      className={styles.leaf}
-                      style={{ ["--d" as string]: `${400 + n++ * 40}ms` }}
-                      pathLength={1}
-                    />
-                  );
-                })}
-              </g>
-            );
-          })}
-        </svg>
-        <span className={styles.center} style={pct(CENTER)}>
-          <svg viewBox="0 0 24 24" width="40" height="40">
-            <circle cx="7" cy="12" r="4.8" fill="none" stroke="currentColor" strokeWidth="2.2" />
-            <circle cx="12.5" cy="12" r="1.5" className={styles.spark} />
-            <rect x="16.5" y="6.5" width="2.6" height="11" rx="1.3" fill="currentColor" />
-          </svg>
-          Tandrix
-        </span>
-        {hubs.map((h) => (
-          <span key={h.name} className={styles.hub} style={pct(h.at)}>
-            {h.name}
-          </span>
+    <div ref={wrap} className={`${styles.map} ${shown ? styles.shown : ""}`}>
+      <svg
+        className={styles.lines}
+        width={size.w}
+        height={size.h}
+        viewBox={`0 0 ${size.w || 1} ${size.h || 1}`}
+        aria-hidden="true"
+      >
+        {paths.map((d, i) => (
+          <g key={i} style={{ "--i": i } as CSSProperties}>
+            <path d={d} pathLength={1} className={styles.curve} />
+            <circle r="4" className={styles.pulse} style={{ offsetPath: `path("${d}")` }} />
+          </g>
         ))}
-        {hubs.flatMap((h) =>
-          h.leaves.map(([name, at]) => (
-            <span key={name} className={styles.leafLabel} style={pct(at)}>
-              {name}
-            </span>
-          )),
-        )}
-      </div>
-      <div className={styles.list}>
-        {hubs.map((h) => (
-          <section key={h.name}>
-            <h3>{h.name}</h3>
-            <ul>
-              {h.leaves.map(([name]) => (
-                <li key={name}>{name}</li>
-              ))}
-            </ul>
-          </section>
+      </svg>
+      <div className={styles.col}>
+        {left.map((g) => (
+          <Card key={g.name} g={g} side="l" />
         ))}
       </div>
-    </>
+      <div className={styles.center}>
+        <div className={styles.core}>
+          <span className={styles.orbit} aria-hidden="true" />
+          <span className={`${styles.orbit} ${styles.orbit2}`} aria-hidden="true" />
+          <BrandMark size={72} />
+        </div>
+        <p className={styles.name}>Tandrix</p>
+        <p className={styles.tag}>One assistant, everything it takes to get it done.</p>
+      </div>
+      <div className={styles.col}>
+        {right.map((g) => (
+          <Card key={g.name} g={g} side="r" />
+        ))}
+      </div>
+    </div>
   );
 }
