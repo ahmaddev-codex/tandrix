@@ -2,12 +2,7 @@ import { BrandWordmark, Icon } from "@tandrix/ui/web";
 import type { ReactNode } from "react";
 import { ScrollReveals } from "../components/motion/ScrollReveals";
 import { NavMenu } from "../components/NavMenu";
-import {
-  CheckCard,
-  GateCard,
-  PointerArrow,
-  VoiceCard,
-} from "../components/scenes/Scenes";
+import { CheckCard, GateCard, PointerArrow, VoiceCard } from "../components/scenes/Scenes";
 import { ActivePill } from "../components/site/ActivePill";
 import { CapabilityMap } from "../components/site/CapabilityMap";
 import { Carousel3D } from "../components/site/Carousel3D";
@@ -35,7 +30,6 @@ import { Cta } from "../components/site/Cta";
 import { DayTimeline, type Moment } from "../components/site/DayTimeline";
 import { Explorer, type Place } from "../components/site/Explorer";
 import { EarlyAccess } from "../components/site/EarlyAccess";
-import { Marquee } from "../components/site/Marquee";
 import { ThemeToggle } from "../components/ThemeToggle";
 import {
   IPHONE_DOWNLOAD_URL,
@@ -67,17 +61,6 @@ const ring: ReactNode[] = [
   <PhotoTile key="cal" src="/photos/calendar-laptop.jpeg" at="40% 40%" label="Book it" />,
   <GateTile key="gate" />,
   <VideoTile key="v4" name="working-on-machine" label="Workshop" />,
-];
-
-const tryAsking = [
-  "What does this blinking light mean?",
-  "Walk me through my first setup",
-  "Where's the export button?",
-  "Is this part seated right?",
-  "Teach me pivot tables",
-  "Book my dentist for Thursday",
-  "Which screw goes here?",
-  "Why can't my Mac see the Wi‑Fi?",
 ];
 
 const moments: Moment[] = [
@@ -337,10 +320,6 @@ export default function Home() {
         </div>
 
         <Carousel3D items={ring} />
-      </section>
-
-      <section className={styles.marquee} aria-label="Things to ask Tandrix">
-        <Marquee items={tryAsking} />
       </section>
 
       <ScrollReveals>

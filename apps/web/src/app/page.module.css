@@ -35,9 +35,10 @@
   display: flex;
   flex-direction: column;
   /* The whole first screen, as on the reference, less the frame around it. */
-  min-height: calc(100svh - var(--frame) * 2);
+  height: calc(100svh - var(--frame) * 2);
+  min-height: 620px;
   margin: var(--frame);
-  padding: 0 var(--gutter) 56px;
+  padding: 0 var(--gutter) clamp(44px, 9vh, 96px);
   border-radius: 28px;
   overflow: hidden;
   color: #fff;
@@ -102,12 +103,13 @@
   justify-items: center;
   gap: 20px;
   max-width: 1000px;
-  margin: auto;
+  /* The copy and the ring centre together, close to each other. */
+  margin: auto auto 0;
   padding-top: clamp(16px, 3vw, 40px);
   text-align: center;
 }
 .heroTitle {
-  font-size: clamp(40px, 5.8vw, 78px);
+  font-size: clamp(38px, min(5.6vw, 8vh), 78px);
   font-weight: 500;
   line-height: 1.02;
   letter-spacing: -0.05em;
@@ -190,11 +192,6 @@
   color: #fff;
   font-size: 12px;
   font-weight: 500;
-}
-
-/* Things to ask, drifting under the hero */
-.marquee {
-  padding: 20px 0 0;
 }
 
 /* Sections */
