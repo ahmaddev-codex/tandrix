@@ -80,17 +80,25 @@ async function speech(text: string, signal: AbortSignal): Promise<Blob | null> {
   const { data } = await supabase.auth.getSession();
   const token = data.session?.access_token;
   if (!token) return null;
-  try {
-    const res = await fetch(`${env.apiUrl}/voice/speak`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ text }),
-      signal: AbortSignal.any([signal, AbortSignal.timeout(20_000)]),
-    });
-    return res.status === 200 ? await res.blob() : null;
-  } catch {
-    return null;
+  // The voice can still be loading on the server (204): wait a moment and ask once more, rather
+  // than going quiet on the first reply.
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const res = await fetch(`${env.apiUrl}/voice/speak`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+        signal: AbortSignal.any([signal, AbortSignal.timeout(20_000)]),
+      });
+      if (res.status === 200) return await res.blob();
+      if (res.status !== 204 || attempt > 0) return null;
+    } catch {
+      return null;
+    }
+    await new Promise((r) => setTimeout(r, 1500));
+    if (signal.aborted) return null;
   }
+  return null;
 }
 
 export const api = {

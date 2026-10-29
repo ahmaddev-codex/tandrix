@@ -127,17 +127,33 @@ async function speech(text: string, signal: AbortSignal): Promise<Uint8Array | n
   const { data } = await supabase.auth.getSession();
   const token = data.session?.access_token;
   if (!token) return null;
-  try {
-    const res = await fetch(`${env.apiUrl}/voice/speak`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ text }),
-      signal,
-    });
-    return res.status === 200 ? new Uint8Array(await res.arrayBuffer()) : null;
-  } catch {
-    return null;
+  // The voice can still be loading on the server (204): wait a moment and ask once more, rather
+  // than going quiet on the first reply.
+  for (let attempt = 0; attempt < 2; attempt++) {
+    // Hermes has no AbortSignal.any: follow the caller's signal, and give up after 20 s.
+    const ctl = new AbortController();
+    const stop = () => ctl.abort();
+    const timer = setTimeout(stop, 20_000);
+    signal.addEventListener("abort", stop);
+    try {
+      const res = await fetch(`${env.apiUrl}/voice/speak`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+        signal: ctl.signal,
+      });
+      if (res.status === 200) return new Uint8Array(await res.arrayBuffer());
+      if (res.status !== 204 || attempt > 0) return null;
+    } catch {
+      return null;
+    } finally {
+      clearTimeout(timer);
+      signal.removeEventListener("abort", stop);
+    }
+    await new Promise((r) => setTimeout(r, 1500));
+    if (signal.aborted) return null;
   }
+  return null;
 }
 
 export const api = {

@@ -53,6 +53,8 @@ export function kokoroSpeaker(log: (l: Record<string, unknown>) => void): Speake
 } {
   let model: Promise<Kokoro | null> | undefined;
   let readyModel: Kokoro | null = null;
+  let attempts = 0;
+  let retry: ReturnType<typeof setTimeout> | undefined;
   const load = () =>
     (model ??= import("kokoro-js")
       .then(({ KokoroTTS }) => KokoroTTS.from_pretrained(MODEL, { dtype: "q8", device: "cpu" }))
@@ -61,8 +63,18 @@ export function kokoroSpeaker(log: (l: Record<string, unknown>) => void): Speake
         return readyModel;
       })
       .catch((e: Error) => {
-        log({ level: "warn", event: "speech_model_unavailable", error: e.message });
-        model = undefined; // try again on the next reply
+        log({
+          level: "warn",
+          event: "speech_model_unavailable",
+          error: e.message,
+          attempt: ++attempts,
+        });
+        model = undefined;
+        // Keep trying in the background (the model downloads on first use and a download can
+        // fail), backing off to a minute, so the voice comes back without waiting for a reply.
+        clearTimeout(retry);
+        retry = setTimeout(() => void load(), Math.min(60_000, 2_000 * 2 ** Math.min(attempts, 5)));
+        retry.unref?.();
         return null;
       }));
 
