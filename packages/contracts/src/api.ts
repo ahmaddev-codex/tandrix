@@ -275,6 +275,17 @@ export type DeleteJobResponse = z.infer<typeof DeleteJobResponse>;
 
 export const ControlModeRequest = z.strictObject({ mode: ControlMode });
 
+/** POST /early-access: a visitor asks to hear when Tandrix is ready for their device. Public. */
+export const EarlyAccessRequest = z.strictObject({
+  /** Trimmed and lower-cased before it's checked, so pasted addresses with spaces still work. */
+  email: z.string().trim().toLowerCase().pipe(z.email().max(254)),
+  platform: z.enum(["mac", "iphone"]).optional(),
+});
+export type EarlyAccessRequest = z.infer<typeof EarlyAccessRequest>;
+/** The same answer whether or not the address was already on the list. */
+export const EarlyAccessResponse = z.strictObject({ ok: z.literal(true) });
+export type EarlyAccessResponse = z.infer<typeof EarlyAccessResponse>;
+
 /** GET /profile: what Tandrix calls this user, if they have said. */
 export const ProfileResponse = z.strictObject({ displayName: z.string().nullable() });
 export type ProfileResponse = z.infer<typeof ProfileResponse>;

@@ -3,6 +3,7 @@ import type { ShareLink } from "@tandrix/contracts";
 import type { ReportsRepo, StepCheck } from "../src/repos/reports";
 import type { NewPairing, PairingRow, PairingsRepo } from "../src/repos/pairings";
 import type { ProfilesRepo } from "../src/repos/profiles";
+import type { EarlyAccessRepo } from "../src/repos/early-access";
 import { noModelScreenGuide } from "../src/screen-guide";
 import type {
   PartsCheck,
@@ -269,6 +270,7 @@ export const noManuals = () => ({
   screenGuide: noModelScreenGuide,
   pairings: memoryPairings(),
   profiles: memoryProfiles(),
+  earlyAccess: memoryEarlyAccess(),
   reports: memoryReports(),
   sessionMinter: { mint: async () => null },
   manualPages: memoryManualPages(),
@@ -653,6 +655,17 @@ export function memoryPartsChecks(steps?: Map<string, JobStep>) {
       checks[i] = { ...checks[i]!, results: c.results };
       apply(c);
       return checks[i]!;
+    },
+  };
+  return repo;
+}
+
+export function memoryEarlyAccess() {
+  const rows = new Map<string, { platform: "mac" | "iphone" | null; at: string }>();
+  const repo: EarlyAccessRepo & { rows: typeof rows } = {
+    rows,
+    async add(email, platform, now) {
+      if (!rows.has(email)) rows.set(email, { platform, at: now });
     },
   };
   return repo;

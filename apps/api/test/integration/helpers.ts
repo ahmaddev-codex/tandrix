@@ -20,6 +20,7 @@ import type { StepChecker } from "../../src/step-checker";
 import type { PartsChecker } from "../../src/parts-checker";
 import { noModelScreenGuide } from "../../src/screen-guide";
 import { supabasePairingsRepo } from "../../src/repos/pairings";
+import { supabaseEarlyAccessRepo } from "../../src/repos/early-access";
 import { supabaseProfilesRepo } from "../../src/repos/profiles";
 import { supabaseReportsRepo } from "../../src/repos/reports";
 import { supabaseManualPagesRepo } from "../../src/repos/manual-pages";
@@ -124,6 +125,7 @@ export const app = createApp({
   screenGuide: noModelScreenGuide,
   pairings: supabasePairingsRepo(admin),
   profiles: supabaseProfilesRepo(admin),
+  earlyAccess: supabaseEarlyAccessRepo(admin),
   reports: supabaseReportsRepo(admin),
   sessionMinter: supabaseSessionMinter(admin),
   manualPages: supabaseManualPagesRepo(admin),

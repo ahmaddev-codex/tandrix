@@ -31,6 +31,8 @@ import type { ReportsRepo } from "./repos/reports";
 import { inlineScreenRoutes, screenRoutes } from "./routes/screen";
 import type { PairingsRepo } from "./repos/pairings";
 import { profileRoutes } from "./routes/profile";
+import { earlyAccessRoutes } from "./routes/early-access";
+import type { EarlyAccessRepo } from "./repos/early-access";
 import type { ProfilesRepo } from "./repos/profiles";
 import type { SessionMinter } from "./session-minter";
 import { detectionRoutes, SURFACE_HEADER, stepRoutes } from "./routes/steps";
@@ -63,6 +65,7 @@ export interface AppDeps {
   screenGuide: ScreenGuide;
   pairings: PairingsRepo;
   profiles: ProfilesRepo;
+  earlyAccess: EarlyAccessRepo;
   reports: ReportsRepo;
   sessionMinter: SessionMinter;
   manualPages: ManualPagesRepo;
@@ -148,6 +151,14 @@ export function createApp(deps: AppDeps) {
     "/report",
     publicReportRoutes({
       ...reportDeps(deps),
+      ...(deps.now ? { now: deps.now } : {}),
+      ...(deps.clientKey ? { clientKey: deps.clientKey } : {}),
+    }),
+  );
+  app.route(
+    "/early-access",
+    earlyAccessRoutes({
+      earlyAccess: deps.earlyAccess,
       ...(deps.now ? { now: deps.now } : {}),
       ...(deps.clientKey ? { clientKey: deps.clientKey } : {}),
     }),

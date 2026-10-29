@@ -25,6 +25,7 @@ import { supabaseProceduresRepo } from "./repos/procedures";
 import { supabaseDetectionsRepo } from "./repos/detections";
 import { supabaseStepStateRepo } from "./repos/step-state";
 import { supabasePairingsRepo } from "./repos/pairings";
+import { supabaseEarlyAccessRepo } from "./repos/early-access";
 import { supabaseProfilesRepo } from "./repos/profiles";
 import { supabaseReportsRepo } from "./repos/reports";
 import { supabaseSessionMinter } from "./session-minter";
@@ -95,6 +96,7 @@ const app = createApp({
   screenGuide,
   pairings: supabasePairingsRepo(admin),
   profiles: supabaseProfilesRepo(admin),
+  earlyAccess: supabaseEarlyAccessRepo(admin),
   reports: supabaseReportsRepo(admin),
   sessionMinter: supabaseSessionMinter(admin),
   manualPages: supabaseManualPagesRepo(admin),
