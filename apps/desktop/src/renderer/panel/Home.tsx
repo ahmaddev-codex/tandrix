@@ -1,8 +1,8 @@
 import type { JobDetailResponse } from "@tandrix/contracts";
 import { citationLabel, stepChip } from "@tandrix/ui";
-import { Button, HandoffBanner, Input, Notice, StepRow } from "@tandrix/ui/web";
+import { BrandMark, Button, HandoffBanner, Input, Notice, StepRow } from "@tandrix/ui/web";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import type { ScreenAccess } from "../../shared/bridge";
+import { TALK_KEYS, type ScreenAccess } from "../../shared/bridge";
 import { activeJob } from "../lib/active-job";
 import { api } from "../lib/api";
 import { useAuth } from "../lib/auth";
@@ -241,11 +241,21 @@ export function Home() {
 
   return (
     <main className="panel-page">
-      <header className="panel-bar">
-        <h1 className="heading-14">Tandrix</h1>
-        <Button variant="tertiary" size="sm" onClick={() => void auth.signOut()}>
-          Sign out
-        </Button>
+      {/* The sky header, as on the website: the mark, and that Tandrix is ready. */}
+      <header className="panel-sky">
+        <div className="panel-sky-row">
+          <h1 className="panel-brand">
+            <BrandMark size={26} />
+            Tandrix
+          </h1>
+          <button type="button" className="panel-glass" onClick={() => void auth.signOut()}>
+            Sign out
+          </button>
+        </div>
+        <p className="panel-ready">
+          <span className="panel-ready-dot" aria-hidden="true" />
+          Ready. Hold <kbd>{TALK_KEYS}</kbd> to talk.
+        </p>
       </header>
       <div className="panel-body panel-stack-6">
         {banner?.step ? (

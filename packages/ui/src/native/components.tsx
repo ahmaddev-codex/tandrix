@@ -210,7 +210,8 @@ export function Button({
           height,
           minWidth: iconOnly ? height : undefined,
           paddingHorizontal: iconOnly ? 0 : size === "field" ? space["space-5"] : space["space-4"],
-          borderRadius: radius["radius-md"],
+          // Pills, as on the website.
+          borderRadius: radius["radius-full"],
           flexDirection: "row",
           alignItems: "center",
           justifyContent: "center",

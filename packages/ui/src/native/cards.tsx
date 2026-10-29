@@ -246,12 +246,10 @@ export function StepRow({
         {String(index)}
       </Text>
       <View style={{ flex: 1, gap: space["space-2"] }}>
-        {/* Status first, on the title's line, so every row's state reads down one edge. */}
-        <View style={{ flexDirection: "row", alignItems: "center", gap: space["space-2"] }}>
+        {/* Status first, then the action under it, so every row's state reads down one edge. */}
+        <View style={{ alignItems: "flex-start", gap: space["space-2"] }}>
           <StatusChip status={status}>{statusLabel}</StatusChip>
-          <Text variant="heading-14" style={{ flex: 1 }}>
-            {title}
-          </Text>
+          <Text variant="heading-14">{title}</Text>
         </View>
         {source ? (
           <SourceChip kind={sourceKind}>{source}</SourceChip>

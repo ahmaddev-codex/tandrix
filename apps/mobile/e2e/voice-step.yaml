@@ -12,10 +12,12 @@ env:
 - runFlow: subflows/open-app.yaml
 - runFlow: subflows/open-job.yaml
 - runFlow: subflows/open-step.yaml
+# Centred, so the mic isn't under the step's bottom bar when it's tapped.
 - scrollUntilVisible:
     element:
       id: talk
     direction: DOWN
+    centerElement: true
     timeout: 20000
 # A tap: Tandrix keeps listening and says how the turn ends; a second tap ends it.
 - tapOn:
@@ -29,7 +31,13 @@ env:
 - extendedWaitUntil:
     visible: "Tandrix"
     timeout: 60000
-# A hold: talk, then let go.
+# A hold: talk, then let go. Centre the mic again first: the answer can move the page.
+- scrollUntilVisible:
+    element:
+      id: talk
+    direction: DOWN
+    centerElement: true
+    timeout: 20000
 - longPressOn:
     id: talk
 - extendedWaitUntil:

@@ -29,7 +29,8 @@
   gap: var(--space-2);
   height: var(--control-md);
   padding: 0 var(--space-3);
-  border-radius: var(--radius-md);
+  /* Pills, as on the website. */
+  border-radius: var(--radius-full);
   font-family: var(--font-sans);
   font-size: 13px;
   line-height: 18px;
@@ -1199,7 +1200,7 @@ button.tx-visual-frame:focus-visible {
   grid-template-columns: 1fr 1fr;
   gap: 2px;
   padding: 3px;
-  border-radius: 9px;
+  border-radius: var(--radius-full);
   background: var(--gray-100);
   box-shadow: 0 0 0 1px var(--border) inset;
 }
@@ -1210,7 +1211,7 @@ button.tx-visual-frame:focus-visible {
   gap: 6px;
   height: 34px;
   padding: 0 var(--space-3);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-full);
   border: 0;
   background: transparent;
   color: var(--text-secondary);
@@ -1653,8 +1654,10 @@ button.tx-visual-frame:focus-visible {
   min-width: 0;
 }
 .tx-steprow-head {
+  /* Status first, then the action under it. */
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
   gap: var(--space-2);
 }
 .tx-steprow-title {

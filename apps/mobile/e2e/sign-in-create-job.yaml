@@ -95,9 +95,15 @@ env:
       visible: Open
     commands:
       - tapOn: Open
+# Signed in on relaunch: home loads, then the project row (below the sky header) is there.
 - extendedWaitUntil:
-    # Project rows expose one accessibility label: "<title>, <status>".
-    visible: ${JOB_TITLE},.*
+    visible:
+      id: dashboard-menu
     timeout: 30000
+- scrollUntilVisible:
+    # Project rows expose one accessibility label: "<title>, <status>".
+    element: ${JOB_TITLE},.*
+    direction: DOWN
+    timeout: 20000
 - assertNotVisible: Local test sign-in
 - takeScreenshot: jobs-after-restart

@@ -27,9 +27,10 @@ export function OverviewTile({
 }) {
   const t = useTheme();
   const lightTile = tone === "light";
-  const backgroundColor = t.color[lightTile ? "surface-paper" : "surface-ink"];
-  const primaryInk = lightTile ? "ink-on-paper" : "ink-on-surface";
-  const secondaryInk = lightTile ? "ink-on-paper-secondary" : "ink-on-surface-secondary";
+  // The light tile wears the Tandrix blue, as on the website; the other is ink.
+  const backgroundColor = t.color[lightTile ? "highlight" : "surface-ink"];
+  const primaryInk = lightTile ? "on-blue" : "ink-on-surface";
+  const secondaryInk = lightTile ? "on-blue" : "ink-on-surface-secondary";
   return (
     <Pressable
       onPress={onPress}
@@ -40,7 +41,7 @@ export function OverviewTile({
         minHeight: 142,
         justifyContent: "space-between",
         padding: space["space-4"],
-        borderRadius: radius["radius-lg"],
+        borderRadius: radius["radius-lg"] * 1.5,
         backgroundColor,
         borderWidth: !lightTile && t.name === "dark" ? 1 : 0,
         borderColor: t.color["gray-600"],
