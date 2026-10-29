@@ -172,16 +172,20 @@
   transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 .tx-wordmark-link:hover .tx-wordmark-glyph {
-  transform: rotate(12deg) scale(1.05);
+  transform: scale(1.06);
 }
-.tx-wordmark-ring {
-  stroke: var(--text);
+/* The mark: the pointer on a dark tile, in the blue ring Tandrix wears while active. */
+.tx-mark-tile {
+  fill: #0b0b0c;
 }
-.tx-wordmark-spark {
-  fill: var(--highlight);
+.tx-mark-pointer {
+  fill: #ffffff;
 }
-.tx-wordmark-bar {
-  fill: var(--text);
+.tx-mark-ring-a {
+  stop-color: var(--highlight);
+}
+.tx-mark-ring-b {
+  stop-color: #a9cbff;
 }
 .tx-wordmark-sm {
   font-size: 15px;

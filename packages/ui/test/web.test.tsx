@@ -64,8 +64,8 @@ describe("BrandWordmark", () => {
     expect(link.getAttribute("href")).toBe("#top");
     expect(screen.getByText("Tandrix")).toBeTruthy();
     expect(link.querySelector(".tx-wordmark-glyph")).toBeTruthy();
-    expect(link.querySelector(".tx-wordmark-ring")).toBeTruthy();
-    expect(link.querySelector(".tx-wordmark-bar")).toBeTruthy();
+    expect(link.querySelector(".tx-mark-pointer")).toBeTruthy();
+    expect(link.querySelector(".tx-mark-tile")).toBeTruthy();
   });
 });
 
