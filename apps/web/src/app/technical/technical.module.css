@@ -76,7 +76,6 @@
   letter-spacing: -0.045em;
 }
 .sub {
-  margin-top: 12px;
   font-size: 17px;
   color: var(--text-2);
 }
@@ -84,51 +83,13 @@
   color: var(--soft);
 }
 
-/* The system: five nodes joined left to right */
-.stack {
+.head {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 12px;
-  margin: 36px 0 0;
-  padding: 12px;
-  border-radius: 30px;
-  background: var(--mist);
-  list-style: none;
-  counter-reset: node;
+  max-width: 640px;
+  margin-bottom: clamp(32px, 5vw, 56px);
 }
-.node {
-  position: relative;
-  display: grid;
-  align-content: start;
-  gap: 12px;
-  padding: 20px;
-  border-radius: 20px;
-  background: var(--paper);
-}
-.node + .node::before {
-  content: "";
-  position: absolute;
-  left: -12px;
-  top: 40px;
-  width: 12px;
-  height: 2px;
-  background: var(--highlight);
-}
-.node h3 {
-  font-size: 18px;
-  font-weight: 500;
-}
-.node ul {
-  display: grid;
-  gap: 8px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  font-size: 14px;
-  line-height: 1.45;
-  color: var(--text-2);
-}
-.nodeIcon {
+.icon {
   display: grid;
   place-items: center;
   width: 40px;
@@ -172,10 +133,6 @@
 .shots {
   display: grid;
   gap: 16px;
-}
-.caption {
-  font-size: 14px;
-  color: var(--text-2);
 }
 
 /* Cards in a grey tray */
@@ -234,32 +191,8 @@
   background: var(--highlight);
   color: #fff;
 }
-.stats {
-  display: grid;
-  gap: 12px;
-  margin: 28px 0 0;
-  padding: 0;
-  list-style: none;
-}
-.stats li {
-  display: flex;
-  align-items: baseline;
-  gap: 16px;
-  padding: 20px 22px;
-  border-radius: 20px;
-  background: var(--mist);
-}
-.stats b {
-  min-width: 2.6em;
-  font-size: clamp(36px, 4vw, 52px);
-  font-weight: 400;
-  letter-spacing: -0.04em;
-  color: var(--highlight);
-}
-.stats span {
-  font-size: 16px;
-  line-height: 1.45;
-  color: var(--text-2);
+.privacy {
+  max-width: 760px;
 }
 .end {
   display: flex;
@@ -269,18 +202,11 @@
 }
 
 @media (max-width: 1080px) {
-  .stack {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .node + .node::before {
-    display: none;
-  }
   .tray {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 @media (max-width: 760px) {
-  .stack,
   .tray,
   .trayTwo,
   .split {
