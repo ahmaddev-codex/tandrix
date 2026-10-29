@@ -1,6 +1,6 @@
 # Tandrix — Product Requirements Document
 
-**Status:** Hackathon MVP (Meta Global AI Developer Hackathon, 26 Oct – 4 Nov 2026)
+**Status:** Active Product Plan
 **Tagline:** See it. Understand it. Make it work.
 **Positioning:** One AI engineer for the physical and digital worlds.
 
@@ -14,7 +14,7 @@ Tandrix turns any manual, and any expert's experience, into step-by-step visual 
 
 All three surfaces share **one job session**. A job can start at the machine on the phone and continue on the laptop (for example, configuring the controller or monitoring software for the equipment) without repeating context.
 
-Tandrix is general-purpose: a phone project starts from one sentence about the goal, with equipment and a manual optional (a nameplate scan finds both when there is equipment); the Mac answers "teach me" questions about whatever is on screen. The hackathon demo hero is a **pump assembly**, chosen because it is real, physical, has a manual, and has a natural digital follow-up; the product and its copy must never read as pump-only.
+Tandrix is general-purpose: a phone project starts from one sentence about the goal, with equipment and a manual optional (a nameplate scan finds both when there is equipment); the Mac answers "teach me" questions about whatever is on screen. The initial demo hero is a **pump assembly**, chosen because it is real, physical, has a manual, and has a natural digital follow-up; the product and its copy must never read as pump-only.
 
 People should be able to tell what Tandrix does before they sign in: a website explains both apps, the phone opens on a short introduction, and the Mac's first run sets up screen access, the microphone and the hotkey.
 
@@ -162,7 +162,6 @@ Every step with timestamp, evidence photo/screenshot, status and safety confirma
 MVP is ready when, from a fresh install: the demo pump is identified from its nameplate, the parts check runs, at least three steps are guided with highlighted parts and photo checks, the job hands off to desktop where the pointer teaches a real screen step, and the report honestly separates verified, user-confirmed and unresolved items.
 
 ## References
-- Hackathon: https://dev.meta.ai/events/global-hackathon
 - Meta Model API models: https://dev.meta.ai/docs/models
 - Computer use guide: https://dev.meta.ai/docs/computer-use
 - Wearables Device Access Toolkit: https://developers.meta.com/blog/introducing-meta-wearables-device-access-toolkit/

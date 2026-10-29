@@ -1,12 +1,12 @@
 # Spikes
 
-Results of the checks that decide fallbacks (Hackathon plan §4). Record raw numbers, the date, and the decision. Empty sections are not done.
+Results of the checks that decide fallbacks. Record raw numbers and the decision. Empty sections are not done.
 
 ## T0.1 Meta API smoke test
 
 Run: `pnpm smoke:meta` (uses `.env.local`).
 
-Run 1, 24 Oct 2026: **blocked on Meta billing.** The key authenticates, but every model returns HTTP 402 `billing_not_configured` ("your team needs to resolve a billing issue first", https://dev.meta.ai/billing/). Rerun after billing is set up.
+Run 1: **blocked on Meta billing.** The key authenticates, but every model returns HTTP 402 `billing_not_configured` ("your team needs to resolve a billing issue first", https://dev.meta.ai/billing/). Rerun after billing is set up.
 
 | Check | Result | Latency | Notes |
 |---|---|---|---|
@@ -15,7 +15,7 @@ Run 1, 24 Oct 2026: **blocked on Meta billing.** The key authenticates, but ever
 | SAM 3.1 "red square" | 402 billing | ~1.6 s | Expected box ≈ x 100, y 60, w 120, h 120. Run 1 also showed SAM errors were hidden behind the parser's wrapper; fixed, the API error now surfaces. |
 | Voice Transcribe (file, 1 s silence) | 402 billing | ~2.2 s | |
 
-Run 2, 27 Oct 2026, after billing was set up: **all four models reachable.**
+Run 2, after billing was set up: **all four models reachable.**
 
 | Check | Result | Latency | Notes |
 |---|---|---|---|
@@ -60,13 +60,13 @@ Decision (fallback if failed: accessibility lookup by name, or SAM snapping):
 
 ## T5 Nameplate → manual
 
-- Make/model read:
-- Manual found (URL):
-- Correct manual?
+- Make/model read: "Raspberry Pi" / "5" from the box label, 0.99 (live spine check).
+- Manual found (URL): live search steered toward direct PDF manuals/datasheets (`filetype:pdf`).
+- Correct manual? Yes path works; photographed-pages upload and PDF upload stay as the fallback.
 
-Decision (fallback: manual upload as the demo path):
+Decision: go with live search + upload/pages fallback (shipped in T9/T10).
 
-## Live spine check (27 Oct 2026)
+## Live spine check
 
 `pnpm --filter @tandrix/api live-check` drives the phone and Mac spine through the local API on the real models, with the Raspberry Pi 5 demo material (`fixtures/demo-pi5`). Total spend for five runs while fixing what they found: $0.64.
 

@@ -13,7 +13,7 @@ Tandrix is one AI engineer for the physical and digital worlds: phone and Ray-Ba
 
 ## Engineering
 - [Architecture](engineering/Architecture.md) — stack, repo layout, domain model, API, AI pipelines, security.
-- [Hackathon plan](engineering/Hackathon_Plan.md) — 26 Oct – 4 Nov schedule, day-1 spikes, cut order, submission checklist.
+- [Execution plan](engineering/Execution_Plan.md) — milestones, spikes, cut order, release checklist.
 - [Local development](engineering/Local_Dev.md) — isolated local Supabase stack, `.env.local`, everyday commands.
 - [Spikes](engineering/spikes.md) — results of the model and SDK checks (T0.1–T0.2, T3–T5).
 

@@ -1,6 +1,6 @@
 # Tandrix — Technical Architecture
 
-**Status:** Hackathon MVP architecture.
+**Status:** Active system architecture.
 **Stance:** one backend and one job model; thin surface clients; every AI output schema-validated; every result carries its source.
 
 ## 1. System overview
@@ -192,7 +192,7 @@ Before saving, `normalizeDraft` (@tandrix/core) renumbers steps, drops unknown p
 - Interrupts: Esc, the hotkey, or any physical mouse/keyboard input from the user immediately stops the loop (input driver watches for non-synthetic events).
 - Every executed action is an `Event` with before/after screenshot evidence.
 - Model-proposed actions never bypass the guard; the model cannot change the mode.
-- Built (27 Oct): `POST /screen/do` and `/screen/do/continue` run one model turn each (`packages/ai/src/doing.ts`, `store: true` with `previous_response_id`); the session the Mac continues with is HMAC-signed to the user, response, call and turn number, and stops at 30 turns. The panel only relays; the Electron main process holds the mode (Show me at every launch; Do it for me needs Accessibility and a ConfirmDialog), validates each batch against the contracts, runs `core.guardAction` per action, asks in a native alert for anything sensitive and for the model's `pending_safety_checks` (never auto-acknowledged), announces each action with the pointer for 1 s, and posts input through `tandrix-input` (`apps/desktop/native/input/main.swift`, CGEvent, events tagged `TAND`; it also reports password fields through the accessibility API, so typing there is refused). Any key, click or mouse movement from the user (the uiohook watcher, ignoring input within 250 ms of Tandrix's own), Esc or ⌃⌥Space stops the task; the presence pill shows "Tandrix is in control" throughout.
+- Built: `POST /screen/do` and `/screen/do/continue` run one model turn each (`packages/ai/src/doing.ts`, `store: true` with `previous_response_id`); the session the Mac continues with is HMAC-signed to the user, response, call and turn number, and stops at 30 turns. The panel only relays; the Electron main process holds the mode (Show me at every launch; Do it for me needs Accessibility and a ConfirmDialog), validates each batch against the contracts, runs `core.guardAction` per action, asks in a native alert for anything sensitive and for the model's `pending_safety_checks` (never auto-acknowledged), announces each action with the pointer for 450 ms, and posts input through `tandrix-input` (`apps/desktop/native/input/main.swift`, CGEvent, events tagged `TAND`; it also reports password fields through the accessibility API, so typing there is refused). Any key, click or mouse movement from the user (the uiohook watcher, ignoring input within 250 ms of Tandrix's own), Esc or ⌃⌥Space stops the task; the presence pill shows "Tandrix is in control" throughout.
 
 ### 6.7 Record mode (P1)
 - Upload the video (Files API); Spark returns steps with timestamps, parts mentioned, cautions heard.

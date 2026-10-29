@@ -62,7 +62,6 @@ const sections: Array<[string, Array<[string, string]>]> = [
       ["META_MODEL_COMPUTER_USE", keep("META_MODEL_COMPUTER_USE")],
       ["META_MODEL_SEGMENTATION", keep("META_MODEL_SEGMENTATION")],
       ["META_MODEL_TRANSCRIBE", keep("META_MODEL_TRANSCRIBE")],
-      ["META_ASR_REALTIME_URL", keep("META_ASR_REALTIME_URL")],
       ["META_TIMEOUT_MS", keep("META_TIMEOUT_MS")],
     ],
   ],

@@ -1,10 +1,10 @@
-# Tandrix MVP — Task list
+# Tandrix — Task list
 
 See [plan.md](plan.md) for descriptions, acceptance criteria and verification.
 Tracks: **D** design, **A** mobile & glasses, **B** API & AI, **C** desktop (macOS).
 
-## Phase 0 — Prep (24–25 Oct)
-- [x] T0.1 Meta API smoke script (B): all four models live 27 Oct; $0.004 a run; results in docs/engineering/spikes.md
+## Phase 0 — Prep
+- [x] T0.1 Meta API smoke script (B): all four models live; $0.004 a run; results in docs/engineering/spikes.md
 - [ ] T0.2 Glasses toolkit sample running (A)
 - [ ] T0.3 Demo fixtures: pump photos, manual, desktop app choice (all)
 - [ ] T0.4 Monorepo skeleton + CI (B): local lint, format, typecheck, test and build pass; open until CI runs green on the first push
@@ -12,66 +12,69 @@ Tracks: **D** design, **A** mobile & glasses, **B** API & AI, **C** desktop (mac
 - [x] T0.6 Document the Tandrix design system (D): https://claude.ai/artifact/JXT7ErJARYzNkiv8EQjpvp, mirrored in docs/design/system
 - [x] T0.7 `packages/ui`: tokens and core components (D + A + C): phone feature components land in their feature tasks; galleries in T7 and T18
 
-## Phase 1 — Foundation and spikes (Mon 26 Oct)
+## Phase 1 — Foundation and spikes
 - [x] T1 Contracts: core entities (B)
 - [x] T2 Core rules: step status + safety gates (B)
 - [ ] T3 Spike: SAM highlighting (B)
 - [ ] T4 Spike: screen pointing (C)
-- [ ] T5 Spike: nameplate → manual (B)
+- [x] T5 Spike: nameplate → manual (B): decided — live search steered to direct PDFs (T10) with manual upload/pages as the fallback path; see spikes.md
 - [ ] T6 Jobs API with auth, deployed (B): built and tested locally; open until deployed (needs hosted Supabase + Fly.io/Railway)
 - [x] T7 Mobile shell: sign in, create/list jobs (A): passes on the iOS simulator (Maestro e2e); physical-device check by you; Android deferred
 - [ ] **Checkpoint 1:** CI green, API live, spikes decided, contracts frozen, ui gallery renders
 
-## Phase 2 — Physical core (27–29 Oct)
+## Phase 2 — Physical core
 - [x] T8 Capture photo as evidence (A): passes on the iOS simulator; camera shutter on a physical phone by you
 - [x] T9 Identify asset from nameplate (B + A): live, reads makes and models from nameplates, labels and packaging (Raspberry Pi 5 box: 0.99); a physical-phone check by you
-- [ ] T10 Find or attach manual (B + A): upload live (22-page kit); search live in two calls, finds the official page but prefers web pages to PDFs, so fetch can fail and the user uploads; open: steer search to PDFs
+- [x] T10 Find or attach manual (B + A): upload live (22-page kit); web search steered toward direct PDF manuals and datasheets (`filetype:pdf`)
 - [x] T11 Procedure from manual with citations (B + A): live, 18 steps from a 22-page manual, 15 with page citations, ~$0.12 and ~55 s
-- [ ] **Checkpoint 2:** nameplate → cited procedure on phone
+- [x] **Checkpoint 2:** nameplate → cited procedure on phone
 - [x] T12 Highlight parts on the step screen (B + A): live, boards and assemblies outlined (mask, 0.98) via plain-word concepts; small connectors are beyond SAM
 - [x] T13 Safety gates on steps (A): gates, starting and finishing steps pass on the iOS simulator; refusal and skipping covered by API and integration tests; physical-device check by you
 - [x] T14 Voice in and out on phone (B + A): transcription and answers live; answers name the step that covers a question; speaking on a physical phone by you
 - [ ] **Checkpoint 3:** three steps by voice with highlights
 - [x] T15 Step check by photo (B + A): live, fail then pass with specific reasons
 - [x] T16 Parts check (B + A): live, each kind of part looked for by what it looks like; generic SAM words find nothing
-- [ ] T17 Offline cache and upload queue (A): built; an offline start shows Pending and syncs on reconnect on the iOS simulator. Caching the manual PDF and reference images for offline use is not done yet
+- [ ] T17 Offline cache and upload queue (A): built; an offline start shows Pending and syncs on reconnect on the iOS simulator. Caching the manual PDxF and reference images for offline use is not done yet
 - [ ] **Checkpoint 4:** full phone path
 
-## Phase 3 — Desktop (30 Oct)
+## Phase 3 — Desktop
 - [x] T18 Electron shell with overlay and panel (C): verified on this Mac with one display; two displays and the built app's Screen Recording prompt are manual checks
 - [ ] T19 Show me: ask → pointer + voice (C + B): live on a synthetic app, instructive replies, pointer inside the target 3 of 5 runs and 10 px below it twice; open until the T4 spike (18 of 20) in the demo app
 - [ ] T20 Screen step verification (C): built and verified with fixtures; live check not yet run
 - [ ] **Checkpoint 5:** teach-me-this-screen works
 
-## Phase 4a — Product surfaces (added 25 Oct)
+## Phase 4a — Product surfaces
 - [x] P1 Positioning and copy: phone = physical projects, Mac = software, Clicky-style
 - [x] P2 Goal-first projects: steps from a goal; equipment and manual optional
 - [x] P3 Mac: Show me without a job; Clicky-first panel; first-run setup
 - [x] P4 Phone: intro, permissions, home ("What are you building or fixing?"); all phone flows pass
-- [ ] P5 Website: landing page done (Next.js, light and dark, phone width); report API and share links done; report page /r/[token] and the phone's Share report to do (T23)
+- [x] P5 Website: consumer-first rebuild done (ask-led hero, five use-case sections with honest labels, demo slot, Mac + project demos, /technical, credits, metadata, mobile nav, licensed local photos, lazy three.js); report API and share links done; report page /r/[token] verified; demo clips pending (H8)
 - [ ] P6 Known gaps: offline manual/reference caching, deploy readiness, Mac icons and packaging, design system additions
-- [ ] **Checkpoint 4a:** clear what each app does; project from a sentence; Mac teaches with no job
+- [x] **Checkpoint 4a:** clear what each app does; project from a sentence; Mac teaches with no job
 
 - [x] P7 Step visuals: each step shows the user's reference photo, the cited manual page (rendered once, zoomable) and the latest photo, on the phone and the Mac; the photo check compares against the reference. Open: crop to the cited figure; reference in the report (with T23)
 - [ ] P8 Mixed demo material: more than one product (electronics build, a bike repair, a home-network install) plus synthetic app screens for Show me and the T4 spike
 
-## Phase 4b — Real product, end to end (added 27 Oct)
-- [ ] R1 No demo data: fixture model mode removed (API, config, scripts, docs); production refuses to start without META_API_KEY; local test jobs, procedures, manuals and assets deleted (Pi 5 live job kept). E2E on real models done (see I1)
+## Phase 4b — Real product, end to end
+- [ ] R1 No demo data: code verified — no fixture mode in API/config/scripts/docs (only honest noModel "unavailable" fallbacks, unreachable in prod since META_API_KEY is required). Open: delete local test jobs/procedures/manuals/assets (keep Pi 5 live job; needs local Supabase) + E2E on real models (see I1, needs simulator)
 - [ ] I1 Intake at project start: built. One screen takes the goal, label photo, where-it-stands photos, the manual (PDF or pages, else search), the parts photo and notes; one pass sets it up with visible stages and resumes from a stopped stage. Live run on the Pi 5: label read, manual found, 10 steps (9 cited), parts flagged, about $0.20 and 2 min. E2E flows rewritten for real models: all pass (sign-in with intake, gallery, photo, identify, manual pages, highlight, safety, voice, check, visuals, parts, handoff, offline), seeded per flow by `e2e:seed`
 - [ ] L1 Point the camera: live camera on the phone; ask "what is this?" or "where does this go?" by voice or tap, and Tandrix answers and highlights on the live view (frames on demand, not streamed)
-- [x] V1 Voice: natural voice (Kokoro on the API, Premium/Enhanced device voice fallback, never robotic); mic held or tapped on phone and Mac, silence never sent; hold ⌥⌘ to talk on the Mac; presence bar at the top of the screen instead of the panel. Open: wake word ("Tandrix")
-- [ ] L2 Learn software on the Mac: "teach me Photoshop" starts a software project with steps done on screen, each with Show me and a screen check
+- [x] V1 Voice: natural voice (Kokoro on the API, pre-warmed cache, Premium/Enhanced device voice fallback, never robotic); mic held or tapped on phone and Mac, silence never sent; hold ⌥⌘ to talk on the Mac; presence bar at the top of the screen instead of the panel; speech timeout extended to 20s
+- [ ] L2 Learn software on the Mac: conversational lessons shipped (lesson detector + Software Coach prompt, one step per turn with "say next" check-ins, Do-mode demo with narration); open: a software *project* with persisted steps, each with Show me and a screen check
 - [ ] D1 Deploy: API container on Fly.io, hosted Supabase (migrations, buckets, auth), website on Vercel, EAS profiles, signed Mac build, production env checklist; deploy itself after the user's go-ahead
-- [x] T27a Do it for me on the Mac (built; a real run on this Mac is the user's check, since it acts on and sends the real screen): a switch in the panel and by voice ("do it for me"), the in-control pill with Stop, actions run one at a time through the action guard, a confirm before anything that sends, buys, deletes or types a password, any key or mouse movement takes control back
+- [x] T27a Do it for me on the Mac: a switch in the panel and by voice ("do it for me" or direct commands like "Open Spotify"), the in-control pill with Stop, actions run one at a time through the action guard, a confirm before anything that sends, buys, deletes or types a password, any key or mouse movement takes control back; Swift native driver Cocoa runloop event pumping; single-open instant reply ("Opened Spotify.") and multi-step continuation
+- [x] M1 Multi-agent architecture: live system is the sixteen `prompts.ts` skills (dead `routeAgent` registry removed 2026-10-28, prompt goldens started); expanded capabilities without false refusals ("Tandrix cannot do that"), full query/command typing in Do it for me, and automatic mode switching when asked to act
+- [x] M2 System latency and execution speedup: parallel SAM 3.1 segmentation (`highlightParts`, `checkParts`), low-effort reasoning on interactive screen/desktop turns, deterministic app-plan fast path, faster action announce/settle cadence, expanded native macOS key mappings, parallel API DB/storage fetches, PDF render deduplication, and parallel mobile intake uploads
+- [x] M3 Intentional visual guidance: three distinct modes — Mode A (point/identify with subtle arrow dot, no box), Mode B (region highlight around ribbons/toolbars/sections only when helpful), and Mode C (progressive step badges)
 - [ ] U1 UI pass on every surface (phone, Mac panel and overlay, website): hierarchy, spacing, motion and empty, loading and error states, to the design system; published back to the design system
-- [ ] A1 Loophole audit: every screen's dead ends, missing ways back, states with no action, copy that promises what isn't built; fixed or removed
-- [ ] W1 Wake word "Tandrix" / "Wake up Tandrix": on-device recognition (Mac and phone), opt-in, presence shown while listening
+- [x] A1 Loophole audit: fixed voice input silently dead while working (barge-in now queues spoken follow-ups — FAQ already promised it); added branded web 404. Verified: home/new-job/report/job-detail empty + error states all have actions; Setup/access notices link to Settings; no TODO/stale-promise copy in apps
+- [x] W1 Wake word "Tandrix" / "Wake up Tandrix": on-device recognition (Mac and phone) via `parseWakePhrase` and desktop wake engine, handles trailing commands and punctuation seamlessly
 - [ ] **Checkpoint 6b:** a new project from intake to report on real models, on the simulator and the Mac, against the deployed stack
 
-## Phase 4 — Continuity (31 Oct)
+## Phase 4 — Continuity
 - [x] T21 Desktop pairing by QR (C): the Mac's live code approved on the simulator signs the panel in; pair-mac e2e passes; scanning with a physical iPhone is a manual check
 - [x] T22 Handoff between devices (A + C): phone → Mac and Mac → phone live on the simulator and this Mac; 5/5 handoffs under 0.6 s locally; handoff e2e passes; hosted latency at T32
-- [ ] T23 Job report and share link (B)
+- [x] T23 Job report and share link (B): API + /r/[token] reader + mobile owner UI (report screen, create/revoke) + 10-link cap; API tests pass; on-device E2E pending (H15)
 - [ ] **Checkpoint 6:** full spine twice; human review
 
 ## Phase 5 — Glasses (last, after everything else)
@@ -80,16 +83,35 @@ Tracks: **D** design, **A** mobile & glasses, **B** API & AI, **C** desktop (mac
 - [ ] T25 Glasses audio + voice capture trigger, both platforms (A)
 - [ ] **Checkpoint 7:** one step fully through glasses on iOS and Android
 
-## Phase 6 — Extend and harden (2 Nov)
+## Phase 6 — Extend and harden
 - [x] T26 Action guard for Do it for me (C; can start after Phase 1)
-- [ ] T27 Do it for me on desktop (C)
+- [x] T27 Do it for me on desktop (C)
 - [ ] T28 Record mode, 6 h time-box (B + A)
 - [ ] T29 Multilingual (A)
-- [ ] T30 Hardening pass + negative tests (all)
+- [x] T30 Hardening pass + negative tests (all): `docs/engineering/negative-tests.md` checklist written; genuine gap found and closed (DELETE /jobs/:id removes evidence objects + cascading rows, manual bytes kept as shared); async procedure stays H10; manual-device rows stay H15
 - [ ] **Checkpoint 8:** feature freeze, negatives signed off
 
-## Phase 7 — Ship (3–4 Nov)
+## Phase 7 — Ship
 - [ ] T31 Demo reliability + 5 rehearsals (all)
 - [ ] T32 Builds and README (all)
-- [ ] T33 Demo video and submission (all)
-- [ ] **Checkpoint 9:** submitted by 3 PM ET 4 Nov
+- [ ] T33 Demo video and release package (all)
+- [ ] **Checkpoint 9:** release ready
+
+## Phase 8 — Audit remediation & consumer relaunch (2026-10-28)
+- [x] H1 Deploy build fix (Dockerfile ai COPY) + env docs (TANDRIX_ENV, spend, web/renderer URLs; dead ASR var removed)
+- [x] H2 API abuse hardening (per-user model limits, XFF client key, transcribe body limit, share cap, mime/pointer/claim fixes + tests)
+- [x] H3 Owner report UI on mobile (closes T23's loop; E2E pending H15)
+- [x] H4 Latency (indexes migration, latest-checks RPC, record_check step return, parallel reads, per-step confirmations, async spend, render pool, mobile timeout)
+- [x] H5 Marketing consumer rebuild (/technical, credits, metadata, nav menu, licensed photos, lazy three.js, a11y); clips pending H8
+- [x] H6 Agent-skills cleanup (dead registry + ScreenReply removed; prompt goldens; shared-rules fix)
+- [x] H7 Desktop gallery.html build entry
+- [x] H8 Demo clips from owner → wired into slot + credits: 4 clips cycle as the fullscreen hero reel with chapter progress; all 5 credited on /credits
+- [ ] H9 Integration suites on local stack (blocked: Docker in sandbox)
+- [ ] H10 Async procedure pipeline (spec + build)
+- [ ] H11 Deploy pipeline (Fly + Supabase + Vercel + EAS + signed Mac + Sentry; needs accounts)
+- [x] H12 control_mode mirror endpoint + event emission: PATCH /jobs/:id/control-mode records the mode + control_mode_changed event; desktop mirrors on every switch (fire-and-forget)
+- [x] H13 expert_recording reservation doc (`docs/engineering/expert-recording.md`); producer stays T28
+- [ ] H14 Shared rate-limit store (needs Redis decision)
+- [ ] H15 Device QA (physical-phone E2E, real-device web, Lighthouse, OG unfurls)
+- [x] H16 Fly VM sizing (`docs/engineering/fly-sizing.md`): bump to shared-cpu-2x/1GB for release; split TTS only if measured p95 synth > ~2s; no page-count cap needed
+- [x] H17 Guard sensitive-detection beyond English keywords: DE/FR/ES/IT/PT equivalents on all six categories with Unicode-aware word boundaries + substring tests
