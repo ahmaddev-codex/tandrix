@@ -1,0 +1,144 @@
+/* Technical work: the home page's palette, a sky header and grey trays of cards. */
+.page {
+  --ink: var(--gray-1000);
+  --text-2: var(--text-secondary);
+  --soft: var(--gray-600);
+  --paper: var(--background-100);
+  --mist: var(--background-200);
+  --line: var(--gray-200);
+  --line-strong: var(--gray-400);
+  --page-bg: var(--background-100);
+  min-height: 100vh;
+  padding: 12px;
+  background: var(--page-bg);
+  color: var(--ink);
+}
+.page *,
+.page *::before,
+.page *::after {
+  box-sizing: border-box;
+}
+.hero {
+  display: grid;
+  justify-items: start;
+  gap: 22px;
+  padding: 40px clamp(20px, 5vw, 64px) 64px;
+  border-radius: 28px;
+  color: #fff;
+  background:
+    linear-gradient(180deg, rgba(10, 92, 220, 0.9), rgba(46, 125, 255, 0.4)),
+    url("/photos/sky-close.jpg") center / cover no-repeat,
+    #2d95ea;
+}
+.back {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #fff;
+  text-decoration: none;
+}
+.back:hover {
+  text-decoration: underline;
+  text-underline-offset: 6px;
+}
+.title {
+  max-width: 18ch;
+  margin-top: 24px;
+  text-wrap: balance;
+  font-size: clamp(40px, 5.6vw, 72px);
+  font-weight: 500;
+  line-height: 1.02;
+  letter-spacing: -0.055em;
+}
+.lead {
+  max-width: 560px;
+  font-size: 18px;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.92);
+}
+.body {
+  display: grid;
+  gap: clamp(64px, 8vw, 104px);
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: clamp(64px, 8vw, 104px) clamp(8px, 3vw, 40px) 96px;
+}
+.h2 {
+  font-size: clamp(32px, 4vw, 52px);
+  font-weight: 500;
+  line-height: 1.04;
+  letter-spacing: -0.05em;
+}
+.soft {
+  color: var(--soft);
+}
+.tray {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 32px;
+  padding: 12px;
+  border-radius: 30px;
+  background: var(--mist);
+}
+.trayTwo {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.card {
+  display: grid;
+  align-content: end;
+  gap: 10px;
+  min-height: 220px;
+  padding: 22px;
+  border-radius: 20px;
+  background: var(--paper);
+}
+.card h3 {
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+}
+.card p {
+  font-size: 15.5px;
+  line-height: 1.5;
+  color: var(--text-2);
+}
+.phone {
+  justify-self: center;
+  width: min(240px, 70%);
+}
+.scenes {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+  gap: 24px;
+  align-items: center;
+  margin-top: 32px;
+}
+.caption {
+  margin-top: 14px;
+  font-size: 14px;
+  color: var(--text-2);
+}
+.hood {
+  display: grid;
+  gap: 20px;
+  max-width: 720px;
+}
+.prose {
+  font-size: 18px;
+  line-height: 1.6;
+  color: var(--text-2);
+}
+.ctaRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+@media (max-width: 860px) {
+  .tray,
+  .trayTwo,
+  .scenes {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

@@ -1,0 +1,104 @@
+/* The presence pill as a section label: in the flow, centred by its parent. */
+.pillHost {
+  position: relative;
+  inset: auto;
+  display: inline-flex;
+  pointer-events: auto;
+  --tx-level: 0.6;
+}
+.pillHost :global(.tx-presence-pill) {
+  height: 36px;
+  font-size: 13px;
+}
+.meter span {
+  height: calc(4px + 12px * var(--tx-bar));
+}
+@media (prefers-reduced-motion: no-preference) {
+  .meter span {
+    animation: bar 1.1s ease-in-out infinite;
+  }
+  .meter span:nth-child(2) {
+    animation-delay: 0.12s;
+  }
+  .meter span:nth-child(3) {
+    animation-delay: 0.24s;
+  }
+  .meter span:nth-child(4) {
+    animation-delay: 0.36s;
+  }
+  .meter span:nth-child(5) {
+    animation-delay: 0.48s;
+  }
+  .pillHost[data-state="listening"] :global(.tx-presence-pill)::before {
+    animation: tx-presence-turn 3.2s linear infinite;
+  }
+}
+@keyframes bar {
+  50% {
+    transform: scaleY(0.45);
+  }
+}
+
+/* Buttons: sentence case, black for the main action, quiet grey for the other. */
+.cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 10px;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    background-color 160ms ease,
+    box-shadow 160ms ease;
+}
+.ctaArrowed {
+  padding-right: 14px;
+}
+.ctaBlock {
+  width: 100%;
+}
+.ctaDisc {
+  display: inline-grid;
+  place-items: center;
+  transition: transform 200ms ease;
+}
+.cta:hover .ctaDisc {
+  transform: translate(2px, -2px);
+}
+.cta:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 3px;
+}
+.cta-ink {
+  background: var(--ink);
+  color: var(--page-bg);
+}
+.cta-ink:hover {
+  background: color-mix(in srgb, var(--ink) 82%, var(--page-bg));
+}
+.cta-light {
+  background: var(--mist);
+  color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+.cta-light:hover {
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+}
+.cta-blue {
+  background: var(--highlight);
+  color: #fff;
+}
+.cta-blue:hover {
+  background: var(--blue-700);
+}
+.cta-outline {
+  background: transparent;
+  color: inherit;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 30%, transparent);
+}

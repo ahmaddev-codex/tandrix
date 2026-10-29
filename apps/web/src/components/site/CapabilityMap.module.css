@@ -1,0 +1,116 @@
+.map {
+  position: relative;
+  aspect-ratio: 1200 / 640;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.lines {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.main,
+.leaf {
+  stroke: var(--line-strong);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+}
+.main {
+  stroke: color-mix(in srgb, var(--highlight) 55%, var(--line-strong));
+}
+.center,
+.hub,
+.leafLabel {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+}
+.center {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-size: clamp(30px, 3.4vw, 46px);
+  font-weight: 500;
+  letter-spacing: -0.04em;
+  color: var(--ink);
+}
+.spark {
+  fill: var(--highlight);
+}
+.hub {
+  font-size: clamp(16px, 1.75vw, 24px);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+.leafLabel {
+  font-size: clamp(12px, 1.2vw, 15px);
+  color: var(--text-2);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .map .main,
+  .map .leaf {
+    stroke-dashoffset: 1;
+  }
+  .map .hub,
+  .map .leafLabel {
+    opacity: 0;
+  }
+  .shown .main,
+  .shown .leaf {
+    animation: draw 700ms ease-out forwards;
+    animation-delay: var(--d);
+  }
+  .shown .hub {
+    animation: fade 500ms ease-out 300ms forwards;
+  }
+  .shown .leafLabel {
+    animation: fade 500ms ease-out 700ms forwards;
+  }
+}
+@keyframes draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes fade {
+  to {
+    opacity: 1;
+  }
+}
+.list {
+  display: none;
+}
+@media (max-width: 760px) {
+  .map {
+    display: none;
+  }
+  .list {
+    display: grid;
+    gap: 28px;
+  }
+  .list h3 {
+    font-size: 22px;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+  }
+  .list ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 12px 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .list li {
+    padding: 6px 12px;
+    border-radius: 999px;
+    box-shadow: inset 0 0 0 1px var(--line);
+    font-size: 14px;
+    color: var(--text-2);
+  }
+}

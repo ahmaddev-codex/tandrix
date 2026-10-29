@@ -19,11 +19,7 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default async function SharedReportPage({
-  params,
-}: {
-  params: Promise<{ token: string }>;
-}) {
+export default async function SharedReportPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
   const result = await fetchSharedReport(token);
 
@@ -98,9 +94,7 @@ export default async function SharedReportPage({
                             <StatusChip status="verified">{safetyGateLabel[s.gate]}</StatusChip>
                             <span className={styles.detailStep}>Step {s.stepIndex}</span>
                           </div>
-                          <span className={styles.detailTime}>
-                            {formatDateTime(s.confirmedAt)}
-                          </span>
+                          <span className={styles.detailTime}>{formatDateTime(s.confirmedAt)}</span>
                         </li>
                       ))}
                     </ul>
@@ -122,9 +116,7 @@ export default async function SharedReportPage({
                       <div>
                         <dt>Missing</dt>
                         <dd
-                          className={
-                            result.report.parts.missing > 0 ? styles.partsWarn : undefined
-                          }
+                          className={result.report.parts.missing > 0 ? styles.partsWarn : undefined}
                         >
                           {result.report.parts.missing}
                         </dd>
@@ -149,4 +141,3 @@ export default async function SharedReportPage({
     </div>
   );
 }
-

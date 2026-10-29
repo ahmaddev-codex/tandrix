@@ -1,10 +1,5 @@
 // Formatting and fetching for shared job reports (/r/[token]).
-import {
-  JobReportResponse,
-  type Job,
-  type ReportStep,
-  type SafetyGate,
-} from "@tandrix/contracts";
+import { JobReportResponse, type Job, type ReportStep, type SafetyGate } from "@tandrix/contracts";
 import { citationLabel, formatDate, formatTime, stepChip, type SourceKind } from "@tandrix/ui";
 import type { JobReportStep } from "@tandrix/ui/web";
 
@@ -98,4 +93,3 @@ export async function fetchSharedReport(
     return { kind: "error", message: REPORT_UNAVAILABLE };
   }
 }
-

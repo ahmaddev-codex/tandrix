@@ -1,319 +1,570 @@
-/* The Tandrix site. Tokens from @tandrix/ui only; one width, left-aligned. */
-.nav,
-.hero,
-.bench,
-.screen,
-.handoff,
-.careful,
-.closing,
-.footer {
-  --page: min(1180px, calc(100vw - var(--space-6) - var(--space-6)));
+/* The marketing page: white, black and the Tandrix blue, from the design system's tokens (which
+   switch for dark mode). Clean bands, one idea per section, real-looking product pictures. */
+.page {
+  --ink: var(--gray-1000);
+  --page-bg: var(--background-100);
+  --mist: var(--background-200);
+  --line: var(--gray-200);
+  --line-strong: var(--gray-400);
+  --text-2: var(--text-secondary);
+  --soft: var(--gray-600);
+  --band: var(--background-200);
+  --max: 1240px;
+  --gutter: clamp(16px, 4vw, 48px);
+  background: var(--page-bg);
+  color: var(--ink);
+  overflow-x: clip;
+}
+.page *,
+.page *::before,
+.page *::after {
+  box-sizing: border-box;
+}
+.hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.center {
+  text-align: center;
 }
 
-/* Nav */
-.nav {
+/* Header */
+.header {
   position: sticky;
   top: 0;
-  z-index: 10;
-  background: color-mix(in srgb, var(--background-100) 82%, transparent);
-  backdrop-filter: saturate(180%) blur(16px);
-  border-bottom: 1px solid var(--border);
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  height: 68px;
+  padding: 0 var(--gutter);
+  background: color-mix(in srgb, var(--page-bg) 88%, transparent);
+  backdrop-filter: saturate(1.4) blur(14px);
+  -webkit-backdrop-filter: saturate(1.4) blur(14px);
+  box-shadow: 0 1px 0 var(--line);
 }
-.navInner {
-  width: var(--page);
-  min-width: 0;
+.header a:first-child {
+  text-decoration: none;
+  color: var(--ink);
+}
+.nav {
+  display: flex;
+  gap: 28px;
+  margin-left: auto;
+}
+.nav a {
+  font-size: 15px;
+  color: var(--ink);
+  text-decoration: none;
+  opacity: 0.8;
+}
+.nav a:hover {
+  opacity: 1;
+}
+.headerEnd {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.headerCtas {
+  display: flex;
+  gap: 8px;
+}
+
+/* Hero: the headline, with real pieces of Tandrix floating round it */
+.hero {
+  position: relative;
+  min-height: min(900px, calc(100vh - 68px));
+  display: grid;
+  place-items: center;
+  padding: 72px var(--gutter);
+}
+.heroCopy {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  justify-items: center;
+  gap: 22px;
+  max-width: 680px;
+  text-align: center;
+}
+.heroTitle {
+  font-size: clamp(44px, 6.4vw, 84px);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.05em;
+  text-wrap: balance;
+}
+.heroLead {
+  max-width: 500px;
+  font-size: 19px;
+  line-height: 1.5;
+  color: var(--text-2);
+  text-wrap: pretty;
+}
+.heroCtas {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 6px;
+}
+.tiles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.tile {
+  position: absolute;
+  margin: 0;
+  display: grid;
+  gap: 10px;
+}
+.tile figcaption {
+  font-size: 13px;
+  color: var(--text-2);
+}
+.tileArt {
+  border-radius: 14px;
+}
+.t1 {
+  left: 2%;
+  top: 7%;
+  width: 290px;
+}
+.t2 {
+  left: 4%;
+  top: 42%;
+  width: 132px;
+}
+.t3 {
+  left: 15%;
+  top: 68%;
+  width: 230px;
+}
+.t4 {
+  right: 2%;
+  top: 6%;
+  width: 290px;
+}
+.t5 {
+  right: 9%;
+  top: 66%;
+  width: 270px;
+}
+.t6 {
+  right: 3%;
+  top: 40%;
+  width: 220px;
+}
+.t7 {
+  left: 38%;
+  top: 80%;
+  width: 210px;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .tile {
+    animation:
+      tile-in 900ms cubic-bezier(0.2, 0.7, 0.2, 1) both,
+      drift 9s ease-in-out 900ms infinite alternate;
+  }
+  .t2,
+  .t5 {
+    animation-delay: 120ms, 1s;
+    animation-duration: 900ms, 11s;
+  }
+  .t3,
+  .t6 {
+    animation-delay: 220ms, 1.2s;
+    animation-duration: 900ms, 10s;
+  }
+  .t7 {
+    animation-delay: 320ms, 1.4s;
+  }
+}
+@keyframes tile-in {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.97);
+  }
+}
+@keyframes drift {
+  to {
+    transform: translateY(-10px);
+  }
+}
+
+/* Sections */
+.band {
+  padding: clamp(80px, 10vw, 136px) var(--gutter);
+  background: var(--band);
+}
+.band > * {
+  max-width: var(--max);
+  margin-left: auto;
+  margin-right: auto;
+}
+.section {
+  max-width: var(--max);
   margin: 0 auto;
-  height: 56px;
+  padding: clamp(80px, 10vw, 136px) var(--gutter);
+}
+.headCenter {
+  display: grid;
+  justify-items: center;
+  gap: 18px;
+  max-width: 720px;
+  margin-bottom: clamp(48px, 6vw, 80px);
+  text-align: center;
+}
+.h2 {
+  font-size: clamp(36px, 4.6vw, 60px);
+  font-weight: 500;
+  line-height: 1.04;
+  letter-spacing: -0.045em;
+  text-wrap: balance;
+}
+.lead {
+  max-width: 560px;
+  font-size: 18px;
+  line-height: 1.55;
+  color: var(--text-2);
+}
+
+/* Scenes placed inside the day timeline and explorer */
+.pair {
+  position: relative;
+  width: min(560px, 100%);
+}
+.pairPhone {
+  position: absolute;
+  right: -4%;
+  bottom: -18%;
+  width: 32%;
+}
+.phoneOnly {
+  width: min(240px, 60%);
+}
+
+/* Principles: three columns, ruled on top */
+.principles {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(24px, 4vw, 56px);
+  margin-top: clamp(48px, 6vw, 72px);
+}
+.principles article {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  padding-top: 22px;
+  border-top: 1px solid var(--line-strong);
+}
+.principles h3 {
+  font-size: 20px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+.principles p {
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--text-2);
+}
+
+/* Platforms */
+.platforms {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+.platforms article {
+  display: grid;
+  align-content: start;
+  justify-items: start;
+  gap: 12px;
+  padding: 28px;
+  border-radius: 18px;
+  background: var(--page-bg);
+  box-shadow: 0 0 0 1px var(--line);
+}
+.platforms h3 {
+  margin-top: 8px;
+  font-size: 24px;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+}
+.platforms p {
+  margin-bottom: 10px;
+  font-size: 16px;
+  line-height: 1.55;
+  color: var(--text-2);
+}
+
+/* Questions */
+.faq {
+  max-width: 820px;
+  margin: 0 auto;
+  padding: clamp(80px, 10vw, 136px) var(--gutter) 48px;
+}
+.faqList {
+  margin-top: 48px;
+  border-top: 1px solid var(--line);
+}
+.faqItem {
+  border-bottom: 1px solid var(--line);
+  scroll-margin-top: 90px;
+}
+.faqItem summary {
   display: flex;
   align-items: center;
   justify-content: space-between;
-}
-.wordmark {
-  font-weight: 600;
-  font-size: 16px;
-  letter-spacing: -0.32px;
-  text-decoration: none;
-}
-.navLinks {
-  display: flex;
-  min-width: 0;
-  gap: var(--space-6);
-  font-size: 14px;
-}
-.navLinks a {
-  color: var(--text-secondary);
-  text-decoration: none;
-}
-.navLinks a:hover {
-  color: var(--text);
-}
-
-/* Shared text */
-.lead {
+  gap: 16px;
+  padding: 22px 0;
   font-size: 18px;
-  line-height: 28px;
-  color: var(--text-secondary);
-  max-width: 34em;
-  min-width: 0;
-}
-.body {
-  font-size: 15px;
-  line-height: 24px;
-  color: var(--text-secondary);
-  max-width: 36em;
-}
-.small {
-  font-size: 13px;
-  color: var(--text-tertiary);
-}
-.cover {
-  object-fit: cover;
-}
-
-/* Hero: the words, then the viewfinder doing what the words say. */
-.hero {
-  position: relative;
-  isolation: isolate;
-  width: var(--page);
-  margin: 0 auto;
-  padding: var(--space-16) 0 var(--space-12);
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
-  gap: var(--space-12);
-  align-items: center;
-}
-.hero::before {
-  content: "";
-  position: absolute;
-  z-index: -1;
-  inset: -10% -18% -6% 26%;
-  background: radial-gradient(
-    ellipse at 62% 46%,
-    color-mix(in srgb, var(--blue-100) 82%, transparent),
-    transparent 68%
-  );
-  pointer-events: none;
-}
-.hero > * {
-  min-width: 0;
-}
-.heroCopy {
-  display: grid;
-  min-width: 0;
-  gap: var(--space-5);
-  align-content: center;
-}
-.heroCopy h1 {
-  max-width: min(11em, 100%);
-  text-wrap: balance;
-}
-.ctas {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-3);
-}
-
-/* On the bench: aligned to the page container, not edge-to-edge across the viewport. */
-.bench {
-  width: var(--page);
-  margin: 0 auto;
-  display: grid;
-  grid-template-columns: 44fr 56fr;
-  min-height: 460px;
-  background: var(--background-200);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-}
-.benchPhoto {
-  position: relative;
-  min-height: 320px;
-}
-.benchCopy {
-  display: grid;
-  gap: var(--space-4);
-  align-content: center;
-  padding: var(--space-10);
-}
-.benchCopy h2 {
-  max-width: 15em;
-  text-wrap: balance;
-}
-
-/* On screen */
-.screen {
-  width: var(--page);
-  margin: 0 auto;
-  padding: var(--space-16) 0;
-  display: grid;
-  gap: var(--space-8);
-  border-top: 1px solid var(--border);
-}
-.screenCopy {
-  display: grid;
-  gap: var(--space-4);
-}
-.screenCopy h2 {
-  max-width: 16em;
-  text-wrap: balance;
-}
-.screenPair {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: var(--space-8);
-  align-items: center;
-}
-.photoCard {
-  margin: 0;
-  position: relative;
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-}
-.photoFill {
-  display: block;
-  width: 100%;
-  height: 300px;
-  object-fit: cover;
-}
-.photoCard figcaption {
-  position: absolute;
-  left: var(--space-4);
-  bottom: var(--space-4);
-  padding: 6px 10px;
-  border-radius: var(--radius-full);
-  background: var(--overlay-ground);
-  color: var(--overlay-ink);
-  font-size: 13px;
-}
-.doIt {
-  display: grid;
-  gap: var(--space-4);
-  justify-items: start;
-}
-
-/* Handoff */
-.handoff {
-  width: var(--page);
-  margin: 0 auto;
-  padding: var(--space-12) 0;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: var(--space-12);
-  align-items: center;
-  border-top: 1px solid var(--border);
-}
-.handoff > div {
-  display: grid;
-  gap: var(--space-3);
-}
-
-/* Careful by default: four plain rules, not four cards. */
-.careful {
-  width: var(--page);
-  margin: 0 auto;
-  padding: var(--space-12) 0 var(--space-16);
-  display: grid;
-  gap: var(--space-8);
-  border-top: 1px solid var(--border);
-}
-.carefulList {
+  font-weight: 500;
   list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: var(--space-8);
+  cursor: pointer;
 }
-.carefulList li {
-  display: grid;
-  gap: var(--space-2);
-  align-content: start;
+.faqItem summary::-webkit-details-marker {
+  display: none;
 }
-
-/* Closing: aligned to the page container so it doesn't bleed edge-to-edge. */
-.closing {
+.faqItem summary:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 4px;
+  border-radius: 6px;
+}
+.faqSign {
   position: relative;
-  width: var(--page);
-  margin: 0 auto;
-  min-height: 380px;
-  display: grid;
-  align-items: end;
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--border);
-  overflow: hidden;
-  color: var(--overlay-ink);
+  flex: none;
+  width: 16px;
+  height: 16px;
 }
-.closing::after {
+.faqSign::before,
+.faqSign::after {
   content: "";
   position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    to top,
-    color-mix(in srgb, var(--overlay-ground) 88%, transparent) 0%,
-    color-mix(in srgb, var(--overlay-ground) 35%, transparent) 70%
-  );
+  left: 0;
+  top: 7px;
+  width: 16px;
+  height: 1.5px;
+  background: currentColor;
 }
-.closingInner {
-  position: relative;
-  z-index: 1;
-  padding: var(--space-10);
-  display: grid;
-  gap: var(--space-3);
+.faqSign::after {
+  transform: rotate(90deg);
+  transition: transform 180ms ease;
 }
-.closingInner p {
+.faqItem[open] .faqSign::after {
+  transform: rotate(0deg);
+}
+.faqItem p {
+  max-width: 68ch;
+  padding-bottom: 24px;
   font-size: 16px;
-  opacity: 0.8;
+  line-height: 1.65;
+  color: var(--text-2);
+}
+
+/* Closing: an ask box, as you'd talk to Tandrix */
+.ask {
+  display: grid;
+  place-items: center;
+  padding: 64px var(--gutter) clamp(96px, 12vw, 160px);
+}
+.askBox {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: min(620px, 100%);
+  min-height: 60px;
+  padding: 8px 8px 8px 16px;
+  border-radius: 16px;
+  background: var(--page-bg);
+  color: var(--ink);
+  text-decoration: none;
+  box-shadow:
+    0 0 0 1px var(--line-strong),
+    0 12px 32px -18px rgba(9, 30, 66, 0.4);
+  transition: box-shadow 200ms ease;
+}
+.askBox:hover {
+  box-shadow:
+    0 0 0 2px var(--highlight),
+    0 0 28px -6px color-mix(in srgb, var(--highlight) 55%, transparent);
+}
+.askBox:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 3px;
+}
+.askMic {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--highlight);
+  color: #fff;
+}
+.askText {
+  flex: 1;
+  font-size: 16px;
+  color: var(--text-2);
+}
+.askKeys {
+  font-size: 13px;
+  color: var(--soft);
+  white-space: nowrap;
+}
+.askKeys kbd {
+  padding: 2px 6px;
+  border-radius: 6px;
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+  font-family: var(--font-sans);
+}
+.askGo {
+  flex: none;
+  padding: 10px 16px;
+  border-radius: 10px;
+  background: var(--ink);
+  color: var(--page-bg);
+  font-size: 15px;
+  font-weight: 500;
 }
 
 /* Footer */
 .footer {
-  width: var(--page);
-  margin: 0 auto;
-  padding: var(--space-8) 0;
-  display: flex;
-  justify-content: space-between;
-  font-size: 13px;
-  color: var(--text-tertiary);
+  display: grid;
+  gap: 56px;
+  padding: 64px var(--gutter) 32px;
+  background: #0b0b0c;
+  color: #fff;
 }
-.footer a {
-  color: var(--text-secondary);
+.footerTop {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 48px;
+  width: 100%;
+  max-width: var(--max);
+  margin: 0 auto;
+}
+.footerBrand {
+  display: grid;
+  align-content: start;
+  gap: 16px;
+  max-width: 360px;
+}
+.footerBrand p {
+  font-size: 15px;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.7);
+}
+.footerMark,
+.footerMark :global(*) {
+  color: #fff;
+  text-decoration: none;
+}
+.footerMark :global(.tx-wordmark-ring) {
+  stroke: #fff;
+}
+.footerMark :global(.tx-wordmark-bar) {
+  fill: #fff;
+}
+.footerCols {
+  display: grid;
+  grid-template-columns: repeat(3, auto);
+  gap: 24px 72px;
+}
+.footerCols div {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+}
+.footerCols h3 {
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.5);
+}
+.footerCols a {
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.86);
+  text-decoration: none;
+}
+.footerCols a:hover {
+  color: #fff;
+}
+.footerBottom {
+  width: 100%;
+  max-width: var(--max);
+  margin: 0 auto;
+  padding-top: 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.5);
 }
 
-@media (max-width: 900px) {
-  .hero,
-  .screenPair,
-  .handoff,
-  .bench {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .heroCopy h1 {
-    font-size: 36px;
-    line-height: 40px;
-    letter-spacing: -1.4px;
-  }
-  .hero {
-    padding-top: var(--space-8);
-    gap: var(--space-8);
-  }
-  .hero::before {
-    inset: 38% -24% -4% -24%;
-  }
-  .benchCopy {
-    padding: var(--space-8) var(--space-6);
-  }
-  .carefulList {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .navLinks {
-    gap: var(--space-3);
-    font-size: 12px;
-  }
+/* Narrower screens */
+/* The gate card joins the row on narrow screens only; on wide ones it would sit on the buttons. */
+.t7 {
+  display: none;
 }
-@media (max-width: 560px) {
-  .navLinks a:last-child {
+@media (max-width: 1080px) {
+  .nav,
+  .headerCtas {
     display: none;
   }
-  .carefulList {
+  .headerEnd {
+    margin-left: auto;
+  }
+  /* The tiles become a row under the headline. */
+  .hero {
+    min-height: 0;
+    padding-top: 56px;
+    padding-bottom: 32px;
+  }
+  .tiles {
+    position: static;
+    order: 2;
+    display: flex;
+    gap: 16px;
+    width: calc(100% + var(--gutter) * 2);
+    margin: 48px calc(var(--gutter) * -1) 0;
+    padding: 8px var(--gutter) 16px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    pointer-events: auto;
+  }
+  .tiles::-webkit-scrollbar {
+    display: none;
+  }
+  .tile {
+    position: static;
+    flex: none;
+    animation: none !important;
+  }
+  .t1,
+  .t4,
+  .t5 {
+    width: 280px;
+  }
+  .t7 {
+    display: grid;
+  }
+  .principles,
+  .platforms {
     grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 600px) {
+  .askKeys {
+    display: none;
+  }
+  .footerCols {
+    grid-template-columns: repeat(2, auto);
+    gap: 24px 48px;
   }
 }

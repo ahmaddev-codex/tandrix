@@ -1,0 +1,127 @@
+/* The window scales with its box: 1em is 1/60 of the box's width. */
+.box {
+  container-type: inline-size;
+  width: 100%;
+  user-select: none;
+}
+.win {
+  position: relative;
+  font-family: -apple-system, "SF Pro Text", var(--font-sans);
+  font-size: calc(100cqw / 60);
+  border-radius: 0.9em;
+  background: #fff;
+  color: #1d1d1f;
+  overflow: hidden;
+  box-shadow:
+    0 0 0 0.06em rgba(0, 0, 0, 0.16),
+    0 1.6em 3.4em -1.4em rgba(9, 30, 66, 0.4),
+    0 0.3em 0.8em -0.3em rgba(9, 30, 66, 0.18);
+  text-align: left;
+}
+.bar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 2.4em;
+  padding: 0 0.9em;
+  background: #ececec;
+  border-bottom: 0.06em solid #d6d6d6;
+}
+.lights {
+  display: flex;
+  gap: 0.5em;
+}
+.lights i {
+  width: 0.78em;
+  height: 0.78em;
+  border-radius: 50%;
+  background: #ff5f57;
+  box-shadow: inset 0 0 0 0.05em rgba(0, 0, 0, 0.12);
+}
+.lights i:nth-child(2) {
+  background: #febc2e;
+}
+.lights i:nth-child(3) {
+  background: #28c840;
+}
+.title {
+  position: absolute;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 0.86em;
+  font-weight: 600;
+  color: #3c3c3c;
+  pointer-events: none;
+}
+/* Spreadsheet app: its own green title bar. */
+.excel .bar {
+  background: #1e7145;
+  border-bottom-color: #175a37;
+}
+.excel .title {
+  color: #fff;
+}
+.settings .bar,
+.calendar .bar {
+  background: #f6f6f6;
+}
+
+/* Tandrix ring, pointer and caption: positioned around the parent (which is position: relative). */
+.ring {
+  position: absolute;
+  inset: -0.35em;
+  border-radius: 0.7em;
+  border: 0.16em solid var(--highlight);
+  box-shadow:
+    0 0 0 0.3em var(--highlight-tint),
+    0 0 1.4em 0.1em color-mix(in srgb, var(--highlight) 35%, transparent);
+  pointer-events: none;
+  z-index: 5;
+}
+.arrow {
+  position: absolute;
+  right: -1.1em;
+  bottom: -1.3em;
+  width: 2em;
+  height: 2em;
+  fill: #111;
+  stroke: #fff;
+  stroke-width: 1.5;
+  filter: drop-shadow(0 0.15em 0.25em rgba(0, 0, 0, 0.35));
+}
+.caption {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 1.2em);
+  padding: 0.55em 0.85em;
+  border-radius: 0.7em;
+  background: #111;
+  color: #fff;
+  font-size: 1em;
+  font-weight: 500;
+  white-space: nowrap;
+  box-shadow:
+    0 0 0 0.12em var(--highlight),
+    0 0.6em 1.4em -0.5em rgba(0, 0, 0, 0.5);
+}
+.right {
+  left: calc(100% + 1.6em);
+  top: 50%;
+}
+.belowEnd {
+  left: auto;
+  right: 0;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .ring {
+    animation: ring-pulse 2.4s ease-in-out infinite;
+  }
+}
+@keyframes ring-pulse {
+  50% {
+    box-shadow:
+      0 0 0 0.55em var(--highlight-tint),
+      0 0 1.8em 0.2em color-mix(in srgb, var(--highlight) 45%, transparent);
+  }
+}
