@@ -30,7 +30,7 @@ appId: app.tandrix.mobile
     timeout: 120000
 - takeScreenshot: parts-checked
 # The step that needs the cable waits for it.
-- tapOn: ${JOB_TITLE}
+- runFlow: subflows/back-to-job.yaml
 - scrollUntilVisible:
     element: "Step 4: Connect the network cable, Missing part: Ethernet cable.*"
     direction: DOWN
@@ -57,7 +57,7 @@ appId: app.tandrix.mobile
     timeout: 10000
 - tapOn:
     id: part-here
-- tapOn: ${JOB_TITLE}
+- runFlow: subflows/back-to-job.yaml
 - scrollUntilVisible:
     element: "Step 4: Connect the network cable, To do.*"
     direction: DOWN

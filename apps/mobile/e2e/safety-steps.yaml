@@ -45,11 +45,7 @@ appId: app.tandrix.mobile
 - takeScreenshot: step-done
 # Step 3: a torque value outside the range is refused.
 # iOS has no system back: tap the header's back button, labelled with the project title.
-- tapOn: ${JOB_TITLE}
-- extendedWaitUntil:
-    visible:
-      id: step-list
-    timeout: 15000
+- runFlow: subflows/back-to-job.yaml
 - runFlow:
     file: subflows/open-step.yaml
     env:

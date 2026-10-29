@@ -81,10 +81,10 @@ export default function Jobs() {
   };
 
   const menuItems = [
-    { label: "Start a project", icon: "plus", href: "/new-job" },
-    { label: "Actions", icon: "actions", href: "/actions" },
-    { label: "Projects", icon: "projects", href: "/projects" },
-    { label: "Settings", icon: "gear", href: "/settings" },
+    { label: "Start a project", icon: "plus", href: "/new-job", testID: "new-job" },
+    { label: "Actions", icon: "actions", href: "/actions", testID: "menu-actions" },
+    { label: "Projects", icon: "projects", href: "/projects", testID: "menu-projects" },
+    { label: "Settings", icon: "gear", href: "/settings", testID: "menu-settings" },
   ] as const;
 
   const activeCount = (jobs ?? []).filter((job) => job.status === "active").length;
@@ -182,6 +182,7 @@ export default function Jobs() {
                   <Pressable
                     key={item.href}
                     accessibilityRole="button"
+                    testID={item.testID}
                     onPress={() => {
                       closeMenu();
                       router.push(item.href);

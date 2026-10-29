@@ -91,17 +91,36 @@ export function actionFor(detail: JobDetailResponse): HomeAction {
   };
 }
 
+const HOME_ACTION_TTL_MS = 15_000;
+const homeActionCache = new Map<string, { at: number; action: HomeAction }>();
+
+function cacheKeyFor(job: Job): string {
+  return `${job.id}:${job.updatedAt}:${job.currentStepId ?? ""}:${job.activeSurface}:${job.status}`;
+}
+
 export async function loadHomeActions(jobs: Job[]): Promise<HomeAction[]> {
   const active = jobs.filter((job) => job.status === "active");
+  const now = Date.now();
+  for (const [key, entry] of homeActionCache)
+    if (now - entry.at >= HOME_ACTION_TTL_MS) homeActionCache.delete(key);
   const actions: HomeAction[] = [];
   for (let i = 0; i < active.length; i += 20) {
+    const batch = active.slice(i, i + 20);
     const results = await Promise.allSettled(
-      active.slice(i, i + 20).map((job) => api.getJob(job.id)),
+      batch.map(async (job) => {
+        const key = cacheKeyFor(job);
+        const cached = homeActionCache.get(key);
+        if (cached && now - cached.at < HOME_ACTION_TTL_MS) {
+          return cached.action;
+        }
+        const detail = await api.getJob(job.id);
+        const action = actionFor(detail);
+        homeActionCache.set(key, { at: Date.now(), action });
+        return action;
+      }),
     );
     actions.push(
-      ...results.flatMap((result) =>
-        result.status === "fulfilled" ? [actionFor(result.value)] : [],
-      ),
+      ...results.flatMap((result) => (result.status === "fulfilled" ? [result.value] : [])),
     );
   }
   return actions;

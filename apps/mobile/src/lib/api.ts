@@ -5,6 +5,7 @@ import type {
   GenerateProcedureRequest,
   SaveAssetRequest,
   StepActionRequest,
+  UpdateProfileRequest,
 } from "@tandrix/contracts";
 import {
   Asset,
@@ -23,7 +24,11 @@ import {
   ManualResponse,
   ManualSearchResponse,
   IdentifyAssetResponse,
+  ProfileResponse,
+  CreateShareResponse,
   JobDetailResponse,
+  JobReportResponse,
+  ShareLink,
   Evidence,
   EvidenceWithUrl,
   Job,
@@ -49,28 +54,55 @@ export class ApiError extends Error {
 
 const ErrorBody = z.object({ error: z.object({ code: z.string(), message: z.string() }) });
 
+/** Requests fail fast instead of hanging: thirty seconds, then the offline path. */
+const REQUEST_TIMEOUT_MS = 30_000;
+/** Calls that wait on a model (reading a manual, checking a photo) get longer. */
+const MODEL_TIMEOUT_MS = 120_000;
+
+/** Concurrent requests share one session read instead of each queuing on storage. */
+let sessionFlight: Promise<string | null> | null = null;
+function accessToken(): Promise<string | null> {
+  sessionFlight ??= supabase.auth.getSession().then(
+    ({ data }) => {
+      sessionFlight = null;
+      return data.session?.access_token ?? null;
+    },
+    () => {
+      sessionFlight = null;
+      return null;
+    },
+  );
+  return sessionFlight;
+}
+
 async function request<T>(
   path: string,
   schema: z.ZodType<T>,
-  init: RequestInit = {},
+  { timeoutMs = REQUEST_TIMEOUT_MS, ...init }: RequestInit & { timeoutMs?: number } = {},
   /** Multipart bodies set their own content type. */
   json = true,
 ): Promise<T> {
-  const { data } = await supabase.auth.getSession();
-  const token = data.session?.access_token;
+  const token = await accessToken();
   if (!token) throw new ApiError(401, "unauthorized", "Sign in to continue.");
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
   let res: Response;
   try {
     res = await fetch(`${env.apiUrl}${path}`, {
       ...init,
+      signal: ctrl.signal,
       headers: {
         Authorization: `Bearer ${token}`,
         ...(json ? { "Content-Type": "application/json" } : {}),
         ...init.headers,
       },
     });
-  } catch {
+  } catch (e) {
+    if ((e as Error)?.name === "AbortError")
+      throw new ApiError(0, "timeout", "Tandrix is taking too long. Try again.");
     throw new ApiError(0, "offline", "Can't reach Tandrix. Check your connection and try again.");
+  } finally {
+    clearTimeout(timer);
   }
   const body: unknown = await res.json().catch(() => null);
   if (!res.ok) {
@@ -143,6 +175,7 @@ export const api = {
   getJob: (id: string) => request(`/jobs/${id}`, JobDetailResponse),
   identifyAsset: (jobId: string, evidenceId: string) =>
     request(`/jobs/${jobId}/asset/identify`, IdentifyAssetResponse, {
+      timeoutMs: MODEL_TIMEOUT_MS,
       method: "POST",
       body: JSON.stringify({ evidenceId }),
     }),
@@ -165,9 +198,13 @@ export const api = {
       (r) => r.items,
     ),
   searchManual: (jobId: string) =>
-    request(`/jobs/${jobId}/manual/search`, ManualSearchResponse, { method: "POST" }),
+    request(`/jobs/${jobId}/manual/search`, ManualSearchResponse, {
+      timeoutMs: MODEL_TIMEOUT_MS,
+      method: "POST",
+    }),
   fetchManual: (jobId: string, body: { url: string; title: string; token: string }) =>
     request(`/jobs/${jobId}/manual/fetch`, ManualResponse, {
+      timeoutMs: MODEL_TIMEOUT_MS,
       method: "POST",
       body: JSON.stringify(body),
     }).then((r) => r.manual),
@@ -178,10 +215,12 @@ export const api = {
     }),
   completeManualUpload: (jobId: string, uploadId: string) =>
     request(`/jobs/${jobId}/manual/upload/${uploadId}/complete`, ManualResponse, {
+      timeoutMs: MODEL_TIMEOUT_MS,
       method: "POST",
     }).then((r) => r.manual),
   manualFromPhotos: (jobId: string, body: { evidenceIds: string[]; title: string }) =>
     request(`/jobs/${jobId}/manual/from-photos`, ManualResponse, {
+      timeoutMs: MODEL_TIMEOUT_MS,
       method: "POST",
       body: JSON.stringify(body),
     }).then((r) => r.manual),
@@ -189,11 +228,13 @@ export const api = {
     request(`/jobs/${jobId}/manual/${manualId}/url`, z.object({ url: z.url() })).then((r) => r.url),
   generateProcedure: (jobId: string, body: z.input<typeof GenerateProcedureRequest> = {}) =>
     request(`/jobs/${jobId}/procedure`, GenerateProcedureResponse, {
+      timeoutMs: MODEL_TIMEOUT_MS,
       method: "POST",
       body: JSON.stringify(body),
     }),
   highlight: (jobId: string, jobStepId: string, evidenceId: string) =>
     request(`/jobs/${jobId}/steps/${jobStepId}/highlight`, HighlightResponse, {
+      timeoutMs: MODEL_TIMEOUT_MS,
       method: "POST",
       body: JSON.stringify({ evidenceId }),
     }),
@@ -212,17 +253,26 @@ export const api = {
     // Expo's fetch doesn't take React Native's { uri } FormData parts; expo-file-system's File is a Blob.
     form.append("audio", new File(wavUri), "turn.wav");
     form.append("keywords", JSON.stringify(keywords.slice(0, 20)));
-    return request("/voice/transcribe", TranscribeResponse, { method: "POST", body: form }, false);
+    return request(
+      "/voice/transcribe",
+      TranscribeResponse,
+      { method: "POST", body: form, timeoutMs: MODEL_TIMEOUT_MS },
+      false,
+    );
   },
   checkStep: (jobId: string, jobStepId: string, evidenceId: string) =>
     request(`/jobs/${jobId}/steps/${jobStepId}/check`, CheckStepResponse, {
+      timeoutMs: MODEL_TIMEOUT_MS,
       method: "POST",
       body: JSON.stringify({ evidenceId }),
     }),
   stepVisuals: (jobId: string, jobStepId: string) =>
-    request(`/jobs/${jobId}/steps/${jobStepId}/visuals`, StepVisualsResponse),
+    request(`/jobs/${jobId}/steps/${jobStepId}/visuals`, StepVisualsResponse, {
+      timeoutMs: MODEL_TIMEOUT_MS,
+    }),
   setStepReference: (jobId: string, jobStepId: string, evidenceId: string) =>
     request(`/jobs/${jobId}/steps/${jobStepId}/reference`, StepVisualsResponse, {
+      timeoutMs: MODEL_TIMEOUT_MS,
       method: "PUT",
       body: JSON.stringify({ evidenceId }),
     }),
@@ -232,6 +282,7 @@ export const api = {
     }),
   partsCheck: (jobId: string, evidenceId: string) =>
     request(`/jobs/${jobId}/parts-check`, PartsCheckResponse, {
+      timeoutMs: MODEL_TIMEOUT_MS,
       method: "POST",
       body: JSON.stringify({ evidenceId }),
     }),
@@ -245,13 +296,31 @@ export const api = {
       method: "PATCH",
       body: JSON.stringify({ status }),
     }),
-  askStep: (jobId: string, jobStepId: string, body: { text: string; stuck?: boolean }) =>
+  askStep: (
+    jobId: string,
+    jobStepId: string,
+    body: { text: string; stuck?: boolean; userName?: string },
+  ) =>
     request(`/jobs/${jobId}/steps/${jobStepId}/ask`, AskStepResponse, {
+      timeoutMs: MODEL_TIMEOUT_MS,
       method: "POST",
       body: JSON.stringify(body),
     }),
+  getProfile: () => request("/profile", ProfileResponse),
+  updateProfile: (body: UpdateProfileRequest) =>
+    request("/profile", ProfileResponse, { method: "PUT", body: JSON.stringify(body) }),
   createJob: (input: { title: string; surface: Surface }) =>
     request("/jobs", z.object({ job: Job }), { method: "POST", body: JSON.stringify(input) }).then(
       (r) => r.job,
     ),
+  getReport: (jobId: string) => request(`/jobs/${jobId}/report`, JobReportResponse),
+  listShares: (jobId: string) =>
+    request(`/jobs/${jobId}/share`, z.object({ links: z.array(ShareLink) })).then((r) => r.links),
+  createShare: (jobId: string, days = 7) =>
+    request(`/jobs/${jobId}/share`, CreateShareResponse, {
+      method: "POST",
+      body: JSON.stringify({ days }),
+    }),
+  revokeShare: (jobId: string, linkId: string) =>
+    request(`/jobs/${jobId}/share/${linkId}`, z.null(), { method: "DELETE" }),
 };

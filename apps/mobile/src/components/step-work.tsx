@@ -23,7 +23,7 @@ import {
   VoiceTranscript,
   type VoiceTurn,
 } from "@tandrix/ui/native";
-import { useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { View } from "react-native";
 import { api } from "@/lib/api";
 import { isOffline, offlineQueue } from "@/offline";
@@ -84,6 +84,16 @@ export function useStepWork(input: StepWorkInput | null): StepWork {
   // The talk handlers outlive a render; they read the latest step through this.
   const latest = useRef(input);
   latest.current = input;
+  // What Tandrix calls the user, if they have said; the model uses it rarely.
+  const userName = useRef<string | undefined>(undefined);
+  useEffect(() => {
+    api
+      .getProfile()
+      .then((p) => {
+        userName.current = p.displayName ?? undefined;
+      })
+      .catch(() => undefined);
+  }, []);
 
   const say = (text: string, kind?: VoiceTurn["kind"]) => {
     setTurns((ts) => [...ts, { speaker: "tandrix", text, ...(kind ? { kind } : {}) }]);
@@ -257,7 +267,10 @@ export function useStepWork(input: StepWorkInput | null): StepWork {
     if (!cur) return;
     setTurns((ts) => [...ts, { speaker: "you", text }]);
     try {
-      const r = await api.askStep(cur.jobId, cur.jobStep.id, { text });
+      const r = await api.askStep(cur.jobId, cur.jobStep.id, {
+        text,
+        ...(userName.current ? { userName: userName.current } : {}),
+      });
       if (r.status === "command") await runCommand(r.command);
       else if (r.status === "answer") say(r.answer, r.fromStep ? undefined : "general");
       else if (r.status === "refused") say(r.message, "refusal");

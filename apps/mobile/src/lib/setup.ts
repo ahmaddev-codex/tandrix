@@ -167,12 +167,18 @@ export async function runSetup(
   set("start", "done");
   const jobId = state.jobId!;
 
-  // 2. Every photo, once.
+  // 2. Every photo, once (uploaded concurrently).
   if (has("photos")) {
     set("photos", "working");
     try {
-      for (const p of photosOf(intake))
-        if (!state.uploaded[p.uri]) state.uploaded[p.uri] = (await deps.uploadPhoto(jobId, p)).id;
+      const pending = photosOf(intake).filter((p) => !state.uploaded[p.uri]);
+      const uploaded = await Promise.all(
+        pending.map(async (p) => ({
+          uri: p.uri,
+          id: (await deps.uploadPhoto(jobId, p)).id,
+        })),
+      );
+      for (const item of uploaded) state.uploaded[item.uri] = item.id;
     } catch (e) {
       stop("photos", reason(e));
     }

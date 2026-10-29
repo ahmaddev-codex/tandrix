@@ -41,6 +41,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ScrollView, View, type ScrollViewInstance } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "@/lib/api";
+import { speak } from "@/voice/tts";
 import { isOffline, keepPhoto, loadJob, offlineQueue } from "@/offline";
 import { preparePhoto, uploadPhoto, type PreparedPhoto } from "@/lib/evidence";
 import { useStepWork } from "@/components/step-work";
@@ -265,6 +266,12 @@ export default function StepScreen() {
           setPhase("preview");
           return;
         }
+        // Say the verdict aloud like someone standing next to them.
+        const verdict =
+          r.check.result === "pass"
+            ? `That's correct. ${r.check.reason}`
+            : [r.check.reason, r.check.whatToShowNext].filter(Boolean).join(" ");
+        speak(verdict);
         setCheck(r.check);
         setData((d) => (d ? { ...d, jobStep: r.step } : d));
         setPhase("result");

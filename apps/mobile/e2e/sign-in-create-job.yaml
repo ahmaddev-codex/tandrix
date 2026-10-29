@@ -20,16 +20,16 @@ env:
 # Wait for the app to finish loading (signed in or not) before deciding anything.
 - extendedWaitUntil:
     visible:
-      text: "(Local test sign-in|Start a project|Get started)"
+      text: "(Local test sign-in|Get started|Pick up where you left off.)"
     timeout: 60000
 # The keychain can outlive clearState on iOS, so sign out first if a session survived.
 - runFlow:
     when:
       visible:
-        id: open-settings
+        id: main-tab-settings
     commands:
       - tapOn:
-          id: open-settings
+          id: main-tab-settings
       - tapOn:
           id: settings-sign-out
 # Signed out on a fresh install: the welcome screen first.
@@ -58,7 +58,7 @@ env:
     id: password-sign-in
 - extendedWaitUntil:
     visible:
-      id: new-job
+      id: dashboard-menu
     timeout: 15000
 - takeScreenshot: home
 - runFlow: subflows/new-job.yaml

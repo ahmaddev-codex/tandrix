@@ -1,7 +1,7 @@
 // Spoken replies in Tandrix's own voice (Kokoro, from the API), the same voice as on the Mac.
-// Without it (offline, unavailable): a Premium or Enhanced device voice (@tandrix/core
-// pickVoice). Without one of those, the reply is text only: Tandrix never speaks in a robotic
-// voice. One reply at a time: a new reply interrupts the last, and "stop" silences it.
+// Without it (offline, unavailable): an Apple Premium or Enhanced device voice (@tandrix/core
+// pickVoice), which sounds completely natural. Never a compact or novelty robotic voice.
+// One reply at a time: a new reply interrupts the last, and "stop" silences it.
 import { pickVoice } from "@tandrix/core";
 import { createAudioPlayer, setAudioModeAsync, type AudioPlayer } from "expo-audio";
 import { File, Paths } from "expo-file-system";
@@ -10,7 +10,7 @@ import { api } from "@/lib/api";
 
 const chosen = new Map<string, Promise<string | null>>();
 
-/** The device's natural voice for a language, looked up once; null when it has none. */
+/** The device's best voice for a language, looked up once; null when it has none. */
 function deviceVoice(language: string): Promise<string | null> {
   let v = chosen.get(language);
   if (!v) {
@@ -46,12 +46,14 @@ export function stopSpeaking() {
 }
 
 export function speak(text: string, language = "en") {
+  const trimmed = text.trim();
+  if (!trimmed) return;
   stopSpeaking();
   const ctl = new AbortController();
   pending = ctl;
   void (async () => {
-    // Tandrix's voice is English for now; other languages use the device's natural voice.
-    const wav = language.startsWith("en") ? await api.speech(text, ctl.signal) : null;
+    // Tandrix's voice is English for now; other languages use the device's voice.
+    const wav = language.startsWith("en") ? await api.speech(trimmed, ctl.signal) : null;
     if (ctl.signal.aborted) return;
     pending = undefined;
     if (wav) {
@@ -71,7 +73,8 @@ export function speak(text: string, language = "en") {
       }
     }
     const voice = await deviceVoice(language);
+    // No natural voice on this phone: the reply stays text only.
     if (ctl.signal.aborted || !voice) return;
-    Speech.speak(text, { language, voice, rate: 1 });
+    Speech.speak(trimmed, { language, voice, rate: 1 });
   })();
 }

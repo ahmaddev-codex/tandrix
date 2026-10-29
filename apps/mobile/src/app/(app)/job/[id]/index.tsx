@@ -340,6 +340,24 @@ export default function JobScreen() {
                 })}
               </View>
             ) : null}
+            {procedure ? (
+              <SummaryCard
+                testID="report-card"
+                label="Report"
+                title="The project so far, ready to share"
+                action={
+                  <Button
+                    variant="secondary"
+                    size="lg"
+                    block
+                    onPress={() => router.push({ pathname: "/job/[id]/report", params: { id } })}
+                    testID="open-report"
+                  >
+                    Open the report
+                  </Button>
+                }
+              />
+            ) : null}
             <Text variant="label-14" color="text-secondary">
               {photos ? `${photos.length} ${photos.length === 1 ? "photo" : "photos"}` : " "}
             </Text>

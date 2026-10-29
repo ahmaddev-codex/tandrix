@@ -5,7 +5,7 @@ appId: app.tandrix.mobile
 ---
 - runFlow: ../subflows/open-app.yaml
 - tapOn:
-    id: open-settings
+    id: main-tab-settings
 - tapOn:
     id: settings-pair-mac
 - extendedWaitUntil:
