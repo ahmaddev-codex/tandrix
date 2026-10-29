@@ -1,7 +1,7 @@
 // The fallback voice on macOS, when Tandrix's own voice (from the API) can't be reached: `say`
-// with a Premium or Enhanced system voice (@tandrix/core pickVoice), which Chromium's Web Speech
-// may not list. No such voice installed: nothing is spoken (no robotic voices). The text goes in
-// on stdin, never on a command line. One reply at a time.
+// with only Apple's Premium or Enhanced voices (@tandrix/core pickVoice), which sound completely
+// natural. The compact defaults and novelty voices sound robotic and are never used. The text goes
+// in on stdin, never on a command line. One reply at a time.
 import { execFile, spawn, type ChildProcess } from "node:child_process";
 import { pickVoice, type DeviceVoice } from "@tandrix/core";
 
@@ -19,7 +19,7 @@ export function parseSayVoices(out: string): DeviceVoice[] {
 }
 
 let voice: Promise<string | null> | undefined;
-/** The voice to speak with, chosen once; null when `say` isn't there. */
+/** The voice to speak with, chosen once; null when `say` has no Premium/Enhanced voice. */
 function chosenVoice(): Promise<string | null> {
   voice ??= new Promise((resolve) => {
     if (process.platform !== "darwin") return resolve(null);
@@ -37,17 +37,21 @@ export function stopSpeaking() {
   current = undefined;
 }
 
-/** Speaks the reply; false when there's no natural voice installed (the reply stays text only). */
+/** Speaks the reply on macOS using `say` with a natural Premium/Enhanced voice only. */
 export async function speak(text: string): Promise<boolean> {
+  const trimmed = text.trim();
+  if (!trimmed) return false;
   stopSpeaking();
+  if (process.platform !== "darwin") return false;
   const name = await chosenVoice();
   if (!name) return false;
-  const child = spawn("/usr/bin/say", ["-v", name], { stdio: ["pipe", "ignore", "ignore"] });
+  const args = ["-v", name];
+  const child = spawn("/usr/bin/say", args, { stdio: ["pipe", "ignore", "ignore"] });
   current = child;
   child.on("exit", () => {
     if (current === child) current = undefined;
   });
-  child.stdin.end(text.slice(0, MAX_CHARS));
+  child.stdin.end(trimmed.slice(0, MAX_CHARS));
   return true;
 }
 

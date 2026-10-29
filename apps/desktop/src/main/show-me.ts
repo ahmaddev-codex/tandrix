@@ -50,7 +50,13 @@ export async function captureForQuestion(): Promise<ScreenCapture> {
 }
 
 /** Points at a pixel of a capture, on the display the capture came from. */
-export function pointAtCapture(geometry: unknown, point: unknown, caption: unknown) {
+export function pointAtCapture(
+  geometry: unknown,
+  point: unknown,
+  caption: unknown,
+  box?: unknown,
+  step?: unknown,
+) {
   const g = ScreenGeometry.safeParse(geometry);
   const p = Point.safeParse(point);
   if (!g.success || !p.success || typeof caption !== "string") throw new Error("Bad request");
@@ -64,5 +70,13 @@ export function pointAtCapture(geometry: unknown, point: unknown, caption: unkno
     imageWidth: g.data.imageWidth,
     imageHeight: g.data.imageHeight,
   });
-  showPointer(at, caption.slice(0, 280));
+  const b =
+    box && typeof box === "object" && "width" in box && "height" in box
+      ? {
+          width: Number((box as { width: number }).width),
+          height: Number((box as { height: number }).height),
+        }
+      : undefined;
+  const s = typeof step === "number" ? step : undefined;
+  showPointer(at, caption.trim() ? caption.slice(0, 280) : undefined, b, s);
 }

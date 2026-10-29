@@ -64,6 +64,21 @@ const bridge: TandrixBridge = {
     },
   },
   voice: {
+    setWakeWord: (on) => ipcRenderer.invoke(channels.wakeSet, on),
+    onWakeStatus: (listener) => {
+      const fn = (_e: unknown, s: Parameters<typeof listener>[0]) => listener(s);
+      ipcRenderer.on(channels.wakeStatus, fn);
+      return () => {
+        ipcRenderer.off(channels.wakeStatus, fn);
+      };
+    },
+    onWake: (listener) => {
+      const fn = (_e: unknown, rest: string) => listener(rest);
+      ipcRenderer.on(channels.wake, fn);
+      return () => {
+        ipcRenderer.off(channels.wake, fn);
+      };
+    },
     onTalkStart: (listener) => subscribe(channels.talkStart, listener),
     onTalkEnd: (listener) => subscribe(channels.talkEnd, listener),
     talkKeysAccess: (ask) => ipcRenderer.invoke(channels.talkKeysAccess, ask),

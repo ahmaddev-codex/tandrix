@@ -1,6 +1,6 @@
 import type { JobDetailResponse } from "@tandrix/contracts";
 import { citationLabel, stepChip } from "@tandrix/ui";
-import { Button, HandoffBanner, Notice, StepRow } from "@tandrix/ui/web";
+import { Button, HandoffBanner, Input, Notice, StepRow } from "@tandrix/ui/web";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import type { ScreenAccess } from "../../shared/bridge";
 import { activeJob } from "../lib/active-job";
@@ -105,6 +105,65 @@ function JobSteps({ detail, children }: { detail: JobDetailResponse; children?: 
   );
 }
 
+/** What Tandrix calls the user, editable any time. Shared with the phone. */
+function NameRow() {
+  const [name, setName] = useState<string | null>(null);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState("");
+  const [loaded, setLoaded] = useState(false);
+  useEffect(() => {
+    api
+      .getProfile()
+      .then((p) => {
+        setName(p.displayName);
+        setLoaded(true);
+      })
+      .catch(() => setLoaded(true));
+  }, []);
+  if (!loaded) return null;
+  if (!editing) {
+    return (
+      <div className="name-row">
+        <p className="copy-13 panel-muted">
+          {name ? `Tandrix calls you ${name}.` : "Tandrix doesn't have a name for you yet."}
+        </p>
+        <Button
+          variant="tertiary"
+          size="sm"
+          onClick={() => {
+            setDraft(name ?? "");
+            setEditing(true);
+          }}
+        >
+          {name ? "Change" : "Tell it"}
+        </Button>
+      </div>
+    );
+  }
+  const save = () => {
+    const displayName = draft.trim();
+    if (!displayName) return;
+    api
+      .updateProfile({ displayName })
+      .then((p) => {
+        setName(p.displayName);
+        setEditing(false);
+      })
+      .catch(() => undefined);
+  };
+  return (
+    <div className="name-row">
+      <Input label="What Tandrix calls you" value={draft} onChange={setDraft} />
+      <Button variant="primary" size="sm" onClick={save} disabled={!draft.trim()}>
+        Save
+      </Button>
+      <Button variant="tertiary" size="sm" onClick={() => setEditing(false)}>
+        Cancel
+      </Button>
+    </div>
+  );
+}
+
 function CurrentDesktopStep({
   detail,
   onChanged,
@@ -203,6 +262,7 @@ export function Home() {
           />
         ) : null}
         {setup.show ? <Setup status={setup} /> : <ScreenAccessNotice />}
+        <NameRow />
         {state.kind === "error" ? (
           <Notice
             tone="error"

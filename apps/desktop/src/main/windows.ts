@@ -87,8 +87,8 @@ export function showPanel(anchor: Rectangle) {
   togglePanel(anchor);
 }
 
-export function sendToPanel(channel: string) {
-  panel?.webContents.send(channel);
+export function sendToPanel(channel: string, ...args: unknown[]) {
+  panel?.webContents.send(channel, ...args);
 }
 
 const displayInfo = (): DisplayInfo[] =>
@@ -151,11 +151,16 @@ export function clearPointer() {
 }
 
 /** Draws the pointer at a global point (in points), on whichever display shows it. */
-export function showPointer(at: Point, caption?: string) {
+export function showPointer(
+  at: Point,
+  caption?: string,
+  box?: { width: number; height: number },
+  step?: number,
+) {
   clearTimeout(clearTimer);
   const target = toOverlay(at, displayInfo());
   for (const id of overlays.keys())
-    send(id, target?.displayId === id ? { ...target.point, caption } : null);
+    send(id, target?.displayId === id ? { ...target.point, caption, box, step } : null);
   clearTimer = setTimeout(clearPointer, ANSWER_POINTER_MS);
 }
 

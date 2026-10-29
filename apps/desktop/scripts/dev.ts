@@ -49,6 +49,47 @@ async function startElectron() {
 let restarting = Promise.resolve();
 const restart = () => (restarting = restarting.then(startElectron));
 
+// macOS asks the app that launches a helper why it wants speech recognition (the wake word):
+// in dev that's the stock Electron app, so its Info.plist gets the same explanation Tandrix's
+// own build carries. Idempotent.
+const electronPlist = resolve(
+  createRequire(import.meta.url).resolve("electron/package.json"),
+  "../dist/Electron.app/Contents/Info.plist",
+);
+try {
+  execFileSync(
+    "/usr/libexec/PlistBuddy",
+    [
+      "-c",
+      "Add :NSSpeechRecognitionUsageDescription string Tandrix listens for its name on this Mac. Nothing leaves your Mac until you say it.",
+      electronPlist,
+    ],
+    { stdio: "ignore" },
+  );
+} catch {
+  // Already there.
+}
+
+// The wake-word helper (native/wake/main.swift): on-device speech recognition only.
+execFileSync(
+  "swiftc",
+  [
+    "-O",
+    "-o",
+    resolve(appDir, "dist/native/tandrix-wake"),
+    resolve(appDir, "native/wake/main.swift"),
+    "-Xlinker",
+    "-sectcreate",
+    "-Xlinker",
+    "__TEXT",
+    "-Xlinker",
+    "__info_plist",
+    "-Xlinker",
+    resolve(appDir, "native/wake/Info.plist"),
+  ],
+  { stdio: "inherit" },
+);
+
 // The input helper Do it for me drives (native/input/main.swift), built once per dev session.
 mkdirSync(resolve(appDir, "dist/native"), { recursive: true });
 execFileSync(

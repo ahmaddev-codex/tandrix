@@ -110,11 +110,11 @@ export function Icon({ name, size = 16, label, className }: IconProps) {
   );
 }
 
-export type ButtonVariant = "primary" | "secondary" | "tertiary" | "danger" | "mandatory";
+export type ButtonVariant = "primary" | "secondary" | "tertiary" | "danger" | "mandatory" | "ring";
 export type ButtonSize = "sm" | "md" | "lg" | "field";
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  /** primary: one per view. mandatory: safety-gate confirms only. danger: destructive. */
+  /** primary: one per view. ring: signature action with Tandrix ring motif. mandatory: safety-gate confirms only. danger: destructive. */
   variant?: ButtonVariant;
   /** sm 32, md 40, lg 48, field 56 px tall. */
   size?: ButtonSize;

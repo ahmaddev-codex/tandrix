@@ -102,7 +102,8 @@ let modifiers: [String: (CGKeyCode, CGEventFlags)] = [
 ]
 
 let named: [String: CGKeyCode] = [
-  "enter": 36, "return": 36, "tab": 48, "space": 49, "delete": 51, "backspace": 51,
+  "enter": 36, "return": 36, "tab": 48, "space": 49, "spacebar": 49, " ": 49,
+  "delete": 51, "backspace": 51,
   "esc": 53, "escape": 53, "forwarddelete": 117, "del": 117, "home": 115, "end": 119,
   "pageup": 116, "pagedown": 121, "left": 123, "arrowleft": 123, "right": 124, "arrowright": 124,
   "down": 125, "arrowdown": 125, "up": 126, "arrowup": 126,
@@ -112,7 +113,16 @@ let named: [String: CGKeyCode] = [
   "l": 37, "m": 46, "n": 45, "o": 31, "p": 35, "q": 12, "r": 15, "s": 1, "t": 17, "u": 32,
   "v": 9, "w": 13, "x": 7, "y": 16, "z": 6,
   "0": 29, "1": 18, "2": 19, "3": 20, "4": 21, "5": 23, "6": 22, "7": 26, "8": 28, "9": 25,
-  "-": 27, "=": 24, "[": 33, "]": 30, ";": 41, "'": 39, ",": 43, ".": 47, "/": 44, "\\": 42, "`": 50,
+  "-": 27, "minus": 27, "hyphen": 27, "=": 24, "equal": 24, "equals": 24, "plus": 24,
+  "[": 33, "leftbracket": 33, "]": 30, "rightbracket": 30,
+  ";": 41, "semicolon": 41, "'": 39, "quote": 39, "apostrophe": 39,
+  ",": 43, "comma": 43, ".": 47, "period": 47, "dot": 47,
+  "/": 44, "slash": 44, "\\": 42, "backslash": 42, "`": 50, "grave": 50, "backtick": 50,
+]
+
+let shiftedNamed: [String: CGKeyCode] = [
+  "+": 24, "_": 27, "{": 33, "}": 30, ":": 41, "\"": 39, "<": 43, ">": 47, "?": 44, "|": 42, "~": 50,
+  "!": 18, "@": 19, "#": 20, "$": 21, "%": 23, "^": 22, "&": 26, "*": 28, "(": 25, ")": 29,
 ]
 
 enum InputError: Error { case unknownKey(String), bad(String) }
@@ -121,7 +131,15 @@ func press(_ keys: [String]) throws {
   var flags: CGEventFlags = []
   var mods: [CGKeyCode] = []
   var main: [CGKeyCode] = []
-  for raw in keys {
+  let expanded = keys.flatMap { raw -> [String] in
+    raw.count > 1 && raw.contains("+") ? raw.split(separator: "+").map(String.init) : [raw]
+  }
+  for raw in expanded {
+    if let code = shiftedNamed[raw] {
+      if !flags.contains(.maskShift) { flags.insert(.maskShift); mods.append(56) }
+      main.append(code)
+      continue
+    }
     let k = raw.lowercased().replacingOccurrences(of: "_", with: "")
     if let (code, flag) = modifiers[k] { flags.insert(flag); mods.append(code) }
     else if let code = named[k] { main.append(code) }
@@ -194,6 +212,7 @@ while let line = readLine() {
     let c = try JSONDecoder().decode(Command.self, from: data)
     if c.op == "focus" { reply(true, secure: focusedIsSecure()); continue }
     if c.op == "front" {
+      RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.02))
       reply(true, app: NSWorkspace.shared.frontmostApplication?.localizedName ?? "")
       continue
     }

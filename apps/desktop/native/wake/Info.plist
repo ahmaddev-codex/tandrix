@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleIdentifier</key>
+  <string>app.tandrix.wake</string>
+  <key>CFBundleName</key>
+  <string>Tandrix wake word</string>
+  <key>NSSpeechRecognitionUsageDescription</key>
+  <string>Tandrix listens for its name on this Mac, so you can say "Hey Tandrix" instead of pressing keys. Nothing leaves your Mac until you say it.</string>
+  <key>NSMicrophoneUsageDescription</key>
+  <string>Tandrix listens for its name on this Mac when the wake word is on.</string>
+</dict>
+</plist>

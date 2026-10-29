@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  BrandWordmark,
   Button,
   CheckResult,
   ConfirmDialog,
@@ -11,6 +12,8 @@ import {
   JobReport,
   ModeToggle,
   Notice,
+  PointerBuddy,
+  PresenceBar,
   SourceChip,
   StatusChip,
   StepCard,
@@ -45,6 +48,24 @@ describe("Button", () => {
     expect(btn.getAttribute("type")).toBe("button");
     fireEvent.click(btn);
     expect(onClick).toHaveBeenCalledOnce();
+  });
+
+  it("supports the ring variant with signature styling", () => {
+    render(<Button variant="ring">Explore workflow</Button>);
+    const btn = screen.getByRole("button", { name: "Explore workflow" });
+    expect(btn.className).toContain("tx-btn-ring");
+  });
+});
+
+describe("BrandWordmark", () => {
+  it("renders binary-inspired brand mark and wordmark text", () => {
+    render(<BrandWordmark size="md" href="#top" />);
+    const link = screen.getByRole("link", { name: "Tandrix Home" });
+    expect(link.getAttribute("href")).toBe("#top");
+    expect(screen.getByText("Tandrix")).toBeTruthy();
+    expect(link.querySelector(".tx-wordmark-glyph")).toBeTruthy();
+    expect(link.querySelector(".tx-wordmark-ring")).toBeTruthy();
+    expect(link.querySelector(".tx-wordmark-bar")).toBeTruthy();
   });
 });
 
@@ -244,5 +265,31 @@ describe("StepCard", () => {
     expect(screen.getByRole("region", { name: "Step 3 of 4" })).toBeTruthy();
     expect(screen.getByText("Generic, not from the manufacturer")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Check my screen" })).toBeTruthy();
+  });
+});
+
+describe("PresenceBar and PointerBuddy", () => {
+  it("never renders request or response text on the screen", () => {
+    render(
+      <>
+        <PresenceBar state="answering" label="Tandrix" text="Click Export in the top right." />
+        <PointerBuddy x={100} y={120} caption="Click Export in the top right." />
+      </>,
+    );
+    expect(screen.getByText("Tandrix")).toBeTruthy();
+    expect(screen.queryByText("Click Export in the top right.")).toBeNull();
+  });
+
+  it("renders only pointer arrow by default (Mode A), ring when box is given (Mode B), step badge when step is given (Mode C)", () => {
+    const { container: defaultContainer } = render(<PointerBuddy x={100} y={120} />);
+    expect(defaultContainer.querySelector(".tx-ptr-ring")).toBeNull();
+    expect(defaultContainer.querySelector(".tx-ptr-arrow")).toBeTruthy();
+
+    const { container: boxContainer } = render(
+      <PointerBuddy x={100} y={120} box={{ width: 120, height: 60 }} step={2} />,
+    );
+    expect(boxContainer.querySelector(".tx-ptr-ring")).toBeTruthy();
+    expect(boxContainer.querySelector(".tx-ptr-arrow")).toBeTruthy();
+    expect(screen.getByText("2")).toBeTruthy();
   });
 });

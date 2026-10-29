@@ -26,6 +26,9 @@ export const channels = {
   talkStart: "voice:talk-start",
   talkEnd: "voice:talk-end",
   talkKeysAccess: "voice:talk-keys-access",
+  wakeSet: "voice:wake-set",
+  wakeStatus: "voice:wake-status",
+  wake: "voice:wake",
   setPresence: "presence:set",
   controlMode: "do:mode",
   setControlMode: "do:set-mode",
@@ -52,6 +55,8 @@ export interface OverlayPointer {
   x: number;
   y: number;
   caption?: string;
+  box?: { width: number; height: number };
+  step?: number;
 }
 
 /** What Tandrix is doing, for the presence bar at the top of the screen. Null: idle, nothing shown. */
@@ -136,6 +141,8 @@ export interface TandrixBridge {
       geometry: ScreenGeometry,
       point: { x: number; y: number },
       caption: string,
+      box?: { width: number; height: number },
+      step?: number,
     ): Promise<void>;
     clear(): Promise<void>;
     /** Overlay windows only: called with the pointer to draw, or null to clear it. */
@@ -159,6 +166,17 @@ export interface TandrixBridge {
     /** Speaks a reply in the best macOS voice installed; false if it can't. */
     speak(text: string): Promise<boolean>;
     stopSpeaking(): Promise<void>;
+    /** Switches the on-device wake word ("Hey Tandrix") on or off. */
+    setWakeWord(on: boolean): Promise<void>;
+    /** The wake word's state, and why it can't listen when it can't. */
+    onWakeStatus(
+      listener: (s: {
+        status: "off" | "starting" | "listening" | "unavailable";
+        message?: string;
+      }) => void,
+    ): () => void;
+    /** "Hey Tandrix" was heard; `rest` is anything said after it in the same breath. */
+    onWake(listener: (rest: string) => void): () => void;
     /** ⌥⌘ held: start listening (the screen is captured as it is now). */
     onTalkStart(listener: () => void): () => void;
     /** ⌥⌘ let go: ask. */

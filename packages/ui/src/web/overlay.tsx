@@ -10,21 +10,55 @@ export interface PointerBuddyProps {
   x: number | string;
   y: number | string;
   caption?: ReactNode;
+  /**
+   * Mode B (Highlight a region): Optional area contour drawn around a section (such as a ribbon in
+   * Excel or a settings panel) when learning or explaining an interface.
+   */
+  box?: { width: number; height: number };
+  /**
+   * Mode C (Teach or guide): Optional step number displayed as a small badge on the pointer.
+   */
+  step?: number;
 }
 
-export function PointerBuddy({ x, y, caption }: PointerBuddyProps) {
+export function PointerBuddy({ x, y, box, step }: PointerBuddyProps) {
+  const bw = box ? Math.max(36, Math.round(box.width)) : 0;
+  const bh = box ? Math.max(24, Math.round(box.height)) : 0;
   return (
     <div className="tx-ptr" style={{ left: x, top: y }} role="status" aria-live="polite">
-      <svg
-        className="tx-ptr-arrow"
-        viewBox="0 0 24 24"
-        width={26}
-        height={26}
-        aria-hidden="true"
-      >
+      {box ? (
+        <svg
+          className="tx-ptr-ring"
+          style={{ left: -Math.round(bw / 2), top: -Math.round(bh / 2) }}
+          viewBox={`0 0 ${bw} ${bh}`}
+          width={bw}
+          height={bh}
+          aria-hidden="true"
+        >
+          <rect
+            x="3"
+            y="3"
+            width={bw - 6}
+            height={bh - 6}
+            rx="12"
+            className="tx-ptr-ring-halo"
+            pathLength={1}
+          />
+          <rect
+            x="3"
+            y="3"
+            width={bw - 6}
+            height={bh - 6}
+            rx="12"
+            className="tx-ptr-ring-stroke"
+            pathLength={1}
+          />
+        </svg>
+      ) : null}
+      <svg className="tx-ptr-arrow" viewBox="0 0 24 24" width={26} height={26} aria-hidden="true">
         <path d="M4.9 3.3C3.7 2.8 2.8 3.7 3.3 4.9L9.1 19.3C9.6 20.6 11.5 20.5 11.9 19.1L13.2 15.1C13.5 14.1 14.1 13.5 15.1 13.2L19.1 11.9C20.5 11.5 20.6 9.6 19.3 9.1L4.9 3.3Z" />
       </svg>
-      {caption ? <div className="tx-ptr-cap">{caption}</div> : null}
+      {step ? <span className="tx-ptr-step">{step}</span> : null}
     </div>
   );
 }
@@ -59,7 +93,6 @@ export function PresenceBar({
   label,
   keys,
   keysHint,
-  text,
   level = 0,
   top = 0,
 }: PresenceBarProps) {
@@ -96,11 +129,6 @@ export function PresenceBar({
             </span>
           ) : null}
         </div>
-        {text ? (
-          <p className="tx-presence-text" data-kind={state === "answering" ? "reply" : "asked"}>
-            {text}
-          </p>
-        ) : null}
       </div>
     </div>
   );

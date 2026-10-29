@@ -16,7 +16,7 @@ export const readingMs = (text: string) =>
   Math.max(4000, Math.min(15_000, 2500 + text.split(/\s+/).length * 380));
 
 export function presentAnswer(text: string) {
-  present({ state: "answering", label: "Tandrix", text });
+  present({ state: "answering", label: "Tandrix" });
   clearTimer = setTimeout(() => present(null), readingMs(text));
 }
 

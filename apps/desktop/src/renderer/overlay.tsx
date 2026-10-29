@@ -15,7 +15,9 @@ function Overlay() {
   return (
     <>
       {presence ? <PresenceBar {...presence} /> : null}
-      {pointer ? <PointerBuddy x={pointer.x} y={pointer.y} caption={pointer.caption} /> : null}
+      {pointer ? (
+        <PointerBuddy x={pointer.x} y={pointer.y} box={pointer.box} step={pointer.step} />
+      ) : null}
     </>
   );
 }

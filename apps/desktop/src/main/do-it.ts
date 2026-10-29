@@ -10,7 +10,7 @@ type Point = { x: number; y: number };
 import type { DriverCommand, DriverReply } from "./input-driver";
 
 /** How long the pointer shows what's next before it happens: the user's window to stop it. */
-export const ANNOUNCE_MS = 1000;
+export const ANNOUNCE_MS = 450;
 
 export type BatchResult =
   | { status: "ran"; ran: number; acknowledged: SafetyCheck[] }

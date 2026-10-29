@@ -79,7 +79,11 @@ export function DesktopStep({
         jobStepId: jobStep.id,
         stepOrder: step.order,
       });
-      speak(r.check.reason);
+      speak(
+        r.check.result === "pass"
+          ? `That's correct. ${r.check.reason}`
+          : [r.check.reason, r.check.whatToShowNext].filter(Boolean).join(" "),
+      );
       onChanged();
     });
 

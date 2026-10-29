@@ -98,12 +98,105 @@
   background: var(--mandatory);
   color: var(--on-mandatory);
 }
+.tx-btn-ring {
+  position: relative;
+  background: var(--text);
+  color: var(--background-100);
+  border-radius: var(--radius-full);
+  padding: 0 var(--space-4);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--highlight) 40%, transparent),
+    var(--shadow-sm);
+  transition:
+    transform 160ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 160ms cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 160ms ease;
+}
+.tx-btn-ring:hover:not([disabled]) {
+  transform: translateY(-1px);
+  box-shadow:
+    0 0 0 1.5px var(--highlight),
+    0 0 18px -2px color-mix(in srgb, var(--highlight) 45%, transparent),
+    var(--shadow-md);
+}
+.tx-btn-ring:active:not([disabled]) {
+  transform: translateY(0) scale(0.985);
+  box-shadow:
+    0 0 0 1.5px var(--highlight),
+    0 0 10px -2px color-mix(in srgb, var(--highlight) 30%, transparent);
+}
+.tx-btn-ring:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 3px;
+}
 .tx-btn-icon {
   padding: 0;
   aspect-ratio: 1;
 }
 @media (prefers-reduced-motion: reduce) {
   .tx-btn {
+    transition: none;
+  }
+}
+
+/* Brand Wordmark (Binary-inspired) */
+.tx-wordmark-link {
+  text-decoration: none;
+  color: inherit;
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--radius-sm);
+  transition: opacity 140ms ease;
+}
+.tx-wordmark-link:hover {
+  opacity: 0.88;
+}
+.tx-wordmark-link:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 3px;
+}
+.tx-wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  color: var(--text);
+  line-height: 1;
+}
+.tx-wordmark-glyph {
+  display: inline-block;
+  flex-shrink: 0;
+  color: var(--text);
+  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.tx-wordmark-link:hover .tx-wordmark-glyph {
+  transform: rotate(12deg) scale(1.05);
+}
+.tx-wordmark-ring {
+  stroke: var(--text);
+}
+.tx-wordmark-spark {
+  fill: var(--highlight);
+}
+.tx-wordmark-bar {
+  fill: var(--text);
+}
+.tx-wordmark-sm {
+  font-size: 15px;
+  gap: 7px;
+}
+.tx-wordmark-md {
+  font-size: 18px;
+  gap: 9px;
+}
+.tx-wordmark-lg {
+  font-size: 24px;
+  gap: 12px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tx-wordmark-glyph {
     transition: none;
   }
 }
@@ -389,6 +482,58 @@ button.tx-visual-frame:focus-visible {
   stroke-linejoin: round;
   stroke-linecap: round;
   paint-order: stroke fill;
+}
+.tx-ptr-ring {
+  position: absolute;
+  left: -34px;
+  top: -22px;
+  overflow: visible;
+  pointer-events: none;
+}
+.tx-ptr-ring-halo {
+  fill: var(--highlight-tint);
+  stroke: var(--highlight-halo);
+  stroke-width: 4px;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+}
+.tx-ptr-ring-stroke {
+  fill: none;
+  stroke: var(--highlight);
+  stroke-width: 2px;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+}
+.tx-ptr-step {
+  position: absolute;
+  left: 20px;
+  top: -10px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--highlight);
+  color: var(--highlight-halo);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 0 2px var(--highlight-halo);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .tx-ptr-ring-halo,
+  .tx-ptr-ring-stroke {
+    animation: tx-ring-draw 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+}
+@keyframes tx-ring-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
 }
 .tx-ptr-cap {
   position: absolute;

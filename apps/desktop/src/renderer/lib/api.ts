@@ -8,13 +8,16 @@ import {
   Evidence,
   Job,
   JobDetailResponse,
+  ProfileResponse,
   ScreenAskResponse,
   StepActionResponse,
   TranscribeResponse,
+  type ControlMode,
   type CreateEvidenceRequest,
   type ScreenAskInlineRequest,
   type ScreenAskRequest,
   type StepActionRequest,
+  type UpdateProfileRequest,
 } from "@tandrix/contracts";
 import { z } from "zod";
 import { env } from "./env";
@@ -82,7 +85,7 @@ async function speech(text: string, signal: AbortSignal): Promise<Blob | null> {
       method: "POST",
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       body: JSON.stringify({ text }),
-      signal,
+      signal: AbortSignal.any([signal, AbortSignal.timeout(20_000)]),
     });
     return res.status === 200 ? await res.blob() : null;
   } catch {
@@ -92,6 +95,14 @@ async function speech(text: string, signal: AbortSignal): Promise<Blob | null> {
 
 export const api = {
   speech,
+  getProfile: () => request("/profile", ProfileResponse),
+  updateProfile: (body: UpdateProfileRequest) =>
+    request("/profile", ProfileResponse, { method: "PUT", body: JSON.stringify(body) }),
+  setControlMode: (jobId: string, mode: ControlMode) =>
+    request(`/jobs/${jobId}/control-mode`, z.object({ job: Job }), {
+      method: "PATCH",
+      body: JSON.stringify({ mode }),
+    }).then((r) => r.job),
   listJobs: () => request("/jobs", z.object({ jobs: z.array(Job) })).then((r) => r.jobs),
   getJob: (id: string) => request(`/jobs/${id}`, JobDetailResponse),
   createEvidence: (jobId: string, body: z.input<typeof CreateEvidenceRequest>) =>
@@ -106,6 +117,7 @@ export const api = {
   transcribe: (wav: Uint8Array) => {
     const form = new FormData();
     form.append("audio", new Blob([wav as BlobPart], { type: "audio/wav" }), "question.wav");
+    form.append("keywords", JSON.stringify(["Tandrix", "Hey Tandrix", "Wake up Tandrix"]));
     return request("/voice/transcribe", TranscribeResponse, { method: "POST", body: form }, false);
   },
   /** Recorded as the Mac's doing in the job's history. */

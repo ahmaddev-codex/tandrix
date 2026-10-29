@@ -1,8 +1,10 @@
-// First run on the Mac: screen access, the microphone, holding ⌥⌘ to talk, and one question.
-import { Button, Icon } from "@tandrix/ui/web";
+// First run on the Mac: what to call the user, screen access, the microphone, holding ⌥⌘ to
+// talk, and one question.
+import { Button, Icon, Input } from "@tandrix/ui/web";
 import { useCallback, useEffect, useState } from "react";
 import { TALK_KEYS, type ScreenAccess } from "../../shared/bridge";
-import { skipSetup, useSetupFlags } from "../lib/setup";
+import { api } from "../lib/api";
+import { markNamed, readNamed, skipSetup, useSetupFlags } from "../lib/setup";
 
 interface Item {
   title: string;
@@ -36,6 +38,59 @@ export function useSetupStatus() {
     done,
     show: !done && !flags.skipped && !!screen && !!mic && keys !== undefined,
   };
+}
+
+/** Asked once during setup (and never again): what Tandrix should call the user. */
+function NameAsk() {
+  const [name, setName] = useState("");
+  const [show, setShow] = useState(false);
+  const [saving, setSaving] = useState(false);
+  useEffect(() => {
+    if (readNamed()) return;
+    api
+      .getProfile()
+      .then((p) => {
+        if (p.displayName) markNamed();
+        else setShow(true);
+      })
+      .catch(() => undefined);
+  }, []);
+  if (!show) return null;
+  const save = () => {
+    const displayName = name.trim();
+    if (!displayName) return;
+    setSaving(true);
+    api
+      .updateProfile({ displayName })
+      .then(() => {
+        markNamed();
+        setShow(false);
+      })
+      .catch(() => setSaving(false));
+  };
+  const skip = () => {
+    markNamed();
+    setShow(false);
+  };
+  return (
+    <div className="panel-stack-2">
+      <Input
+        label="What should Tandrix call you?"
+        value={name}
+        onChange={setName}
+        placeholder="Your first name"
+        hint="First name is fine. Tandrix uses it rarely, so it feels personal."
+      />
+      <div className="setup-name-actions">
+        <Button variant="primary" size="sm" onClick={save} disabled={saving || !name.trim()}>
+          Save
+        </Button>
+        <Button variant="tertiary" size="sm" onClick={skip}>
+          Skip
+        </Button>
+      </div>
+    </div>
+  );
 }
 
 export function Setup({ status }: { status: ReturnType<typeof useSetupStatus> }) {
@@ -89,6 +144,7 @@ export function Setup({ status }: { status: ReturnType<typeof useSetupStatus> })
         </h2>
         <p className="copy-13 panel-muted">Four things, about a minute.</p>
       </header>
+      <NameAsk />
       <ol className="setup-list">
         {items.map((item, i) => (
           <li key={item.title} className={item.done ? "setup-item is-done" : "setup-item"}>

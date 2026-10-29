@@ -23,6 +23,7 @@ import { captureForQuestion, pointAtCapture, setListening, setupShowMe } from ".
 import {
   clearPointer,
   createPanel,
+  sendToPanel,
   isOwnWindow,
   showPanel,
   syncOverlays,
@@ -44,6 +45,7 @@ import {
   stopDoing,
 } from "./do-session";
 import { frontApp, installedApps } from "./apps";
+import { setWakeWord, stopWakeWord } from "./wake";
 import { ControlMode, DesktopAction, SafetyCheck, ScreenGeometry } from "@tandrix/contracts";
 import { z } from "zod";
 
@@ -78,7 +80,12 @@ const DoBatchSchema = z.strictObject({
 });
 const flag = (a: unknown[]): a is [boolean] => a.length === 1 && typeof a[0] === "boolean";
 /** Checked in detail by the handler itself. */
-const three = (a: unknown[]): a is [unknown, unknown, unknown] => a.length === 3;
+const pointArgs = (
+  a: unknown[],
+): a is
+  | [unknown, unknown, unknown]
+  | [unknown, unknown, unknown, unknown]
+  | [unknown, unknown, unknown, unknown, unknown] => a.length >= 3 && a.length <= 5;
 
 /** The name set in System Settings > General > About, else the host name tidied up. */
 function deviceName(): string {
@@ -141,7 +148,7 @@ function registerIpc() {
   );
   handle(channels.testPointer, testPointer, none);
   handle(channels.screenCapture, captureForQuestion, none);
-  handle(channels.pointAt, pointAtCapture, three);
+  handle(channels.pointAt, pointAtCapture, pointArgs);
   handle(channels.clearPointer, clearPointer, none);
   handle(channels.deviceName, deviceName, none);
   handle(channels.panelShow, () => tray && showPanel(tray.getBounds()), none);
@@ -164,6 +171,16 @@ function registerIpc() {
   handle(channels.doRun, (raw) => runDoBatch(DoBatchSchema.parse(raw)), one);
   handle(channels.doEnd, endTask, none);
   handle(channels.doStop, stopDoing, none);
+  handle(
+    channels.wakeSet,
+    (on: boolean) =>
+      setWakeWord(on, {
+        status: (status, message) =>
+          sendToPanel(channels.wakeStatus, { status, ...(message ? { message } : {}) }),
+        wake: (rest) => sendToPanel(channels.wake, rest),
+      }),
+    flag,
+  );
   handle(
     channels.doApps,
     async () => {
@@ -213,6 +230,7 @@ app.on("will-quit", () => {
   globalShortcut.unregisterAll();
   void stopPushToTalk();
   shutdownDoing();
+  stopWakeWord();
 });
 app.on("second-instance", () => tray && togglePanel(tray.getBounds()));
 // A menu-bar app keeps running with its windows hidden.

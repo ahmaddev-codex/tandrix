@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 
 const TRIED = "tandrix.setup.tried";
 const SKIPPED = "tandrix.setup.skipped";
+const NAMED = "tandrix.setup.named";
 const CHANGED = "tandrix-setup-changed";
 
 const read = (key: string) => {
@@ -24,6 +25,9 @@ const write = (key: string) => {
 /** Called after the first answered question, however it was asked. */
 export const markTried = () => !read(TRIED) && write(TRIED);
 export const skipSetup = () => write(SKIPPED);
+/** The name question was answered or skipped; it is asked once. */
+export const markNamed = () => write(NAMED);
+export const readNamed = () => read(NAMED);
 
 export function useSetupFlags() {
   const [flags, setFlags] = useState(() => ({ tried: read(TRIED), skipped: read(SKIPPED) }));

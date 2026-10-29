@@ -163,6 +163,20 @@ input {
 .setup-item.is-done .label-13 {
   color: var(--text-secondary);
 }
+.setup-name-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+.name-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+.name-row .tx-field {
+  flex: 1 1 160px;
+  min-width: 0;
+}
 .visually-hidden {
   position: absolute;
   width: 1px;

@@ -25,4 +25,12 @@ describe("parseSayVoices", () => {
   it("leads to the Premium voice", () => {
     expect(pickVoice(parseSayVoices(out), "en-US")?.name).toBe("Ava (Premium)");
   });
+
+  it("returns null when no Premium or Enhanced voice is installed to avoid robotic voices", () => {
+    const standardOnly = out
+      .split("\n")
+      .filter((l) => !l.includes("Ava"))
+      .join("\n");
+    expect(pickVoice(parseSayVoices(standardOnly), "en-US")).toBeNull();
+  });
 });
