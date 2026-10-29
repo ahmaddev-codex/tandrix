@@ -16,7 +16,8 @@
   border-radius: 0.3em;
   box-shadow:
     0 0 0 0.04em rgba(0, 0, 0, 0.1),
-    0 1em 2.4em -1em rgba(9, 30, 66, 0.35);
+    0 0.1em 0.25em rgba(9, 30, 66, 0.06),
+    0 0.8em 1.8em -1.2em rgba(9, 30, 66, 0.22);
   /* Paper grain */
   background-image: radial-gradient(rgba(0, 0, 0, 0.025) 0.05em, transparent 0.06em);
   background-size: 0.4em 0.4em;

@@ -78,3 +78,12 @@ export const analyticsPhoto: PhotoSpec = {
   h: 1308,
   crop: { x: 0, y: 160, w: 736, h: 760 },
 };
+
+/** The same diagram, cropped to the robot, with the sensor ringed: the picture on a step card. */
+export const sensorPhoto: PhotoSpec = {
+  src: "/photos/robot-manual.jpeg",
+  w: 735,
+  h: 563,
+  crop: { x: 190, y: 250, w: 450, h: 260 },
+  ring: { x: 258, y: 326, w: 88, h: 72, caption: "Ultrasonic sensor" },
+};

@@ -17,7 +17,7 @@ import {
   VerifiedTile,
   VideoTile,
 } from "../components/site/Tiles";
-import { Photo } from "../components/scenes/Photo";
+import { Photo, type PhotoSpec } from "../components/scenes/Photo";
 import {
   calendarPhoto,
   excelPhoto,
@@ -29,7 +29,12 @@ import { Clip } from "../components/site/Clip";
 import { Cta } from "../components/site/Cta";
 import { DayTimeline, type Moment } from "../components/site/DayTimeline";
 import { Explorer, type Place } from "../components/site/Explorer";
+import { Assemble } from "../components/site/Assemble";
+import { BeforeAfter } from "../components/site/BeforeAfter";
 import { EarlyAccess } from "../components/site/EarlyAccess";
+import { HearIt } from "../components/site/HearIt";
+import { StickyPresence } from "../components/site/StickyPresence";
+import { TryIt } from "../components/site/TryIt";
 import { ThemeToggle } from "../components/ThemeToggle";
 import {
   IPHONE_DOWNLOAD_URL,
@@ -164,33 +169,41 @@ const uses = [
   },
 ] as const;
 
+/** Width over height of a photo as shown. */
+const fit = (p: PhotoSpec) => (p.crop ? p.crop.w / p.crop.h : p.w / p.h);
+
 const asks = [
   {
-    clip: "phone-coffee",
+    photo: wifiPhoto,
+    line: "router",
     when: "11 pm, a blinking router",
-    ask: "What does this blinking light mean?",
+    ask: "Why can't my Mac see the Wi‑Fi?",
     reply: "It's waiting for Wi‑Fi. Open Settings, then Network, and pick yours.",
   },
   {
-    clip: "laptop-woman",
+    photo: excelPhoto,
+    line: "teach",
     when: "A new app at work",
     ask: "Teach me pivot tables",
     reply: "Click any cell, then Insert, then PivotTable. Say next when that's done.",
   },
   {
-    clip: "woodwork",
+    photo: manualPhoto,
+    line: "setup",
     when: "A new kit on the bench",
     ask: "Walk me through my first setup",
     reply: "Found the manual: six steps. Show me the parts laid out and we'll start.",
   },
   {
-    clip: "working-on-a-cpu",
+    photo: partsPhoto,
+    line: "seated",
     when: "Mid-build, screwdriver in hand",
     ask: "Is this part seated right?",
     reply: "Not yet. The left clip is still up. Press it down until it clicks, then show me again.",
   },
   {
-    clip: "typing-on-laptop",
+    photo: calendarPhoto,
+    line: "dentist",
     when: "The task behind the task",
     ask: "And book my dentist after this",
     reply: "Queued. I'll do it next, and ask you before anything is sent.",
@@ -278,8 +291,9 @@ const faqs: Array<{ id?: string; q: string; a: string }> = [
 export default function Home() {
   return (
     <div id="top" className={styles.page}>
-      <section className={styles.hero} aria-labelledby="hero-title">
+      <section className={styles.hero} aria-labelledby="hero-title" data-presence-off>
         <SmoothScroll />
+        <StickyPresence />
         <header className={styles.header}>
           <BrandWordmark href="#top" size="lg" className={styles.brand} />
           <nav className={styles.nav} aria-label="Primary">
@@ -324,9 +338,14 @@ export default function Home() {
 
       <ScrollReveals>
         <main>
-          <section id="what" className={styles.section} aria-labelledby="what-title">
+          <section
+            id="what"
+            data-presence-state="looking"
+            data-presence-label="Looking at your screen"
+            className={styles.section}
+            aria-labelledby="what-title"
+          >
             <div className={styles.head} data-reveal>
-              <ActivePill state="looking" label="Looking at your screen" />
               <h2 id="what-title" className={styles.h2}>
                 An assistant that{" "}
                 <span className={styles.nowrap}>
@@ -381,9 +400,29 @@ export default function Home() {
             </div>
           </section>
 
-          <section id="day" className={styles.band} aria-labelledby="day-title">
+          <section
+            id="try"
+            className={styles.section}
+            aria-labelledby="try-title"
+            data-presence-state="looking"
+            data-presence-label="Show me"
+          >
             <div className={styles.head} data-reveal>
-              <ActivePill state="answering" label="Answering" />
+              <h2 id="try-title" className={styles.h2}>
+                Point at anything. <span className={styles.h2Soft}>It tells you what it is.</span>
+              </h2>
+            </div>
+            <TryIt />
+          </section>
+
+          <section
+            id="day"
+            data-presence-state="answering"
+            data-presence-label="Answering"
+            className={styles.band}
+            aria-labelledby="day-title"
+          >
+            <div className={styles.head} data-reveal>
               <h2 id="day-title" className={styles.h2}>
                 A day with Tandrix
               </h2>
@@ -395,9 +434,14 @@ export default function Home() {
             <DayTimeline moments={moments} />
           </section>
 
-          <section id="uses" className={styles.section} aria-labelledby="uses-title">
+          <section
+            id="uses"
+            data-presence-state="doing"
+            data-presence-label="Tandrix is in control"
+            className={styles.section}
+            aria-labelledby="uses-title"
+          >
             <div className={styles.head} data-reveal>
-              <ActivePill state="doing" label="Tandrix is in control" keys="Esc" hint="to stop" />
               <h2 id="uses-title" className={styles.h2}>
                 Help with whatever&apos;s in front of you
               </h2>
@@ -461,9 +505,33 @@ export default function Home() {
             </div>
           </section>
 
-          <section id="explore" className={styles.band} aria-labelledby="explore-title">
+          <section
+            id="build"
+            className={styles.buildSection}
+            aria-labelledby="build-title"
+            data-presence-state="doing"
+            data-presence-label="Checking each part"
+          >
             <div className={styles.head} data-reveal>
-              <ActivePill state="thinking" label="Thinking" />
+              <h2 id="build-title" className={styles.h2}>
+                Build it with Tandrix
+              </h2>
+              <p className={styles.lead}>
+                Scroll to put the kit together. Each part is checked as it lands, the way Tandrix
+                checks your build from a photo.
+              </p>
+            </div>
+            <Assemble />
+          </section>
+
+          <section
+            id="explore"
+            data-presence-state="thinking"
+            data-presence-label="Thinking"
+            className={styles.band}
+            aria-labelledby="explore-title"
+          >
+            <div className={styles.head} data-reveal>
               <h2 id="explore-title" className={styles.h2}>
                 See what it can do for you
               </h2>
@@ -472,11 +540,29 @@ export default function Home() {
           </section>
 
           <section
+            id="manual"
+            className={styles.section}
+            aria-labelledby="manual-title"
+            data-presence-state="thinking"
+            data-presence-label="Reading the manual"
+          >
+            <div className={styles.head} data-reveal>
+              <h2 id="manual-title" className={styles.h2}>
+                From the manual <span className={styles.h2Soft}>to your next step</span>
+              </h2>
+              <p className={styles.lead}>
+                Tandrix reads the real manual and turns each page into one clear step, with the part
+                ringed. Drag to compare.
+              </p>
+            </div>
+            <BeforeAfter />
+          </section>
+
+          <section
             className={`${styles.section} ${styles.sectionWide}`}
             aria-labelledby="asks-title"
           >
             <div className={styles.headLeft} data-reveal>
-              <ActivePill state="listening" label="Listening" />
               <h2 id="asks-title" className={styles.h2}>
                 Ask it like you&apos;d ask a friend
               </h2>
@@ -485,20 +571,33 @@ export default function Home() {
             <div className={styles.asks} tabIndex={0} aria-label="Examples">
               {asks.map((a) => (
                 <article key={a.ask} className={styles.ask}>
-                  <Clip name={a.clip} className={styles.askClip} />
-                  <span className={styles.askShade} aria-hidden="true" />
-                  <p className={styles.askWhen}>{a.when}</p>
-                  <p className={styles.askQuote}>“{a.ask}”</p>
-                  <p className={styles.askReply}>
-                    <span className={styles.askBy}>Tandrix</span>
-                    {a.reply}
-                  </p>
+                  <div className={styles.askShot}>
+                    {/* Fitted whole inside the frame at its own shape, so the ring stays exact. */}
+                    <div style={{ width: `min(100cqw, ${fit(a.photo) * 100}cqh)` }}>
+                      <Photo spec={a.photo} />
+                    </div>
+                  </div>
+                  <div className={styles.askText}>
+                    <p className={styles.askWhen}>{a.when}</p>
+                    <p className={styles.askQuote}>“{a.ask}”</p>
+                    <p className={styles.askReply}>
+                      <span className={styles.askBy}>Tandrix</span>
+                      {a.reply}
+                    </p>
+                    <HearIt line={a.line} label="Hear the reply" tone="light" />
+                  </div>
                 </article>
               ))}
             </div>
           </section>
 
-          <section id="map" className={styles.section} aria-labelledby="map-title">
+          <section
+            id="map"
+            data-presence-state="answering"
+            data-presence-label="Ready"
+            className={styles.section}
+            aria-labelledby="map-title"
+          >
             <div className={styles.head} data-reveal>
               <h2 id="map-title" className={styles.h2}>
                 Everything it does, <span className={styles.h2Soft}>in one assistant</span>
@@ -507,9 +606,14 @@ export default function Home() {
             <CapabilityMap />
           </section>
 
-          <section id="get" className={styles.section} aria-labelledby="get-title">
+          <section
+            id="get"
+            data-presence-state="listening"
+            data-presence-label="Ready when you are"
+            className={styles.section}
+            aria-labelledby="get-title"
+          >
             <div className={styles.head} data-reveal>
-              <ActivePill state="answering" label="Ready when you are" />
               <h2 id="get-title" className={styles.h2}>
                 One assistant,
                 <span className={styles.h2Soft}> on every screen you work on</span>
@@ -551,11 +655,12 @@ export default function Home() {
 
           <section
             id="faq"
+            data-presence-state="answering"
+            data-presence-label="Answering"
             className={`${styles.section} ${styles.faq}`}
             aria-labelledby="faq-title"
           >
             <div className={styles.headLeft} data-reveal>
-              <ActivePill state="answering" label="Answering" />
               <h2 id="faq-title" className={styles.h2}>
                 Questions
               </h2>
@@ -580,7 +685,6 @@ export default function Home() {
 
       <section className={styles.closing} aria-labelledby="closing-title">
         <div className={styles.closingCopy}>
-          <ActivePill state="listening" label="Listening" keys="⌥⌘" />
           <h2 id="closing-title" className={styles.closingTitle}>
             Say what you want done.
             <span>Tandrix takes it from there.</span>
