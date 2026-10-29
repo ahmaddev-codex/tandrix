@@ -89,7 +89,7 @@ export function evidenceRoutes(
       // Trust what storage holds, not what the client declared.
       const limit = uploadLimits[ev.kind];
       const typeOk =
-        obj.contentType === null || (limit.mime as readonly string[]).includes(obj.contentType);
+        obj.contentType !== null && (limit.mime as readonly string[]).includes(obj.contentType);
       if (obj.size < 1 || obj.size > limit.maxBytes || !typeOk) {
         await storage.remove(ev.storageKey);
         throw invalid([

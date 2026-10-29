@@ -109,15 +109,16 @@ export async function stepVisuals(
     .sort((a, b) => b.capturedAt.localeCompare(a.capturedAt))[0] as
     (Evidence & { kind: "photo" | "screenshot" }) | undefined;
 
-  const evidenceUrls = await d.storage.signedReadUrls(
-    [reference, latest].filter((e) => !!e).map((e) => e.storageKey),
-    VISUAL_URL_TTL_SEC,
-  );
-  const pageUrl = page
-    ? (await d.manualStorage.signedReadUrls([page.storageKey], VISUAL_URL_TTL_SEC)).get(
-        page.storageKey,
-      )
-    : undefined;
+  const [evidenceUrls, pageUrls] = await Promise.all([
+    d.storage.signedReadUrls(
+      [reference, latest].filter((e) => !!e).map((e) => e.storageKey),
+      VISUAL_URL_TTL_SEC,
+    ),
+    page
+      ? d.manualStorage.signedReadUrls([page.storageKey], VISUAL_URL_TTL_SEC)
+      : Promise.resolve(new Map<string, string>()),
+  ]);
+  const pageUrl = page ? pageUrls.get(page.storageKey) : undefined;
 
   const visuals: StepVisual[] = [];
   const refUrl = reference && evidenceUrls.get(reference.storageKey);

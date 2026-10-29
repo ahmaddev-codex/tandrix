@@ -12,6 +12,8 @@ export interface ScreenQuestion {
   question: string;
   /** Short context lines: equipment, current step and its instruction. */
   context?: string[];
+  /** A guided lesson: one step at a time with check-ins. */
+  lesson?: boolean;
   signal?: AbortSignal;
 }
 
@@ -47,7 +49,11 @@ function computerCalls(output: ResponseOutputItem[]) {
 
 /** Restated next to the question: the model otherwise narrates ("I'll point to…"). */
 export const REPLY_RULE =
-  'Your text reply is read aloud to the user as the instruction. Write it as the instruction itself, in the imperative, naming the control as labelled on screen, for example "Click Export, then choose PDF." Never describe what you are doing, never "I\'ll" or "Got it". Wrong: "I\'ll point to the Apple menu so you can open System Settings." Right: "Click the Apple menu, then System Settings." Plain words only: no code, markup or JSON.';
+  'Your text reply is read aloud to the user as the instruction. You may open with two warm words at most ("Got it.", "Sure thing."), then give the instruction itself, in the imperative, naming the control as labelled on screen, for example "Got it. Click Export, then choose PDF." Never describe what you are doing beyond that opener: never "I\'ll point", "let me highlight" or "I will click". Wrong: "I\'ll point to the Apple menu so you can open System Settings." Right: "Click the Apple menu, then System Settings." Plain words only: no code, markup or JSON.';
+
+/** The lesson version: one step, then the check-in. */
+export const TEACH_REPLY_RULE =
+  'Your text reply is read aloud as the lesson. Give only the single next step: one short explaining sentence at most, then the instruction in the imperative, naming controls as labelled on screen, for example "Docs saves as you type, so there is nothing to do there. Click File, then New. Say next when that is done." End every step with the check-in. You may open with two warm words at most ("Got it.", "Let\'s learn it."). Never describe pointing: no "I\'ll point" or "let me highlight". Plain words only: no code, markup or JSON.';
 
 export async function askScreen(
   client: MetaClient,
@@ -55,14 +61,16 @@ export async function askScreen(
   q: ScreenQuestion,
 ): Promise<ScreenAnswer> {
   const context = q.context?.filter(Boolean).join("\n");
+  const rule = q.lesson ? TEACH_REPLY_RULE : REPLY_RULE;
   const res = await client.respond(
     {
       model,
-      instructions: prompts.showMe,
+      instructions: q.lesson ? prompts.teachMe : prompts.showMe,
       tools: [{ type: "computer" }],
+      reasoning: { effort: "low" },
       input: [
         user(
-          text(`${context ? `${context}\n\n` : ""}The user asks: ${q.question}\n\n${REPLY_RULE}`),
+          text(`${context ? `${context}\n\n` : ""}The user asks: ${q.question}\n\n${rule}`),
           q.screenshot,
         ),
       ],

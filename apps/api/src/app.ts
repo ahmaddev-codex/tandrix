@@ -30,6 +30,8 @@ import { jobReportRoutes, publicReportRoutes } from "./routes/report";
 import type { ReportsRepo } from "./repos/reports";
 import { inlineScreenRoutes, screenRoutes } from "./routes/screen";
 import type { PairingsRepo } from "./repos/pairings";
+import { profileRoutes } from "./routes/profile";
+import type { ProfilesRepo } from "./repos/profiles";
 import type { SessionMinter } from "./session-minter";
 import { detectionRoutes, SURFACE_HEADER, stepRoutes } from "./routes/steps";
 import type { ManualPagesRepo } from "./repos/manual-pages";
@@ -60,6 +62,7 @@ export interface AppDeps {
   partsChecker: PartsChecker;
   screenGuide: ScreenGuide;
   pairings: PairingsRepo;
+  profiles: ProfilesRepo;
   reports: ReportsRepo;
   sessionMinter: SessionMinter;
   manualPages: ManualPagesRepo;
@@ -152,6 +155,9 @@ export function createApp(deps: AppDeps) {
   app.use("/jobs/*", requireUser(deps.verifyToken));
   app.use("/voice/*", requireUser(deps.verifyToken));
   app.use("/screen/*", requireUser(deps.verifyToken));
+  app.use("/profile", requireUser(deps.verifyToken));
+  app.use("/profile/*", requireUser(deps.verifyToken));
+  app.route("/profile", profileRoutes(deps.profiles, ...(deps.now ? [deps.now] : [])));
   app.route(
     "/screen",
     inlineScreenRoutes({
@@ -259,6 +265,8 @@ export function createApp(deps: AppDeps) {
       deps.procedures,
       deps.stepState,
       deps.partsChecks,
+      deps.evidence,
+      deps.storage,
     ),
   );
 

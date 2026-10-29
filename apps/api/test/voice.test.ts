@@ -7,6 +7,7 @@ import {
 } from "@tandrix/contracts";
 import { describe, expect, it } from "vitest";
 import { createApp } from "../src/app";
+import { MODEL_CALLS_PER_MINUTE } from "../src/rate-limit";
 import type { JobsRepo } from "../src/repos/jobs";
 import type { StepAnswerer, Transcriber } from "../src/voice";
 import {
@@ -168,6 +169,13 @@ describe("POST /voice/transcribe", () => {
   it("needs a signed-in user", async () => {
     const s = await setup();
     expect((await s.upload(wav(1000), {}, "nope")).status).toBe(401);
+  });
+
+  it("limits transcriptions per user per minute", async () => {
+    const s = await setup();
+    for (let i = 0; i < MODEL_CALLS_PER_MINUTE; i++)
+      expect((await s.upload(wav(1200))).status).toBe(200);
+    expect((await s.upload(wav(1200))).status).toBe(429);
   });
 });
 

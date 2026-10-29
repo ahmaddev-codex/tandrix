@@ -6,8 +6,9 @@ import { randomUUID } from "node:crypto";
 import { Hono } from "hono";
 import type { z } from "zod";
 import type { AuthEnv } from "../auth";
-import { HttpError, invalid, notFound } from "../errors";
+import { HttpError, invalid, notFound, tooMany } from "../errors";
 import type { ProcedureGenerator } from "../procedure-generator";
+import { modelLimiter, type RateLimiter } from "../rate-limit";
 import type { AssetsRepo } from "../repos/assets";
 import type { EvidenceRepo, EvidenceStorage } from "../repos/evidence";
 import type { JobsRepo } from "../repos/jobs";
@@ -29,11 +30,14 @@ export interface ProcedureDeps {
   procedures: ProceduresRepo;
   generator: ProcedureGenerator;
   log: (l: Record<string, unknown>) => void;
+  limiter?: RateLimiter;
 }
 
 export function procedureRoutes(d: ProcedureDeps) {
+  const limiter = d.limiter ?? modelLimiter();
   return new Hono<AuthEnv>().post("/", async (c) => {
     const user = c.get("user");
+    if (!limiter.allow(user.id)) throw tooMany();
     const jobId = Id.safeParse(c.req.param("id"));
     if (!jobId.success) throw notFound("Job");
     const parsed = GenerateProcedureRequest.safeParse(await c.req.json().catch(() => ({})));
@@ -53,16 +57,18 @@ export function procedureRoutes(d: ProcedureDeps) {
     const manual =
       (await d.manuals.forJob(user.id, jobId.data)) ??
       (asset ? await d.manuals.findForModel(user.id, key) : null);
-    // Photos of where the work stands, owned by this job and uploaded.
-    const photos: Array<{ bytes: Uint8Array; mimeType: string }> = [];
-    for (const id of parsed.data.contextEvidenceIds) {
-      const ev = await d.evidence.getForOwner(user.id, jobId.data, id);
+    // Photos of where the work stands, owned by this job and uploaded. Looked up and
+    // downloaded in parallel, validated in order so the first bad photo is the one named.
+    const photoEvs = await Promise.all(
+      parsed.data.contextEvidenceIds.map((id) => d.evidence.getForOwner(user.id, jobId.data, id)),
+    );
+    const keys: string[] = [];
+    for (const ev of photoEvs) {
       if (!ev || !ev.uploadedAt || ev.kind !== "photo") throw notFound("Photo");
-      photos.push({
-        bytes: await d.evidenceStorage.download(ev.storageKey),
-        mimeType: ev.mimeType,
-      });
+      keys.push(ev.storageKey);
     }
+    const blobs = await Promise.all(keys.map((k) => d.evidenceStorage.download(k)));
+    const photos = blobs.map((bytes, i) => ({ bytes, mimeType: photoEvs[i]!.mimeType }));
     if (asset && !manual && !parsed.data.allowGeneric) {
       throw new HttpError(
         409,

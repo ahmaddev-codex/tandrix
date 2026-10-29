@@ -133,18 +133,6 @@ export const PartsAssignment = z.strictObject({
 });
 export type PartsAssignment = z.infer<typeof PartsAssignment>;
 
-/** Text half of a desktop turn; the pointer target comes from the computer-use action. */
-export const ScreenReply = z.strictObject({
-  say: text(600),
-  /** The control's name as shown in the app, used for the caption and accessibility fallback. */
-  targetLabel: optionalText(120),
-  /** What should change on screen after the user acts; used to verify the screen step. */
-  expectedChange: optionalText(300),
-  /** True when the target isn't visible and the user must scroll or open something first. */
-  targetNotVisible: z.boolean().default(false),
-});
-export type ScreenReply = z.infer<typeof ScreenReply>;
-
 /** What each part looks like in plain words, for the segmenter when its name finds nothing. */
 export const VisualConcepts = z.strictObject({
   concepts: z.array(

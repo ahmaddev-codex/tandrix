@@ -129,25 +129,27 @@ export function supabaseProceduresRepo(db: SupabaseClient): ProceduresRepo {
     },
 
     async getDetail(ownerId, procedureId) {
-      const { data: p, error } = await db
-        .from("procedures")
-        .select(
-          "id, asset_model_key, source_type, author_id, status, version, title, manual_id, created_at",
-        )
-        .eq("id", procedureId)
-        // The owner id goes into a PostgREST filter string, so it must be exactly a UUID.
-        .or(`status.eq.published,author_id.eq.${Id.parse(ownerId)}`)
-        .maybeSingle();
-      if (error) throw dbError(error);
-      if (!p) return null;
-      const [parts, steps] = await Promise.all([
+      // All three reads need only the procedure id, so they run together; errors surface in the
+      // same order as before, and a missing procedure still returns null.
+      const [proc, parts, steps] = await Promise.all([
+        db
+          .from("procedures")
+          .select(
+            "id, asset_model_key, source_type, author_id, status, version, title, manual_id, created_at",
+          )
+          .eq("id", procedureId)
+          // The owner id goes into a PostgREST filter string, so it must be exactly a UUID.
+          .or(`status.eq.published,author_id.eq.${Id.parse(ownerId)}`)
+          .maybeSingle(),
         db.from("part_specs").select("*").eq("procedure_id", procedureId).order("name"),
         db.from("procedure_steps").select("*").eq("procedure_id", procedureId).order("order"),
       ]);
+      if (proc.error) throw dbError(proc.error);
+      if (!proc.data) return null;
       if (parts.error) throw dbError(parts.error);
       if (steps.error) throw dbError(steps.error);
       return {
-        procedure: toProcedure(p),
+        procedure: toProcedure(proc.data),
         parts: parts.data.map(toPart),
         steps: steps.data.map(toStep),
       };

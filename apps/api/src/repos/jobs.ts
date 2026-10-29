@@ -25,6 +25,22 @@ export interface JobsRepo {
     jobStepId?: string;
     by: Surface;
   }): Promise<Job>;
+  /**
+   * Mirrors the desktop's Show me / Do it for me mode onto the job and records a
+   * control_mode_changed event. Null when the job isn't the owner's.
+   */
+  setControlMode(input: {
+    ownerId: string;
+    jobId: string;
+    mode: "show" | "do";
+    surface: Surface;
+  }): Promise<Job | null>;
+  /**
+   * Deletes the owner's job: steps first (status_evidence_id is delete-restrict), then the
+   * job row, which cascades evidence, detections, checks, events and share links. Storage
+   * objects are removed by the caller first. False when the job isn't the owner's.
+   */
+  remove(ownerId: string, jobId: string): Promise<boolean>;
 }
 
 type Row = Record<string, unknown>;
@@ -110,25 +126,60 @@ export function supabaseJobsRepo(db: SupabaseClient): JobsRepo {
     },
 
     async getForOwner(ownerId, jobId) {
-      const { data, error } = await db
-        .from("jobs")
-        .select(JOB_COLUMNS)
-        .eq("id", jobId)
-        .eq("owner_id", ownerId)
-        .maybeSingle();
-      if (error) throw dbError(error);
-      if (!data) return null;
-      const steps = await db
-        .from("job_steps")
-        .select(
-          "id, job_id, procedure_step_id, status, status_evidence_id, started_at, note, blocked_by, updated_at, updated_by_surface, procedure_steps!inner(order)",
-        )
-        .eq("job_id", jobId);
+      // The steps need only the job id, so both reads run together; a missing job still returns
+      // null without surfacing the steps result.
+      const [job, steps] = await Promise.all([
+        db.from("jobs").select(JOB_COLUMNS).eq("id", jobId).eq("owner_id", ownerId).maybeSingle(),
+        db
+          .from("job_steps")
+          .select(
+            "id, job_id, procedure_step_id, status, status_evidence_id, started_at, note, blocked_by, updated_at, updated_by_surface, procedure_steps!inner(order)",
+          )
+          .eq("job_id", jobId),
+      ]);
+      if (job.error) throw dbError(job.error);
+      if (!job.data) return null;
       if (steps.error) throw dbError(steps.error);
       // Order by the procedure step's position; PostgREST's referencedTable ordering would only
       // sort inside the embedded rows.
       const ordered = [...(steps.data as Row[])].sort((a, b) => stepOrder(a) - stepOrder(b));
-      return { job: toJob(data), steps: ordered.map(toJobStep) };
+      return { job: toJob(job.data), steps: ordered.map(toJobStep) };
+    },
+
+    async setControlMode(input) {
+      const { data, error } = await db
+        .from("jobs")
+        .update({ control_mode: input.mode })
+        .eq("id", input.jobId)
+        .eq("owner_id", input.ownerId)
+        .select(JOB_COLUMNS)
+        .maybeSingle();
+      if (error) throw dbError(error);
+      if (!data) return null;
+      const { error: eventError } = await db.from("events").insert({
+        job_id: input.jobId,
+        type: "control_mode_changed",
+        surface: input.surface,
+        payload: { mode: input.mode },
+      });
+      if (eventError) throw dbError(eventError);
+      return toJob(data);
+    },
+
+    async remove(ownerId, jobId) {
+      const { data, error } = await db
+        .from("jobs")
+        .select("id")
+        .eq("id", jobId)
+        .eq("owner_id", ownerId)
+        .maybeSingle();
+      if (error) throw dbError(error);
+      if (!data) return false;
+      const { error: stepsError } = await db.from("job_steps").delete().eq("job_id", jobId);
+      if (stepsError) throw dbError(stepsError);
+      const { error: jobError } = await db.from("jobs").delete().eq("id", jobId);
+      if (jobError) throw dbError(jobError);
+      return true;
     },
 
     async ownsAsset(ownerId, assetId) {

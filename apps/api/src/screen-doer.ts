@@ -6,10 +6,13 @@ import {
   imageData,
   MetaApiError,
   MetaClient,
+  needsOnlineLookup,
   planTask,
+  searchOnlineSolution,
   startDoing,
   type DoTurn,
   type MetaConfig,
+  onlineNotes,
 } from "@tandrix/ai";
 import type { SafetyCheck } from "@tandrix/contracts";
 
@@ -63,6 +66,13 @@ export function metaScreenDoer(
   return {
     async plan({ task, frontApp, apps }) {
       if (!apps.length) return null;
+      const lower = task.toLowerCase();
+      const byLength = [...apps].sort((a, b) => b.length - a.length);
+      const named = byLength.find((a) => a.length >= 3 && lower.includes(a.toLowerCase()));
+      if (named) {
+        if (frontApp && named.toLowerCase() === frontApp.toLowerCase()) return null;
+        if (/\b(open|launch|switch to|go to|in)\b/i.test(task)) return named;
+      }
       try {
         const r = await planTask(client, config.models, {
           task,
@@ -76,12 +86,20 @@ export function metaScreenDoer(
       }
     },
     start: ({ screenshot, task }) =>
-      run(() =>
-        startDoing(client, config.models.computerUse, {
+      run(async () => {
+        let context: string[] | undefined;
+        if (needsOnlineLookup(task)) {
+          const online = await searchOnlineSolution(client, config.models.reasoning, task).catch(
+            () => null,
+          );
+          if (online?.notes) context = [onlineNotes(online.notes)];
+        }
+        return startDoing(client, config.models.computerUse, {
           screenshot: imageData(screenshot.bytes, screenshot.mimeType),
           task,
-        }),
-      ),
+          ...(context ? { context } : {}),
+        });
+      }),
     continue: ({ previousResponseId, callId, screenshot, acknowledged }) =>
       run(() =>
         continueDoing(client, config.models.computerUse, {

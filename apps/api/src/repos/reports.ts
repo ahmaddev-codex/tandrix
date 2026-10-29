@@ -34,25 +34,15 @@ const toLink = (r: Row): ShareLink => ({
 export function supabaseReportsRepo(db: SupabaseClient): ReportsRepo {
   return {
     async latestChecks(jobId) {
-      const { data, error } = await db
-        .from("checks")
-        .select("job_step_id, evidence_id, result, reason, created_at, job_steps!inner(job_id)")
-        .eq("job_steps.job_id", jobId)
-        .order("created_at", { ascending: false });
+      const { data, error } = await db.rpc("latest_checks_for_job", { p_job_id: jobId });
       if (error) throw dbError(error);
-      const latest = new Map<string, StepCheck>();
-      for (const r of (data ?? []) as Row[]) {
-        const id = String(r.job_step_id);
-        if (!latest.has(id))
-          latest.set(id, {
-            jobStepId: id,
-            evidenceId: String(r.evidence_id),
-            result: r.result as CheckResult,
-            reason: String(r.reason),
-            createdAt: iso(r.created_at),
-          });
-      }
-      return [...latest.values()];
+      return ((data ?? []) as Row[]).map((r): StepCheck => ({
+        jobStepId: String(r.job_step_id),
+        evidenceId: String(r.evidence_id),
+        result: r.result as CheckResult,
+        reason: String(r.reason),
+        createdAt: iso(r.created_at),
+      }));
     },
     async createShare(jobId, tokenHash, expiresAt) {
       const { data, error } = await db

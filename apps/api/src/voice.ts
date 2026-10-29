@@ -10,7 +10,9 @@ import {
 } from "@tandrix/ai";
 import type { TranscribeResponse } from "@tandrix/contracts";
 import { Hono } from "hono";
-import { rateLimiter, type RateLimiter } from "./rate-limit";
+import { bodyLimit } from "hono/body-limit";
+import type { ContentfulStatusCode } from "hono/utils/http-status";
+import { modelLimiter, rateLimiter, type RateLimiter } from "./rate-limit";
 import { MAX_SPEAK_CHARS, noSpeaker, type Speaker } from "./speech";
 
 const SpeakRequest = z.strictObject({ text: z.string().trim().min(1).max(MAX_SPEAK_CHARS) });
@@ -99,10 +101,23 @@ const Keywords = z.array(z.string().trim().min(1).max(40)).max(20);
 /** Spoken replies: twenty a minute per user covers a conversation. */
 const SPEAK_PER_MINUTE = 20;
 
+/** Refuse oversized recordings before buffering them (chunked uploads carry no length). */
+const transcribeLimit = bodyLimit({
+  maxSize: MAX_TURN_BYTES + 64 * 1024,
+  onError: () => {
+    throw new HttpError(
+      413 as ContentfulStatusCode,
+      "invalid_request",
+      "That recording is too long. Keep it under a minute.",
+    );
+  },
+});
+
 export function voiceRoutes(
   transcriber: Transcriber,
   speaker: Speaker = noSpeaker,
   limiter: RateLimiter = rateLimiter(SPEAK_PER_MINUTE, 60_000),
+  transcribeLimiter: RateLimiter = modelLimiter(),
 ) {
   return (
     new Hono<AuthEnv>()
@@ -119,7 +134,8 @@ export function voiceRoutes(
           "cache-control": "private, max-age=3600",
         });
       })
-      .post("/transcribe", async (c) => {
+      .post("/transcribe", transcribeLimit, async (c) => {
+        if (!transcribeLimiter.allow(c.get("user").id)) throw tooMany();
         // Refuse oversized bodies before reading them.
         const declared = Number(c.req.header("content-length") ?? 0);
         if (declared > MAX_TURN_BYTES + 64 * 1024) {

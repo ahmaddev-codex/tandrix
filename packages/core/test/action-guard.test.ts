@@ -81,6 +81,37 @@ describe("sensitive actions ask first", () => {
     const r = guardAction(click, ctx({ intent: "Send it.", targetLabel: "Send" }));
     expect(r.decision === "confirm" && r.prompt).toContain("click Send");
   });
+
+  it.each([
+    ["Bezahlen", "payment"],
+    ["Payer la commande", "payment"],
+    ["Pagar ahora", "payment"],
+    ["Teilen", "send"],
+    ["Envoyer le message", "send"],
+    ["Löschen", "delete"],
+    ["Supprimer le fichier", "delete"],
+    ["Eliminar cuenta", "delete"],
+    ["Passwort", "credentials"],
+    ["Mot de passe", "credentials"],
+    ["Contraseña", "credentials"],
+    ["Iniciar sesión", "credentials"],
+    ["Herunterladen", "install"],
+    ["Télécharger", "install"],
+    ["Datenschutz", "security_settings"],
+    ["Seguridad", "security_settings"],
+  ])("asks first for %j (%s)", (label, category) => {
+    const r = guardAction(click, ctx({ intent: `Click ${label}.`, targetLabel: label }));
+    expect(r).toMatchObject({ decision: "confirm", category });
+  });
+
+  it("does not fire on substrings of longer words", () => {
+    // "sender" is not the Send button; "mappings" is not a PIN prompt.
+    for (const label of ["sender", "mappings", "Appendix", "repins"]) {
+      expect(
+        guardAction(click, ctx({ intent: `Click ${label}.`, targetLabel: label })).decision,
+      ).toBe("allow");
+    }
+  });
 });
 
 describe("credentials and secrets", () => {

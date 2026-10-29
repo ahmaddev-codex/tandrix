@@ -1,9 +1,17 @@
-import { CreateJobRequest, HandoffRequest, Id, type HandoffResponse } from "@tandrix/contracts";
+import {
+  ControlModeRequest,
+  CreateJobRequest,
+  HandoffRequest,
+  Id,
+  type DeleteJobResponse,
+  type HandoffResponse,
+} from "@tandrix/contracts";
 import { Hono } from "hono";
 import { z } from "zod";
 import type { AuthEnv } from "../auth";
 import { invalid, notFound } from "../errors";
 import type { AssetsRepo } from "../repos/assets";
+import type { EvidenceRepo, EvidenceStorage } from "../repos/evidence";
 import type { JobsRepo } from "../repos/jobs";
 import { assetModelKey, type ManualsRepo } from "../repos/manuals";
 import type { ProceduresRepo } from "../repos/procedures";
@@ -26,6 +34,8 @@ export function jobsRoutes(
   procedures: ProceduresRepo,
   stepState: StepStateRepo,
   partsChecks: PartsChecksRepo,
+  evidence: EvidenceRepo,
+  storage: EvidenceStorage,
 ) {
   return new Hono<AuthEnv>()
     .post("/", async (c) => {
@@ -59,6 +69,32 @@ export function jobsRoutes(
       });
       return c.json({ job } satisfies HandoffResponse);
     })
+    .patch("/:id/control-mode", async (c) => {
+      const id = Id.safeParse(c.req.param("id"));
+      if (!id.success) throw notFound("Job");
+      const parsed = ControlModeRequest.safeParse(await c.req.json().catch(() => undefined));
+      if (!parsed.success) throw invalid(issues(parsed.error));
+      const job = await repo.setControlMode({
+        ownerId: c.get("user").id,
+        jobId: id.data,
+        mode: parsed.data.mode,
+        surface: clientSurface(c.req.header(SURFACE_HEADER)),
+      });
+      if (!job) throw notFound("Job");
+      return c.json({ job });
+    })
+    .delete("/:id", async (c) => {
+      const id = Id.safeParse(c.req.param("id"));
+      if (!id.success) throw notFound("Job");
+      const user = c.get("user");
+      const found = await repo.getForOwner(user.id, id.data);
+      if (!found) throw notFound("Job");
+      // Storage first: if an object can't go, the rows stay and the client retries.
+      const keys = await evidence.keysForJob(id.data);
+      await Promise.all(keys.map((key) => storage.remove(key)));
+      await repo.remove(user.id, id.data);
+      return c.json({ deleted: true } satisfies DeleteJobResponse);
+    })
     .get("/", async (c) => {
       const q = ListQuery.safeParse(c.req.query());
       if (!q.success) throw invalid(issues(q.error));
@@ -71,17 +107,22 @@ export function jobsRoutes(
       const user = c.get("user");
       const found = await repo.getForOwner(user.id, id.data);
       if (!found) throw notFound("Job");
-      const asset = found.job.assetId ? await assets.getForOwner(user.id, found.job.assetId) : null;
+      const [asset, jobManual, procedure, rawConfirmations, rawPartsCheck] = await Promise.all([
+        found.job.assetId ? assets.getForOwner(user.id, found.job.assetId) : Promise.resolve(null),
+        manuals.forJob(user.id, found.job.id),
+        found.job.procedureId
+          ? procedures.getDetail(user.id, found.job.procedureId)
+          : Promise.resolve(null),
+        found.job.procedureId ? stepState.confirmations(found.job.id) : Promise.resolve([]),
+        found.job.procedureId ? partsChecks.latest(found.job.id) : Promise.resolve(null),
+      ]);
       const manual =
-        (await manuals.forJob(user.id, found.job.id)) ??
+        jobManual ??
         (asset
           ? await manuals.findForModel(user.id, assetModelKey(asset.make, asset.model))
           : null);
-      const procedure = found.job.procedureId
-        ? await procedures.getDetail(user.id, found.job.procedureId)
-        : null;
-      const safetyConfirmations = procedure ? await stepState.confirmations(found.job.id) : [];
-      const partsCheck = procedure ? await partsChecks.latest(found.job.id) : null;
+      const safetyConfirmations = procedure ? rawConfirmations : [];
+      const partsCheck = procedure ? rawPartsCheck : null;
       return c.json({ ...found, asset, manual, procedure, safetyConfirmations, partsCheck });
     });
 }

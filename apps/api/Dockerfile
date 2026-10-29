@@ -10,9 +10,11 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/api/package.json apps/api/
 COPY packages/contracts/package.json packages/contracts/
 COPY packages/core/package.json packages/core/
+COPY packages/ai/package.json packages/ai/
 RUN pnpm install --frozen-lockfile --filter "@tandrix/api..."
 COPY packages/contracts packages/contracts
 COPY packages/core packages/core
+COPY packages/ai packages/ai
 COPY apps/api apps/api
 RUN pnpm --filter @tandrix/api build
 

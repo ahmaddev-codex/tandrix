@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { askScreen, imageUrl, MetaClient, prompts, REPLY_RULE } from "../src";
+import {
+  askScreen,
+  imageUrl,
+  MetaClient,
+  prompts,
+  REPLY_RULE,
+  TEACH_REPLY_RULE,
+} from "../src";
 import { json, noSleep, scriptedFetch } from "./helpers";
 
 const screenshot = imageUrl("data:image/jpeg;base64,AAAA");
@@ -130,6 +137,26 @@ describe("askScreen replies", () => {
     const r = await ask("Click Choose storage.");
     expect(r.reply).toBe("Click Choose storage.");
     expect(r.calls).toHaveLength(1);
+  });
+
+  it("keeps a warm opener without rewriting it", async () => {
+    const r = await ask("Got it. Click Export, then choose PDF.");
+    expect(r.reply).toBe("Got it. Click Export, then choose PDF.");
+    expect(r.calls).toHaveLength(1);
+  });
+
+  it("sends the lesson rules when teaching", async () => {
+    const { client, calls } = clientWith(response([message("Click File.")]));
+    await askScreen(client, "muse-spark-1.3", {
+      screenshot,
+      question: "Teach me Google Docs",
+      lesson: true,
+    });
+    expect(calls[0]!.body.instructions).toBe(prompts.teachMe);
+    const input = calls[0]!.body.input as Array<{ content: Array<Record<string, unknown>> }>;
+    expect(input[0]!.content[0]!.text).toBe(
+      `The user asks: Teach me Google Docs\n\n${TEACH_REPLY_RULE}`,
+    );
   });
 
   it("keeps the first reply when the rewrite still narrates", async () => {

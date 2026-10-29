@@ -15,8 +15,9 @@ import { randomUUID } from "node:crypto";
 import { Hono } from "hono";
 import type { z } from "zod";
 import type { AuthEnv } from "../auth";
-import { HttpError, invalid, notFound } from "../errors";
+import { HttpError, invalid, notFound, tooMany } from "../errors";
 import type { PartsChecker } from "../parts-checker";
+import { modelLimiter, type RateLimiter } from "../rate-limit";
 import type { EvidenceRepo, EvidenceStorage } from "../repos/evidence";
 import type { JobsRepo } from "../repos/jobs";
 import type { BlockChanges, PartsChecksRepo } from "../repos/parts-checks";
@@ -32,6 +33,7 @@ export interface PartsDeps {
   storage: EvidenceStorage;
   partsChecks: PartsChecksRepo;
   checker: PartsChecker;
+  limiter?: RateLimiter;
 }
 
 /** Which steps the results block or unblock, with the note each blocked step shows. */
@@ -79,9 +81,11 @@ export function partsRoutes(d: PartsDeps) {
     return { jobId: jobId.data, steps: found.steps, detail };
   };
 
+  const limiter = d.limiter ?? modelLimiter();
   return new Hono<AuthEnv>()
     .post("/", async (c) => {
       const user = c.get("user");
+      if (!limiter.allow(user.id)) throw tooMany();
       const { jobId, steps, detail } = await jobProcedure(user.id, c.req.param("id"));
       const parsed = PartsCheckRequest.safeParse(await c.req.json().catch(() => undefined));
       if (!parsed.success) throw invalid(issues(parsed.error));

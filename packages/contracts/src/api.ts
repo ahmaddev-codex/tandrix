@@ -269,7 +269,21 @@ export const HandoffRequest = z.strictObject({ to: Surface, stepId: Id.optional(
 export const HandoffResponse = z.strictObject({ job: Job });
 export type HandoffResponse = z.infer<typeof HandoffResponse>;
 
+/** DELETE /jobs/:id: the job, its steps and its evidence objects are gone. */
+export const DeleteJobResponse = z.strictObject({ deleted: z.literal(true) });
+export type DeleteJobResponse = z.infer<typeof DeleteJobResponse>;
+
 export const ControlModeRequest = z.strictObject({ mode: ControlMode });
+
+/** GET /profile: what Tandrix calls this user, if they have said. */
+export const ProfileResponse = z.strictObject({ displayName: z.string().nullable() });
+export type ProfileResponse = z.infer<typeof ProfileResponse>;
+
+/** PUT /profile: set or clear it (null clears). */
+export const UpdateProfileRequest = z.strictObject({
+  displayName: z.string().trim().min(1).max(40).nullable(),
+});
+export type UpdateProfileRequest = z.infer<typeof UpdateProfileRequest>;
 
 /**
  * POST /jobs/:id/screen/ask: a question about an uploaded screenshot (evidence kind
@@ -280,6 +294,10 @@ export const ScreenAskRequest = z.strictObject({
   transcript: text(2000),
   geometry: ScreenGeometry,
   mode: ControlMode,
+  /** "Teach me…": one step at a time with check-ins, instead of a single answer. */
+  lesson: z.boolean().default(false),
+  /** What Tandrix calls the user; used rarely, never in every reply. */
+  userName: z.string().trim().min(1).max(40).optional(),
 });
 
 /** The largest inline screenshot a question outside a job may carry (base64 of a 1280 px JPEG is far smaller). */
@@ -310,6 +328,10 @@ export const ScreenAskInlineRequest = z.strictObject({
   mode: ControlMode,
   /** Oldest first; the last four at most. */
   history: z.array(ScreenTurn).max(4).default([]),
+  /** "Teach me…": one step at a time with check-ins, instead of a single answer. */
+  lesson: z.boolean().default(false),
+  /** What Tandrix calls the user; used rarely, never in every reply. */
+  userName: z.string().trim().min(1).max(40).optional(),
 });
 
 export const ScreenAskResponse = z.discriminatedUnion("status", [
@@ -463,6 +485,8 @@ export const AskStepRequest = z.strictObject({
   text: text(1000),
   /** From the "I'm stuck" command: ask for the next physical thing to do. */
   stuck: z.boolean().default(false),
+  /** What Tandrix calls the user; used rarely, never in every reply. */
+  userName: z.string().trim().min(1).max(40).optional(),
 });
 
 export const AskStepResponse = z.discriminatedUnion("status", [

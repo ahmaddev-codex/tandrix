@@ -29,7 +29,8 @@ const exact: Array<[RegExp, VoiceCommand]> = [
 ];
 
 export function parseVoiceCommand(text: string): VoiceCommand | null {
-  const t = normalize(text);
+  const wake = parseWakePhrase(text);
+  const t = normalize(wake.woke ? wake.remainder : text);
   if (!t || t.split(" ").length > 12) return null;
   for (const [pattern, command] of exact) if (pattern.test(t)) return command;
 
@@ -42,4 +43,65 @@ export function parseVoiceCommand(text: string): VoiceCommand | null {
   if (skip) return skip[4] ? { kind: "skip", reason: skip[4] } : { kind: "skip" };
 
   return null;
+}
+
+/**
+ * True when a user explicitly asks Tandrix to perform an action on their computer for them
+ * (for example "do it for me", "click Save for me", "open Calendar and add an event for me").
+ */
+export function wantsDesktopExecution(text: string): boolean {
+  const q = text.trim();
+  if (!q) return false;
+  if (/\b(do (it|this|that)( for me)?|for me please|take over)\b/i.test(q)) return true;
+  if (
+    /^(please\s+)?(click|double[- ]click|open|launch|switch to|type|enter|fill in|turn on|turn off|enable|disable|toggle)\b.+\bfor me\b/i.test(
+      q,
+    )
+  ) {
+    return true;
+  }
+  if (/^(do it:?|do this:?)\s+\S+/i.test(q)) return true;
+  if (/^(please\s+)?(open|launch)\s+[a-z0-9 .+-]+(\s+and\s+.+)?$/i.test(q)) return true;
+  return false;
+}
+
+/**
+ * True when the user asks for a guided lesson on an app or feature ("teach me Photoshop",
+ * "show me how to use Google Docs", "walk me through pivot tables"): taught one step at a time
+ * with check-ins, not answered all at once. A plain question ("how do I export this?") is not.
+ */
+export function wantsLesson(text: string): boolean {
+  const q = text.trim();
+  if (!q) return false;
+  if (
+    /^(please\s+)?(teach me|show me how|walk me through|guide me through|help me learn|give me a (tour of|lesson in)|train me on|talk me through)\b/i.test(
+      q,
+    )
+  )
+    return true;
+  if (/\bhow (do|can) i use\b/i.test(q)) return true;
+  if (/^how to use\b/i.test(q)) return true;
+  return false;
+}
+
+const TANDRIX_WORD =
+  "(?:tandrix|tandrics|tandrex|tandrik|tandricks|tantrix|tendrix|ten\\s+tricks|tan\\s+tricks|chandrix|sandrix|standrix)";
+
+const WAKE_RE = new RegExp(
+  `^\\s*(?:(?:ok|okay|um|uh|well)[\\s,]+)?(?:(?:wake[- ]?up|hey|hi|hello|ok|okay|yo)[\\s,]+${TANDRIX_WORD}|${TANDRIX_WORD}[\\s,]+wake[- ]?up|${TANDRIX_WORD})(?:[\\s,!.:;?—-]+(.*))?$`,
+  "i",
+);
+
+/**
+ * Detects a "Hey Tandrix" / "Wake up Tandrix" wake phrase (including punctuation like
+ * "Hey, Tandrix." and common speech-to-text phonetic spellings) and extracts any trailing task or
+ * question spoken in the same breath.
+ */
+export function parseWakePhrase(text: string): { woke: boolean; remainder: string } {
+  const m = WAKE_RE.exec(text.trim());
+  if (!m) return { woke: false, remainder: text.trim() };
+  const rawRemainder = (m[1] ?? "").replace(/^[.!?,;:\s—-]+/, "").trim();
+  // If the remainder is only punctuation, treat it as a standalone wake phrase.
+  const remainder = /^[.!?,;:\s—-]+$/.test(rawRemainder) ? "" : rawRemainder;
+  return { woke: true, remainder };
 }

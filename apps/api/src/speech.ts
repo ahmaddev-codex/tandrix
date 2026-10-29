@@ -52,10 +52,14 @@ export function kokoroSpeaker(log: (l: Record<string, unknown>) => void): Speake
   warm(): void;
 } {
   let model: Promise<Kokoro | null> | undefined;
+  let readyModel: Kokoro | null = null;
   const load = () =>
     (model ??= import("kokoro-js")
       .then(({ KokoroTTS }) => KokoroTTS.from_pretrained(MODEL, { dtype: "q8", device: "cpu" }))
-      .then((m) => m as unknown as Kokoro)
+      .then((m) => {
+        readyModel = m as unknown as Kokoro;
+        return readyModel;
+      })
       .catch((e: Error) => {
         log({ level: "warn", event: "speech_model_unavailable", error: e.message });
         model = undefined; // try again on the next reply
@@ -69,7 +73,23 @@ export function kokoroSpeaker(log: (l: Record<string, unknown>) => void): Speake
   return {
     warm() {
       const started = Date.now();
-      void load().then((m) => m && log({ event: "speech_model_ready", ms: Date.now() - started }));
+      void load().then(async (m) => {
+        if (!m) return;
+        log({ event: "speech_model_ready", ms: Date.now() - started });
+        // Warm up and pre-cache common wake and completion phrases so they return instantly.
+        for (const phrase of [
+          "I'm here. What would you like to do?",
+          "I'm here. Tell me what you want to do or ask about this step.",
+          "Done.",
+        ]) {
+          try {
+            const audio = await m.generate(phrase, { voice: VOICE });
+            cache.set(phrase, pcm16Wav(audio.audio, audio.sampling_rate));
+          } catch {
+            // Ignore pre-warming failure.
+          }
+        }
+      });
     },
     async speak(raw) {
       const text = raw.replace(/\s+/g, " ").trim().slice(0, MAX_SPEAK_CHARS);
@@ -81,9 +101,9 @@ export function kokoroSpeaker(log: (l: Record<string, unknown>) => void): Speake
         cache.set(text, hit);
         return hit;
       }
+      const m = await load();
+      if (!m) return null;
       const run = queue.then(async () => {
-        const m = await load();
-        if (!m) return null;
         const started = Date.now();
         const audio = await m.generate(text, { voice: VOICE });
         const wav = pcm16Wav(audio.audio, audio.sampling_rate);

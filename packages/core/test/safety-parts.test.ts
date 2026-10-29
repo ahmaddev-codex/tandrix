@@ -116,9 +116,18 @@ describe("refusalForRequest", () => {
     }
   });
 
+  it("refuses handling conductors while powered", () => {
+    expect(refusalForRequest("Can I cut the wire while it's powered?")).not.toBeNull();
+    expect(
+      refusalForRequest("Is it ok to touch the terminals while it is plugged in?"),
+    ).not.toBeNull();
+  });
+
   it("answers ordinary questions", () => {
     expect(refusalForRequest("Which way do the impeller vanes face?")).toBeNull();
     expect(refusalForRequest("Isolate the power first, then what?")).toBeNull();
+    expect(refusalForRequest("How do I wire up the GPIO pins on the Raspberry Pi?")).toBeNull();
+    expect(refusalForRequest("Can I check the terminal logs while it's running?")).toBeNull();
   });
 });
 

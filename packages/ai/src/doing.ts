@@ -95,6 +95,7 @@ export async function startDoing(client: MetaClient, model: string, q: DoStart):
       store: true,
       instructions: prompts.doItForMe,
       tools: [{ type: "computer" }],
+      reasoning: { effort: "low" },
       input: [
         user(
           text(`${context ? `${context}\n\n` : ""}Do this for the user: ${q.task}`),
@@ -128,6 +129,7 @@ export async function continueDoing(
       store: true,
       previous_response_id: c.previousResponseId,
       tools: [{ type: "computer" }],
+      reasoning: { effort: "low" },
       input: [
         {
           type: "computer_call_output",

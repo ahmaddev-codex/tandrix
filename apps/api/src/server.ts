@@ -5,6 +5,7 @@ import { createApp } from "./app";
 import { supabaseVerifier } from "./auth";
 import { loadApiConfig } from "./config";
 import { join } from "node:path";
+import { clientKeyFromHeaders } from "./rate-limit";
 import { loadMetaConfig, setSpendMeter } from "@tandrix/ai";
 import { fileSpendMeter } from "./spend";
 import { metaNameplateReader, noModelReader } from "./nameplate";
@@ -24,6 +25,7 @@ import { supabaseProceduresRepo } from "./repos/procedures";
 import { supabaseDetectionsRepo } from "./repos/detections";
 import { supabaseStepStateRepo } from "./repos/step-state";
 import { supabasePairingsRepo } from "./repos/pairings";
+import { supabaseProfilesRepo } from "./repos/profiles";
 import { supabaseReportsRepo } from "./repos/reports";
 import { supabaseSessionMinter } from "./session-minter";
 import { supabaseManualPagesRepo } from "./repos/manual-pages";
@@ -44,13 +46,15 @@ if (meta) {
   const limit = Number(
     process.env.META_SPEND_LIMIT_USD ?? (config.env === "local" ? 10 : Infinity),
   );
-  setSpendMeter(
-    fileSpendMeter(
-      process.env.META_SPEND_LEDGER ?? join(import.meta.dirname, "..", ".meta-spend.json"),
-      limit,
-      log,
-    ),
+  const meter = fileSpendMeter(
+    process.env.META_SPEND_LEDGER ?? join(import.meta.dirname, "..", ".meta-spend.json"),
+    limit,
+    log,
   );
+  setSpendMeter(meter);
+  // Ledger writes are async: let the last one land before the process goes.
+  for (const sig of ["SIGTERM", "SIGINT"] as const)
+    process.once(sig, () => void meter.flush().finally(() => process.exit(0)));
   log({ event: "spend_meter_on", limitUsd: limit });
 }
 const nameplateReader = meta ? metaNameplateReader(meta, log) : noModelReader;
@@ -90,13 +94,19 @@ const app = createApp({
   partsChecker,
   screenGuide,
   pairings: supabasePairingsRepo(admin),
+  profiles: supabaseProfilesRepo(admin),
   reports: supabaseReportsRepo(admin),
   sessionMinter: supabaseSessionMinter(admin),
   manualPages: supabaseManualPagesRepo(admin),
   pageRenderer: workerPageRenderer(),
   speaker,
   screenDoer: meta ? metaScreenDoer(meta, log) : noModelScreenDoer,
-  clientKey: (c) => getConnInfo(c).remote.address ?? "unknown",
+  clientKey: (c) =>
+    clientKeyFromHeaders(
+      c.req.header("x-forwarded-for"),
+      getConnInfo(c).remote.address,
+      c.req.header("fly-client-ip"),
+    ),
   tokenSecret: config.tokenSigningSecret,
   corsOrigins: config.corsOrigins,
   log,
