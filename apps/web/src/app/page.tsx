@@ -452,10 +452,10 @@ export default function Home() {
                 <span className={styles.cardIcon}>
                   <Icon name="gear" size={20} />
                 </span>
-                <h3>Technical work</h3>
-                <p>Dev environments, code questions and hardware builds, step by step.</p>
+                <h3>How Tandrix works</h3>
+                <p>The layers it adds over your work, and how you stay in control.</p>
                 <span className={styles.cardMore}>
-                  For technical work <Icon name="arrowRight" size={16} />
+                  See inside <Icon name="arrowRight" size={16} />
                 </span>
               </a>
             </div>
@@ -616,7 +616,7 @@ export default function Home() {
             <a href="#day">A day with it</a>
             <a href="#explore">Uses</a>
             <a href="#faq">Questions</a>
-            <a href="/technical">Technical work</a>
+            <a href="/technical">How Tandrix works</a>
             {SOURCE_URL ? (
               <a href={SOURCE_URL} target="_blank" rel="noreferrer">
                 Source
