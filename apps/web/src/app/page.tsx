@@ -562,7 +562,7 @@ export default function Home() {
             className={`${styles.section} ${styles.sectionWide}`}
             aria-labelledby="asks-title"
           >
-            <div className={styles.headLeft} data-reveal>
+            <div className={styles.head} data-reveal>
               <h2 id="asks-title" className={styles.h2}>
                 Ask it like you&apos;d ask a friend
               </h2>

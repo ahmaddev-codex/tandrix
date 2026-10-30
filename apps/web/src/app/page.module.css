@@ -204,8 +204,12 @@
   max-width: none;
   padding-right: 0;
 }
-.sectionWide > .headLeft {
-  max-width: 1236px;
+/* The cards run to the right edge; the heading stays centred on the page. */
+.sectionWide > .head {
+  padding-right: var(--gutter);
+}
+.sectionWide .asks {
+  justify-content: safe center;
 }
 .band {
   margin: var(--gap) var(--frame) 0;
@@ -733,7 +737,9 @@
 
 /* Closing banner */
 .closing {
-  margin: var(--gap) var(--frame) var(--frame);
+  width: min(1340px - 2 * var(--gutter), 100% - 2 * var(--frame));
+  box-sizing: border-box;
+  margin: var(--gap) auto var(--frame);
   padding: clamp(64px, 9vw, 112px) var(--gutter);
   border-radius: 28px;
   color: #fff;
@@ -777,7 +783,8 @@
 .footer {
   display: grid;
   gap: 48px;
-  margin: 0 var(--frame) var(--frame);
+  width: min(1340px - 2 * var(--gutter), 100% - 2 * var(--frame));
+  margin: 0 auto var(--frame);
   padding: 44px var(--gutter) 28px;
   border-radius: 28px;
   background: #0b0b0c;
