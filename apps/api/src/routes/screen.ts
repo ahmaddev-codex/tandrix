@@ -3,6 +3,8 @@
 import { calledLine } from "@tandrix/ai";
 import {
   DO_MAX_TURNS,
+  BackgroundRequest,
+  BackgroundResponse,
   DoContinueRequest,
   DoStartRequest,
   Id,
@@ -26,7 +28,12 @@ import type { EvidenceRepo, EvidenceStorage } from "../repos/evidence";
 import type { JobsRepo } from "../repos/jobs";
 import type { ProceduresRepo } from "../repos/procedures";
 import type { ScreenGuide, ScreenGuideOutcome } from "../screen-guide";
-import { noModelScreenDoer, type DoOutcome, type ScreenDoer } from "../screen-doer";
+import {
+  BACKGROUND_UNAVAILABLE,
+  noModelScreenDoer,
+  type DoOutcome,
+  type ScreenDoer,
+} from "../screen-doer";
 import { signToken, verifyToken } from "../signed-token";
 
 export interface ScreenDeps {
@@ -235,6 +242,7 @@ export function inlineScreenRoutes(d: {
 }) {
   const limiter = d.limiter ?? rateLimiter(30, 60_000);
   const doLimiter = d.doLimiter ?? rateLimiter(120, 60_000);
+  const backgroundLimiter = rateLimiter(20, 60_000);
   const doer = d.doer ?? noModelScreenDoer;
   const now = d.now ?? Date.now;
 
@@ -287,6 +295,17 @@ export function inlineScreenRoutes(d: {
       if (outcome.status === "unavailable") return c.json(outcome satisfies ScreenAskResponse);
       return c.json(answered(outcome, null, size, req.transcript));
     })
+    .post("/background", async (c) => {
+      const user = c.get("user");
+      if (!backgroundLimiter.allow(user.id)) throw tooMany();
+      const parsed = BackgroundRequest.safeParse(await c.req.json().catch(() => undefined));
+      if (!parsed.success) throw invalid(issues(parsed.error));
+      const out = doer.background
+        ? await doer.background(parsed.data.task)
+        : ({ status: "unavailable", message: BACKGROUND_UNAVAILABLE } as const);
+      d.log?.({ event: "background_task", status: out.status });
+      return c.json(BackgroundResponse.parse(out));
+    })
     .post("/do", screenshotLimit, async (c) => {
       const user = c.get("user");
       if (!doLimiter.allow(user.id)) throw tooMany();
@@ -310,8 +329,9 @@ export function inlineScreenRoutes(d: {
           mimeType: parsed.data.screenshot.mimeType,
         },
         task: parsed.data.task,
+        memory: parsed.data.memory,
       });
-      return c.json(turnResponse(user.id, outcome, 1));
+      return c.json(turnResponse(user.id, outcome, parsed.data.turn));
     })
     .post("/do/continue", screenshotLimit, async (c) => {
       const user = c.get("user");

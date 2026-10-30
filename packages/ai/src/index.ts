@@ -12,3 +12,4 @@ export * from "./screen";
 export * from "./pricing";
 export * from "./reply";
 export * from "./doing";
+export * from "./background";

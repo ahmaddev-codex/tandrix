@@ -1,12 +1,27 @@
 // Show me and Do it for me in the panel: listen (hotkey, held mic, or "Wake up Tandrix"), or take a
 // typed goal; screenshot what the user is looking at; ask or act across apps; queue follow-up tasks
 // given while Tandrix is already working; point at the answer and always voice the response.
-import { parseWakePhrase, TAP_MS, wantsDesktopExecution, wantsLesson } from "@tandrix/core";
+import {
+  acknowledge,
+  acknowledgeBackground,
+  acknowledgeQueued,
+  acknowledgeRedirect,
+  helpKind,
+  interjection,
+  isNo,
+  isYes,
+  offerToDo,
+  parseWakePhrase,
+  TAP_MS,
+  wantsLesson,
+} from "@tandrix/core";
 import type { ControlMode, Evidence } from "@tandrix/contracts";
 import type { VoiceTurn } from "@tandrix/ui/web";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ScreenCapture } from "../../shared/bridge";
+import { createBoard, type AgentTask, type Board } from "./agents";
 import { api } from "./api";
+import { runScreenTask } from "./screen-task";
 import { startRecording, type Recording } from "./recorder";
 import { uploadScreenshot } from "./screenshot";
 import { recentExchanges } from "./exchanges";
@@ -16,9 +31,6 @@ import { isSpeaking, speak, stopSpeaking } from "./speech";
 import { TALK_KEYS, type Presence } from "../../shared/bridge";
 
 export type ShowMePhase = "idle" | "listening" | "working";
-
-/** How long the screen gets to settle after a batch before the next screenshot. */
-const SETTLE_MS = 350;
 
 const WAKE_KEY = "tandrix.wakeWord";
 
@@ -41,7 +53,6 @@ export function useShowMe(jobId: string | undefined) {
   const [phase, setPhase] = useState<ShowMePhase>("idle");
   const [turns, setTurns] = useState<VoiceTurn[]>([]);
   const [problem, setProblem] = useState<string>();
-  const [queued, setQueued] = useState<string[]>([]);
   // The wake word is off until the user switches it on; it's remembered on this Mac.
   const [wakeWord, setWakeWordState] = useState(() => {
     try {
@@ -97,7 +108,6 @@ export function useShowMe(jobId: string | undefined) {
   const held = useRef(false);
   const phaseRef = useRef(phase);
   phaseRef.current = phase;
-  const queueRef = useRef<string[]>([]);
   /** Background work is running, even while the panel listens for a follow-up. */
   const workingRef = useRef(false);
   /** The presence the background work last showed, restored after listening. */
@@ -128,6 +138,15 @@ export function useShowMe(jobId: string | undefined) {
     presentAnswer(message);
   };
 
+  /** After Tandrix finishes saying something, listen for the answer (a yes to an offer). */
+  const listenAfterSpeaking = async () => {
+    const until = Date.now() + 12_000;
+    // Speech starts a beat after it's asked for; then wait for it to end.
+    await new Promise((r) => setTimeout(r, 400));
+    while (isSpeaking() && Date.now() < until) await new Promise((r) => setTimeout(r, 150));
+    if (offerRef.current && phaseRef.current !== "listening") void listenRef.current("tap");
+  };
+
   const shoot = useCallback(async (job: string | undefined): Promise<Shot> => {
     const capture = await window.tandrix.screen.capture();
     return { capture, evidence: job ? await uploadScreenshot(job, capture) : null };
@@ -135,88 +154,82 @@ export function useShowMe(jobId: string | undefined) {
 
   const turnsRef = useRef(turns);
   turnsRef.current = turns;
-  /**
-   * Do it for me: the task runs turn by turn across whatever apps are needed. The API says what to
-   * do on the screen shown; the main process checks each action with the guard, asks the user
-   * where needed, and runs it; then a fresh screenshot goes back.
-   */
-  const doTask = useCallback(async (task: string, shot: Promise<Shot>) => {
-    await window.tandrix.doing.begin();
-    reply("On it.");
-    try {
-      let { capture } = await shot;
-      const inline = (c: ScreenCapture) => ({
-        mimeType: c.mimeType,
-        data: base64(c.image),
-      });
-      const { apps, front } = await window.tandrix.doing.apps();
-      let r = await api.doStart({
-        screenshot: inline(capture),
-        task,
-        geometry: capture.geometry,
-        apps,
-        ...(front ? { frontApp: front } : {}),
-      });
-      let appSwitches = 0;
-      for (;;) {
-        if (r.status === "open_app") {
-          if (++appSwitches > 6 || !(await window.tandrix.doing.openApp(r.app)))
-            return reply(`Tandrix couldn't open ${r.app}. Open it yourself, then ask again.`);
-          // If the goal was simply to open or launch that app, it is completed.
-          const onlyOpen = new RegExp(
-            `^(?:please\\s+)?(?:open|launch|start|switch to)\\s+${r.app.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\$&")}(?:\\s+for\\s+me)?[.!]*$`,
-            "i",
-          ).test(task.trim());
-          if (onlyOpen) return reply(`Opened ${r.app}.`);
 
-          await new Promise((res) => setTimeout(res, SETTLE_MS));
-          capture = await window.tandrix.screen.capture();
-          r = await api.doStart({
-            screenshot: inline(capture),
-            task,
-            geometry: capture.geometry,
-            apps,
-            frontApp: r.app,
-            planned: true,
-          });
-          continue;
-        }
-        if (r.status === "unavailable") return reply(r.message);
-        if (r.status === "done") return reply(r.reply || "Done.");
-        // Narrate the work as it happens: the model's few words about this turn.
-        if (r.reply) {
-          speak(r.reply);
-          present({ state: "doing", label: r.reply.slice(0, 120) });
-        }
-        const ran = await window.tandrix.doing.run({
-          actions: r.actions,
-          geometry: capture.geometry,
-          intent: r.reply,
-          safetyChecks: r.safetyChecks,
+  // Every task handed over: screen tasks one at a time, background ones alongside.
+  const [agents, setAgents] = useState<AgentTask[]>([]);
+  const boardRef = useRef<Board | null>(null);
+  const board = (boardRef.current ??= createBoard({
+    runScreen: async (task, io) => {
+      // Acting needs Do it for me in the main process (and Accessibility); it's switched on for the
+      // task and back afterwards unless the user keeps it on.
+      const mode = await window.tandrix.doing.setMode("do");
+      if (mode !== "do")
+        return {
+          status: "failed",
+          reply:
+            "To do things for you I need Accessibility access. Allow Tandrix in System Settings > Privacy & Security > Accessibility, then ask me again.",
+        };
+      await window.tandrix.doing.begin();
+      try {
+        return await runScreenTask(task, {
+          capture: () => window.tandrix.screen.capture(),
+          apps: () => window.tandrix.doing.apps(),
+          openApp: (name) => window.tandrix.doing.openApp(name),
+          turn: (req) => api.doStart(req),
+          next: (req) => api.doContinue(req),
+          run: (batch) => window.tandrix.doing.run(batch),
+          say: (line) => {
+            speak(line);
+            present({
+              state: "doing",
+              label: line.slice(0, 120),
+              keys: "Esc",
+              keysHint: "to stop",
+            });
+          },
+          steer: io.steer,
+          stopped: io.stopped,
+          settle: (ms) => new Promise((r) => setTimeout(r, ms)),
+          base64,
         });
-        if (ran.status !== "ran") return reply(ran.message);
-        // Let the app react (menus open, pages load) before looking again.
-        await new Promise((res) => setTimeout(res, SETTLE_MS));
-        capture = await window.tandrix.screen.capture();
-        r = await api.doContinue({
-          session: r.session,
-          screenshot: inline(capture),
-          geometry: capture.geometry,
-          acknowledged: ran.acknowledged,
-        });
+      } finally {
+        await window.tandrix.doing.end();
+        if (modeRef.current !== "do") await window.tandrix.doing.setMode("show");
       }
-    } finally {
-      await window.tandrix.doing.end();
-    }
+    },
+    background: (task) => api.background(task),
+    onChange: setAgents,
+    onFinish: (t) => {
+      if (!t.result) return;
+      if (t.kind === "background") {
+        add({ speaker: "tandrix", text: t.detail ? `${t.result}\n\n${t.detail}` : t.result });
+        void window.tandrix.panel.notify("Tandrix finished a task", t.result);
+        // Not over the user while they're talking.
+        if (phaseRef.current !== "listening") speak(t.result);
+        return;
+      }
+      reply(t.result);
+      markTried();
+    },
+  }));
+
+  /** Tandrix's offer to do something, waiting for a yes. */
+  const [offer, setOffer] = useState<string | null>(null);
+  const offerRef = useRef<string | null>(null);
+  const setPendingOffer = (task: string | null) => {
+    offerRef.current = task;
+    setOffer(task);
+  };
+
+  const startScreenTask = useCallback((task: string) => {
+    reply(acknowledge(task));
+    present({ state: "doing", label: "Starting", keys: "Esc", keysHint: "to stop" });
+    board.addScreen(task);
   }, []);
 
-  const answer = useCallback(
+  /** Show me: look at the screen, point at the answer, say it. */
+  const showAnswer = useCallback(
     async (job: string | undefined, question: string, shot: Promise<Shot>) => {
-      if (modeRef.current === "do") return doTask(question, shot);
-      if (wantsDesktopExecution(question)) {
-        const switched = await setMode("do");
-        if (switched === "do") return doTask(question, shot);
-      }
       const { capture, evidence } = await shot;
       const lesson = wantsLesson(question);
       const named = userNameRef.current ? { userName: userNameRef.current } : {};
@@ -255,41 +268,98 @@ export function useShowMe(jobId: string | undefined) {
       reply(r.reply);
       markTried();
     },
-    [doTask, setMode],
+    [],
   );
 
-  /** Does the work with the presence bar showing it's busy from the start, then drains queued tasks. */
-  const run = useCallback(
-    async (work: () => Promise<void>, busy: Presence) => {
-      setPhase("working");
-      phaseRef.current = "working";
-      workingRef.current = true;
-      busyRef.current = busy;
-      present(busy);
-      try {
-        await work();
-        while (queueRef.current.length > 0) {
-          const nextTask = queueRef.current.shift()!;
-          setQueued([...queueRef.current]);
-          busyRef.current = { state: "looking", label: "Working on your next task" };
-          present(busyRef.current);
-          reply("On to your next task.");
-          await answer(jobId, nextTask, shoot(jobId));
+  /**
+   * Everything said or typed goes through here. While a screen task runs, a remark stops it,
+   * steers it, or becomes the next task; otherwise Tandrix shows the way, offers to do it, does
+   * it, or works on it in the background.
+   */
+  const answer = useCallback(
+    async (job: string | undefined, said: string, shot: Promise<Shot>, spoken = false) => {
+      const pending = offerRef.current;
+      if (pending) {
+        setPendingOffer(null);
+        if (isYes(said)) return startScreenTask(pending);
+        if (isNo(said)) {
+          reply("No problem, I'll show you instead.");
+          return showAnswer(job, pending, shot);
         }
-      } catch (e) {
-        fail((e as Error).message);
-      } finally {
-        workingRef.current = false;
-        busyRef.current = null;
-        setPhase("idle");
-        phaseRef.current = "idle";
-        // Work that ended without a reply leaves the screen clear.
-        const shown = presenceState();
-        if (shown === "thinking" || shown === "looking") present(null);
       }
+      const kind = helpKind(said);
+      if (board.screenBusy()) {
+        if (kind === "background") {
+          board.addBackground(said);
+          return reply(acknowledgeBackground());
+        }
+        const how = interjection(said);
+        if (how === "stop") {
+          board.stopScreen();
+          await window.tandrix.doing.stop();
+          return;
+        }
+        if (how === "redirect" && board.steer(said)) return reply(acknowledgeRedirect());
+        board.addScreen(said);
+        return reply(acknowledgeQueued());
+      }
+      if (kind === "background") {
+        board.addBackground(said);
+        return reply(acknowledgeBackground());
+      }
+      if (kind === "do" || (kind === "offer" && modeRef.current === "do"))
+        return startScreenTask(said);
+      if (kind === "offer") {
+        setPendingOffer(said);
+        reply(offerToDo(said));
+        // Spoken asks get a spoken answer: listen for the yes once the offer has been said.
+        if (spoken) void listenAfterSpeaking();
+        return;
+      }
+      return showAnswer(job, said, shot);
     },
-    [jobId, answer, shoot],
+    [showAnswer, startScreenTask],
   );
+
+  /** Accept or decline the offer from the panel's buttons. */
+  const acceptOffer = useCallback(() => {
+    const task = offerRef.current;
+    if (!task) return;
+    setPendingOffer(null);
+    startScreenTask(task);
+  }, [startScreenTask]);
+  const declineOffer = useCallback(() => {
+    const task = offerRef.current;
+    if (!task) return;
+    setPendingOffer(null);
+    reply("No problem, I'll show you instead.");
+    void run(() => showAnswer(jobId, task, shoot(jobId)), {
+      state: "looking",
+      label: "Looking at your screen",
+    });
+  }, [jobId, showAnswer, shoot]);
+
+  /** Does the work with the presence bar showing it's busy from the start. */
+  const run = useCallback(async (work: () => Promise<void>, busy: Presence) => {
+    setPhase("working");
+    phaseRef.current = "working";
+    workingRef.current = true;
+    busyRef.current = busy;
+    present(busy);
+    try {
+      await work();
+    } catch (e) {
+      fail((e as Error).message);
+    } finally {
+      workingRef.current = false;
+      busyRef.current = null;
+      setPhase("idle");
+      phaseRef.current = "idle";
+      // Work that ended without a reply leaves the screen clear.
+      const shown = presenceState();
+      if (shown === "thinking" || shown === "looking") present(null);
+    }
+  }, []);
 
   /** A typed or wake-triggered question. Can be called even while another task is working. */
   const ask = useCallback(
@@ -304,11 +374,9 @@ export function useShowMe(jobId: string | undefined) {
       }
       setProblem(undefined);
       add({ speaker: "you", text: effective });
-      if (workingRef.current) {
-        queueRef.current.push(effective);
-        setQueued([...queueRef.current]);
-        reply("Got it — I'll do that next.");
-        restorePhase();
+      // Remarks while a task runs, and answers to an offer, are handled straight away.
+      if (board.screenBusy() || offerRef.current || helpKind(effective) === "background") {
+        void answer(jobId, effective, shoot(jobId));
         return;
       }
       if (phaseRef.current !== "idle") return;
@@ -357,8 +425,8 @@ export function useShowMe(jobId: string | undefined) {
           }
           const effective = wake.woke ? wake.remainder : heard.transcript;
           add({ speaker: "you", text: effective });
-          present({ state: "looking", label: "Looking at your screen" });
-          await answer(jobId, effective, shot);
+          present({ state: "thinking", label: "Thinking" });
+          await answer(jobId, effective, shot, true);
         },
         { state: "thinking", label: "Thinking" },
       );
@@ -407,8 +475,6 @@ export function useShowMe(jobId: string | undefined) {
     recording.current?.cancel();
     recording.current = undefined;
     held.current = false;
-    queueRef.current = [];
-    setQueued([]);
     void window.tandrix.voice.setListening(false);
     setPhase("idle");
     phaseRef.current = "idle";
@@ -477,7 +543,11 @@ export function useShowMe(jobId: string | undefined) {
     phase,
     turns,
     problem,
-    queued,
+    agents,
+    offer,
+    acceptOffer,
+    declineOffer,
+    clearFinished: () => board.clearFinished(),
     wakeWord,
     setWakeWord,
     wakeStatus,

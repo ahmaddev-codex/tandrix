@@ -55,6 +55,8 @@ export interface OverlayPointer {
   x: number;
   y: number;
   caption?: string;
+  /** Doing the work (Do it for me): the pointer glides between steps and shows each action. */
+  working?: { act: "click" | "type" | "keys" | "move" | "scroll" | "drag"; seq: number };
   box?: { width: number; height: number };
   step?: number;
 }

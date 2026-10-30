@@ -8,7 +8,7 @@ import { drive, driving, stopDriver } from "./input-driver";
 import { inputWatched, onUserInput, talkKeysAccess } from "./push-to-talk";
 import { setPresence } from "./presence";
 import { setCancelKey } from "./hotkey";
-import { clearPointer, showPointer } from "./windows";
+import { clearWorkPointer, showWorkPointer } from "./windows";
 import { openApp } from "./apps";
 
 const IN_CONTROL = {
@@ -53,7 +53,7 @@ export function setControlMode(next: ControlMode): ControlMode {
 /** Stops whatever Tandrix is doing; the next batch won't start. */
 export function stopDoing() {
   stopRequested = true;
-  clearPointer();
+  clearWorkPointer();
 }
 
 /** A task starts: the in-control pill, and Esc to stop. */
@@ -73,7 +73,7 @@ export function beginTask() {
 export function endTask() {
   active = false;
   setCancelKey(null);
-  clearPointer();
+  clearWorkPointer();
 }
 
 export const doingTask = () => active;
@@ -121,7 +121,8 @@ export async function runDoBatch(batch: Batch): Promise<BatchResult> {
       mode: controlMode,
       drive,
       confirm,
-      announce: (at, caption) => (at ? showPointer(at, caption) : clearPointer()),
+      announce: (at, caption, act) =>
+        at ? showWorkPointer(at, caption ?? "", act ?? "move") : clearWorkPointer(),
       waitOrStop,
       stopped: () => stopRequested,
       now: Date.now,

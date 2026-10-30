@@ -1,6 +1,7 @@
 // Typed client for the Tandrix API. Responses are validated with the shared contracts.
 import type { DoContinueRequest, DoStartRequest } from "@tandrix/contracts";
 import {
+  BackgroundResponse,
   CheckStepResponse,
   DoTurnResponse,
   StepVisualsResponse,
@@ -145,9 +146,15 @@ export const api = {
   /** Do it for me: the first turn of a task on the screen shown (inline, not kept). */
   doStart: (body: z.input<typeof DoStartRequest>) =>
     request("/screen/do", DoTurnResponse, { method: "POST", body: JSON.stringify(body) }),
-  /** The next turn: the screen after the last batch ran. */
+  /** The next turn of the same model conversation: the screen after the last batch ran. */
   doContinue: (body: z.input<typeof DoContinueRequest>) =>
     request("/screen/do/continue", DoTurnResponse, { method: "POST", body: JSON.stringify(body) }),
+  /** A task that needs no screen, done in the background. */
+  background: (task: string) =>
+    request("/screen/background", BackgroundResponse, {
+      method: "POST",
+      body: JSON.stringify({ task }),
+    }),
   /** A question outside any job: the screenshot travels inline and isn't kept. */
   screenAskInline: (body: z.input<typeof ScreenAskInlineRequest>) =>
     request("/screen/ask", ScreenAskResponse, { method: "POST", body: JSON.stringify(body) }),

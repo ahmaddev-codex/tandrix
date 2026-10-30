@@ -1,12 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  askScreen,
-  imageUrl,
-  MetaClient,
-  prompts,
-  REPLY_RULE,
-  TEACH_REPLY_RULE,
-} from "../src";
+import { askScreen, imageUrl, MetaClient, prompts, REPLY_RULE, TEACH_REPLY_RULE } from "../src";
 import { json, noSleep, scriptedFetch } from "./helpers";
 
 const screenshot = imageUrl("data:image/jpeg;base64,AAAA");

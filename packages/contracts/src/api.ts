@@ -381,7 +381,23 @@ export const ROUTINE_ACTION_CHECK = "computer_action_requires_confirmation";
 export type SafetyCheck = z.infer<typeof SafetyCheck>;
 
 /** Turns in one Do it for me task before Tandrix stops and hands back. */
-export const DO_MAX_TURNS = 30;
+/** A hard ceiling on one task's turns; well before it, the Mac checks in with the user. */
+export const DO_MAX_TURNS = 200;
+
+/** POST /screen/background: a task that needs no screen, done while the user carries on. */
+export const BackgroundRequest = z.strictObject({ task: text(2000) });
+export const BackgroundResponse = z.discriminatedUnion("status", [
+  z.strictObject({
+    status: z.literal("done"),
+    /** Said aloud when it's ready. */
+    spoken: z.string().max(400),
+    /** The full answer, to read. */
+    detail: z.string().max(6000),
+    sources: z.array(z.string().max(2000)).max(8),
+  }),
+  z.strictObject({ status: z.literal("unavailable"), message: text(300) }),
+]);
+export type BackgroundResponse = z.infer<typeof BackgroundResponse>;
 
 /** POST /screen/do: start doing a task on the screen shown. The screenshot isn't stored here. */
 export const DoStartRequest = z.strictObject({
@@ -394,6 +410,13 @@ export const DoStartRequest = z.strictObject({
   frontApp: optionalText(120),
   /** The Mac already opened the app the plan chose: start on this screen. */
   planned: z.boolean().default(false),
+  /**
+   * What's been done so far, one line each, kept by the Mac. Each turn is a fresh model call with
+   * this memory and the current screen, so turns stay fast instead of growing with every screenshot.
+   */
+  memory: z.array(text(300)).max(40).default([]),
+  /** Which turn of the task this is (1 for the first). */
+  turn: z.number().int().min(1).max(DO_MAX_TURNS).default(1),
 });
 
 /** POST /screen/do/continue: the screen after the last batch ran, with the checks accepted. */

@@ -164,6 +164,36 @@ export function showPointer(
   clearTimer = setTimeout(clearPointer, ANSWER_POINTER_MS);
 }
 
+let workAt: Point | null = null;
+let workSeq = 0;
+/**
+ * Tandrix's pointer doing the work: it stays on screen for the whole task (no timer), glides to each
+ * target, and shows what it's doing. "here" keeps it where it is (typing, keys).
+ */
+export function showWorkPointer(
+  at: Point | "here",
+  caption: string,
+  act: NonNullable<OverlayPointer["working"]>["act"],
+) {
+  clearTimeout(clearTimer);
+  if (at !== "here") workAt = at;
+  if (!workAt) return;
+  const target = toOverlay(workAt, displayInfo());
+  workSeq++;
+  for (const id of overlays.keys())
+    send(
+      id,
+      target?.displayId === id
+        ? { ...target.point, caption, working: { act, seq: workSeq } }
+        : null,
+    );
+}
+
+export function clearWorkPointer() {
+  workAt = null;
+  clearPointer();
+}
+
 /** The pointer at the centre of every display, so the user can see each overlay works. */
 export function testPointer() {
   const displays = displayInfo();

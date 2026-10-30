@@ -3,6 +3,7 @@
 // model loads once (warmed at start), syntheses run one at a time, and recent phrases are cached.
 // When this can't speak, the apps fall back to a Premium or Enhanced device voice, else text only;
 // never a robotic voice.
+import { ASSISTANT_LINES } from "@tandrix/core";
 
 export interface Speaker {
   /** The reply as a WAV, or null when speech isn't available. */
@@ -93,6 +94,7 @@ export function kokoroSpeaker(log: (l: Record<string, unknown>) => void): Speake
           "I'm here. What would you like to do?",
           "I'm here. Tell me what you want to do or ask about this step.",
           "Done.",
+          ...ASSISTANT_LINES,
         ]) {
           try {
             const audio = await m.generate(phrase, { voice: VOICE });

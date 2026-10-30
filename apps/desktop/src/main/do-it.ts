@@ -19,13 +19,32 @@ export type BatchResult =
   /** The guard refused an action; the task stops there. */
   | { status: "refused"; ran: number; message: string };
 
+/** What the pointer is doing, so the overlay can show it (a click ripples, typing shows keys). */
+export type WorkAct = "click" | "type" | "keys" | "move" | "scroll" | "drag";
+
+const actOf = (a: DesktopAction): WorkAct =>
+  a.type === "click" || a.type === "double_click"
+    ? "click"
+    : a.type === "type"
+      ? "type"
+      : a.type === "keypress"
+        ? "keys"
+        : a.type === "scroll"
+          ? "scroll"
+          : a.type === "drag"
+            ? "drag"
+            : "move";
+
 export interface BatchDeps {
   mode: () => ControlMode;
   drive: (cmd: DriverCommand) => Promise<DriverReply>;
   /** Asks the user (a native alert); true to allow. */
   confirm: (prompt: string) => Promise<boolean>;
-  /** Shows the pointer at a global point with a caption, or clears it. */
-  announce: (at: Point | null, caption?: string) => void;
+  /**
+   * Shows Tandrix's pointer doing the work: at a global point ("here" keeps it where it is, for
+   * typing and keys), with what it's doing; null clears it when the task stops.
+   */
+  announce: (at: Point | "here" | null, caption?: string, act?: WorkAct) => void;
   /** Resolves after `ms`, or early (true) when the user takes control back. */
   waitOrStop: (ms: number) => Promise<boolean>;
   stopped: () => boolean;
@@ -151,7 +170,7 @@ export async function runBatch(b: Batch, d: BatchDeps): Promise<BatchResult> {
     const cmd = command(action, b.geometry);
     if (!cmd) continue;
     // Show what's next, and give the user a moment to stop it.
-    d.announce(where(action, b.geometry), caption(action));
+    d.announce(where(action, b.geometry) ?? "here", caption(action), actOf(action));
     if (await d.waitOrStop(ANNOUNCE_MS)) return stop("Stopped. You have control back.");
     const r = await d.drive(cmd);
     d.history.push(d.now());
@@ -165,6 +184,6 @@ export async function runBatch(b: Batch, d: BatchDeps): Promise<BatchResult> {
     }
     ran++;
   }
-  d.announce(null);
+  // The pointer stays on screen between batches: the task isn't over until it says so.
   return { status: "ran", ran, acknowledged: b.safetyChecks };
 }

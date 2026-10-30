@@ -7,6 +7,7 @@ import {
   MetaApiError,
   MetaClient,
   needsOnlineLookup,
+  runBackground,
   planTask,
   searchOnlineSolution,
   startDoing,
@@ -24,10 +25,19 @@ export interface Shot {
 export type DoOutcome =
   { status: "turn"; turn: DoTurn } | { status: "unavailable"; message: string };
 
+export type BackgroundOutcome =
+  | { status: "done"; spoken: string; detail: string; sources: string[] }
+  | { status: "unavailable"; message: string };
+
+export const BACKGROUND_UNAVAILABLE =
+  "Tandrix couldn't finish that in the background right now. Try again in a minute.";
+
 export interface ScreenDoer {
+  /** A task that needs no screen: research, comparisons, drafts. */
+  background?(task: string): Promise<BackgroundOutcome>;
   /** Which installed app the task needs, if not the one in front; null on any failure. */
   plan(input: { task: string; frontApp?: string; apps: string[] }): Promise<string | null>;
-  start(input: { screenshot: Shot; task: string }): Promise<DoOutcome>;
+  start(input: { screenshot: Shot; task: string; memory?: string[] }): Promise<DoOutcome>;
   continue(input: {
     previousResponseId: string;
     callId: string;
@@ -64,6 +74,18 @@ export function metaScreenDoer(
     }
   };
   return {
+    async background(task) {
+      try {
+        const r = await runBackground(client, config.models.reasoning, task);
+        return { status: "done", ...r };
+      } catch (e) {
+        if (e instanceof MetaApiError) {
+          log({ level: "warn", event: "background_model_error", status: e.status });
+          return { status: "unavailable", message: BACKGROUND_UNAVAILABLE };
+        }
+        throw e;
+      }
+    },
     async plan({ task, frontApp, apps }) {
       if (!apps.length) return null;
       const lower = task.toLowerCase();
@@ -85,10 +107,13 @@ export function metaScreenDoer(
         throw e;
       }
     },
-    start: ({ screenshot, task }) =>
+    start: ({ screenshot, task, memory = [] }) =>
       run(async () => {
-        let context: string[] | undefined;
-        if (needsOnlineLookup(task)) {
+        let context: string[] | undefined = memory.length
+          ? [`Done so far, in order:\n${memory.map((m) => `- ${m}`).join("\n")}`]
+          : undefined;
+        // The web lookup happens once, at the start; its notes ride along in the memory after.
+        if (!memory.length && needsOnlineLookup(task)) {
           const online = await searchOnlineSolution(client, config.models.reasoning, task).catch(
             () => null,
           );
