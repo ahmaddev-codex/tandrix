@@ -61,6 +61,12 @@ export interface Batch {
   safetyChecks: SafetyCheck[];
 }
 
+/** A wheel notch, in display points, for models that answer in notches rather than pixels. */
+const NOTCH = 60;
+
+/** Screenshot pixels to display points; values this small are notches (a "3" means three clicks of the wheel). */
+export const scrollPixels = (v: number, k: number) => (Math.abs(v) <= 15 ? v * NOTCH : Math.round(v * k));
+
 const toGlobal = (p: Point, g: ScreenGeometry): Point => ({
   x: g.originX + (p.x * g.displayWidth) / g.imageWidth,
   y: g.originY + (p.y * g.displayHeight) / g.imageHeight,
@@ -102,13 +108,13 @@ function command(a: DesktopAction, g: ScreenGeometry): DriverCommand | null {
     case "drag":
       return { op: "drag", path: a.path.map((p) => toGlobal(p, g)) };
     case "scroll": {
-      // Scroll distances are screenshot pixels too.
+      // Scroll distances are screenshot pixels too; tiny ones are wheel notches.
       const k = g.displayWidth / g.imageWidth;
       return {
         op: "scroll",
         ...toGlobal(a, g),
-        dx: Math.round(a.scroll_x * k),
-        dy: Math.round(a.scroll_y * k),
+        dx: scrollPixels(a.scroll_x, k),
+        dy: scrollPixels(a.scroll_y, k),
       };
     }
     case "type":

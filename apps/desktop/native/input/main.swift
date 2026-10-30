@@ -74,11 +74,36 @@ func drag(_ path: [Point]) {
   post(CGEvent(mouseEventSource: source, mouseType: .leftMouseUp, mouseCursorPosition: end, mouseButton: .left))
 }
 
+/// Scrolls the way a trackpad does: a gesture that begins, moves in small steps and ends. One big
+/// unphased wheel event is clamped or dropped by most apps (Safari, Chrome, Electron), so the page
+/// barely moved.
 func scroll(_ p: CGPoint, _ dx: Int32, _ dy: Int32) {
   move(p)
   pause(30)
-  // The protocol scrolls down for positive y; Quartz scrolls content up for positive values.
-  post(CGEvent(scrollWheelEvent2Source: source, units: .pixel, wheelCount: 2, wheel1: -dy, wheel2: -dx, wheel3: 0))
+  // About 40 pixels a step, at most 40 steps, so a long scroll still lands in well under a second.
+  let steps = Int32(max(1, min(40, (max(abs(dx), abs(dy)) + 39) / 40)))
+  var sentX: Int32 = 0
+  var sentY: Int32 = 0
+  // Quartz phases: 1 began, 2 changed, 4 ended.
+  func step(_ x: Int32, _ y: Int32, _ phase: Int64) {
+    // The protocol scrolls down for positive y; Quartz scrolls content up for positive values.
+    let e = CGEvent(scrollWheelEvent2Source: source, units: .pixel, wheelCount: 2, wheel1: -y, wheel2: -x, wheel3: 0)
+    e?.setIntegerValueField(.scrollWheelEventIsContinuous, value: 1)
+    e?.setIntegerValueField(.scrollWheelEventScrollPhase, value: phase)
+    e?.location = p
+    post(e)
+  }
+  step(0, 0, 1)
+  for i in 1...steps {
+    let x = dx * i / steps - sentX
+    let y = dy * i / steps - sentY
+    sentX += x
+    sentY += y
+    pause(12)
+    step(x, y, 2)
+  }
+  pause(12)
+  step(0, 0, 4)
 }
 
 func type(_ text: String) {
