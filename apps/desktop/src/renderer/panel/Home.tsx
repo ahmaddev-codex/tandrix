@@ -129,7 +129,7 @@ function NameRow() {
           {name ? `Tandrix calls you ${name}.` : "Tandrix doesn't have a name for you yet."}
         </p>
         <Button
-          variant="tertiary"
+          variant="secondary"
           size="sm"
           onClick={() => {
             setDraft(name ?? "");

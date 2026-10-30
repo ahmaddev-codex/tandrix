@@ -788,6 +788,37 @@ button.tx-visual-frame:focus-visible {
 }
 
 /* Confirm dialog */
+/* The modal's backdrop: the page dimmed, the dialog centred and easing in. */
+.tx-dialog-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: var(--space-4);
+  background: var(--overlay-scrim);
+  animation: tx-scrim-in 160ms ease-out both;
+}
+.tx-dialog-scrim > .tx-dialog {
+  animation: tx-dialog-in 220ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+@keyframes tx-scrim-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes tx-dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tx-dialog-scrim,
+  .tx-dialog-scrim > .tx-dialog {
+    animation: none;
+  }
+}
 .tx-dialog {
   width: 100%;
   max-width: 440px;

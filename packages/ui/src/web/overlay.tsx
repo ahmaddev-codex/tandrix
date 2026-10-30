@@ -1,6 +1,6 @@
 "use client";
 // Mac overlay and panel components: pointer, control state and the Show me / Do it for me switch.
-import { useId, type ReactNode } from "react";
+import { useEffect, useId, type ReactNode } from "react";
 import type { ControlMode } from "../shared";
 import { cx } from "./cx";
 import { Button, Icon } from "./primitives";
@@ -179,22 +179,38 @@ export function ConfirmDialog({
   onCancel,
 }: ConfirmDialogProps) {
   const titleId = useId();
+  // A modal: focus starts on the main action (autoFocus), and Esc is the same as Cancel.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onCancel?.();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onCancel]);
   return (
-    <div className="tx-dialog" role="dialog" aria-modal="true" aria-labelledby={titleId}>
-      <div className="tx-dialog-body">
-        <h2 className="tx-dialog-title" id={titleId}>
-          {title}
-        </h2>
-        {lead ? <p className="tx-dialog-lead">{lead}</p> : null}
-        {note ? <p className="tx-dialog-note">{note}</p> : null}
-      </div>
-      <div className="tx-dialog-foot">
-        <Button variant="secondary" onClick={onCancel}>
-          {cancelLabel}
-        </Button>
-        <Button variant={tone === "danger" ? "danger" : "primary"} onClick={onConfirm}>
-          {confirmLabel}
-        </Button>
+    // Over everything, centred, with the page dimmed behind; a click outside cancels.
+    <div
+      className="tx-dialog-scrim"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onCancel?.();
+      }}
+    >
+      <div className="tx-dialog" role="dialog" aria-modal="true" aria-labelledby={titleId}>
+        <div className="tx-dialog-body">
+          <h2 className="tx-dialog-title" id={titleId}>
+            {title}
+          </h2>
+          {lead ? <p className="tx-dialog-lead">{lead}</p> : null}
+          {note ? <p className="tx-dialog-note">{note}</p> : null}
+        </div>
+        <div className="tx-dialog-foot">
+          <Button variant="secondary" onClick={onCancel}>
+            {cancelLabel}
+          </Button>
+          <Button autoFocus variant={tone === "danger" ? "danger" : "primary"} onClick={onConfirm}>
+            {confirmLabel}
+          </Button>
+        </div>
       </div>
     </div>
   );

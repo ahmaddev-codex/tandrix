@@ -93,8 +93,8 @@ export function VoiceSetup({ listening }: { listening: boolean }) {
       {step.kind === "none" ? (
         <>
           <p className="copy-13">
-            Teach Tandrix your voice and it answers &ldquo;Hey Tandrix&rdquo; only from you, not the TV
-            or other people. It takes three short phrases.
+            Teach Tandrix your voice and it answers &ldquo;Hey Tandrix&rdquo; only from you, not the
+            TV or other people. It takes three short phrases.
           </p>
           <Button
             variant="secondary"
@@ -124,11 +124,7 @@ export function VoiceSetup({ listening }: { listening: boolean }) {
                 Record
               </Button>
             )}
-            <Button
-              variant="secondary"
-              disabled={step.recording}
-              onClick={() => void refresh()}
-            >
+            <Button variant="secondary" disabled={step.recording} onClick={() => void refresh()}>
               Cancel
             </Button>
           </div>
@@ -146,11 +142,13 @@ export function VoiceSetup({ listening }: { listening: boolean }) {
             }}
           />
           {ignored ? (
-            <p className="copy-12 panel-muted">Heard someone else say Tandrix, so I stayed quiet.</p>
+            <p className="copy-12 panel-muted">
+              Heard someone else say Tandrix, so I stayed quiet.
+            </p>
           ) : null}
           <p className="copy-12 panel-muted">
-            Your voiceprint stays on this Mac. If it misses you, say &ldquo;Hey Tandrix&rdquo; again or
-            hold {"⌥⌘"}.{" "}
+            Your voiceprint stays on this Mac. If it misses you, say &ldquo;Hey Tandrix&rdquo; again
+            or hold {"⌥⌘"}.{" "}
             <button type="button" className="panel-link" onClick={() => setDeleting(true)}>
               Delete my voice
             </button>

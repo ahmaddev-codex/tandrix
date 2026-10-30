@@ -134,7 +134,6 @@ export function ShowMe({ s }: { s: ReturnType<typeof useShowMe> }) {
           {s.phase === "listening" ? "Listening…" : working ? "Add it" : "Go"}
         </Button>
       </form>
-
     </section>
   );
 }
