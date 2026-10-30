@@ -13,6 +13,7 @@ Tandrix should feel like a calm, capable friend standing next to you: it looks f
 | Surface | Must |
 |---|---|
 | Phone (site) | Readable in direct sun; primary actions usable with gloves; the camera frame dominant; one instruction, one action, one check per step. |
+| Phone (app) | The website's direction: sky header on Home, white trays of rows, big-number tiles; a compact frosted-glass tab pill floating over the page; light grey Back pills with dark text. |
 | Glasses | Voice carries the instruction; lens shows one step, two lines at most. |
 | Mac overlay | Pointer and caption readable over any app; clearly distinct from the user's cursor; visible indicator whenever Tandrix is in control. |
 | Mac panel | Asking front and centre; Settings on its own page; tasks and their status scannable. |
