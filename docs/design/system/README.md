@@ -1,4 +1,4 @@
-Tandrix is one AI engineer for the physical and digital worlds. It runs on the phone on site, on Ray-Ban Meta glasses, as an overlay on the Mac, and as web reports. This system is monochrome-first and high-contrast, set in Geist, with colour kept for meaning. It adds field extensions for camera frames, the Mac pointer, evidence statuses, safety and the glasses lens.
+Tandrix is an assistant that sees your screen and what's in front of your camera, points at the answer, and checks every step with you. It runs on the Mac (a panel and an overlay), on the iPhone, on the web, and later on Ray-Ban Meta glasses. This system is monochrome-first and high-contrast, set in Geist, with colour kept for meaning. It adds field extensions for camera frames, the Mac pointer, evidence statuses, safety and the glasses lens.
 
 ## Principles
 

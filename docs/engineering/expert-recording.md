@@ -1,4 +1,4 @@
-# `expert_recording`: reservation (H13)
+# Expert recordings: the reserved shape
 
 The `expert_recording` citation kind and `source_type` are reserved in the schema and
 contracts, but nothing produces them yet (see H6). This note reserves the shape so a future

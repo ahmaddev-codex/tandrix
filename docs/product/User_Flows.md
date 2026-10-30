@@ -1,136 +1,108 @@
 # Tandrix — User Flows
 
-## 0. First run and home
+**Status:** current as of 30 October 2026. Requirements are in the [PRD](PRD.md).
 
-- **Phone:** three short cards (what Tandrix does on site; it checks your work with photos; it talks you through hands-free), why it needs the camera and microphone, then sign in. Home asks **"What are you building or fixing?"** with examples ("Assemble a home server rack", "Replace a pump seal", "Mount a TV on drywall"), offers **Scan a nameplate** for equipment, and lists recent projects.
-- **Mac:** sign in with the phone's QR (or email), then setup: allow Screen Recording, allow the microphone, try the hotkey on any app ("How do I …?"). The panel's home is asking: a question box, the mic, the hotkey reminder and the last answers. A job card appears only when the phone hands one over.
+## 1. First run
 
-## 1. End-to-end job (demo spine)
+**iPhone.** A short introduction (what Tandrix does; it checks your work with photos; it talks you through), why it needs the camera and microphone, then sign in with an emailed code. Home asks **What are you building or fixing?** with examples and lists recent projects. Settings has **Sign in a Mac**.
 
-A phone project can also start from a goal with no equipment: the goal goes straight to "Build procedure" (Generic unless a manual is added).
+**Mac.** Tandrix lives in the menu bar. Signed out, the panel shows a QR: scanning it with the phone (or typing its code in **Sign in a Mac**) signs the Mac in; email works too. First-run setup asks for Screen Recording and the microphone, then invites a first question with ⌥⌘ held.
 
-```mermaid
-flowchart TD
-  A[Open Tandrix on phone] --> B[New job]
-  B --> C[Point at nameplate]
-  C --> D{Asset identified?}
-  D -->|Yes| E[Search for manual]
-  D -->|No / unsure| C2[Edit make & model or type it] --> E
-  E --> F{Manual found?}
-  F -->|Yes| G[Build procedure with citations]
-  F -->|No| F2[Upload manual photos / PDF] --> G
-  F2 -->|No manual| G2[Generic procedure, labelled] --> H
-  G --> H[Parts check: one photo of laid-out parts]
-  H --> I[Guided step loop]
-  I --> J{Digital step?}
-  J -->|No| I
-  J -->|Yes| K[Continue on desktop]
-  K --> L[Teach-me-this-screen on desktop]
-  L --> M{More steps?}
-  M -->|Physical| I
-  M -->|None| N[Job report]
-```
-
-## 2. Guided step loop (phone / glasses)
+## 2. Asking on the Mac
 
 ```mermaid
 flowchart TD
-  S[Next step] --> G{Safety gate?}
-  G -->|Yes| G1[Confirm gate: isolate, depressurise, PPE] --> P
-  G -->|No| P[Capture frame]
-  P --> H[Highlight parts on frame + speak instruction]
-  H --> R[Show reference image + caution]
-  R --> D[Worker does the step]
-  D --> C[Capture check photo]
-  C --> V{Compare with expected}
-  V -->|Matches| OK[Verified]
-  V -->|Differs| X[Needs attention: say what looks wrong] --> D
-  V -->|Can't tell from photo| U[Ask user to confirm → user-confirmed]
-  OK --> S
-  U --> S
+  A[Hold ⌥⌘ or say Hey Tandrix] --> B[Ask]
+  B --> C{What does it need?}
+  C -->|A question about the screen| D[Show me: ring the control, say the step]
+  C -->|A task, Always do is off| E[Offer: Want me to do it?]
+  C -->|A task, said as do it for me| F[Do it for me]
+  C -->|No screen needed| G[Background agent]
+  E -->|Yes| F
+  E -->|Just show me| D
 ```
 
-Voice commands available at every point: "next", "repeat", "show me again", "what's this?", "I'm stuck", "skip", "stop".
+- **Show me.** The pointer rings the control and the reply is spoken and shown in the presence pill at the top of the screen. "Teach me …" gives one step per turn; "next" moves on.
+- **Do it for me.** The pill says Tandrix is in control. Each action: the pointer moves to the target, says what it's doing, acts, and looks again. Paying, sending, deleting, passwords and security settings stop for a confirm. Moving the mouse, typing or Esc stops it. When finished, it checks the result and says what it did.
+- **Background agent.** It answers by voice when ready and lists the task, with its full answer, on the panel's task board. It may add a calendar event, a reminder or a note, save an email draft, list files, or use a website in Tandrix's own hidden browser.
 
-## 3. Teach me this screen (desktop)
+**While a screen task runs**, what the user says is routed:
 
-1. User holds the hotkey and speaks ("How do I set the pressure limit in this app?"). Release sends.
-2. Desktop captures the active screen, sends screenshot + transcript + job context.
-3. Tandrix replies by voice with the first step; the pointer flies to the target and shows a label.
-4. User clicks. Tandrix re-captures (on hotkey or auto after a short delay) and checks the screen changed as expected.
-5. Repeat until done; the step in the job is set to verified (screen evidence) or user-confirmed.
-
-**Do it for me mode.** The user switches from **Show me** to **Do it for me** in the desktop panel or by voice ("just do it"). First time per job, a plain confirmation: *"Clicking this allows Tandrix to control your device."* Then, per action:
-
-1. Pointer moves to the target and the caption says what it's about to do ("Clicking **Save**").
-2. Short pause (about 1 s); moving the mouse, typing or pressing Esc pauses Tandrix and hands control back.
-3. Tandrix acts, re-captures, and checks the result before the next action.
-4. Sensitive actions (pay, send, delete, passwords, system/security settings, installs) always stop for an explicit confirm.
-
-An indicator stays on screen the whole time Tandrix is in control.
-
-## 4. Device handoff
-
-- Phone reaches a step tagged `surface: desktop`, or the user taps **Continue on desktop**.
-- Desktop app (signed in to the same account) shows a notification: "Job: Pump P-100 assembly — step 9 ready." One click opens it.
-- Phone shows "Waiting on desktop" and still lets the user go back to physical steps.
-- First-time pairing: desktop shows a QR code; scan with the phone to link.
-
-## 5. Parts check
-
-1. "Lay the parts out on a clear surface, not touching if possible."
-2. Capture one photo (or two for large sets).
-3. Tandrix outlines each object and labels it against the parts list: ✓ found, ? possible match, ✗ missing.
-4. User taps any label to correct it or mark "not sure".
-5. Result is saved as evidence. Missing parts become a blocker on the steps that need them.
-
-## 6. Record mode
-
-1. Senior tech chooses **Record a procedure**, names the asset model.
-2. Records the job on phone or glasses, narrating ("now I fit the mechanical seal, carbon face toward the impeller").
-3. Tandrix produces a draft: steps, keyframes, parts mentioned, cautions heard.
-4. Expert edits, deletes, reorders, then publishes.
-5. Future jobs on that model offer: "Use procedure recorded by A. Rivera (expert) or the manufacturer manual?"
-
-## 7. Glasses
-
-- Pair glasses in the phone app (Meta AI app + Tandrix permission).
-- Job runs on the phone; the glasses are the camera, mic and speaker.
-- "Hey, next" style voice control; capture on voice command or the phone/glasses button.
-- Highlights are shown on the phone screen (and on the lens for Ray-Ban Display, P2); speech carries the instruction.
-
-## 8. Screens
-
-| Surface | Screen | Purpose |
-|---|---|---|
-| Phone | Home | Recent jobs, new job, record procedure |
-| Phone | Capture | Camera, capture button, mic, flash, retake |
-| Phone | Asset | Identified make/model, manual source, edit |
-| Phone | Parts check | Annotated photo, list of found/missing |
-| Phone | Step | Highlighted frame, instruction, reference image, caution, check button |
-| Phone | Report | Steps, statuses, evidence, share |
-| Desktop | Overlay | Pointer buddy and caption bubble over all apps |
-| Desktop | Panel | Menu-bar panel: current job, step list, mic state, stop |
-| Web | Shared report | Read-only job report for manager or expert |
-
-## 9. Error and recovery
-
-| Situation | Behaviour |
+| Said | What happens |
 |---|---|
-| Camera/mic denied | Explain why it's needed; offer photo picker and typed input. |
-| Blurry / dark photo | Ask for retake with a specific hint (closer, more light, other angle). |
-| Part not found in frame | "I can't find the impeller here. Try from the front." Numbered text fallback. |
-| No signal | Use cached procedure; queue photos; mark checks "pending" until synced. |
-| Model timeout or invalid output | One retry; then show the cached step text and continue. |
-| Pointer target not visible | "Scroll down" or "open the Settings menu first" instead of guessing. |
-| Hazardous request (wiring, live work) | Refuse that guidance, explain, suggest a qualified person. |
+| "Stop" | The task stops; control is back at once. |
+| A correction ("no, Thursday the 13th") | The running task is steered. |
+| A question about the screen | Answered by looking, without taking the pointer. |
+| A look-up or question of fact | A background agent starts now. |
+| Another task on the screen | Queued next ("I've only got the one mouse"). |
 
-## 10. Demo script (3–5 min)
+## 3. A project on the iPhone
 
-1. **Hook (15 s):** "Manuals don't come to site. Experts don't scale. Tandrix does."
-2. **Identify (30 s):** point phone at the pump nameplate → model found → manual found with source link.
-3. **Parts check (30 s):** one photo of laid-out parts → every part outlined, one missing O-ring flagged.
-4. **Guided steps (75 s):** two to three steps with highlighted parts, spoken instructions, photo checks; one shows "needs attention" and gets corrected. At least one step done through the glasses.
-5. **Handoff (45 s):** "Continue on desktop" → laptop opens the job → "Teach me this screen" → pointer guides the controller/monitoring setup.
-6. **Report (30 s):** verified vs user-confirmed vs unresolved, with evidence, shared link.
-7. **Close (15 s):** record mode teaser and the vision: one AI engineer across physical and digital.
+```mermaid
+flowchart TD
+  A[What are you building or fixing?] --> B[Intake: goal, optional label photo, manual, parts photo, notes]
+  B --> C[Identify the item]
+  C --> D{Manual?}
+  D -->|Found or added| E[Steps citing the manual's pages]
+  D -->|None| E2[Generic steps, labelled]
+  E --> F[Parts check]
+  E2 --> F
+  F --> G[Step loop]
+  G --> H{Step done on a computer?}
+  H -->|Yes| I[Continue on Mac]
+  H -->|No| G
+  I --> G
+  G -->|All done| J[Report and share link]
+```
+
+Intake shows each stage as it runs and resumes from a stopped stage. A missing part from the parts check holds the steps that need it until it's marked as here.
+
+## 4. The step loop
+
+```mermaid
+flowchart TD
+  S[Open step] --> G{Safety gate?}
+  G -->|Yes| G1[Confirm it's safe: unplugged, cooled, depressurised] --> W
+  G -->|No| W[Read the step: instruction, cited page, reference image]
+  W --> H[Optional: outline the parts on a photo]
+  H --> D[Do the step]
+  D --> C[Photo of the finished step]
+  C --> V{Check}
+  V -->|Matches| OK[Verified]
+  V -->|Differs| X[Needs attention: what to fix] --> D
+  V -->|Can't tell from a photo| U[User confirms]
+```
+
+Voice works throughout: "next", "repeat", "show me again", "what's this?", "skip because …", "stop", and any question about the step.
+
+## 5. Handoff
+
+1. A step done on a computer shows **Continue on Mac** on the phone.
+2. The Mac shows a notification ("Step 5 is ready") and opens the step in the panel.
+3. The user starts it and asks **Check my screen**; a screenshot verifies it.
+4. The phone shows "Waiting on your Mac" and turns the step Verified as soon as the Mac checks it. Either device can take the project back.
+
+## 6. Settings on the Mac
+
+Opened from the gear in the panel header; a page of its own.
+
+| Group | What's there |
+|---|---|
+| Doing things for you | Always do things without asking first (asks once, with a plain confirmation) |
+| Listening | Wake word; Teach Tandrix my voice (three phrases), Only answer my voice, Delete my voice |
+| Tandrix's browser | Sign in to sites the background agents should use |
+| You | What Tandrix calls you |
+| Account | Signed-in email; Sign out |
+
+## 7. Errors and recovery
+
+| Situation | What Tandrix does |
+|---|---|
+| Camera, microphone or screen access denied | Says why it's needed and how to allow it; typing and the photo picker still work. |
+| Blurry or dark photo | Asks for another with a specific hint. |
+| A part isn't found in the photo | Says so plainly and lists the parts by number. |
+| No signal on the phone | Steps stay readable; actions and photos queue and send later, shown as Pending. |
+| A model call fails | Says it couldn't, plainly; nothing is guessed. |
+| The control isn't on screen | Points at the way to it (a menu, a tab, scrolling) instead of guessing. |
+| Do it for me makes no progress | Tries a different approach, then stops and asks what to do. |
+| Hazardous request (wiring, live work) | Declines that guidance and suggests a qualified person. |

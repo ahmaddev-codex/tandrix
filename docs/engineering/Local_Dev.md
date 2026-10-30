@@ -118,14 +118,28 @@ pnpm --filter @tandrix/desktop start  # runs the built app
 ```
 
 - Tandrix lives in the menu bar (a "Tandrix" title, no Dock icon). Click it to open the panel; it closes when it loses focus. Right-click for Quit. The panel opens by itself on launch.
-- Signed out, the panel shows a QR: scan it with the phone (the camera app opens Tandrix), or choose Sign in a Mac on the phone (the laptop icon on the jobs list) and type the code. "Sign in with email instead" gives the email code (from Mailpit) and, on the local stack, "Local test sign-in". The session is encrypted with `safeStorage` (Keychain) under the app's userData folder and survives restarts.
+- Signed out, the panel shows a QR: scan it with the phone (the camera app opens Tandrix), or open Settings on the phone, choose Sign in a Mac, and type the code. "Sign in with email instead" gives the email code (from Mailpit) and, on the local stack, "Local test sign-in". The session is encrypted with `safeStorage` (Keychain) under the app's userData folder and survives restarts.
 - **Show me:** in any app, hold ⌥⌘, ask out loud and let go (needs Tandrix, or in dev the app that launched Electron, allowed under Privacy & Security > Accessibility; only Option, Command and "another key" are looked at). ⌃⌥Space also works: press, ask, and a pause sends it. The panel doesn't open: a presence bar at the top of the display under the cursor shows Listening (with the mic level), Looking at your screen, then the reply, and is gone when Tandrix is idle. The panel, from the menu-bar icon, is for signing in, setup, typed questions and projects handed to the Mac. In dev, macOS asks about the microphone for the app that launched Electron.
 - **Desktop steps:** a project whose steps include work on the computer offers them in the panel once handed to the Mac: start one, then "Check my screen".
-- "Test the pointer" draws the pointer at the centre of every display for four seconds. Checking it on two displays is a manual check.
+- **Do it for me:** ask Tandrix to do something and it offers ("Want me to do it?"); say yes or click. Settings (the gear in the panel header) has "Always do things without asking first". It needs Tandrix allowed under Privacy & Security > Accessibility. Moving the mouse, typing or pressing Esc takes control back.
+- **Background tasks:** look-ups, drafts and other tasks that need no screen run in parallel with whatever is on screen. They can add calendar events and reminders, make notes, save email drafts and list files through fixed AppleScripts; macOS asks once per app (Privacy & Security > Automation). They use websites in Tandrix's own hidden browser; sign in to sites from Settings → Tandrix's browser.
+- **Wake word and voice:** switch on "Hey Tandrix" in Settings. "Teach Tandrix my voice" records three phrases into an on-device voiceprint (kept in the app's userData folder, deletable from Settings). The wake helper needs Speech Recognition and the microphone; `TANDRIX_WAKE_DEBUG=1` prints what it hears.
+- "Test the pointer" (Settings → Development, local builds only) draws the pointer at the centre of every display for four seconds. Checking it on two displays is a manual check.
 - Screen Recording: in dev, macOS asks about (and lists) the app that launched Electron, usually your terminal or editor, not Tandrix.
 - Editors built on Electron export `ELECTRON_RUN_AS_NODE` to their terminals; the dev script removes it. Run the built app with `env -u ELECTRON_RUN_AS_NODE pnpm --filter @tandrix/desktop start` from such a terminal.
 - Pass Electron flags after `--`, e.g. `pnpm --filter @tandrix/desktop dev -- --remote-debugging-port=9222` to inspect the panel and overlays from Chrome.
 - The design-system gallery for the Mac and web components, in light, dark and sunlight, is at http://localhost:5173/gallery.html while the dev server runs (in any browser; it isn't in the built app).
+
+## Website
+
+```bash
+pnpm --filter @tandrix/web dev        # Next.js on http://localhost:3000
+pnpm --filter @tandrix/web build      # production build
+```
+
+- Next.js App Router, styled with Tailwind CSS v4. The theme in `src/app/globals.css` maps the design system's tokens (`@tandrix/ui`), so `bg-mist`, `text-ink` and `text-highlight` follow light and dark. The design system's own stylesheet and the vendored figure kit load into Tailwind's `components` layer, so utilities can adjust them.
+- `src/app` holds routes only (the marketing pages in a `(marketing)` group, the shared report at `/r/[token]`); homepage sections are in `src/components/sections`, their words in `src/content/home.tsx`.
+- The early-access form posts to the API's `/early-access`; set `NEXT_PUBLIC_API_URL` to point it elsewhere.
 
 ## Testing on a physical phone
 
@@ -135,3 +149,4 @@ A phone can't reach `127.0.0.1` on your Mac. In `apps/mobile/.env.local`, replac
 
 - `pnpm test` needs no services: model calls and the database are faked. This is what CI runs.
 - `pnpm test:integration` needs the local stack. It checks the API end to end and the database rules directly: users see only their own data, clients can't write anything, and a step can't be stored as verified without evidence.
+- `tsx --env-file=.env.local scripts/probe-agent.ts` runs the background agent on three real tasks with the Mac's tools simulated (nothing touches the Mac); it spends a few cents.

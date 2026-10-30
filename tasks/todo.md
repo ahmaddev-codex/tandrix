@@ -48,7 +48,7 @@ Tracks: **D** design, **A** mobile & glasses, **B** API & AI, **C** desktop (mac
 - [x] P2 Goal-first projects: steps from a goal; equipment and manual optional
 - [x] P3 Mac: Show me without a job; Clicky-first panel; first-run setup
 - [x] P4 Phone: intro, permissions, home ("What are you building or fixing?"); all phone flows pass
-- [x] P5 Website: consumer-first rebuild done (ask-led hero, five use-case sections with honest labels, demo slot, Mac + project demos, /technical, credits, metadata, mobile nav, licensed local photos, lazy three.js); report API and share links done; report page /r/[token] verified; demo clips pending (H8)
+- [x] P5 Website: consumer-first rebuild, then rebuilt again in Phase 9 (W1–W3): drawn figures instead of product photos, App Router structure, Tailwind; report page /r/[token] verified
 - [ ] P6 Known gaps: offline manual/reference caching, deploy readiness, Mac icons and packaging, design system additions
 - [x] **Checkpoint 4a:** clear what each app does; project from a sentence; Mac teaches with no job
 
@@ -115,3 +115,17 @@ Tracks: **D** design, **A** mobile & glasses, **B** API & AI, **C** desktop (mac
 - [ ] H15 Device QA (physical-phone E2E, real-device web, Lighthouse, OG unfurls)
 - [x] H16 Fly VM sizing (`docs/engineering/fly-sizing.md`): bump to shared-cpu-2x/1GB for release; split TTS only if measured p95 synth > ~2s; no page-count cap needed
 - [x] H17 Guard sensitive-detection beyond English keywords: DE/FR/ES/IT/PT equivalents on all six categories with Unicode-aware word boundaries + substring tests
+
+## Phase 9 — Assistant, agents and polish (2026-10-29 → 30)
+- [x] C1 Do it for me engine: fresh model turns carrying a text memory plus one chained turn (chains grew from 8 to 14 s a turn), check before done, circling and no-progress detectors that nudge then ask, corrections mid-task, up to 200 turns, the pointer shown doing each action, scrolls as phased trackpad gestures (live: 600 px asked, 600 px moved)
+- [x] C2 Talking like a person: offers to do a task and acts on a natural yes, varied acknowledgements and a light joke on big asks, pre-voiced lines; only screen jobs queue, everything else starts at once (`core.whileBusy`)
+- [x] C3 Background agents: a task board, up to three at once beside the screen task; web search; typed Mac tools (calendar, reminders, notes, mail drafts, files) as fixed AppleScripts with arguments as data; Tandrix's own hidden browser driven by the computer-use runner (live: price and stock found on a real site in 24 s). Open: first run of the Mac tools in the real apps (my sandbox blocks Apple Events; macOS asks once per app)
+- [x] C4 Mac Settings as its own page: grouped cards of rows, a sliding transition, and a real modal for the Do it for me confirmation (it had rendered at the foot of the page)
+- [x] V2 Wake word answers on a short pause and accepts common mishearings; optional on-device voiceprint ("Only answer my voice"): three setup phrases, cut by the recogniser's word timings, compared by a scaled distance that cancels the microphone (live: the user's phrases 0.59–0.87, other voices 0.82–1.39, cutoff 0.9). Physical check by you with your own voice
+- [x] M4 Phone: the home menu removed (the bottom bar covers it), Sign in a Mac as a compact sheet, the "Tandrix is ready" badge removed
+- [x] W1 Website figures: isometric drawings in code (the pointing machine, the desk through a day, the kit assembling on scroll, the asks), objects drawn on the page itself, following the site's theme
+- [x] W2 Website structure and styling: App Router layout (routes only in app/, sections, layout, ui, widgets, figures, content), Tailwind CSS v4 on the design-system tokens, no CSS modules left; checked against before/after screenshots of every section and page
+- [x] W3 Website details: the Tandrix pointer as the cursor; the presence pill above every section on scroll
+- [x] D2 Documentation pass: a root README, the docs index, the PRD and user flows rewritten for the product as it is, Architecture, Local development, the execution plan and the design brief brought up to date
+- [ ] U2 Phone redesign in the website's direction (white, black and Tandrix blue; the sky header; cleaner sections)
+- [ ] **Checkpoint 9:** the Mac tools and voiceprint checked by you on this Mac; phone redesign reviewed; deploy go-ahead

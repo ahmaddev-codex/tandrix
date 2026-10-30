@@ -1,4 +1,4 @@
-# Negative tests (T30)
+# Negative tests
 
 Each failure case, where it is covered, and what the user sees. Anything marked
 manual needs a human run; everything else runs in `pnpm test`.

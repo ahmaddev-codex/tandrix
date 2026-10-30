@@ -1,4 +1,4 @@
-# Fly sizing vs TTS/render split (H16)
+# API machine sizing
 
 Current `apps/api/fly.toml`: one `shared-cpu-1x` with 512 MB in `iad`, `min_machines_running = 1`.
 

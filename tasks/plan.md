@@ -486,6 +486,32 @@ Fly.io API deploy, hosted Supabase (migrations/buckets/auth), Vercel web (then s
 #### H12–H17 Backlog (open)
 H12: `control_mode` mirror endpoint + `control_mode_changed` emission (desktop holds mode locally; DB column is write-never). H13: `expert_recording` producer or reservation doc. H14: shared rate-limit store for multi-instance API (Redis/Upstash decision). H15: device QA — physical-phone report E2E, real-device web checks, Lighthouse, OG unfurls, contrast pass. H16: Fly VM sizing vs TTS/render split; worker page-count. H17: guard sensitive-detection beyond English-keyword regex.
 
+### Phase 9 — Assistant, agents and polish
+
+#### C1 Do it for me engine (done)
+Each model turn is fresh, carrying up to 40 lines of text memory, followed by one chained turn so the model keeps its intent. Before saying done it checks the result. A circling detector (similar replies, click-only turns) and a no-progress detector (same screen, same action) nudge once, then stop and ask. Corrections said mid-task steer it. Verified on a synthetic Notes app in headless Chrome with the real runner and model.
+
+#### C2 Conversation and routing (done)
+`core.helpKind` decides show, offer, do or background; `isYes`/`isNo` read a natural answer; `core.whileBusy` routes what's said during a screen task (stop, steer, look, background, queue). Acknowledgements never repeat back to back. Tests in `packages/core/test/assistant.test.ts`.
+
+#### C3 Background agents (done; Mac tools await a real-app run)
+`/screen/background` is stateless: each call carries the task, the Mac's local time and every tool call so far with its output, and returns either the next calls or the answer. Mac tools run as fixed AppleScripts (`apps/desktop/src/main/mac-tools.ts`); `browse` runs in a hidden Electron window on the `persist:tandrix-browser` profile through the same runner and action guard. Acceptance: the agent chains tools correctly on real tasks (`scripts/probe-agent.ts`); a browse finishes on a live site; nothing touches the user's input.
+
+#### C4 Settings page (done)
+Settings replaces the panel while open, with the main page kept mounted so tasks carry on. The design system's `ConfirmDialog` is a modal: a dimmed backdrop, centred, focus on the main action, Esc or a click outside to cancel.
+
+#### V2 Wake word and voiceprint (done; your physical check open)
+`tandrix-wake` acts on partial results after a 0.9 s pause. The voiceprint (MFCC mean and spread, 24 numbers) is computed in the helper and compared in `src/main/voiceprint.ts`; it filters out other voices, and is not a lock.
+
+#### W1–W3 Website (done)
+Figures drawn in code with the vendored anatomy kit; the App Router structure; Tailwind v4 themed from `@tandrix/ui`. Verification: before/after screenshots of every section at 1440 and 390, identical apart from motion.
+
+#### D2 Documentation (done)
+Root README, docs index, PRD, user flows, architecture, local development, execution plan and design brief current as of 30 October 2026.
+
+#### U2 Phone redesign (open)
+The iPhone app redesigned in the website's direction, screen by screen, to the design system. Acceptance: every screen on the simulator in light and dark; all Maestro flows pass; reviewed by you on a phone.
+
 ---
 
 ## Cut order (if behind, cut from the top)
