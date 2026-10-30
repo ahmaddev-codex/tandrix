@@ -1,6 +1,6 @@
 import type { JobDetailResponse } from "@tandrix/contracts";
 import { citationLabel, stepChip } from "@tandrix/ui";
-import { BrandMark, Button, HandoffBanner, Input, Notice, StepRow } from "@tandrix/ui/web";
+import { BrandMark, Button, HandoffBanner, Icon, Input, Notice, StepRow } from "@tandrix/ui/web";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { TALK_KEYS, type ScreenAccess } from "../../shared/bridge";
 import { activeJob } from "../lib/active-job";
@@ -245,71 +245,83 @@ export function Home() {
   const [view, setView] = useState<"home" | "settings">("home");
 
   return (
-    <main className="panel-page">
-      {/* The sky header, as on the website: the mark, and that Tandrix is ready. */}
-      <header className="panel-sky">
-        <div className="panel-sky-row">
-          <h1 className="panel-brand">
-            <BrandMark size={26} />
-            Tandrix
-          </h1>
-          <button
-            type="button"
-            className="panel-glass"
-            aria-pressed={view === "settings"}
-            onClick={() => setView(view === "settings" ? "home" : "settings")}
-          >
-            {view === "settings" ? "Done" : "Settings"}
-          </button>
-        </div>
-        <p className="panel-ready">
-          <span className="panel-ready-dot" aria-hidden="true" />
-          Ready. Hold <kbd>{TALK_KEYS}</kbd> to talk.
-        </p>
-      </header>
+    <>
       {view === "settings" ? (
-        <div className="panel-body">
-          <Settings s={showMe} name={<NameRow />} onBack={() => setView("home")} />
-        </div>
+        <Settings
+          s={showMe}
+          name={<NameRow />}
+          onBack={() => {
+            setView("home");
+            window.scrollTo(0, 0);
+          }}
+        />
       ) : null}
-      {/* Kept mounted (just hidden) while Settings is open, so nothing in progress is lost. */}
-      <div className="panel-body panel-stack-6" hidden={view === "settings"}>
-        {banner?.step ? (
-          <HandoffBanner
-            state="incoming"
-            step={banner.step.order}
-            stepTitle={banner.step.title}
-            job={banner.job.title}
-            device={`your ${banner.h.from}`}
-            onAction={() => {
-              setIncoming(undefined);
-              document.getElementById("desktop-step")?.scrollIntoView({ behavior: "smooth" });
-            }}
-          />
-        ) : null}
-        {setup.show ? <Setup status={setup} /> : <ScreenAccessNotice />}
-        {state.kind === "error" ? (
-          <Notice
-            tone="error"
-            action={
-              <Button variant="secondary" onClick={load}>
-                Try again
-              </Button>
-            }
-          >
-            {state.message}
-          </Notice>
-        ) : null}
-        {onMac ? (
-          // A project from the phone, continued here: its step, then asking, then its steps.
-          <JobSteps detail={onMac}>
-            <CurrentDesktopStep key={onMac.job.id} detail={onMac} onChanged={load} />
+      {/* The main page stays mounted (just hidden) while Settings is open, so nothing in progress
+          is lost. */}
+      <main className="panel-page" hidden={view === "settings"}>
+        {/* The sky header, as on the website: the mark, and that Tandrix is ready. */}
+        <header className="panel-sky">
+          <div className="panel-sky-row">
+            <h1 className="panel-brand">
+              <BrandMark size={26} />
+              Tandrix
+            </h1>
+            <button
+              type="button"
+              className="panel-glass panel-glass-icon"
+              aria-label="Settings"
+              onClick={() => {
+                setView("settings");
+                window.scrollTo(0, 0);
+              }}
+            >
+              <Icon name="gear" size={16} />
+            </button>
+          </div>
+          <p className="panel-ready">
+            <span className="panel-ready-dot" aria-hidden="true" />
+            Ready. Hold <kbd>{TALK_KEYS}</kbd> to talk.
+          </p>
+        </header>
+        {/* Kept mounted (just hidden) while Settings is open, so nothing in progress is lost. */}
+        <div className="panel-body panel-stack-6">
+          {banner?.step ? (
+            <HandoffBanner
+              state="incoming"
+              step={banner.step.order}
+              stepTitle={banner.step.title}
+              job={banner.job.title}
+              device={`your ${banner.h.from}`}
+              onAction={() => {
+                setIncoming(undefined);
+                document.getElementById("desktop-step")?.scrollIntoView({ behavior: "smooth" });
+              }}
+            />
+          ) : null}
+          {setup.show ? <Setup status={setup} /> : <ScreenAccessNotice />}
+          {state.kind === "error" ? (
+            <Notice
+              tone="error"
+              action={
+                <Button variant="secondary" onClick={load}>
+                  Try again
+                </Button>
+              }
+            >
+              {state.message}
+            </Notice>
+          ) : null}
+          {onMac ? (
+            // A project from the phone, continued here: its step, then asking, then its steps.
+            <JobSteps detail={onMac}>
+              <CurrentDesktopStep key={onMac.job.id} detail={onMac} onChanged={load} />
+              <ShowMe s={showMe} />
+            </JobSteps>
+          ) : (
             <ShowMe s={showMe} />
-          </JobSteps>
-        ) : (
-          <ShowMe s={showMe} />
-        )}
-      </div>
-    </main>
+          )}
+        </div>
+      </main>
+    </>
   );
 }

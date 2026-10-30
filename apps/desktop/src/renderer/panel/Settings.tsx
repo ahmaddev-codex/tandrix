@@ -42,110 +42,111 @@ export function Settings({
     : `https://${site.trim()}`;
 
   return (
-    <section className="panel-stack-6" aria-labelledby="settings-title">
+    <main className="panel-page panel-settings" aria-labelledby="settings-title">
       <header className="panel-settings-head">
         <Button size="sm" variant="tertiary" icon="chevronLeft" onClick={onBack}>
           Back
         </Button>
-        <h2 className="heading-16" id="settings-title">
+        <h1 className="heading-16" id="settings-title">
           Settings
-        </h2>
+        </h1>
       </header>
-
-      <Group title="Doing things for you">
-        <Toggle
-          label="Always do things without asking first"
-          checked={s.mode === "do"}
-          onChange={(on) => (on ? setConfirming(true) : void s.setMode("show"))}
-        />
-        <p className="copy-12 panel-muted">
-          Off: Tandrix offers, and you say yes. Either way it asks before paying, sending, deleting
-          or changing security settings.
-        </p>
-      </Group>
-
-      <Group title="Tandrix's browser">
-        <p className="copy-12 panel-muted">
-          Background tasks use websites in a browser of their own, out of sight, so your screen,
-          mouse and keyboard stay yours. Sign in to the sites you want them to use; your own browser
-          isn&rsquo;t touched.
-        </p>
-        <form
-          className="panel-ask"
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (!site.trim()) return;
-            void window.tandrix.browser.signIn(siteUrl);
-            setSite("");
-          }}
-        >
-          <Input
-            label="Sign in to a site"
-            value={site}
-            onChange={setSite}
-            placeholder="mail.google.com"
+      <div className="panel-body panel-stack-6">
+        <Group title="Doing things for you">
+          <Toggle
+            label="Always do things without asking first"
+            checked={s.mode === "do"}
+            onChange={(on) => (on ? setConfirming(true) : void s.setMode("show"))}
           />
-          <Button type="submit" size="sm" variant="secondary" disabled={!site.trim()}>
-            Open
-          </Button>
-        </form>
-      </Group>
+          <p className="copy-12 panel-muted">
+            Off: Tandrix offers, and you say yes. Either way it asks before paying, sending,
+            deleting or changing security settings.
+          </p>
+        </Group>
 
-      <Group title="Listening">
-        <Toggle label='Wake word ("Hey Tandrix")' checked={s.wakeWord} onChange={s.setWakeWord} />
-        {s.wakeWord && s.wakeStatus.status === "unavailable" ? (
-          <Notice tone="attention">
-            {s.wakeStatus.message ?? "The wake word can't listen right now."}
-          </Notice>
-        ) : s.wakeWord ? (
-          <>
-            <p className="copy-12 panel-muted">
-              Heard on this Mac only. Nothing leaves it until you say Tandrix&rsquo;s name.
-            </p>
-            <VoiceSetup listening={s.wakeStatus.status === "listening"} />
-          </>
-        ) : (
-          <p className="copy-12 panel-muted">Off: hold ⌥⌘ to talk, or type.</p>
-        )}
-      </Group>
+        <Group title="Tandrix's browser">
+          <p className="copy-12 panel-muted">
+            Background tasks use websites in a browser of their own, out of sight, so your screen,
+            mouse and keyboard stay yours. Sign in to the sites you want them to use; your own
+            browser isn&rsquo;t touched.
+          </p>
+          <form
+            className="panel-ask"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!site.trim()) return;
+              void window.tandrix.browser.signIn(siteUrl);
+              setSite("");
+            }}
+          >
+            <Input
+              label="Sign in to a site"
+              value={site}
+              onChange={setSite}
+              placeholder="mail.google.com"
+            />
+            <Button type="submit" size="sm" variant="secondary" disabled={!site.trim()}>
+              Open
+            </Button>
+          </form>
+        </Group>
 
-      <Group title="You">{name}</Group>
+        <Group title="Listening">
+          <Toggle label='Wake word ("Hey Tandrix")' checked={s.wakeWord} onChange={s.setWakeWord} />
+          {s.wakeWord && s.wakeStatus.status === "unavailable" ? (
+            <Notice tone="attention">
+              {s.wakeStatus.message ?? "The wake word can't listen right now."}
+            </Notice>
+          ) : s.wakeWord ? (
+            <>
+              <p className="copy-12 panel-muted">
+                Heard on this Mac only. Nothing leaves it until you say Tandrix&rsquo;s name.
+              </p>
+              <VoiceSetup listening={s.wakeStatus.status === "listening"} />
+            </>
+          ) : (
+            <p className="copy-12 panel-muted">Off: hold ⌥⌘ to talk, or type.</p>
+          )}
+        </Group>
 
-      <Group title="Account">
-        {auth.session?.user.email ? (
-          <p className="copy-13">Signed in as {auth.session.user.email}</p>
-        ) : null}
-        <div>
-          <Button variant="secondary" onClick={() => void auth.signOut()}>
-            Sign out
-          </Button>
-        </div>
-      </Group>
+        <Group title="You">{name}</Group>
 
-      {isLocal ? (
-        <Group title="Development">
+        <Group title="Account">
+          {auth.session?.user.email ? (
+            <p className="copy-13">Signed in as {auth.session.user.email}</p>
+          ) : null}
           <div>
-            <Button
-              variant="secondary"
-              icon="pointer"
-              onClick={() => void window.tandrix.overlay.testPointer()}
-            >
-              Test the pointer
+            <Button variant="secondary" onClick={() => void auth.signOut()}>
+              Sign out
             </Button>
           </div>
         </Group>
-      ) : null}
 
-      {confirming ? (
-        <ConfirmDialog
-          {...doItForMeConfirmation}
-          onConfirm={() => {
-            setConfirming(false);
-            void s.setMode("do");
-          }}
-          onCancel={() => setConfirming(false)}
-        />
-      ) : null}
-    </section>
+        {isLocal ? (
+          <Group title="Development">
+            <div>
+              <Button
+                variant="secondary"
+                icon="pointer"
+                onClick={() => void window.tandrix.overlay.testPointer()}
+              >
+                Test the pointer
+              </Button>
+            </div>
+          </Group>
+        ) : null}
+
+        {confirming ? (
+          <ConfirmDialog
+            {...doItForMeConfirmation}
+            onConfirm={() => {
+              setConfirming(false);
+              void s.setMode("do");
+            }}
+            onCancel={() => setConfirming(false)}
+          />
+        ) : null}
+      </div>
+    </main>
   );
 }

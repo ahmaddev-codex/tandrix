@@ -436,6 +436,9 @@ input {
   align-items: center;
   gap: var(--space-2);
 }
+.panel-settings-head h1 {
+  margin: 0;
+}
 .panel-settings-group {
   display: grid;
   gap: var(--space-2);
@@ -444,4 +447,22 @@ input {
 }
 .panel-settings-group:last-of-type {
   border-bottom: 0;
+}
+.panel-glass-icon {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  padding: 0;
+}
+.panel-settings .panel-settings-head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: var(--space-3) var(--space-3) var(--space-2);
+  background: var(--background-100);
+  border-bottom: 1px solid var(--gray-200);
+}
+/* `hidden` must win over the layout's own display. */
+[hidden] {
+  display: none !important;
 }
