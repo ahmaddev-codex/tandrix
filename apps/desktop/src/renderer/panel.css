@@ -429,3 +429,19 @@ input {
   text-decoration: underline;
   text-underline-offset: 2px;
 }
+
+/* Settings */
+.panel-settings-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.panel-settings-group {
+  display: grid;
+  gap: var(--space-2);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--gray-200);
+}
+.panel-settings-group:last-of-type {
+  border-bottom: 0;
+}

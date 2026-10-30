@@ -38,6 +38,7 @@ const map = {
   power: "power",
   gauge: "gauge",
   arrowRight: "arrow-right",
+  chevronLeft: "caret-left",
   actions: "list-checks",
   projects: "folder-simple",
   home: "house",

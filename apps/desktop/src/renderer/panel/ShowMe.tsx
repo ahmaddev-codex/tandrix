@@ -1,16 +1,8 @@
-import {
-  Button,
-  ConfirmDialog,
-  doItForMeConfirmation,
-  Input,
-  Notice,
-  Toggle,
-} from "@tandrix/ui/web";
+import { Button, Input, Notice } from "@tandrix/ui/web";
 import { useState, type FormEvent } from "react";
 import { TALK_KEYS } from "../../shared/bridge";
 import type { AgentTask } from "../lib/agents";
-import { useShowMe } from "../lib/use-show-me";
-import { VoiceSetup } from "./VoiceSetup";
+import type { useShowMe } from "../lib/use-show-me";
 
 const examples = [
   "Where's the export button?",
@@ -31,11 +23,8 @@ const statusLabel: Record<AgentTask["status"], string> = {
  * Ask anything. Tandrix shows the way, offers to do it, or works on it in the background, and you
  * can keep handing it tasks while it works.
  */
-export function ShowMe({ jobId }: { jobId?: string }) {
-  const s = useShowMe(jobId);
+export function ShowMe({ s }: { s: ReturnType<typeof useShowMe> }) {
   const [question, setQuestion] = useState("");
-  // Doing things without asking first is opt-in, and asks once (design system: Do it for me).
-  const [confirming, setConfirming] = useState(false);
   const working = s.agents.some((a) => a.status === "running" || a.status === "queued");
   const finished = s.agents.some((a) => a.status !== "running" && a.status !== "queued");
 
@@ -146,34 +135,6 @@ export function ShowMe({ jobId }: { jobId?: string }) {
         </Button>
       </form>
 
-      <Toggle
-        label="Always do things without asking first"
-        checked={s.mode === "do"}
-        onChange={(on) => (on ? setConfirming(true) : void s.setMode("show"))}
-      />
-      <Toggle label='Wake word ("Hey Tandrix")' checked={s.wakeWord} onChange={s.setWakeWord} />
-      {s.wakeWord && s.wakeStatus.status === "unavailable" ? (
-        <Notice tone="attention">
-          {s.wakeStatus.message ?? "The wake word can't listen right now."}
-        </Notice>
-      ) : s.wakeWord ? (
-        <>
-          <p className="copy-12 panel-muted">
-            Heard on this Mac only. Nothing leaves it until you say Tandrix&rsquo;s name.
-          </p>
-          <VoiceSetup listening={s.wakeStatus.status === "listening"} />
-        </>
-      ) : null}
-      {confirming ? (
-        <ConfirmDialog
-          {...doItForMeConfirmation}
-          onConfirm={() => {
-            setConfirming(false);
-            void s.setMode("do");
-          }}
-          onCancel={() => setConfirming(false)}
-        />
-      ) : null}
     </section>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 import {
   ArrowRight,
+  ChevronLeft,
   Ban,
   BookOpen,
   Camera,
@@ -79,6 +80,7 @@ const iconGlyphs = {
   power: Power,
   gauge: Gauge,
   arrowRight: ArrowRight,
+  chevronLeft: ChevronLeft,
   actions: ListChecks,
   projects: FolderKanban,
   home: House,

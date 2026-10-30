@@ -7,11 +7,12 @@ import { activeJob } from "../lib/active-job";
 import { api } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { desktopStep, finished, stepOf } from "../lib/desktop-step";
-import { isLocal } from "../lib/env";
 import { useHandoffsToMac, useJobChanges, type IncomingHandoff } from "../lib/realtime";
 import { DesktopStep, type ScreenCheck } from "./DesktopStep";
 import { Setup, useSetupStatus } from "./Setup";
+import { Settings } from "./Settings";
 import { ShowMe } from "./ShowMe";
+import { useShowMe } from "../lib/use-show-me";
 
 type JobState =
   | { kind: "loading" }
@@ -238,6 +239,10 @@ export function Home() {
     state.kind === "ready" && state.detail.job.activeSurface === "desktop"
       ? state.detail
       : undefined;
+  // One assistant for the panel: Settings reads and changes it, and opening Settings never stops
+  // a task that's running.
+  const showMe = useShowMe(onMac?.job.id);
+  const [view, setView] = useState<"home" | "settings">("home");
 
   return (
     <main className="panel-page">
@@ -248,8 +253,13 @@ export function Home() {
             <BrandMark size={26} />
             Tandrix
           </h1>
-          <button type="button" className="panel-glass" onClick={() => void auth.signOut()}>
-            Sign out
+          <button
+            type="button"
+            className="panel-glass"
+            aria-pressed={view === "settings"}
+            onClick={() => setView(view === "settings" ? "home" : "settings")}
+          >
+            {view === "settings" ? "Done" : "Settings"}
           </button>
         </div>
         <p className="panel-ready">
@@ -257,7 +267,13 @@ export function Home() {
           Ready. Hold <kbd>{TALK_KEYS}</kbd> to talk.
         </p>
       </header>
-      <div className="panel-body panel-stack-6">
+      {view === "settings" ? (
+        <div className="panel-body">
+          <Settings s={showMe} name={<NameRow />} onBack={() => setView("home")} />
+        </div>
+      ) : null}
+      {/* Kept mounted (just hidden) while Settings is open, so nothing in progress is lost. */}
+      <div className="panel-body panel-stack-6" hidden={view === "settings"}>
         {banner?.step ? (
           <HandoffBanner
             state="incoming"
@@ -272,7 +288,6 @@ export function Home() {
           />
         ) : null}
         {setup.show ? <Setup status={setup} /> : <ScreenAccessNotice />}
-        <NameRow />
         {state.kind === "error" ? (
           <Notice
             tone="error"
@@ -289,23 +304,12 @@ export function Home() {
           // A project from the phone, continued here: its step, then asking, then its steps.
           <JobSteps detail={onMac}>
             <CurrentDesktopStep key={onMac.job.id} detail={onMac} onChanged={load} />
-            <ShowMe jobId={onMac.job.id} />
+            <ShowMe s={showMe} />
           </JobSteps>
         ) : (
-          <ShowMe />
+          <ShowMe s={showMe} />
         )}
       </div>
-      {isLocal ? (
-        <footer className="panel-foot">
-          <Button
-            variant="secondary"
-            icon="pointer"
-            onClick={() => void window.tandrix.overlay.testPointer()}
-          >
-            Test the pointer
-          </Button>
-        </footer>
-      ) : null}
     </main>
   );
 }
