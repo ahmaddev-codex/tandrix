@@ -4,6 +4,7 @@
 // proposing actions. Turns are chained with previous_response_id, so the model's side of the
 // session is stored by the API for the length of the task. Nothing here executes anything.
 import { DesktopAction, TaskPlan } from "@tandrix/contracts";
+import { z } from "zod";
 import type { Models } from "./pipelines";
 import { generateStructured } from "./structured";
 import { outputText, type MetaClient, type MetaResponse } from "./client";
@@ -148,6 +149,25 @@ export async function continueDoing(
  * Before the first step: which app the task needs. Opening it directly is quicker and steadier
  * than finding it on screen. Null when the app in front will do.
  */
+const ScreenNote = z.object({ note: z.string().max(1200).nullable() });
+
+/** Writes down what a screen holds that the task needs, before the task leaves it. */
+export function noteScreen(
+  client: MetaClient,
+  models: Models,
+  q: { task: string; screenshot: InputPart; signal?: AbortSignal },
+) {
+  return generateStructured(client, {
+    model: models.reasoning,
+    name: "screen_note",
+    schema: ScreenNote,
+    instructions: prompts.noteScreen,
+    input: [user(text(`Task: ${q.task}`), q.screenshot)],
+    effort: "low",
+    ...(q.signal ? { signal: q.signal } : {}),
+  });
+}
+
 export function planTask(
   client: MetaClient,
   models: Models,

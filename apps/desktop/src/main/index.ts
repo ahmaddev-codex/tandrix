@@ -297,6 +297,7 @@ function registerIpc() {
     },
     none,
   );
+  handle(channels.doFront, frontApp, none);
   handle(channels.doOpenApp, openTaskApp, key);
   handle(channels.talkKeysAccess, talkKeysAccess, flag);
   handle(channels.stopSpeaking, stopSpeaking, none);

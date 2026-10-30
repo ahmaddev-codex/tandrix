@@ -65,7 +65,8 @@ export interface Batch {
 const NOTCH = 60;
 
 /** Screenshot pixels to display points; values this small are notches (a "3" means three clicks of the wheel). */
-export const scrollPixels = (v: number, k: number) => (Math.abs(v) <= 15 ? v * NOTCH : Math.round(v * k));
+export const scrollPixels = (v: number, k: number) =>
+  Math.abs(v) <= 15 ? v * NOTCH : Math.round(v * k);
 
 const toGlobal = (p: Point, g: ScreenGeometry): Point => ({
   x: g.originX + (p.x * g.displayWidth) / g.imageWidth,

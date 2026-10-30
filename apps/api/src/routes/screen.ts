@@ -6,6 +6,8 @@ import {
   BackgroundRequest,
   BackgroundResponse,
   DoContinueRequest,
+  DoNotesRequest,
+  DoNotesResponse,
   DoStartRequest,
   Id,
   INLINE_SCREENSHOT_MAX_BYTES,
@@ -30,6 +32,7 @@ import type { ProceduresRepo } from "../repos/procedures";
 import type { ScreenGuide, ScreenGuideOutcome } from "../screen-guide";
 import {
   BACKGROUND_UNAVAILABLE,
+  DO_UNAVAILABLE,
   noModelScreenDoer,
   type DoOutcome,
   type ScreenDoer,
@@ -340,6 +343,26 @@ export function inlineScreenRoutes(d: {
         memory: parsed.data.memory,
       });
       return c.json(turnResponse(user.id, outcome, parsed.data.turn));
+    })
+    .post("/do/notes", screenshotLimit, async (c) => {
+      const user = c.get("user");
+      if (!doLimiter.allow(user.id)) throw tooMany();
+      const parsed = DoNotesRequest.safeParse(await c.req.json().catch(() => undefined));
+      if (!parsed.success) throw invalid(issues(parsed.error));
+      const r = doer.notes
+        ? await doer.notes({
+            screenshot: {
+              bytes: shotBytes(parsed.data.screenshot),
+              mimeType: parsed.data.screenshot.mimeType,
+            },
+            task: parsed.data.task,
+          })
+        : null;
+      return c.json(
+        DoNotesResponse.parse(
+          r ? { status: "done", note: r.note } : { status: "unavailable", message: DO_UNAVAILABLE },
+        ),
+      );
     })
     .post("/do/continue", screenshotLimit, async (c) => {
       const user = c.get("user");

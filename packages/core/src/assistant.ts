@@ -1,7 +1,7 @@
 // How Tandrix talks while it helps: what kind of help a request needs, natural acknowledgements
 // (never the same line twice in a row, and a light joke now and then when the ask is a big one),
 // offering to do the work itself, and what to make of something said while it's already busy.
-import { wantsDesktopExecution, wantsLesson } from "./voice";
+import { asImperative, wantsDesktopExecution, wantsLesson } from "./voice";
 
 /** Shows, offers to do, does straight away, or works in the background without the screen. */
 export type HelpKind = "show" | "offer" | "do" | "background";
@@ -11,7 +11,7 @@ const QUESTION =
 
 /** Things to do on the computer, said as a plain request ("book my dentist for Thursday"). */
 const ACTION =
-  /^(please\s+)?(add|book|schedule|create|make|set( up)?|turn (on|off)|switch|change|rename|move|copy|paste|save|export|send|reply|forward|write|draft|fill( in| out)?|sign (up|in)|log in|install|update|delete|remove|clean up|sort|organi[sz]e|archive|close|quit|open|launch|start|find and|download|upload|share|invite|mute|unmute|enable|disable|connect|join|pair|print|resize|crop|convert|merge|format|bookmark|subscribe|unsubscribe|order|buy|pay|transfer|clear|empty|restart|reset)\b/i;
+  /^(please\s+)?(go( to| into| back to)?|head (to|over to)|grab|get|fetch|pull|take|put|bring|copy|check (my|the|on)|look (at|in|through|for) (my|the)|read (my|the)|find (my|the)|add|book|schedule|create|make|set( up)?|turn (on|off)|switch|change|rename|move|copy|paste|save|export|send|reply|forward|write|draft|fill( in| out)?|sign (up|in)|log in|install|update|delete|remove|clean up|sort|organi[sz]e|archive|close|quit|open|launch|start|find and|download|upload|share|invite|mute|unmute|enable|disable|connect|join|pair|print|resize|crop|convert|merge|format|bookmark|subscribe|unsubscribe|order|buy|pay|transfer|clear|empty|restart|reset)\b/i;
 
 /** Work that needs no screen: looking things up, summing up, drafting words to read later. */
 const BACKGROUND =
@@ -24,10 +24,17 @@ export function helpKind(text: string): HelpKind {
   if (wantsLesson(q)) return "show";
   if (wantsDesktopExecution(q)) return "do";
   if (/\b(in the background|while i work|meanwhile|when you can)\b/i.test(q)) return "background";
-  if (BACKGROUND.test(q) && !/\b(on (my|this|the) screen|here|this (page|app|window))\b/i.test(q))
+  // A polite wrapper ("can you …?", "I want you to …") must not turn a request into a question
+  // to be answered with instructions: judge the ask underneath it.
+  const core = asImperative(q);
+  if (
+    BACKGROUND.test(core) &&
+    !/\b(on (my|this|the) screen|here|this (page|app|window))\b/i.test(q)
+  )
     return "background";
-  if (QUESTION.test(q)) return "show";
-  if (ACTION.test(q)) return "offer";
+  // Only a question said as a question is shown; a wrapped request falls through to the offer.
+  if (core === q && QUESTION.test(q)) return "show";
+  if (ACTION.test(core)) return "offer";
   return "show";
 }
 

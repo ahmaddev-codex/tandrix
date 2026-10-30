@@ -23,6 +23,7 @@ const bridge: TandrixBridge = {
     end: () => ipcRenderer.invoke(channels.doEnd),
     stop: () => ipcRenderer.invoke(channels.doStop),
     apps: () => ipcRenderer.invoke(channels.doApps),
+    front: () => ipcRenderer.invoke(channels.doFront),
     openApp: (name) => ipcRenderer.invoke(channels.doOpenApp, name),
   },
   storage: {

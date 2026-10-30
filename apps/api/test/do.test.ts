@@ -234,6 +234,26 @@ describe("fresh turns with memory", () => {
   });
 });
 
+describe("POST /screen/do/notes", () => {
+  it("writes down what the screen holds for the task, or says it's unavailable", async () => {
+    const s = setup();
+    const ask = (body: object) =>
+      s.app("u1").request("/screen/do/notes", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+      });
+    const shot = { mimeType: "image/png", data: Buffer.from("png").toString("base64") };
+    expect((await (await ask({ screenshot: shot, task: "x" })).json()).status).toBe("unavailable");
+    s.doer.notes = async ({ task }) => ({ note: `Acme Tue 10:00 (for ${task})` });
+    expect(await (await ask({ screenshot: shot, task: "add it" })).json()).toEqual({
+      status: "done",
+      note: "Acme Tue 10:00 (for add it)",
+    });
+    expect((await ask({ task: "no screenshot" })).status).toBe(400);
+  });
+});
+
 describe("POST /screen/background", () => {
   it("does a task with no screen and answers what to say and what to read", async () => {
     const s = setup();

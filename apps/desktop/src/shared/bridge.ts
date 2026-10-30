@@ -55,6 +55,7 @@ export const channels = {
   doEnd: "do:end",
   doStop: "do:stop",
   doApps: "do:apps",
+  doFront: "do:front",
   doOpenApp: "do:open-app",
   presence: "overlay:presence",
 } as const;
@@ -125,6 +126,8 @@ export interface TandrixBridge {
     stop(): Promise<void>;
     /** Installed apps, and the one in front (not Tandrix), for the task's plan. */
     apps(): Promise<{ apps: string[]; front?: string }>;
+    /** The app in front now (not Tandrix), to tell when a task moves between apps. */
+    front(): Promise<string | undefined>;
     /** Opens an installed app during a task; false if it isn't installed or no task runs. */
     openApp(name: string): Promise<boolean>;
   };

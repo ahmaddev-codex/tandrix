@@ -1,8 +1,14 @@
 // Typed client for the Tandrix API. Responses are validated with the shared contracts.
-import type { DoContinueRequest, DoStartRequest, BackgroundRequest } from "@tandrix/contracts";
+import type {
+  DoContinueRequest,
+  DoNotesRequest,
+  DoStartRequest,
+  BackgroundRequest,
+} from "@tandrix/contracts";
 import {
   BackgroundResponse,
   CheckStepResponse,
+  DoNotesResponse,
   DoTurnResponse,
   StepVisualsResponse,
   CreateEvidenceResponse,
@@ -147,6 +153,8 @@ export const api = {
   doStart: (body: z.input<typeof DoStartRequest>) =>
     request("/screen/do", DoTurnResponse, { method: "POST", body: JSON.stringify(body) }),
   /** The next turn of the same model conversation: the screen after the last batch ran. */
+  doNotes: (body: z.input<typeof DoNotesRequest>) =>
+    request("/screen/do/notes", DoNotesResponse, { method: "POST", body: JSON.stringify(body) }),
   doContinue: (body: z.input<typeof DoContinueRequest>) =>
     request("/screen/do/continue", DoTurnResponse, { method: "POST", body: JSON.stringify(body) }),
   /** A task that needs no screen, done in the background. */

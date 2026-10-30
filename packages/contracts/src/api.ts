@@ -465,6 +465,18 @@ export const DoStartRequest = z.strictObject({
   turn: z.number().int().min(1).max(DO_MAX_TURNS).default(1),
 });
 
+/**
+ * POST /screen/do/notes: what a screen holds that the task needs, written down before Tandrix
+ * leaves that app (the next turn sees only the new screen). The screenshot isn't stored.
+ */
+export const DoNotesRequest = z.strictObject({ screenshot: InlineScreenshot, task: text(2000) });
+export const DoNotesResponse = z.discriminatedUnion("status", [
+  /** The details, or null when the screen holds nothing the task needs. */
+  z.strictObject({ status: z.literal("done"), note: z.string().max(1200).nullable() }),
+  z.strictObject({ status: z.literal("unavailable"), message: text(300) }),
+]);
+export type DoNotesResponse = z.infer<typeof DoNotesResponse>;
+
 /** POST /screen/do/continue: the screen after the last batch ran, with the checks accepted. */
 export const DoContinueRequest = z.strictObject({
   /** From the last turn; it ties the task to this user and counts its turns. */

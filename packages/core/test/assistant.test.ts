@@ -9,6 +9,7 @@ import {
   isYes,
   offerToDo,
 } from "../src/assistant";
+import { wantsDesktopExecution } from "../src/voice";
 
 describe("helpKind", () => {
   it("shows the way for questions about the screen", () => {
@@ -24,6 +25,34 @@ describe("helpKind", () => {
   it("does it straight away when asked to do it", () => {
     expect(helpKind("Turn on dark mode for me")).toBe("do");
     expect(helpKind("Do it")).toBe("do");
+  });
+  it("does it straight away however the handover is phrased", () => {
+    expect(helpKind("Book my dentist for Thursday for me")).toBe("do");
+    expect(helpKind("Add bread to my shopping note for me")).toBe("do");
+    expect(helpKind("Can you turn on dark mode for me?")).toBe("do");
+    expect(helpKind("Could you add bread to my shopping note for me?")).toBe("do");
+    expect(helpKind("Please send the email for me")).toBe("do");
+    expect(helpKind("Do the update for me")).toBe("do");
+    expect(helpKind("I want you to turn on dark mode")).toBe("do");
+    expect(wantsDesktopExecution("Book my dentist for me")).toBe(true);
+  });
+  it("treats going somewhere and getting something as a task, not a question", () => {
+    const ask =
+      "Go to my whatsapp and grab a chat with the interview lineups and add it to my calendar";
+    expect(helpKind(ask)).toBe("offer");
+    expect(helpKind(`${ask} for me`)).toBe("do");
+    expect(helpKind("Grab the tracking number from my email")).toBe("offer");
+    expect(helpKind("Check my calendar for Friday")).toBe("offer");
+    expect(helpKind("Find out when the Apple store closes")).toBe("background");
+  });
+  it("offers, rather than shows, a politely wrapped request", () => {
+    expect(helpKind("Can you turn on dark mode?")).toBe("offer");
+    expect(helpKind("Can you research the best standing desks?")).toBe("background");
+  });
+  it("keeps no-screen work and real questions off the screen even with for me", () => {
+    expect(helpKind("Research the best standing desks for me")).toBe("background");
+    expect(helpKind("Draft a reply thanking Sam for me")).toBe("background");
+    expect(helpKind("What should I buy for me?")).toBe("show");
   });
   it("works in the background when no screen is needed", () => {
     expect(helpKind("Research the best standing desks under $500")).toBe("background");

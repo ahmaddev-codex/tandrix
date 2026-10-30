@@ -172,6 +172,11 @@ export function useShowMe(jobId: string | undefined) {
           openApp: (name) => window.tandrix.doing.openApp(name),
           turn: (req) => api.doStart(req),
           next: (req) => api.doContinue(req),
+          front: () => window.tandrix.doing.front(),
+          note: async (req) => {
+            const r = await api.doNotes(req);
+            return r.status === "done" ? r.note : null;
+          },
           run: (batch) => window.tandrix.doing.run(batch),
           say: (line) => {
             speak(line);

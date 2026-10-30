@@ -2,6 +2,8 @@ import type { DoTurnResponse } from "@tandrix/contracts";
 import { describe, expect, it } from "vitest";
 import type { ScreenCapture } from "../src/shared/bridge";
 import {
+  notesIn,
+  spokenPart,
   circling,
   fingerprint,
   likeness,
@@ -79,16 +81,17 @@ describe("runScreenTask", () => {
     ]);
     const r = await runScreenTask("Add bread to my shopping note", s.d);
     expect(r).toEqual({ status: "done", reply: "Added bread." });
-    // A fresh turn, then one continued in the same conversation, then fresh with the memory.
+    // Every turn is fresh (fast) and carries what's been done so far.
     expect(s.sent[0]!.memory).toEqual([]);
-    expect(s.sent[1]!.memory).toEqual(["(continued)"]);
+    expect(s.sent[1]!.memory).toEqual(["Opening the note. (clicked at 1,1)"]);
     expect(s.sent[2]!.memory).toEqual([
       "Opening the note. (clicked at 1,1)",
       "Adding bread. (clicked at 1,1)",
     ]);
     // Checking before finishing carries everything done so far.
     expect(s.sent[3]!.memory.at(-1)).toMatch(/^You said: "Added bread."\. Check this screen/);
-    expect(s.said).toEqual(["Opening the note.", "Adding bread."]);
+    // Spoken at most every few seconds: the second line, a moment later, is left to the caption.
+    expect(s.said).toEqual(["Opening the note."]);
   });
 
   it("checks the screen once before believing it's finished, and keeps going if not", async () => {
@@ -194,5 +197,60 @@ describe("helpers", () => {
   });
   it("tells screens apart", () => {
     expect(fingerprint(new Uint8Array([1, 2, 3]))).not.toBe(fingerprint(new Uint8Array([1, 2, 4])));
+  });
+});
+
+describe("leaving an app", () => {
+  it("writes down what the last app held when the model left it without a note", async () => {
+    const s = setup([
+      act("Got the lineup, opening Calendar."),
+      act("Adding them."),
+      done("Added."),
+    ]);
+    const apps = ["WhatsApp", "WhatsApp", "Calendar", "Calendar", "Calendar", "Calendar"];
+    const noted: string[] = [];
+    s.d.front = async () => apps.shift();
+    s.d.note = async (req) => {
+      noted.push(req.task);
+      return "Acme Tue 3 Nov 10:00-10:45";
+    };
+    await runScreenTask("Add the interviews to my calendar", s.d);
+    expect(noted).toEqual(["Add the interviews to my calendar"]);
+    expect(s.sent[1]!.memory[0]).toBe("You noted in WhatsApp: Acme Tue 3 Nov 10:00-10:45");
+  });
+
+  it("doesn't, when the model wrote its own note there", async () => {
+    const s = setup([
+      act("NOTE: Acme Tue 10:00. Opening Calendar."),
+      act("Adding."),
+      done("Added."),
+    ]);
+    const apps = ["WhatsApp", "WhatsApp", "Calendar", "Calendar", "Calendar", "Calendar"];
+    let asked = 0;
+    s.d.front = async () => apps.shift();
+    s.d.note = async () => {
+      asked++;
+      return "x";
+    };
+    await runScreenTask("Add it to my calendar", s.d);
+    expect(asked).toBe(0);
+  });
+});
+
+describe("plans and notes", () => {
+  it("keeps the model's plan and what it read, whole, for every later turn", () => {
+    const reply =
+      "PLAN: open WhatsApp; open the interviews chat; note the times; open Calendar. NOTE: Acme Tue 4 Nov 10:00; Globex Wed 5 Nov 14:30.";
+    expect(notesIn(reply)).toEqual([
+      "Your plan: open WhatsApp; open the interviews chat; note the times; open Calendar.",
+      "You noted: Acme Tue 4 Nov 10:00; Globex Wed 5 Nov 14:30.",
+    ]);
+  });
+
+  it("never says the plan, the notes or filler aloud", () => {
+    expect(spokenPart("Got it. Opening Calendar.")).toBe("Opening Calendar.");
+    expect(spokenPart("Okay, got it — adding the first one.")).toBe("adding the first one.");
+    expect(spokenPart("NOTE: Acme Tue 10:00")).toBe("");
+    expect(spokenPart("PLAN: open WhatsApp; open Calendar.")).toBe("");
   });
 });

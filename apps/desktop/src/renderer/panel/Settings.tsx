@@ -6,6 +6,7 @@ import {
   ConfirmDialog,
   doItForMeConfirmation,
   Input,
+  ModeToggle,
   Notice,
   Toggle,
 } from "@tandrix/ui/web";
@@ -83,13 +84,18 @@ export function Settings({
       </header>
 
       <div className="panel-settings-body">
-        <Group title="Doing things for you">
-          <div className="panel-row">
-            <Toggle
-              label="Always do things without asking first"
-              description="Off: Tandrix offers first, and you say yes. Either way it asks before paying, sending, deleting or changing security settings."
-              checked={s.mode === "do"}
-              onChange={(on) => (on ? setConfirming(true) : void s.setMode("show"))}
+        <Group title="How Tandrix helps">
+          <div className="panel-row panel-row-block">
+            <div className="panel-row-text">
+              <span className="panel-row-desc">
+                {s.mode === "do"
+                  ? "Do it for me: Tandrix does what you ask straight away, including when you say \u201cfor me\u201d. It still asks before paying, sending, deleting or changing security settings."
+                  : "Show me: Tandrix points and explains, and you do it. When you ask it to do something it offers first and you say yes; saying \u201cfor me\u201d does it straight away."}
+              </span>
+            </div>
+            <ModeToggle
+              mode={s.mode}
+              onChange={(next) => (next === "do" ? setConfirming(true) : void s.setMode("show"))}
             />
           </div>
         </Group>

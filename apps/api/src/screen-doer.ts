@@ -3,6 +3,7 @@
 // Mac runs each action through the action guard in @tandrix/core.
 import {
   continueDoing,
+  noteScreen,
   imageData,
   MetaApiError,
   MetaClient,
@@ -42,6 +43,8 @@ export interface ScreenDoer {
   /** Which installed app the task needs, if not the one in front; null on any failure. */
   plan(input: { task: string; frontApp?: string; apps: string[] }): Promise<string | null>;
   start(input: { screenshot: Shot; task: string; memory?: string[] }): Promise<DoOutcome>;
+  /** What a screen holds that the task needs (before leaving it); null when nothing. */
+  notes?(input: { screenshot: Shot; task: string }): Promise<{ note: string | null } | null>;
   continue(input: {
     previousResponseId: string;
     callId: string;
@@ -107,6 +110,21 @@ export function metaScreenDoer(
         return r.ok ? r.data.openApp : null;
       } catch (e) {
         if (e instanceof MetaApiError) return null;
+        throw e;
+      }
+    },
+    async notes({ screenshot, task }) {
+      try {
+        const r = await noteScreen(client, config.models, {
+          task,
+          screenshot: imageData(screenshot.bytes, screenshot.mimeType),
+        });
+        return r.ok ? { note: r.data.note?.trim() || null } : null;
+      } catch (e) {
+        if (e instanceof MetaApiError) {
+          log({ level: "warn", event: "do_notes_model_error", status: e.status });
+          return null;
+        }
         throw e;
       }
     },

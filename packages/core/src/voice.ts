@@ -46,22 +46,56 @@ export function parseVoiceCommand(text: string): VoiceCommand | null {
 }
 
 /**
+ * The request under its politeness: "Can you add bread?", "I want you to add bread" and
+ * "Please add bread" are all the same ask as "add bread". Anything else comes back unchanged.
+ */
+export function asImperative(text: string): string {
+  return text
+    .trim()
+    .replace(/^(please\s+)?(can|could|would|will)\s+you\s+(please\s+)?/i, "")
+    .replace(/^i\s+(want|need|'d like|would like)\s+you\s+to\s+/i, "")
+    .replace(/^please\s+/i, "")
+    .replace(/[.!?]+$/, "")
+    .trim();
+}
+
+/** Screen work said as a verb first ("add…", "book…", "turn on…"): the ACTION list's twin. */
+const DELEGATED_VERB =
+  /^(go( to| into| back to)?|head (to|over to)|grab|get|fetch|pull|take|put|bring|copy|check (my|the|on)|look (at|in|through|for) (my|the)|read (my|the)|find (my|the)|add|book|schedule|create|make|set( up)?|turn (on|off)|switch|change|rename|move|copy|paste|save|export|send|reply|forward|write|fill( in| out)?|sign (up|in)|log in|install|update|delete|remove|clean up|sort|organi[sz]e|archive|close|quit|open|launch|start|download|upload|share|invite|mute|unmute|enable|disable|connect|join|pair|print|resize|crop|convert|merge|format|bookmark|subscribe|unsubscribe|order|buy|pay|transfer|clear|empty|restart|reset|click|type|enter|toggle)\b/i;
+
+/** Work that needs no screen, however it is asked for; "for me" must not drag it to the mouse. */
+const BACKGROUND_LEAD =
+  /^(research|look up|look into|find out|find me|search|compare|summari[sz]e|explain|draft|write me|come up with|plan|brainstorm|give me|list|recommend|check)\b/i;
+
+/**
  * True when a user explicitly asks Tandrix to perform an action on their computer for them
  * (for example "do it for me", "click Save for me", "open Calendar and add an event for me").
+ * The delegation can be wrapped ("can you … for me?", "I want you to …") and the verb can be
+ * any screen verb, not just clicking and typing.
  */
 export function wantsDesktopExecution(text: string): boolean {
   const q = text.trim();
   if (!q) return false;
-  if (/\b(do (it|this|that)( for me)?|for me please|take over)\b/i.test(q)) return true;
   if (
-    /^(please\s+)?(click|double[- ]click|open|launch|switch to|type|enter|fill in|turn on|turn off|enable|disable|toggle)\b.+\bfor me\b/i.test(
-      q,
-    )
-  ) {
+    /\b(do (it|this|that)( for me)?|for me please|take over|take care of (it|this|that))\b/i.test(q)
+  )
     return true;
+  const core = asImperative(q);
+  if (/^(do it:?|do this:?)\s+\S+/i.test(core)) return true;
+  if (/^do\s+(the|my|this|that)\b/i.test(core)) return true;
+  if (/\bfor me\b/i.test(core)) {
+    // No-screen work ("draft a reply for me", "research desks for me") stays background work.
+    if (BACKGROUND_LEAD.test(core)) return false;
+    if (DELEGATED_VERB.test(core)) return true;
   }
-  if (/^(do it:?|do this:?)\s+\S+/i.test(q)) return true;
-  if (/^(please\s+)?(open|launch)\s+[a-z0-9 .+-]+(\s+and\s+.+)?$/i.test(q)) return true;
+  // "I want you to turn on dark mode" hands the work over even without a "for me".
+  if (
+    /^i\s+(want|need|'d like|would like)\s+you\s+to\s+/i.test(q) &&
+    !BACKGROUND_LEAD.test(core) &&
+    DELEGATED_VERB.test(core)
+  )
+    return true;
+  if (/^(open|launch)\s+[a-z0-9 .+-]+(\s+and\s+.+)?$/i.test(core)) return true;
   return false;
 }
 

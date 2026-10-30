@@ -36,6 +36,13 @@ export interface ScreenTaskDeps {
   stopped: () => boolean;
   settle: (ms: number) => Promise<void>;
   base64: (bytes: Uint8Array) => string;
+  /** The app in front now, when the Mac can tell. */
+  front?: () => Promise<string | undefined>;
+  /** What a screen holds that the task needs, written down; null when nothing. */
+  note?: (req: {
+    screenshot: { mimeType: ScreenCapture["mimeType"]; data: string };
+    task: string;
+  }) => Promise<string | null>;
 }
 
 export type ScreenTaskResult =
@@ -50,12 +57,14 @@ const SETTLE_MS = 300;
 const STUCK_AFTER = 3;
 /** The model sees this much recent memory each turn. */
 const MEMORY_LINES = 30;
+/** At most one progress line spoken this often while working. */
+const SPEAK_EVERY_MS = 3500;
 /**
  * Turns continued in the same model conversation before starting fresh with the memory: enough for
  * the model to remember what it just did, few enough that turns don't slow down as screenshots pile
  * up.
  */
-const CHAIN = 1;
+const CHAIN = 0;
 /** Turns of only clicking and near-identical narration before Tandrix calls it going in circles. */
 const CIRCLE_TURNS = 5;
 
@@ -113,6 +122,30 @@ export function memoryLine(reply: string, actions: DesktopAction[]): string {
   );
 }
 
+/** The model's plan and what it noted down to use later, out of a reply ("PLAN: …", "NOTE: …"). */
+export function notesIn(reply: string): string[] {
+  const out: string[] = [];
+  for (const m of reply.matchAll(/\b(PLAN|NOTE):\s*([\s\S]*?)(?=\s*\b(?:PLAN|NOTE):|$)/g)) {
+    const text = m[2]!.replace(/\s+/g, " ").trim();
+    const label = m[1] === "PLAN" ? "Your plan:" : "You noted:";
+    // Kept whole: long notes go over several lines rather than being cut.
+    for (let i = 0; i < text.length && out.length < 6; i += 270)
+      out.push(`${label} ${text.slice(i, i + 270)}`);
+  }
+  return out;
+}
+
+/**
+ * What of a reply is worth saying aloud: never the plan or notes, and without the filler a model
+ * opens with ("Got it.", "Okay,").
+ */
+export function spokenPart(reply: string): string {
+  return reply
+    .replace(/\b(PLAN|NOTE):[\s\S]*?(?=\s*\b(?:PLAN|NOTE):|$)/g, "")
+    .replace(/^\s*((got it|okay|ok|sure|alright|all right|on it|right|great)\b[\s,.!—–-]*)+/i, "")
+    .trim();
+}
+
 /** A cheap fingerprint of a screenshot, to tell whether a step changed anything. */
 export function fingerprint(bytes: Uint8Array): string {
   let h = 2166136261;
@@ -127,16 +160,21 @@ const ONLY_OPEN = (app: string) =>
     "i",
   );
 
-const PROGRESS = [
-  "Still on it.",
-  "Making progress.",
-  "Getting there.",
-  "A few more steps.",
-  "Nearly there, I think.",
-];
-
 export async function runScreenTask(task: string, d: ScreenTaskDeps): Promise<ScreenTaskResult> {
   const memory: string[] = [];
+  /** The plan and what was noted to use later: sent every turn, never pushed out. */
+  const notes: string[] = [];
+  let lastSpoken = "";
+  let lastSpokenAt = 0;
+  /** Progress is spoken when it's new, and not more often than this. */
+  const say = (reply: string) => {
+    const line = spokenPart(reply);
+    const now = Date.now();
+    if (!line || likeness(line, lastSpoken) > 0.6 || now - lastSpokenAt < SPEAK_EVERY_MS) return;
+    lastSpoken = line;
+    lastSpokenAt = now;
+    d.say(line);
+  };
   const { apps, front } = await d.apps();
   let frontApp = front;
   let capture = await d.capture();
@@ -151,8 +189,34 @@ export async function runScreenTask(task: string, d: ScreenTaskDeps): Promise<Sc
   let chain: { session: string; acknowledged: DoBatch["safetyChecks"]; left: number } | null = null;
   let nudged = false;
 
+  /** Where the last turn was, and whether anything was noted there. */
+  let app = d.front ? await d.front() : undefined;
+  let shotInApp: ScreenCapture | null = null;
+  let notedInApp = false;
+
   for (let turn = 1; turn <= DO_MAX_TURNS; turn++) {
     if (d.stopped()) return { status: "stopped", reply: "Stopped. You have control back." };
+    // Left an app without writing down what it read there: the next turn would only see the new
+    // app, and go back for it. Write it down from the last look at that app, once, before going on.
+    if (d.front) {
+      const now = await d.front();
+      if (now && app && now !== app && shotInApp && !notedInApp && d.note) {
+        const note = await d
+          .note({
+            screenshot: { mimeType: shotInApp.mimeType, data: d.base64(shotInApp.image) },
+            task,
+          })
+          .catch(() => null);
+        if (note)
+          for (let i = 0; i < note.length && i < 1080; i += 250)
+            notes.push(`You noted in ${app}: ${note.slice(i, i + 250)}`);
+      }
+      if (now && now !== app) {
+        app = now;
+        notedInApp = false;
+        shotInApp = null;
+      }
+    }
     for (const said of d.steer()) {
       memory.push(`The user just said: "${said}". Change what you're doing to match.`);
       checked = false;
@@ -174,9 +238,10 @@ export async function runScreenTask(task: string, d: ScreenTaskDeps): Promise<Sc
           ...(frontApp ? { frontApp } : {}),
           planned,
           // Each line within the API's limit, whatever the model said.
-          memory: memory
-            .slice(-MEMORY_LINES)
-            .map((m) => (m.length > 290 ? `${m.slice(0, 289)}…` : m)),
+          memory: [
+            ...notes.slice(-10),
+            ...memory.slice(-(MEMORY_LINES - Math.min(notes.length, 10))),
+          ].map((m) => (m.length > 290 ? `${m.slice(0, 289)}…` : m)),
           turn,
         });
     const left: number = chain ? chain.left - 1 : CHAIN;
@@ -215,7 +280,12 @@ export async function runScreenTask(task: string, d: ScreenTaskDeps): Promise<Sc
     }
 
     // Act.
-    if (r.reply) d.say(r.reply);
+    for (const n of notesIn(r.reply)) {
+      if (!notes.includes(n)) notes.push(n);
+      if (n.startsWith("You noted:")) notedInApp = true;
+    }
+    shotInApp = capture;
+    if (r.reply) say(r.reply);
     const ran = await d.run({
       actions: r.actions,
       geometry: capture.geometry,
@@ -227,7 +297,7 @@ export async function runScreenTask(task: string, d: ScreenTaskDeps): Promise<Sc
         ? { status: "stopped", reply: ran.message }
         : { status: "failed", reply: ran.message };
     if (left > 0) chain = { session: r.session, acknowledged: ran.acknowledged, left };
-    memory.push(memoryLine(r.reply, r.actions));
+    memory.push(memoryLine(spokenPart(r.reply) || "Planned and noted.", r.actions));
     checked = false;
     recent.push({ reply: r.reply, actions: r.actions });
     if (circling(recent)) {
@@ -262,7 +332,6 @@ export async function runScreenTask(task: string, d: ScreenTaskDeps): Promise<Sc
     } else noEffect = 0;
     lastSig = sig;
     lastPrint = print;
-    if (turn % 12 === 0) d.say(PROGRESS[(turn / 12) % PROGRESS.length]!);
   }
   return {
     status: "stuck",

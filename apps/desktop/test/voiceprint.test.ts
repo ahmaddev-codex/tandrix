@@ -3,7 +3,13 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import prints from "./fixtures/voiceprints.json";
-import { distance, fromSetup, shouldAnswer, voiceprintStore, type Voiceprint } from "../src/main/voiceprint";
+import {
+  distance,
+  fromSetup,
+  shouldAnswer,
+  voiceprintStore,
+  type Voiceprint,
+} from "../src/main/voiceprint";
 
 // Real prints from the wake helper (`tandrix-wake --print`) of macOS voices saying wake phrases.
 const P = prints as Record<string, number[]>;
@@ -35,7 +41,10 @@ describe("voiceprint", () => {
 
   it("measures a microphone's colouring away: the same offset on both sides doesn't move the distance", () => {
     const shift = (p: number[]) => p.map((x, i) => x + (i < 12 ? 3 : 0));
-    expect(distance(shift(vp.print), shift(P["Samantha-t0"]!))).toBeCloseTo(distance(vp.print, P["Samantha-t0"]!), 6);
+    expect(distance(shift(vp.print), shift(P["Samantha-t0"]!))).toBeCloseTo(
+      distance(vp.print, P["Samantha-t0"]!),
+      6,
+    );
   });
 
   it("saves, loads and deletes on disk", () => {

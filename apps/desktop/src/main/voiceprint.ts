@@ -36,7 +36,9 @@ export interface Voiceprint {
 }
 
 export const isPrint = (v: unknown): v is number[] =>
-  Array.isArray(v) && v.length === PRINT_LENGTH && v.every((n) => typeof n === "number" && Number.isFinite(n));
+  Array.isArray(v) &&
+  v.length === PRINT_LENGTH &&
+  v.every((n) => typeof n === "number" && Number.isFinite(n));
 
 export function distance(a: number[], b: number[]) {
   let sum = 0;
@@ -45,7 +47,10 @@ export function distance(a: number[], b: number[]) {
 }
 
 export const meanPrint = (prints: number[][]) =>
-  Array.from({ length: PRINT_LENGTH }, (_, i) => prints.reduce((s, p) => s + p[i]!, 0) / prints.length);
+  Array.from(
+    { length: PRINT_LENGTH },
+    (_, i) => prints.reduce((s, p) => s + p[i]!, 0) / prints.length,
+  );
 
 /** Whether to answer a wake phrase: always, unless only-my-voice is on and it's clearly someone else. */
 export function shouldAnswer(vp: Voiceprint | null, heard: number[] | undefined) {
