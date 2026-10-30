@@ -3,8 +3,13 @@
 // speech on device, it says so and exits rather than use a server. The Electron main process runs
 // it only while the wake word is switched on, and reads one JSON line per event on stdout:
 //   {"ready":true}                      listening
-//   {"wake":true,"rest":"what to ask"}  heard the wake phrase (rest may be empty)
+//   {"wake":true,"rest":"what to ask","voice":[...]}  heard the wake phrase (rest may be empty;
+//                                       voice is the voiceprint of the last few seconds, if voiced)
+//   {"sample":[...],"voiced":2.1}       a voice setup phrase, recorded between record start and stop
 //   {"error":"..."}                     can't listen (then it exits)
+// and takes one JSON command per line on stdin:
+//   {"record":"start"} / {"record":"stop"}   record a voice setup phrase
+// Voiceprints are computed here (voiceprint.swift) and never leave the Mac.
 import AVFoundation
 import Foundation
 import Speech
@@ -42,6 +47,11 @@ final class Listener {
   var pendingWake: Timer?
   /// Which recognition task is current.
   var generation = 0
+  /// The last few seconds heard, for the voiceprint.
+  let recent = Recent(seconds: 8)
+  var resampler: Resampler?
+  /// Where in `recent` the current recognition task's audio starts.
+  var taskStart = 0
 
   init() {
     guard let r = SFSpeechRecognizer(locale: Locale(identifier: "en-US")) else {
@@ -53,9 +63,13 @@ final class Listener {
 
   func start() {
     let input = engine.inputNode
-    input.installTap(onBus: 0, bufferSize: 2048, format: input.outputFormat(forBus: 0)) {
+    let format = input.outputFormat(forBus: 0)
+    resampler = Resampler(from: format)
+    input.installTap(onBus: 0, bufferSize: 2048, format: format) {
       [weak self] buffer, _ in
-      self?.request?.append(buffer)
+      guard let self else { return }
+      self.request?.append(buffer)
+      if let r = self.resampler { self.recent.append(r.convert(buffer)) }
     }
     engine.prepare()
     do { try engine.start() } catch { fail("microphone_unavailable") }
@@ -70,6 +84,7 @@ final class Listener {
     let gen = generation
     pendingWake?.invalidate()
     task?.cancel()
+    taskStart = recent.now
     let req = SFSpeechAudioBufferRecognitionRequest()
     req.requiresOnDeviceRecognition = true
     req.shouldReportPartialResults = true
@@ -88,6 +103,10 @@ final class Listener {
           // when the task ends, a minute later. Once the name is heard, wait for a short pause
           // so "Tandrix, open Calendar" arrives whole, then answer and start listening afresh.
           if let m = wake.firstMatch(in: fresh, range: range) {
+            // Where this phrase started, from the recogniser's word timings, so the voiceprint
+            // hears just the phrase and not the silence or speech before it.
+            let firstWord = result.bestTranscription.segments.first { $0.substringRange.location >= self.handled }
+            let phraseStart = self.taskStart + Int(((firstWord?.timestamp ?? 0) - 0.15) * PRINT_RATE)
             let rest =
               Range(m.range(at: 1), in: fresh).map { String(fresh[$0]) }?
               .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
@@ -97,7 +116,11 @@ final class Listener {
               guard let self else { return }
               guard gen == self.generation else { return }
               self.handled = text.count
-              emit(["wake": true, "rest": rest])
+              // The phrase just said, from its first word to this short pause (at most 6 s).
+              var event: [String: Any] = ["wake": true, "rest": rest]
+              let phrase = self.recent.since(max(phraseStart, self.recent.now - Int(6 * PRINT_RATE)))
+              if let p = Voiceprint.of(phrase) { event["voice"] = p.print }
+              emit(event)
               // A fresh task, so the same words can't wake it twice.
               self.renew()
             }
@@ -117,12 +140,35 @@ final class Listener {
     }
   }
 
+  func command(_ line: String) {
+    guard let data = line.data(using: .utf8),
+      let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+    else { return }
+    switch obj["record"] as? String {
+    case "start": recent.startRecording()
+    case "stop":
+      let samples = recent.stopRecording()
+      if let p = Voiceprint.of(samples) {
+        emit(["sample": p.print, "voiced": p.voiced])
+      } else {
+        emit(["sample": NSNull(), "reason": "too_short"])
+      }
+    default: break
+    }
+  }
+
   func renew() {
     DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in self?.begin() }
   }
 }
 
 var signalSources: [DispatchSourceSignal] = []
+
+// Tests: print the voiceprint of an audio file and exit.
+if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--print" {
+  emit(printOfFile(CommandLine.arguments[2]))
+  exit(0)
+}
 
 /// macOS asks for speech and microphone access on behalf of the "responsible" app: whatever
 /// launched Tandrix (in dev, the editor or terminal), whose Info.plist lacks the usage strings, so
@@ -167,9 +213,11 @@ SFSpeechRecognizer.requestAuthorization { status in
     listener?.start()
   }
 }
-// Stop when Tandrix stops (stdin closes).
+// Commands from Tandrix; stop when it stops (stdin closes).
 DispatchQueue.global().async {
-  while readLine() != nil {}
+  while let line = readLine() {
+    DispatchQueue.main.async { listener?.command(line) }
+  }
   exit(0)
 }
 RunLoop.main.run()

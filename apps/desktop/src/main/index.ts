@@ -45,7 +45,8 @@ import {
   stopDoing,
 } from "./do-session";
 import { frontApp, installedApps } from "./apps";
-import { setWakeWord, stopWakeWord } from "./wake";
+import { finishSample, setWakeWord, startSample, stopWakeWord } from "./wake";
+import { fromSetup, SETUP_PHRASES, shouldAnswer, voiceprintStore } from "./voiceprint";
 import { ControlMode, DesktopAction, SafetyCheck, ScreenGeometry } from "@tandrix/contracts";
 import { z } from "zod";
 
@@ -79,6 +80,19 @@ const DoBatchSchema = z.strictObject({
   safetyChecks: z.array(SafetyCheck).max(10),
 });
 const flag = (a: unknown[]): a is [boolean] => a.length === 1 && typeof a[0] === "boolean";
+const phraseArgs = (a: unknown[]): a is [number, "start" | "stop"] =>
+  a.length === 2 &&
+  Number.isInteger(a[0]) &&
+  (a[0] as number) >= 0 &&
+  (a[0] as number) < SETUP_PHRASES &&
+  (a[1] === "start" || a[1] === "stop");
+
+/** The user's voiceprint, on this Mac only. */
+const voices = () => voiceprintStore(app.getPath("userData"));
+/** Prints of the voice setup phrases recorded so far. */
+let setupPrints: Array<number[] | undefined> = [];
+/** Wakes are ignored until then: while a setup phrase records, and just after. */
+let quietUntil = 0;
 /** Checked in detail by the handler itself. */
 const pointArgs = (
   a: unknown[],
@@ -177,10 +191,61 @@ function registerIpc() {
       setWakeWord(on, {
         status: (status, message) =>
           sendToPanel(channels.wakeStatus, { status, ...(message ? { message } : {}) }),
-        wake: (rest) => sendToPanel(channels.wake, rest),
+        wake: (rest, voice) => {
+          // The setup phrases say "Hey Tandrix" on purpose; they aren't wakes.
+          if (Date.now() < quietUntil) return;
+          if (shouldAnswer(voices().load(), voice)) sendToPanel(channels.wake, rest);
+          else sendToPanel(channels.wakeIgnored);
+        },
       }),
     flag,
   );
+  handle(channels.voiceprint, () => {
+    const vp = voices().load();
+    return { enrolled: vp !== null, onlyMine: vp?.onlyMine ?? false };
+  }, none);
+  handle(
+    channels.voicePhrase,
+    async (index: number, action: "start" | "stop") => {
+      if (action === "start") {
+        quietUntil = Infinity;
+        setupPrints[index] = undefined;
+        return startSample() ? { ok: true } : { ok: false, reason: "not_listening" };
+      }
+      const r = await finishSample();
+      quietUntil = Date.now() + 2500;
+      if (!r.print) return { ok: false, reason: r.reason };
+      setupPrints[index] = r.print;
+      return { ok: true };
+    },
+    phraseArgs,
+  );
+  handle(
+    channels.voiceFinish,
+    () => {
+      const prints = setupPrints.slice(0, SETUP_PHRASES);
+      const missing = prints.findIndex((p) => !p);
+      if (prints.length < SETUP_PHRASES || missing >= 0) return { ok: false, redo: Math.max(missing, prints.length) };
+      const made = fromSetup(prints as number[][]);
+      if ("redo" in made) return { ok: false, redo: made.redo };
+      voices().save({ version: 1, print: made.print, onlyMine: true, createdAt: new Date().toISOString() });
+      setupPrints = [];
+      return { ok: true };
+    },
+    none,
+  );
+  handle(
+    channels.voiceOnlyMine,
+    (on: boolean) => {
+      const vp = voices().load();
+      if (vp) voices().save({ ...vp, onlyMine: on });
+    },
+    flag,
+  );
+  handle(channels.voiceDelete, () => {
+    voices().remove();
+    setupPrints = [];
+  }, none);
   handle(
     channels.doApps,
     async () => {

@@ -388,3 +388,44 @@ input {
     animation: panel-blink 1.4s ease-in-out infinite;
   }
 }
+
+/* Know my voice: three phrases, then a toggle. */
+.panel-voice {
+  display: grid;
+  gap: var(--space-2);
+  justify-items: start;
+}
+.panel-voice-phrase {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+.panel-voice-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: panel-voice-pulse 1s ease-in-out infinite;
+}
+@keyframes panel-voice-pulse {
+  50% {
+    opacity: 0.3;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .panel-voice-dot {
+    animation: none;
+  }
+}
+.panel-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--highlight);
+  font: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}

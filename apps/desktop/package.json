@@ -11,7 +11,7 @@
     "start": "electron .",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json",
-    "build:native": "mkdir -p dist/native && swiftc -O -o dist/native/tandrix-input native/input/main.swift && swiftc -O -o dist/native/tandrix-wake native/wake/main.swift -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __info_plist -Xlinker native/wake/Info.plist"
+    "build:native": "mkdir -p dist/native && swiftc -O -o dist/native/tandrix-input native/input/main.swift && swiftc -O -o dist/native/tandrix-wake native/wake/main.swift native/wake/voiceprint.swift -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __info_plist -Xlinker native/wake/Info.plist"
   },
   "dependencies": {
     "@expo-google-fonts/geist": "^0.4.2",

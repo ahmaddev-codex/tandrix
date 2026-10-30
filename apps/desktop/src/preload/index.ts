@@ -79,6 +79,12 @@ const bridge: TandrixBridge = {
         ipcRenderer.off(channels.wake, fn);
       };
     },
+    onWakeIgnored: (listener) => subscribe(channels.wakeIgnored, listener),
+    voiceprint: () => ipcRenderer.invoke(channels.voiceprint),
+    voicePhrase: (index, action) => ipcRenderer.invoke(channels.voicePhrase, index, action),
+    voiceFinish: () => ipcRenderer.invoke(channels.voiceFinish),
+    setOnlyMyVoice: (on) => ipcRenderer.invoke(channels.voiceOnlyMine, on),
+    deleteVoice: () => ipcRenderer.invoke(channels.voiceDelete),
     onTalkStart: (listener) => subscribe(channels.talkStart, listener),
     onTalkEnd: (listener) => subscribe(channels.talkEnd, listener),
     talkKeysAccess: (ask) => ipcRenderer.invoke(channels.talkKeysAccess, ask),

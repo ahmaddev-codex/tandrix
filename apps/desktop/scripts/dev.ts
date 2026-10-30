@@ -78,6 +78,7 @@ execFileSync(
     "-o",
     resolve(appDir, "dist/native/tandrix-wake"),
     resolve(appDir, "native/wake/main.swift"),
+    resolve(appDir, "native/wake/voiceprint.swift"),
     "-Xlinker",
     "-sectcreate",
     "-Xlinker",

@@ -6,6 +6,7 @@ import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { app } from "electron";
+import { isPrint } from "./voiceprint";
 
 export type WakeStatus = "off" | "starting" | "listening" | "unavailable";
 
@@ -22,6 +23,10 @@ const reasons: Record<string, string> = {
 let helper: ChildProcessWithoutNullStreams | undefined;
 let wanted = false;
 let retry: ReturnType<typeof setTimeout> | undefined;
+/** Waiting for the print of a voice setup phrase. */
+let sampleWaiter: ((r: SampleResult) => void) | undefined;
+
+export type SampleResult = { print: number[]; voiced: number } | { print: null; reason: string };
 
 function helperPath(): string {
   const packaged = join(process.resourcesPath ?? "", "native", "tandrix-wake");
@@ -30,8 +35,11 @@ function helperPath(): string {
 
 export interface WakeEvents {
   status(status: WakeStatus, message?: string): void;
-  /** The wake phrase was heard; `rest` is anything said after it in the same breath. */
-  wake(rest: string): void;
+  /**
+   * The wake phrase was heard; `rest` is anything said after it in the same breath, `voice` the
+   * voiceprint of the phrase when there was enough voice to tell.
+   */
+  wake(rest: string, voice?: number[]): void;
 }
 
 export function setWakeWord(on: boolean, events: WakeEvents) {
@@ -57,14 +65,36 @@ export function setWakeWord(on: boolean, events: WakeEvents) {
     while ((nl = buffer.indexOf("\n")) >= 0) {
       const line = buffer.slice(0, nl);
       buffer = buffer.slice(nl + 1);
-      let msg: { ready?: boolean; wake?: boolean; rest?: unknown; error?: unknown };
+      let msg: {
+        ready?: boolean;
+        wake?: boolean;
+        rest?: unknown;
+        voice?: unknown;
+        sample?: unknown;
+        voiced?: unknown;
+        reason?: unknown;
+        error?: unknown;
+      };
       try {
         msg = JSON.parse(line) as typeof msg;
       } catch {
         continue;
       }
       if (msg.ready) events.status("listening");
-      if (msg.wake) events.wake(typeof msg.rest === "string" ? msg.rest.slice(0, 2000) : "");
+      if (msg.wake)
+        events.wake(
+          typeof msg.rest === "string" ? msg.rest.slice(0, 2000) : "",
+          isPrint(msg.voice) ? msg.voice : undefined,
+        );
+      if ("sample" in msg && sampleWaiter) {
+        const done = sampleWaiter;
+        sampleWaiter = undefined;
+        done(
+          isPrint(msg.sample)
+            ? { print: msg.sample, voiced: typeof msg.voiced === "number" ? msg.voiced : 0 }
+            : { print: null, reason: typeof msg.reason === "string" ? msg.reason : "too_short" },
+        );
+      }
       if (typeof msg.error === "string") {
         failed = true;
         events.status("unavailable", reasons[msg.error] ?? "The wake word can't listen right now.");
@@ -79,6 +109,32 @@ export function setWakeWord(on: boolean, events: WakeEvents) {
     if (helper === child) helper = undefined;
     // A crash while wanted: try again shortly. A reason it can't listen: stay off.
     if (wanted && !failed) retry = setTimeout(() => setWakeWord(true, events), 3000);
+  });
+}
+
+/** Starts recording a voice setup phrase; false when the wake word isn't listening (it owns the mic). */
+export function startSample(): boolean {
+  if (!helper) return false;
+  sampleWaiter?.({ print: null, reason: "restarted" });
+  sampleWaiter = undefined;
+  helper.stdin.write(`${JSON.stringify({ record: "start" })}\n`);
+  return true;
+}
+
+/** Ends the phrase being recorded and gives its print. */
+export function finishSample(): Promise<SampleResult> {
+  const child = helper;
+  if (!child) return Promise.resolve({ print: null, reason: "not_listening" });
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => {
+      sampleWaiter = undefined;
+      resolve({ print: null, reason: "no_answer" });
+    }, 4000);
+    sampleWaiter = (r) => {
+      clearTimeout(timer);
+      resolve(r);
+    };
+    child.stdin.write(`${JSON.stringify({ record: "stop" })}\n`);
   });
 }
 

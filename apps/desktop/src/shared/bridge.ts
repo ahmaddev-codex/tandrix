@@ -29,6 +29,12 @@ export const channels = {
   wakeSet: "voice:wake-set",
   wakeStatus: "voice:wake-status",
   wake: "voice:wake",
+  wakeIgnored: "voice:wake-ignored",
+  voiceprint: "voice:print",
+  voicePhrase: "voice:print-phrase",
+  voiceFinish: "voice:print-finish",
+  voiceOnlyMine: "voice:print-only-mine",
+  voiceDelete: "voice:print-delete",
   setPresence: "presence:set",
   controlMode: "do:mode",
   setControlMode: "do:set-mode",
@@ -179,6 +185,23 @@ export interface TandrixBridge {
     ): () => void;
     /** "Hey Tandrix" was heard; `rest` is anything said after it in the same breath. */
     onWake(listener: (rest: string) => void): () => void;
+    /** "Hey Tandrix" was heard in a voice that isn't the user's, and only-my-voice is on. */
+    onWakeIgnored(listener: () => void): () => void;
+    /** Whether this Mac knows the user's voice, and whether it answers only that voice. */
+    voiceprint(): Promise<{ enrolled: boolean; onlyMine: boolean }>;
+    /**
+     * Records setup phrase `index` (0–2): `start`, then `stop` when they've said it. Needs the wake
+     * word listening. `ok` false with a reason when there wasn't enough voice.
+     */
+    voicePhrase(
+      index: number,
+      action: "start" | "stop",
+    ): Promise<{ ok: true } | { ok: false; reason: string }>;
+    /** Saves the voiceprint from the three phrases, or names the one to say again. */
+    voiceFinish(): Promise<{ ok: true } | { ok: false; redo: number }>;
+    setOnlyMyVoice(on: boolean): Promise<void>;
+    /** Deletes the voiceprint from this Mac. */
+    deleteVoice(): Promise<void>;
     /** ⌥⌘ held: start listening (the screen is captured as it is now). */
     onTalkStart(listener: () => void): () => void;
     /** ⌥⌘ let go: ask. */

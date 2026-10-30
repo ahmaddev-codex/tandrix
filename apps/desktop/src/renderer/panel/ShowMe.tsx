@@ -10,6 +10,7 @@ import { useState, type FormEvent } from "react";
 import { TALK_KEYS } from "../../shared/bridge";
 import type { AgentTask } from "../lib/agents";
 import { useShowMe } from "../lib/use-show-me";
+import { VoiceSetup } from "./VoiceSetup";
 
 const examples = [
   "Where's the export button?",
@@ -156,9 +157,12 @@ export function ShowMe({ jobId }: { jobId?: string }) {
           {s.wakeStatus.message ?? "The wake word can't listen right now."}
         </Notice>
       ) : s.wakeWord ? (
-        <p className="copy-12 panel-muted">
-          Heard on this Mac only. Nothing leaves it until you say Tandrix&rsquo;s name.
-        </p>
+        <>
+          <p className="copy-12 panel-muted">
+            Heard on this Mac only. Nothing leaves it until you say Tandrix&rsquo;s name.
+          </p>
+          <VoiceSetup listening={s.wakeStatus.status === "listening"} />
+        </>
       ) : null}
       {confirming ? (
         <ConfirmDialog
