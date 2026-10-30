@@ -1,7 +1,7 @@
 /* A tall section; its content stays pinned while the scroll drives the assembly. */
 .section {
   position: relative;
-  height: 260vh;
+  height: 180vh;
 }
 .sticky {
   position: sticky;
@@ -14,29 +14,35 @@
   max-width: 1240px;
   margin: 0 auto;
 }
-.diagram {
+
+/* The kit, drawn straight on the page: each part waits above its place until it drops. */
+.stage {
+  --anatomy-paper: var(--fig-ground, var(--background-100));
   position: relative;
-  width: min(100%, 560px, 70vh);
-  justify-self: center;
+  display: flex;
+  justify-content: center;
+  height: min(72vh, 600px);
 }
-.band {
-  position: absolute;
-  inset: 0;
-  will-change: transform;
+.stage :global(.iso-svg) {
+  width: auto;
+  height: 100%;
+  max-width: 100%;
 }
-.band img {
-  position: absolute;
-  top: 0;
-  height: auto;
-  max-width: none;
+.stage :global(.kit-ghost path) {
+  stroke-width: 1.6px;
 }
-.bandIn {
-  filter: drop-shadow(0 0 0.5px var(--highlight));
+.stage :global(.kit-ghost .kit-glow) {
+  stroke-width: 6px;
+  opacity: 0.18;
 }
+.stage :global(.kit-logo) {
+  fill: var(--anatomy-hi);
+}
+
 .done {
   position: absolute;
   left: 50%;
-  bottom: 2%;
+  bottom: 4%;
   transform: translateX(-50%);
   padding: 8px 16px;
   border-radius: 999px;
@@ -52,6 +58,8 @@
     transform: translate(-50%, 8px) scale(0.96);
   }
 }
+
+/* The checklist beside it */
 .side {
   display: grid;
   justify-items: start;
@@ -132,16 +140,16 @@
 }
 @media (max-width: 860px) {
   .section {
-    height: 240vh;
+    height: 170vh;
   }
   .sticky {
     grid-template-columns: minmax(0, 1fr);
     align-content: center;
-    gap: 16px;
-    padding: 64px 0 24px;
+    gap: 8px;
+    padding: 56px 0 16px;
   }
-  .diagram {
-    width: min(100%, 44vh);
+  .stage {
+    height: 42vh;
   }
   .list li {
     padding: 8px 12px;

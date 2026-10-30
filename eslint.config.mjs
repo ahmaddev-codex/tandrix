@@ -27,6 +27,8 @@ export default tseslint.config(
       "apps/mobile/android/**",
       "apps/mobile/expo-env.d.ts",
       ".maestro/**",
+      // Third-party: the Anatomy figure kit (MIT), kept as published.
+      "apps/web/src/components/iso/**",
     ],
   },
   js.configs.recommended,

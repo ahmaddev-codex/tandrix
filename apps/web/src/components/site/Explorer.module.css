@@ -58,51 +58,22 @@
 }
 .stage {
   position: relative;
-  padding-top: 36px;
-}
-.sheetBack,
-.sheetMid {
-  position: absolute;
-  left: 9%;
-  right: 9%;
-  top: 0;
-  height: 44px;
-  border-radius: 14px 14px 0 0;
-  background: color-mix(in srgb, var(--highlight) 16%, var(--page-bg));
-}
-.sheetMid {
-  left: 4.5%;
-  right: 4.5%;
-  top: 16px;
-  background: color-mix(in srgb, var(--highlight) 30%, #fff);
+  /* Scenes are drawn straight on the band, no frame. */
+  --fig-ground: var(--mist);
 }
 .card {
   position: relative;
   display: grid;
   place-items: center;
   aspect-ratio: 16 / 11;
-  padding: clamp(20px, 4vw, 48px);
-  border-radius: 20px;
-  background:
-    radial-gradient(120% 90% at 20% 0%, rgba(255, 255, 255, 0.5), transparent 60%),
-    linear-gradient(160deg, color-mix(in srgb, var(--highlight) 80%, #fff), var(--highlight));
-  overflow: hidden;
-}
-.card::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: repeating-radial-gradient(
-    circle at 80% 120%,
-    transparent 0 38px,
-    rgba(255, 255, 255, 0.12) 38px 40px
-  );
 }
 .scene {
   position: relative;
-  width: min(100%, 540px);
-  display: grid;
-  justify-items: center;
+  width: min(100%, 640px);
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 @media (prefers-reduced-motion: no-preference) {
   .scene {

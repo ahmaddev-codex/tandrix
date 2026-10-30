@@ -17,14 +17,6 @@ import {
   VerifiedTile,
   VideoTile,
 } from "../components/site/Tiles";
-import { Photo, type PhotoSpec } from "../components/scenes/Photo";
-import {
-  calendarPhoto,
-  excelPhoto,
-  manualPhoto,
-  partsPhoto,
-  wifiPhoto,
-} from "../components/scenes/photos";
 import { Clip } from "../components/site/Clip";
 import { Cta } from "../components/site/Cta";
 import { DayTimeline, type Moment } from "../components/site/DayTimeline";
@@ -34,7 +26,10 @@ import { BeforeAfter } from "../components/site/BeforeAfter";
 import { EarlyAccess } from "../components/site/EarlyAccess";
 import { HearIt } from "../components/site/HearIt";
 import { StickyPresence } from "../components/site/StickyPresence";
-import { TryIt } from "../components/site/TryIt";
+import { DeskFigure } from "../components/figures/desk/figure";
+import { KIT_GHOSTS, KIT_LAYERS } from "../components/figures/kit/art";
+import { SeatedFigure } from "../components/figures/kit/figure";
+import { PointerFigure } from "../components/figures/pointer/figure";
 import { ThemeToggle } from "../components/ThemeToggle";
 import {
   IPHONE_DOWNLOAD_URL,
@@ -75,7 +70,7 @@ const moments: Moment[] = [
     title: "Learn the new spreadsheet",
     body: "Ask where things are and Tandrix rings the control on your screen, then says the next step out loud. Say “teach me” and it goes one step at a time.",
     ask: "Teach me pivot tables",
-    scene: <Photo spec={excelPhoto} className={styles.shot} />,
+    scene: <DeskFigure focus="sheet" label="The laptop on the desk, with PivotTable ringed on the spreadsheet" />,
   },
   {
     time: "12 PM",
@@ -83,7 +78,7 @@ const moments: Moment[] = [
     title: "Get back on the Wi‑Fi",
     body: "It looks at your screen, finds the setting, and points at it. You click; it checks it worked before moving on.",
     ask: "Why can't my Mac see the Wi‑Fi?",
-    scene: <Photo spec={wifiPhoto} className={styles.shot} />,
+    scene: <DeskFigure focus="wifi" label="The laptop's Wi‑Fi settings with your network ringed, and the router beside it" />,
   },
   {
     time: "4 PM",
@@ -91,14 +86,7 @@ const moments: Moment[] = [
     title: "Assemble the shelf",
     body: "Photograph the label and Tandrix finds the manual. Point your phone at the parts and it outlines what's there and what's missing.",
     ask: "Walk me through the shelf",
-    scene: (
-      <div className={styles.pair}>
-        <Photo spec={manualPhoto} className={styles.shot} />
-        <div className={styles.pairPhone}>
-          <Photo spec={partsPhoto} className={styles.shot} />
-        </div>
-      </div>
-    ),
+    scene: <DeskFigure focus="kit" label="The parts tray and the manual, with the parts for this step ringed" />,
   },
   {
     time: "7 PM",
@@ -106,7 +94,7 @@ const moments: Moment[] = [
     title: "Book the dentist",
     body: "Hand over the task. Tandrix opens Calendar, does the steps, and asks before it sends anything. Move the mouse and you're back in control.",
     ask: "Book my dentist for Thursday at ten",
-    scene: <Photo spec={calendarPhoto} className={styles.shot} />,
+    scene: <DeskFigure focus="calendar" label="The laptop calendar, with Thursday at ten ringed" />,
   },
 ];
 
@@ -114,15 +102,15 @@ const places: Place[] = [
   {
     name: "At home",
     tasks: [
-      { name: "Join the Wi‑Fi", scene: <Photo spec={wifiPhoto} className={styles.shot} /> },
-      { name: "Book the dentist", scene: <Photo spec={calendarPhoto} className={styles.shot} /> },
+      { name: "Join the Wi‑Fi", scene: <DeskFigure focus="wifi" only={["laptop", "router"]} label="Wi‑Fi settings ringed on the laptop" /> },
+      { name: "Book the dentist", scene: <DeskFigure focus="calendar" only={["laptop", "phone"]} label="Thursday at ten ringed in the calendar" /> },
       { name: "Make it safe first", scene: <GateCard /> },
     ],
   },
   {
     name: "At work",
     tasks: [
-      { name: "Build a pivot table", scene: <Photo spec={excelPhoto} className={styles.shot} /> },
+      { name: "Build a pivot table", scene: <DeskFigure focus="sheet" only={["laptop"]} label="PivotTable ringed on the spreadsheet" /> },
       {
         name: "Ask about your screen",
         scene: (
@@ -137,16 +125,16 @@ const places: Place[] = [
   {
     name: "In the workshop",
     tasks: [
-      { name: "Check the parts", scene: <Photo spec={partsPhoto} className={styles.shot} /> },
-      { name: "Name a part", scene: <Photo spec={manualPhoto} className={styles.shot} /> },
+      { name: "Check the parts", scene: <DeskFigure focus="kit" only={["tray", "phone"]} label="The phone checking the parts tray" /> },
+      { name: "Name a part", scene: <DeskFigure focus="kit" only={["manual", "tray"]} label="The manual beside the parts it names" /> },
       { name: "Check a step", scene: <CheckCard /> },
     ],
   },
   {
     name: "Learning",
     tasks: [
-      { name: "Learn a spreadsheet", scene: <Photo spec={excelPhoto} className={styles.shot} /> },
-      { name: "Learn your settings", scene: <Photo spec={wifiPhoto} className={styles.shot} /> },
+      { name: "Learn a spreadsheet", scene: <DeskFigure focus="sheet" only={["laptop"]} label="PivotTable ringed on the spreadsheet" /> },
+      { name: "Learn your settings", scene: <DeskFigure focus="wifi" only={["laptop", "router"]} label="Wi‑Fi settings ringed on the laptop" /> },
     ],
   },
 ];
@@ -169,40 +157,37 @@ const uses = [
   },
 ] as const;
 
-/** Width over height of a photo as shown. */
-const fit = (p: PhotoSpec) => (p.crop ? p.crop.w / p.crop.h : p.w / p.h);
-
 const asks = [
   {
-    photo: wifiPhoto,
+    figure: <DeskFigure focus="wifi" only={["laptop", "router"]} label="Wi‑Fi settings ringed on the laptop, the router beside it" width={400} height={300} />,
     line: "router",
     when: "11 pm, a blinking router",
     ask: "Why can't my Mac see the Wi‑Fi?",
     reply: "It's waiting for Wi‑Fi. Open Settings, then Network, and pick yours.",
   },
   {
-    photo: excelPhoto,
+    figure: <DeskFigure focus="sheet" only={["laptop"]} label="PivotTable ringed on the laptop screen" width={400} height={300} />,
     line: "teach",
     when: "A new app at work",
     ask: "Teach me pivot tables",
     reply: "Click any cell, then Insert, then PivotTable. Say next when that's done.",
   },
   {
-    photo: manualPhoto,
+    figure: <DeskFigure focus="kit" only={["manual"]} label="The manual open, with step one ringed" width={400} height={300} />,
     line: "setup",
     when: "A new kit on the bench",
     ask: "Walk me through my first setup",
     reply: "Found the manual: six steps. Show me the parts laid out and we'll start.",
   },
   {
-    photo: partsPhoto,
+    figure: <SeatedFigure />,
     line: "seated",
     when: "Mid-build, screwdriver in hand",
     ask: "Is this part seated right?",
     reply: "Not yet. The left clip is still up. Press it down until it clicks, then show me again.",
   },
   {
-    photo: calendarPhoto,
+    figure: <DeskFigure focus="calendar" only={["laptop", "phone"]} label="Thursday at ten ringed in the laptop calendar" width={400} height={300} />,
     line: "dentist",
     when: "The task behind the task",
     ask: "And book my dentist after this",
@@ -383,7 +368,7 @@ export default function Home() {
                 <p className={styles.tileLabel}>Show me</p>
                 <p className={styles.tileStat}>Points, then waits</p>
                 <div className={styles.tileScene}>
-                  <Photo spec={excelPhoto} className={styles.shot} />
+                  <DeskFigure focus="sheet" only={["laptop"]} label="PivotTable ringed on the spreadsheet" />
                 </div>
               </article>
               <div className={styles.tileStack}>
@@ -412,7 +397,7 @@ export default function Home() {
                 Point at anything. <span className={styles.h2Soft}>It tells you what it is.</span>
               </h2>
             </div>
-            <TryIt />
+            <PointerFigure />
           </section>
 
           <section
@@ -521,7 +506,7 @@ export default function Home() {
                 checks your build from a photo.
               </p>
             </div>
-            <Assemble />
+            <Assemble layers={KIT_LAYERS} ghosts={KIT_GHOSTS} />
           </section>
 
           <section
@@ -572,10 +557,7 @@ export default function Home() {
               {asks.map((a) => (
                 <article key={a.ask} className={styles.ask}>
                   <div className={styles.askShot}>
-                    {/* Fitted whole inside the frame at its own shape, so the ring stays exact. */}
-                    <div style={{ width: `min(100cqw, ${fit(a.photo) * 100}cqh)` }}>
-                      <Photo spec={a.photo} />
-                    </div>
+                    {a.figure}
                   </div>
                   <div className={styles.askText}>
                     <p className={styles.askWhen}>{a.when}</p>

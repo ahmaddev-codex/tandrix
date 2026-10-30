@@ -1,4 +1,6 @@
 .wrap {
+  /* The desk figures are filled with the band's ground. */
+  --fig-ground: var(--mist);
   display: grid;
   grid-template-columns: 72px minmax(0, 360px) minmax(0, 1fr);
   gap: 0 48px;
@@ -119,13 +121,6 @@
   grid-template-rows: auto 1fr;
   gap: 18px;
   height: 100%;
-  padding: 28px clamp(20px, 4vw, 48px) 0;
-  border-radius: 20px;
-  overflow: hidden;
-  background:
-    linear-gradient(180deg, rgba(18, 104, 214, 0.55), rgba(46, 125, 255, 0.1) 60%),
-    url("/photos/sky-bright.jpg") center / cover no-repeat,
-    var(--highlight);
 }
 .ask {
   justify-self: center;
@@ -152,9 +147,8 @@
   box-shadow: 0 0 0 3px var(--highlight-tint);
 }
 .scene {
-  align-self: end;
-  display: grid;
-  justify-items: center;
+  min-height: 0;
+  display: flex;
 }
 @media (max-width: 960px) {
   .wrap {

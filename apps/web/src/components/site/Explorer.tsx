@@ -35,8 +35,6 @@ export function Explorer({ places }: { places: Place[] }) {
         </ul>
       </div>
       <div className={styles.stage}>
-        <span className={styles.sheetBack} />
-        <span className={styles.sheetMid} />
         <div className={styles.card}>
           <div key={`${p}-${t}`} className={styles.scene}>
             {task.scene}
