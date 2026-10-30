@@ -2,6 +2,7 @@
 import {
   ArrowRight,
   ChevronLeft,
+  ChevronRight,
   Ban,
   BookOpen,
   Camera,
@@ -81,6 +82,7 @@ const iconGlyphs = {
   gauge: Gauge,
   arrowRight: ArrowRight,
   chevronLeft: ChevronLeft,
+  chevronRight: ChevronRight,
   actions: ListChecks,
   projects: FolderKanban,
   home: House,

@@ -1,7 +1,7 @@
 // Job-screen building blocks (design system: Notice, ActionCard, SummaryCard, StepRow).
 import type { ReactNode } from "react";
 import { Pressable, View } from "react-native";
-import { radius, size as sizes, space, type ColorToken } from "../generated/tokens";
+import { size as sizes, space, type ColorToken } from "../generated/tokens";
 import {
   genericSourceLabel,
   statusMeta,
@@ -12,11 +12,11 @@ import {
 import { Button, Icon, SourceChip, StatusChip, Text } from "./components";
 import { useTheme } from "./theme";
 
-const card = (bg: string, shadow: string) => ({
+// White on the grey page, like a card in one of the website's trays: rounded, no hard edge.
+const card = (bg: string, _shadow?: string) => ({
   padding: space["space-5"],
-  borderRadius: radius["radius-lg"],
+  borderRadius: 20,
   backgroundColor: bg,
-  boxShadow: shadow,
 });
 
 // ---- Notice ----
@@ -53,7 +53,7 @@ export function Notice({ tone = "neutral", title, children, icon, action, testID
         gap: space["space-2"],
         alignItems: "flex-start",
         padding: space["space-4"],
-        borderRadius: radius["radius-lg"],
+        borderRadius: 18,
         backgroundColor: t.color[c.bg],
       }}
     >
@@ -233,9 +233,8 @@ export function StepRow({
         minHeight: sizes["control-field"],
         alignItems: "flex-start",
         padding: space["space-4"],
-        borderRadius: radius["radius-lg"],
+        borderRadius: 18,
         backgroundColor: pressed ? t.color["gray-200"] : t.color["background-100"],
-        boxShadow: t.shadow["shadow-sm"],
       })}
     >
       <Text

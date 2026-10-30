@@ -39,6 +39,7 @@ const map = {
   gauge: "gauge",
   arrowRight: "arrow-right",
   chevronLeft: "caret-left",
+  chevronRight: "caret-right",
   actions: "list-checks",
   projects: "folder-simple",
   home: "house",
