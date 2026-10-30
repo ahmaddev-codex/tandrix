@@ -19,6 +19,7 @@ import {
   useTheme,
   type ActionCardProps,
 } from "@tandrix/ui/native";
+import { File } from "expo-file-system";
 import { Image } from "expo-image";
 import { router, Stack, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -26,7 +27,7 @@ import { FlatList, Linking, RefreshControl, useWindowDimensions, View } from "re
 import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "@/lib/api";
 import { useJobChanges } from "@/lib/realtime";
-import { loadJob, offlineQueue, useOfflineStatus } from "@/offline";
+import { isOffline, loadJob, manualCache, offlineQueue, useOfflineStatus } from "@/offline";
 
 const COLUMNS = 3;
 
@@ -107,12 +108,24 @@ export default function JobScreen() {
     }
   };
 
+  // Kept on the phone (see keepForSite), the manual opens in place, with or without a connection;
+  // not kept yet, it opens from the server and is kept for next time.
   const openManual = async (m: Manual) => {
     setOpening(true);
     try {
-      await Linking.openURL(await api.manualUrl(id, m.id));
+      const kept = manualCache.file(m.id);
+      if (kept.exists) await File.preview(kept, { title: m.title });
+      else {
+        const url = await api.manualUrl(id, m.id);
+        void manualCache.keep(m.id, url).catch(() => {});
+        await Linking.openURL(url);
+      }
     } catch (e) {
-      setError((e as Error).message);
+      setError(
+        isOffline(e)
+          ? "This manual isn't on your phone yet. Open it once with a connection and it stays."
+          : (e as Error).message,
+      );
     } finally {
       setOpening(false);
     }

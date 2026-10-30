@@ -42,7 +42,7 @@ import { ScrollView, View, type ScrollViewInstance } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "@/lib/api";
 import { speak } from "@/voice/tts";
-import { isOffline, keepPhoto, loadJob, offlineQueue } from "@/offline";
+import { isOffline, keepPhoto, loadJob, offlineQueue, visualCache } from "@/offline";
 import { preparePhoto, uploadPhoto, type PreparedPhoto } from "@/lib/evidence";
 import { useStepWork } from "@/components/step-work";
 import { useJobChanges } from "@/lib/realtime";
@@ -140,12 +140,16 @@ export default function StepScreen() {
       })
       .catch((e: Error) => setError(e.message));
   }, [id, stepId]);
-  // Pictures help but aren't needed to work the step: offline or failing, the step shows without.
+  // Pictures help but aren't needed to work the step: offline, the ones kept on the phone show;
+  // failing, the step shows without.
   const loadVisuals = useCallback(() => {
     api
       .stepVisuals(id, stepId)
-      .then((r) => setVisuals(r.visuals))
-      .catch(() => {});
+      .then((r) => {
+        setVisuals(r.visuals);
+        void visualCache.save(stepId, r.visuals).catch(() => {});
+      })
+      .catch(async () => setVisuals(await visualCache.load(stepId)));
   }, [id, stepId]);
   useEffect(load, [load]);
   useEffect(loadVisuals, [loadVisuals]);
