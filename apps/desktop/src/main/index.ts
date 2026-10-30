@@ -47,7 +47,14 @@ import {
 import { frontApp, installedApps } from "./apps";
 import { finishSample, setWakeWord, startSample, stopWakeWord } from "./wake";
 import { fromSetup, SETUP_PHRASES, shouldAnswer, voiceprintStore } from "./voiceprint";
-import { ControlMode, DesktopAction, SafetyCheck, ScreenGeometry } from "@tandrix/contracts";
+import {
+  AgentCall,
+  ControlMode,
+  DesktopAction,
+  SafetyCheck,
+  ScreenGeometry,
+} from "@tandrix/contracts";
+import { runMacTool } from "./mac-tools";
 import { z } from "zod";
 
 let tray: Tray | undefined;
@@ -200,10 +207,22 @@ function registerIpc() {
       }),
     flag,
   );
-  handle(channels.voiceprint, () => {
-    const vp = voices().load();
-    return { enrolled: vp !== null, onlyMine: vp?.onlyMine ?? false };
-  }, none);
+  handle(
+    channels.agentTool,
+    (raw: unknown) =>
+      runMacTool(AgentCall.parse(raw), {
+        browse: async () => "Tandrix's browser isn't available yet. Use web search instead.",
+      }),
+    one,
+  );
+  handle(
+    channels.voiceprint,
+    () => {
+      const vp = voices().load();
+      return { enrolled: vp !== null, onlyMine: vp?.onlyMine ?? false };
+    },
+    none,
+  );
   handle(
     channels.voicePhrase,
     async (index: number, action: "start" | "stop") => {
@@ -225,10 +244,16 @@ function registerIpc() {
     () => {
       const prints = setupPrints.slice(0, SETUP_PHRASES);
       const missing = prints.findIndex((p) => !p);
-      if (prints.length < SETUP_PHRASES || missing >= 0) return { ok: false, redo: Math.max(missing, prints.length) };
+      if (prints.length < SETUP_PHRASES || missing >= 0)
+        return { ok: false, redo: Math.max(missing, prints.length) };
       const made = fromSetup(prints as number[][]);
       if ("redo" in made) return { ok: false, redo: made.redo };
-      voices().save({ version: 1, print: made.print, onlyMine: true, createdAt: new Date().toISOString() });
+      voices().save({
+        version: 1,
+        print: made.print,
+        onlyMine: true,
+        createdAt: new Date().toISOString(),
+      });
       setupPrints = [];
       return { ok: true };
     },
@@ -242,10 +267,14 @@ function registerIpc() {
     },
     flag,
   );
-  handle(channels.voiceDelete, () => {
-    voices().remove();
-    setupPrints = [];
-  }, none);
+  handle(
+    channels.voiceDelete,
+    () => {
+      voices().remove();
+      setupPrints = [];
+    },
+    none,
+  );
   handle(
     channels.doApps,
     async () => {

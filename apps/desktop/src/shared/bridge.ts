@@ -1,6 +1,12 @@
 // The only surface the renderer has into the main process (exposed by the preload as
 // window.tandrix). Channel names and payloads live here so both sides agree.
-import type { ControlMode, DesktopAction, SafetyCheck, ScreenGeometry } from "@tandrix/contracts";
+import type {
+  AgentCall,
+  ControlMode,
+  DesktopAction,
+  SafetyCheck,
+  ScreenGeometry,
+} from "@tandrix/contracts";
 
 export const channels = {
   storageGet: "storage:get",
@@ -35,6 +41,7 @@ export const channels = {
   voiceFinish: "voice:print-finish",
   voiceOnlyMine: "voice:print-only-mine",
   voiceDelete: "voice:print-delete",
+  agentTool: "agent:tool",
   setPresence: "presence:set",
   controlMode: "do:mode",
   setControlMode: "do:set-mode",
@@ -159,6 +166,10 @@ export interface TandrixBridge {
     setPresence(presence: Presence | null): Promise<void>;
     /** Overlay windows only: the presence to draw, or null. */
     onPresence(listener: (presence: OverlayPresence | null) => void): () => void;
+  };
+  /** Background agents' tools: run on this Mac without its screen, mouse or keyboard. */
+  agent: {
+    runTool(call: AgentCall): Promise<string>;
   };
   voice: {
     /** Asks macOS for the microphone the first time; true when Tandrix may use it. */

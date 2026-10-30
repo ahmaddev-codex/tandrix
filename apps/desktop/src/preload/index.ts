@@ -63,6 +63,9 @@ const bridge: TandrixBridge = {
       };
     },
   },
+  agent: {
+    runTool: (call) => ipcRenderer.invoke(channels.agentTool, call),
+  },
   voice: {
     setWakeWord: (on) => ipcRenderer.invoke(channels.wakeSet, on),
     onWakeStatus: (listener) => {

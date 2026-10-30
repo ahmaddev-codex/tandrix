@@ -15,7 +15,7 @@ import {
   type MetaConfig,
   onlineNotes,
 } from "@tandrix/ai";
-import type { SafetyCheck } from "@tandrix/contracts";
+import type { AgentCall, AgentStep, SafetyCheck } from "@tandrix/contracts";
 
 export interface Shot {
   bytes: Uint8Array;
@@ -27,6 +27,7 @@ export type DoOutcome =
 
 export type BackgroundOutcome =
   | { status: "done"; spoken: string; detail: string; sources: string[] }
+  | { status: "call"; calls: AgentCall[] }
   | { status: "unavailable"; message: string };
 
 export const BACKGROUND_UNAVAILABLE =
@@ -34,7 +35,10 @@ export const BACKGROUND_UNAVAILABLE =
 
 export interface ScreenDoer {
   /** A task that needs no screen: research, comparisons, drafts. */
-  background?(task: string): Promise<BackgroundOutcome>;
+  background?(
+    task: string,
+    opts?: { tools?: boolean; steps?: AgentStep[]; now?: string },
+  ): Promise<BackgroundOutcome>;
   /** Which installed app the task needs, if not the one in front; null on any failure. */
   plan(input: { task: string; frontApp?: string; apps: string[] }): Promise<string | null>;
   start(input: { screenshot: Shot; task: string; memory?: string[] }): Promise<DoOutcome>;
@@ -74,10 +78,9 @@ export function metaScreenDoer(
     }
   };
   return {
-    async background(task) {
+    async background(task, opts) {
       try {
-        const r = await runBackground(client, config.models.reasoning, task);
-        return { status: "done", ...r };
+        return await runBackground(client, config.models.reasoning, task, undefined, opts);
       } catch (e) {
         if (e instanceof MetaApiError) {
           log({ level: "warn", event: "background_model_error", status: e.status });

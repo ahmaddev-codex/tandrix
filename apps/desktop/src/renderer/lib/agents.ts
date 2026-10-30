@@ -2,7 +2,7 @@
 // screen share one pair of hands (one mouse, one keyboard), so they run one after another; tasks
 // that need no screen (look this up, draft that) run in the background, several at once, while
 // the screen work carries on.
-import type { BackgroundResponse } from "@tandrix/contracts";
+import type { BackgroundResult } from "./background-agent";
 import type { ScreenTaskResult } from "./screen-task";
 
 export type AgentStatus = "queued" | "running" | "done" | "stopped" | "stuck" | "failed";
@@ -24,7 +24,7 @@ export interface BoardDeps {
     task: string,
     io: { steer: () => string[]; stopped: () => boolean },
   ) => Promise<ScreenTaskResult>;
-  background: (task: string) => Promise<BackgroundResponse>;
+  background: (task: string) => Promise<BackgroundResult>;
   /** The list changed. */
   onChange: (tasks: AgentTask[]) => void;
   /** A task finished (any way); say and show its result. */

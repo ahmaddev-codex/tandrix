@@ -242,7 +242,8 @@ export function inlineScreenRoutes(d: {
 }) {
   const limiter = d.limiter ?? rateLimiter(30, 60_000);
   const doLimiter = d.doLimiter ?? rateLimiter(120, 60_000);
-  const backgroundLimiter = rateLimiter(20, 60_000);
+  // Each tool step of a background task is a request, and several tasks run at once.
+  const backgroundLimiter = rateLimiter(60, 60_000);
   const doer = d.doer ?? noModelScreenDoer;
   const now = d.now ?? Date.now;
 
@@ -300,10 +301,17 @@ export function inlineScreenRoutes(d: {
       if (!backgroundLimiter.allow(user.id)) throw tooMany();
       const parsed = BackgroundRequest.safeParse(await c.req.json().catch(() => undefined));
       if (!parsed.success) throw invalid(issues(parsed.error));
+      const { task, tools, steps, now } = parsed.data;
       const out = doer.background
-        ? await doer.background(parsed.data.task)
+        ? await doer.background(task, { tools, steps, ...(now ? { now } : {}) })
         : ({ status: "unavailable", message: BACKGROUND_UNAVAILABLE } as const);
-      d.log?.({ event: "background_task", status: out.status });
+      // What happened (never the task's words): enough to see where tasks stall.
+      d.log?.({
+        event: "background_task",
+        status: out.status,
+        steps: steps.length,
+        ...(out.status === "call" ? { calls: out.calls.map((c) => c.name).join(",") } : {}),
+      });
       return c.json(BackgroundResponse.parse(out));
     })
     .post("/do", screenshotLimit, async (c) => {

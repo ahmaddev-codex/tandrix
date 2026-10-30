@@ -1,5 +1,5 @@
 // Typed client for the Tandrix API. Responses are validated with the shared contracts.
-import type { DoContinueRequest, DoStartRequest } from "@tandrix/contracts";
+import type { DoContinueRequest, DoStartRequest, BackgroundRequest } from "@tandrix/contracts";
 import {
   BackgroundResponse,
   CheckStepResponse,
@@ -150,10 +150,10 @@ export const api = {
   doContinue: (body: z.input<typeof DoContinueRequest>) =>
     request("/screen/do/continue", DoTurnResponse, { method: "POST", body: JSON.stringify(body) }),
   /** A task that needs no screen, done in the background. */
-  background: (task: string) =>
+  background: (body: BackgroundRequest) =>
     request("/screen/background", BackgroundResponse, {
       method: "POST",
-      body: JSON.stringify({ task }),
+      body: JSON.stringify(body),
     }),
   /** A question outside any job: the screenshot travels inline and isn't kept. */
   screenAskInline: (body: z.input<typeof ScreenAskInlineRequest>) =>

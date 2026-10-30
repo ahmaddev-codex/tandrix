@@ -385,8 +385,54 @@ export type SafetyCheck = z.infer<typeof SafetyCheck>;
 export const DO_MAX_TURNS = 200;
 
 /** POST /screen/background: a task that needs no screen, done while the user carries on. */
-export const BackgroundRequest = z.strictObject({ task: text(2000) });
+/**
+ * What background agents can do on the Mac without its screen, mouse or keyboard. The Mac runs
+ * each one with a fixed script; nothing here sends, pays or deletes.
+ */
+export const MAC_TOOLS = [
+  "calendar_add_event",
+  "calendar_list_events",
+  "reminders_add",
+  "notes_create",
+  "mail_draft",
+  "files_list",
+  "browse",
+] as const;
+export const MacToolName = z.enum(MAC_TOOLS);
+export type MacToolName = z.infer<typeof MacToolName>;
+
+/** A tool the background agent asked the Mac to run, and what came back. */
+export const AgentStep = z.strictObject({
+  id: text(200),
+  name: MacToolName,
+  /** JSON, as the model wrote it. */
+  arguments: z.string().max(4000),
+  /** What the Mac reports back (JSON or plain words). */
+  output: z.string().max(8000),
+});
+export type AgentStep = z.infer<typeof AgentStep>;
+
+export const BackgroundRequest = z.strictObject({
+  task: text(2000),
+  /** The Mac can run MAC_TOOLS; without it the agent only searches the web and answers. */
+  tools: z.boolean().default(false),
+  /** Tools run so far for this task, in order. Each call is fresh: the server keeps nothing. */
+  steps: z.array(AgentStep).max(16).default([]),
+  /** The Mac's local time, with its offset (for "tomorrow at 9"). */
+  now: optionalText(40),
+});
+export type BackgroundRequest = z.input<typeof BackgroundRequest>;
+
+export const AgentCall = z.strictObject({
+  id: text(200),
+  name: MacToolName,
+  arguments: z.string().max(4000),
+});
+export type AgentCall = z.infer<typeof AgentCall>;
+
 export const BackgroundResponse = z.discriminatedUnion("status", [
+  /** Run these on the Mac, then ask again with their outputs added to `steps`. */
+  z.strictObject({ status: z.literal("call"), calls: z.array(AgentCall).min(1).max(6) }),
   z.strictObject({
     status: z.literal("done"),
     /** Said aloud when it's ready. */

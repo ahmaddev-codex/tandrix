@@ -94,7 +94,7 @@ function setup(script: DoTurn[] = [turn()], planned: string | null = null) {
     });
     return { status: res.status, body: await res.json() };
   };
-  return { start, next, seen, background, advance: (ms: number) => (clock += ms) };
+  return { start, next, seen, background, doer, app, advance: (ms: number) => (clock += ms) };
 }
 
 const act = (b: DoTurnResponse | null) => {
@@ -245,6 +245,50 @@ describe("POST /screen/background", () => {
       detail: "All of it.",
       sources: [],
     });
+  });
+
+  it("asks the Mac to run tools, then answers once their outputs come back", async () => {
+    const s = setup();
+    const seen: object[] = [];
+    const steps = [
+      { id: "c1", name: "reminders_add", arguments: '{"title":"Call Sam"}', output: '{"ok":true}' },
+    ];
+    s.doer.background = async (task, opts) => {
+      seen.push({ task, ...opts });
+      return opts?.steps?.length
+        ? { status: "done", spoken: "Added it.", detail: "Reminder: Call Sam.", sources: [] }
+        : {
+            status: "call",
+            calls: [{ id: "c1", name: "reminders_add", arguments: '{"title":"Call Sam"}' }],
+          };
+    };
+    const ask = (body: object) =>
+      s.app("u1").request("/screen/background", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+      });
+    const first = await (
+      await ask({ task: "Remind me to call Sam", tools: true, now: "2026-10-30T09:00+01:00" })
+    ).json();
+    expect(first).toEqual({
+      status: "call",
+      calls: [{ id: "c1", name: "reminders_add", arguments: '{"title":"Call Sam"}' }],
+    });
+    const second = await (await ask({ task: "Remind me to call Sam", tools: true, steps })).json();
+    expect(second.status).toBe("done");
+    expect(seen[0]).toMatchObject({ tools: true, steps: [], now: "2026-10-30T09:00+01:00" });
+    expect(seen[1]).toMatchObject({ steps });
+  });
+
+  it("refuses a tool the Mac doesn't have", async () => {
+    const s = setup();
+    const r = await s.background({
+      task: "x",
+      tools: true,
+      steps: [{ id: "c", name: "shell_run", arguments: "{}", output: "" }],
+    });
+    expect(r.status).toBe(400);
   });
 
   it("says it's unavailable without a model, and refuses an empty task", async () => {

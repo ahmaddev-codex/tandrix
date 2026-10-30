@@ -27,6 +27,7 @@ import { uploadScreenshot } from "./screenshot";
 import { recentExchanges } from "./exchanges";
 import { markTried } from "./setup";
 import { present, presentAnswer, presenceState } from "./presence";
+import { localNow, runBackgroundTask } from "./background-agent";
 import { isSpeaking, speak, stopSpeaking } from "./speech";
 import { TALK_KEYS, type Presence } from "../../shared/bridge";
 
@@ -197,7 +198,12 @@ export function useShowMe(jobId: string | undefined) {
         if (modeRef.current !== "do") await window.tandrix.doing.setMode("show");
       }
     },
-    background: (task) => api.background(task),
+    background: (task) =>
+      runBackgroundTask(task, {
+        ask: (body) => api.background(body),
+        runTool: (call) => window.tandrix.agent.runTool(call),
+        now: () => localNow(),
+      }),
     onChange: setAgents,
     onFinish: (t) => {
       if (!t.result) return;
