@@ -276,9 +276,10 @@ const faqs: Array<{ id?: string; q: string; a: string }> = [
 export default function Home() {
   return (
     <div id="top" className={styles.page}>
+      <SmoothScroll />
+      {/* At the top level, so its stacking order isn't trapped inside the hero's. */}
+      <StickyPresence />
       <section className={styles.hero} aria-labelledby="hero-title" data-presence-off>
-        <SmoothScroll />
-        <StickyPresence />
         <header className={styles.header}>
           <BrandWordmark href="#top" size="lg" className={styles.brand} />
           <nav className={styles.nav} aria-label="Primary">
