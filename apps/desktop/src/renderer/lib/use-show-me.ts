@@ -28,6 +28,8 @@ import { recentExchanges } from "./exchanges";
 import { markTried } from "./setup";
 import { present, presentAnswer, presenceState } from "./presence";
 import { localNow, runBackgroundTask } from "./background-agent";
+import { base64 } from "./bytes";
+import { browseCall } from "./browse";
 import { isSpeaking, speak, stopSpeaking } from "./speech";
 import { TALK_KEYS, type Presence } from "../../shared/bridge";
 
@@ -41,14 +43,6 @@ export const NO_MIC =
   "Tandrix can't use the microphone. Allow it in System Settings > Privacy & Security > Microphone, or type your question.";
 /** What's asked about: inside a job the screenshot is job evidence; outside one it isn't kept. */
 type Shot = { capture: ScreenCapture; evidence: Evidence | null };
-
-/** Base64 for an inline screenshot, built in chunks so large images don't overflow the stack. */
-function base64(bytes: Uint8Array): string {
-  let out = "";
-  for (let i = 0; i < bytes.length; i += 0x8000)
-    out += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
-  return btoa(out);
-}
 
 export function useShowMe(jobId: string | undefined) {
   const [phase, setPhase] = useState<ShowMePhase>("idle");
@@ -201,7 +195,9 @@ export function useShowMe(jobId: string | undefined) {
     background: (task) =>
       runBackgroundTask(task, {
         ask: (body) => api.background(body),
-        runTool: (call) => window.tandrix.agent.runTool(call),
+        // Browsing needs the model, so it runs here; everything else runs on the Mac.
+        runTool: (call) =>
+          call.name === "browse" ? browseCall(call.arguments) : window.tandrix.agent.runTool(call),
         now: () => localNow(),
       }),
     onChange: setAgents,

@@ -55,6 +55,7 @@ import {
   ScreenGeometry,
 } from "@tandrix/contracts";
 import { runMacTool } from "./mac-tools";
+import { captureTab, closeTab, openSignIn, openTab, runInTab } from "./browser-session";
 import { z } from "zod";
 
 let tray: Tray | undefined;
@@ -87,6 +88,9 @@ const DoBatchSchema = z.strictObject({
   safetyChecks: z.array(SafetyCheck).max(10),
 });
 const flag = (a: unknown[]): a is [boolean] => a.length === 1 && typeof a[0] === "boolean";
+const httpsUrl = (a: unknown[]): a is [string] =>
+  a.length === 1 && typeof a[0] === "string" && a[0].length < 2000 && /^https:\/\//i.test(a[0]);
+const tabId = (a: unknown[]): a is [number] => a.length === 1 && Number.isInteger(a[0]);
 const phraseArgs = (a: unknown[]): a is [number, "start" | "stop"] =>
   a.length === 2 &&
   Number.isInteger(a[0]) &&
@@ -211,10 +215,20 @@ function registerIpc() {
     channels.agentTool,
     (raw: unknown) =>
       runMacTool(AgentCall.parse(raw), {
-        browse: async () => "Tandrix's browser isn't available yet. Use web search instead.",
+        // The panel runs browsing itself (it needs the model); this path never gets there.
+        browse: async () => "Browsing runs from the panel.",
       }),
     one,
   );
+  handle(channels.browserOpen, (url: string) => openTab(url), httpsUrl);
+  handle(channels.browserCapture, (id: number) => captureTab(id), tabId);
+  handle(
+    channels.browserRun,
+    (id: number, raw: unknown) => runInTab(id, DoBatchSchema.parse(raw)),
+    (a: unknown[]): a is [number, unknown] => a.length === 2 && Number.isInteger(a[0]),
+  );
+  handle(channels.browserClose, (id: number) => closeTab(id), tabId);
+  handle(channels.browserSignIn, (url: string) => openSignIn(url), httpsUrl);
   handle(
     channels.voiceprint,
     () => {

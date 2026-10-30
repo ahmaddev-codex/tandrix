@@ -1,6 +1,13 @@
 // Settings: how Tandrix helps, how it listens, what it calls you, and the account. Kept off the main
 // screen so asking stays front and centre.
-import { Button, ConfirmDialog, doItForMeConfirmation, Notice, Toggle } from "@tandrix/ui/web";
+import {
+  Button,
+  ConfirmDialog,
+  doItForMeConfirmation,
+  Input,
+  Notice,
+  Toggle,
+} from "@tandrix/ui/web";
 import { useState, type ReactNode } from "react";
 import { useAuth } from "../lib/auth";
 import { isLocal } from "../lib/env";
@@ -29,6 +36,10 @@ export function Settings({
   const auth = useAuth();
   // Doing things without asking first is opt-in, and asks once (design system: Do it for me).
   const [confirming, setConfirming] = useState(false);
+  const [site, setSite] = useState("");
+  const siteUrl = /^https?:\/\//i.test(site.trim())
+    ? site.trim().replace(/^http:/i, "https:")
+    : `https://${site.trim()}`;
 
   return (
     <section className="panel-stack-6" aria-labelledby="settings-title">
@@ -51,6 +62,33 @@ export function Settings({
           Off: Tandrix offers, and you say yes. Either way it asks before paying, sending, deleting
           or changing security settings.
         </p>
+      </Group>
+
+      <Group title="Tandrix's browser">
+        <p className="copy-12 panel-muted">
+          Background tasks use websites in a browser of their own, out of sight, so your screen,
+          mouse and keyboard stay yours. Sign in to the sites you want them to use; your own browser
+          isn&rsquo;t touched.
+        </p>
+        <form
+          className="panel-ask"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!site.trim()) return;
+            void window.tandrix.browser.signIn(siteUrl);
+            setSite("");
+          }}
+        >
+          <Input
+            label="Sign in to a site"
+            value={site}
+            onChange={setSite}
+            placeholder="mail.google.com"
+          />
+          <Button type="submit" size="sm" variant="secondary" disabled={!site.trim()}>
+            Open
+          </Button>
+        </form>
       </Group>
 
       <Group title="Listening">

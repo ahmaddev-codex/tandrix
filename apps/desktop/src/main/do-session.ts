@@ -78,7 +78,7 @@ export function endTask() {
 
 export const doingTask = () => active;
 
-const confirm = async (prompt: string) => {
+export const confirm = async (prompt: string) => {
   const r = await dialog.showMessageBox({
     type: "question",
     message: prompt,

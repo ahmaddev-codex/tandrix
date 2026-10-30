@@ -42,6 +42,11 @@ export const channels = {
   voiceOnlyMine: "voice:print-only-mine",
   voiceDelete: "voice:print-delete",
   agentTool: "agent:tool",
+  browserOpen: "browser:open",
+  browserCapture: "browser:capture",
+  browserRun: "browser:run",
+  browserClose: "browser:close",
+  browserSignIn: "browser:sign-in",
   setPresence: "presence:set",
   controlMode: "do:mode",
   setControlMode: "do:set-mode",
@@ -170,6 +175,18 @@ export interface TandrixBridge {
   /** Background agents' tools: run on this Mac without its screen, mouse or keyboard. */
   agent: {
     runTool(call: AgentCall): Promise<string>;
+  };
+  /**
+   * Tandrix's own browser: hidden tabs a background agent drives without the user's screen,
+   * mouse or keyboard, on a profile where the user signs in to sites once.
+   */
+  browser: {
+    open(url: string): Promise<number>;
+    capture(id: number): Promise<ScreenCapture & { url: string }>;
+    run(id: number, batch: DoBatch): Promise<DoBatchResult>;
+    close(id: number): Promise<void>;
+    /** A visible window on that profile, to sign in to a site. */
+    signIn(url: string): Promise<void>;
   };
   voice: {
     /** Asks macOS for the microphone the first time; true when Tandrix may use it. */

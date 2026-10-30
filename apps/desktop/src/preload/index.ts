@@ -66,6 +66,13 @@ const bridge: TandrixBridge = {
   agent: {
     runTool: (call) => ipcRenderer.invoke(channels.agentTool, call),
   },
+  browser: {
+    open: (url) => ipcRenderer.invoke(channels.browserOpen, url),
+    capture: (id) => ipcRenderer.invoke(channels.browserCapture, id),
+    run: (id, batch) => ipcRenderer.invoke(channels.browserRun, id, batch),
+    close: (id) => ipcRenderer.invoke(channels.browserClose, id),
+    signIn: (url) => ipcRenderer.invoke(channels.browserSignIn, url),
+  },
   voice: {
     setWakeWord: (on) => ipcRenderer.invoke(channels.wakeSet, on),
     onWakeStatus: (listener) => {
