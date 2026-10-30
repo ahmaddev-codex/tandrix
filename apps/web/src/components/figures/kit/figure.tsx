@@ -1,7 +1,7 @@
 // The kit, still, for the "Is this part seated right?" card: the cooler stands proud on its left
 // pin. Cropped to the case and cooler, not the room the explode needs.
-import "../../iso/iso.css";
-import { iso, type Point3 } from "../../iso/iso-kit";
+import "@/vendor/anatomy/iso.css";
+import { iso, type Point3 } from "@/vendor/anatomy/iso-kit";
 import { SeatedStill } from "./art";
 import { CASE, COOLER_Z, P } from "./view";
 import styles from "../desk/desk.module.css";
@@ -24,7 +24,12 @@ const H = Math.max(...flat.map((f) => f[1])) + PAD - Y;
 export function SeatedFigure() {
   return (
     <div className={`iso ${styles.wrap}`}>
-      <svg className="iso-svg" viewBox={`${X} ${Y} ${W} ${H}`} role="img" aria-label="The cooler sitting high on its left pin, ringed">
+      <svg
+        className="iso-svg"
+        viewBox={`${X} ${Y} ${W} ${H}`}
+        role="img"
+        aria-label="The cooler sitting high on its left pin, ringed"
+      >
         <SeatedStill />
       </svg>
     </div>

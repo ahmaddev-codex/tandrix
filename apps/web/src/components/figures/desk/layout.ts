@@ -2,7 +2,7 @@
 // and a mug. World units are about a millimetre; x right, y toward the viewer (the kit's camera
 // looks down +y, so the back of the desk is negative y), z up. Shared by A day with Tandrix and the
 // Ask cards, which frame one object at a time.
-import type { Plan, Point3 } from "../../iso/iso-kit";
+import type { Plan, Point3 } from "@/vendor/anatomy/iso-kit";
 
 export const AZIMUTH = 40;
 
@@ -34,8 +34,16 @@ export type DeskObject = "laptop" | "router" | "tray" | "manual" | "phone" | "mu
 
 /** Corners of each object's box, for framing a figure on some of them. */
 export const BOUNDS: Record<DeskObject, Point3[]> = {
-  laptop: box({ x: LAPTOP.x, y: LAPTOP.y - LAPTOP.lidD, w: LAPTOP.w, d: LAPTOP.d + LAPTOP.lidD, r: 0 }, 0, LAPTOP.h + LAPTOP.lid),
-  router: box({ x: ROUTER.x, y: ROUTER.y, w: ROUTER.w, d: ROUTER.d, r: 0 }, 0, ROUTER.h + ROUTER.antenna),
+  laptop: box(
+    { x: LAPTOP.x, y: LAPTOP.y - LAPTOP.lidD, w: LAPTOP.w, d: LAPTOP.d + LAPTOP.lidD, r: 0 },
+    0,
+    LAPTOP.h + LAPTOP.lid,
+  ),
+  router: box(
+    { x: ROUTER.x, y: ROUTER.y, w: ROUTER.w, d: ROUTER.d, r: 0 },
+    0,
+    ROUTER.h + ROUTER.antenna,
+  ),
   tray: box(TRAY, 0, TRAY_H + 8),
   manual: box(MANUAL, 0, MANUAL_H),
   phone: box(PHONE, 0, PHONE_H),
@@ -44,10 +52,13 @@ export const BOUNDS: Record<DeskObject, Point3[]> = {
 export const DESK_BOUNDS = box(DESK, -DESK_H - FOOT_H, 0);
 
 function box({ x, y, w, d }: Plan, z0: number, z1: number): Point3[] {
-  return [z0, z1].flatMap((z) => [
-    [x, y, z],
-    [x + w, y, z],
-    [x, y + d, z],
-    [x + w, y + d, z],
-  ] as Point3[]);
+  return [z0, z1].flatMap(
+    (z) =>
+      [
+        [x, y, z],
+        [x + w, y, z],
+        [x, y + d, z],
+        [x + w, y + d, z],
+      ] as Point3[],
+  );
 }

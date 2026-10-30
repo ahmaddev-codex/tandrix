@@ -1,3 +1,132 @@
+@import "tailwindcss";
+
+/* Tailwind's theme points at the design system's tokens (@tandrix/ui), so every utility follows
+   them, light and dark: bg-mist, text-ink, text-highlight and so on. */
+@theme inline {
+  --color-*: initial;
+  --color-white: #fff;
+  --color-black: #000;
+  --color-transparent: transparent;
+  --color-current: currentColor;
+  --color-ink: var(--gray-1000);
+  --color-page: var(--background-100);
+  --color-paper: var(--background-100);
+  --color-mist: var(--gray-100);
+  --color-line: var(--gray-200);
+  --color-line-strong: var(--gray-400);
+  --color-text: var(--text);
+  --color-text-2: var(--text-secondary);
+  --color-text-3: var(--text-tertiary);
+  --color-soft: var(--gray-600);
+  --color-gray-100: var(--gray-100);
+  --color-gray-200: var(--gray-200);
+  --color-gray-300: var(--gray-300);
+  --color-gray-400: var(--gray-400);
+  --color-gray-500: var(--gray-500);
+  --color-gray-600: var(--gray-600);
+  --color-gray-700: var(--gray-700);
+  --color-gray-800: var(--gray-800);
+  --color-gray-900: var(--gray-900);
+  --color-gray-1000: var(--gray-1000);
+  --color-blue-100: var(--blue-100);
+  --color-blue-700: var(--blue-700);
+  --color-blue-900: var(--blue-900);
+  --color-highlight: var(--highlight);
+  --color-highlight-tint: var(--highlight-tint);
+  --color-highlight-halo: var(--highlight-halo);
+  --color-overlay: var(--overlay-ground);
+  --color-overlay-ink: var(--overlay-ink);
+  --color-focus: var(--focus-ring);
+  --font-sans:
+    var(--font-geist-sans), -apple-system, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", Menlo, monospace;
+  --radius-full: var(--radius-full);
+  --spacing-gutter: var(--gutter);
+  --spacing-frame: var(--frame);
+  --spacing-gap: var(--gap);
+  --spacing-band: var(--band-pad);
+  --spacing-head: var(--head-gap);
+  --shadow-soft: 0 1px 2px rgba(9, 40, 90, 0.06), 0 10px 24px -18px rgba(9, 40, 90, 0.22);
+
+  /* Text sizes in the site's px, with the browser's own line height unless a leading-* says
+     otherwise (Tailwind's defaults would add one to every size). */
+  --text-*: initial;
+  --text-xs: 12px;
+  --text-sm: 14px;
+  --text-base: 16px;
+  --text-lg: 18px;
+  --text-xl: 20px;
+  --text-2xl: 24px;
+
+  /* The site's layout steps: phones, then tablets from 721 px, then desktops from 1081 px. */
+  --breakpoint-*: initial;
+  --breakpoint-sm: 721px;
+  --breakpoint-md: 961px;
+  --breakpoint-lg: 1081px;
+
+  --ease-out-soft: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --animate-rise: rise 900ms var(--ease-out-soft) both;
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(18px);
+    }
+  }
+}
+
+/* One-offs too rich for inline utilities: the skies, and the tray's blue tile. */
+@utility bg-hero-sky {
+  background: #6fb6f5 url("/photos/hero.png") center 70% / cover no-repeat;
+}
+@utility bg-hero-veil {
+  background:
+    radial-gradient(55% 40% at 50% 32%, rgba(14, 86, 190, 0.3), transparent 72%),
+    linear-gradient(
+      180deg,
+      rgba(18, 104, 214, 0.5) 0%,
+      rgba(46, 125, 255, 0.18) 45%,
+      rgba(46, 125, 255, 0) 75%
+    );
+}
+@utility bg-closing-sky {
+  background:
+    linear-gradient(
+      100deg,
+      rgba(18, 104, 214, 0.78) 0%,
+      rgba(46, 125, 255, 0.35) 55%,
+      rgba(46, 125, 255, 0) 100%
+    ),
+    url("/photos/sky-fluffy.jpg") center / cover no-repeat,
+    #3f9bf0;
+}
+@utility bg-blue-glow {
+  background:
+    radial-gradient(120% 120% at 100% 0%, rgba(255, 255, 255, 0.35), transparent 55%),
+    var(--highlight);
+}
+/* The width the closing banner and footer share with the sections. */
+@utility w-page-frame {
+  width: min(1340px - 2 * var(--gutter), 100% - 2 * var(--frame));
+}
+
+/* The page's rhythm: the same gap between every block, and inside every grey band. */
+:root {
+  --frame: 12px;
+  --gutter: clamp(16px, 4vw, 52px);
+  --gap: clamp(88px, 10vw, 144px);
+  --band-pad: clamp(64px, 8vw, 112px);
+  --head-gap: clamp(40px, 5vw, 64px);
+  /* Kept for the components still written in CSS modules. */
+  --ink: var(--gray-1000);
+  --page-bg: var(--background-100);
+  --mist: var(--gray-100);
+  --paper: var(--background-100);
+  --line: var(--gray-200);
+  --line-strong: var(--gray-400);
+  --text-2: var(--text-secondary);
+  --soft: var(--gray-600);
+}
+
 /* Site-wide layout. Colours, type and spacing come from @tandrix/ui tokens. */
 :root {
   color-scheme: light dark;
@@ -25,44 +154,49 @@ html[data-theme="dark"] {
   color-scheme: dark;
 }
 
-html {
-  scroll-behavior: smooth;
-  -webkit-text-size-adjust: 100%;
-}
-
-@media (prefers-reduced-motion: reduce) {
+/* Base element styles sit in Tailwind's base layer, so utilities can override them. */
+@layer base {
   html {
-    scroll-behavior: auto;
+    /* The browser's own spacing, as the site was designed (Tailwind's base would make it 1.5). */
+    line-height: normal;
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
   }
-}
 
-body {
-  margin: 0;
-  background: var(--background-100);
-  color: var(--text);
-  font-family: var(--font-sans);
-  -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
-}
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+  }
 
-h1,
-h2,
-h3,
-h4,
-p,
-ol,
-ul,
-figure {
-  margin: 0;
-}
+  body {
+    margin: 0;
+    background: var(--background-100);
+    color: var(--text);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
 
-a {
-  color: inherit;
-}
+  h1,
+  h2,
+  h3,
+  h4,
+  p,
+  ol,
+  ul,
+  figure {
+    margin: 0;
+  }
 
-::selection {
-  background: var(--blue-100);
-  color: var(--blue-900);
+  a {
+    color: inherit;
+  }
+
+  ::selection {
+    background: var(--blue-100);
+    color: var(--blue-900);
+  }
 }
 
 /* Listening buttons: every primary CTA wears Tandrix's Mac listening state — a dark pill
@@ -175,30 +309,32 @@ a {
   }
 }
 
-/* The Tandrix pointer is the cursor everywhere on the site; over anything you can press it wears
-   its blue ring, as on the Mac. Text fields keep the text cursor. */
-html {
-  cursor:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='26' height='26' viewBox='0 0 24 24'%3E%3Cpath d='M4.9 3.3C3.7 2.8 2.8 3.7 3.3 4.9L9.1 19.3C9.6 20.6 11.5 20.5 11.9 19.1L13.2 15.1C13.5 14.1 14.1 13.5 15.1 13.2L19.1 11.9C20.5 11.5 20.6 9.6 19.3 9.1L4.9 3.3Z' fill='%230b0b0c' stroke='white' stroke-width='1.4'/%3E%3C/svg%3E")
-      4 4,
-    default;
-}
-a,
-button,
-summary,
-label,
-select,
-[role="button"],
-[role="radio"],
-input[type="range"],
-input[type="checkbox"] {
-  cursor:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='34' height='34' viewBox='0 0 32 32'%3E%3Ccircle cx='9' cy='9' r='7.5' fill='rgba(46,125,255,0.18)' stroke='%232e7dff' stroke-width='1.6'/%3E%3Cpath d='M8.9 7.3C7.7 6.8 6.8 7.7 7.3 8.9L13.1 23.3C13.6 24.6 15.5 24.5 15.9 23.1L17.2 19.1C17.5 18.1 18.1 17.5 19.1 17.2L23.1 15.9C24.5 15.5 24.6 13.6 23.3 13.1L8.9 7.3Z' fill='%230b0b0c' stroke='white' stroke-width='1.4'/%3E%3C/svg%3E")
-      8 8,
-    pointer;
-}
-input[type="text"],
-input[type="email"],
-textarea {
-  cursor: text;
+@layer base {
+  /* The Tandrix pointer is the cursor everywhere on the site; over anything you can press it wears
+     its blue ring, as on the Mac. Text fields keep the text cursor. */
+  html {
+    cursor:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='26' height='26' viewBox='0 0 24 24'%3E%3Cpath d='M4.9 3.3C3.7 2.8 2.8 3.7 3.3 4.9L9.1 19.3C9.6 20.6 11.5 20.5 11.9 19.1L13.2 15.1C13.5 14.1 14.1 13.5 15.1 13.2L19.1 11.9C20.5 11.5 20.6 9.6 19.3 9.1L4.9 3.3Z' fill='%230b0b0c' stroke='white' stroke-width='1.4'/%3E%3C/svg%3E")
+        4 4,
+      default;
+  }
+  a,
+  button,
+  summary,
+  label,
+  select,
+  [role="button"],
+  [role="radio"],
+  input[type="range"],
+  input[type="checkbox"] {
+    cursor:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='34' height='34' viewBox='0 0 32 32'%3E%3Ccircle cx='9' cy='9' r='7.5' fill='rgba(46,125,255,0.18)' stroke='%232e7dff' stroke-width='1.6'/%3E%3Cpath d='M8.9 7.3C7.7 6.8 6.8 7.7 7.3 8.9L13.1 23.3C13.6 24.6 15.5 24.5 15.9 23.1L17.2 19.1C17.5 18.1 18.1 17.5 19.1 17.2L23.1 15.9C24.5 15.5 24.6 13.6 23.3 13.1L8.9 7.3Z' fill='%230b0b0c' stroke='white' stroke-width='1.4'/%3E%3C/svg%3E")
+        8 8,
+      pointer;
+  }
+  input[type="text"],
+  input[type="email"],
+  textarea {
+    cursor: text;
+  }
 }

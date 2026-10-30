@@ -1,7 +1,7 @@
 // Fig: Show me. A control console on a bench under a small XY gantry; the pointer head (Tandrix's
 // pointer, with its blue ring light) travels to the control you're asking about. World units are
 // about a millimetre; x right, y toward the viewer (the kit's camera looks down +y), z up.
-import { fitProjection, iso, type Flat, type Plan, type Point3 } from "../../iso/iso-kit";
+import { fitProjection, iso, type Flat, type Plan, type Point3 } from "@/vendor/anatomy/iso-kit";
 
 export const WIDTH = 640;
 export const HEIGHT = 420;

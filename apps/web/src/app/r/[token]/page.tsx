@@ -3,12 +3,7 @@ import { formatDateTime } from "@tandrix/ui";
 import { Icon, JobReport, Notice, StatusChip } from "@tandrix/ui/web";
 import type { Metadata } from "next";
 import Link from "next/link";
-import {
-  fetchSharedReport,
-  reportMeta,
-  safetyGateLabel,
-  toReportStepProps,
-} from "../../../lib/report";
+import { fetchSharedReport, reportMeta, safetyGateLabel, toReportStepProps } from "@/lib/report";
 import styles from "./page.module.css";
 
 export const dynamic = "force-dynamic";

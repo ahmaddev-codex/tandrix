@@ -4,8 +4,8 @@
 // plunger drops to the control's height and the ring lights on the control. Server-built parts
 // arrive as props; this only writes transforms on refs, never re-rendering per frame.
 import * as React from "react";
-import { translateAlong } from "../../iso/iso-kit";
-import { spring, useInView, useLoop, useStillness, type Spring } from "../../iso/react/live";
+import { translateAlong } from "@/vendor/anatomy/iso-kit";
+import { spring, useInView, useLoop, useStillness, type Spring } from "@/vendor/anatomy/react/live";
 import { at, HEIGHT, P, REST, TARGETS, WIDTH } from "./view";
 
 const TOUR_EVERY = 2.8;
@@ -36,7 +36,11 @@ export function PointerLive({ art, rings, rail, carriage, plunger, housing, arm,
   const ringsRef = React.useRef<SVGGElement>(null);
 
   const [active, setActive] = React.useState(0);
-  const motion = React.useRef({ x: { at: 0, rate: 0 } as Spring, y: { at: 0, rate: 0 } as Spring, z: { at: 0, rate: 0 } as Spring });
+  const motion = React.useRef({
+    x: { at: 0, rate: 0 } as Spring,
+    y: { at: 0, rate: 0 } as Spring,
+    z: { at: 0, rate: 0 } as Spring,
+  });
   const tour = React.useRef({ clock: 0, idle: IDLE_AFTER });
 
   const target = TARGETS[active]!;
@@ -89,7 +93,13 @@ export function PointerLive({ art, rings, rail, carriage, plunger, housing, arm,
 
   return (
     <div ref={stage} className="iso-stage ptr-stage">
-      <svg className="iso-svg" viewBox={`0 0 ${WIDTH} ${HEIGHT}`} role="img" aria-label="A pointer on a gantry over a control panel, ringing the control you ask about" focusable="false">
+      <svg
+        className="iso-svg"
+        viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
+        role="img"
+        aria-label="A pointer on a gantry over a control panel, ringing the control you ask about"
+        focusable="false"
+      >
         {art}
         <g ref={ringsRef}>{rings}</g>
         {rail}
@@ -109,7 +119,11 @@ export function PointerLive({ art, rings, rail, carriage, plunger, housing, arm,
               className="ptr-hit"
               aria-label={`Point at the ${t.name.toLowerCase()}`}
               aria-pressed={i === active}
-              style={{ left: `${(x / WIDTH) * 100}%`, top: `${(y / HEIGHT) * 100}%`, width: `${((t.r * 2.4) / WIDTH) * 100}%` }}
+              style={{
+                left: `${(x / WIDTH) * 100}%`,
+                top: `${(y / HEIGHT) * 100}%`,
+                width: `${((t.r * 2.4) / WIDTH) * 100}%`,
+              }}
               onPointerEnter={() => choose(i)}
               onFocus={() => choose(i)}
               onClick={() => choose(i)}

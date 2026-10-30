@@ -1,0 +1,40 @@
+/* The presence pill as a section label: in the flow, centred by its parent. */
+.pillHost {
+  position: relative;
+  inset: auto;
+  display: inline-flex;
+  pointer-events: auto;
+  --tx-level: 0.6;
+}
+.pillHost :global(.tx-presence-pill) {
+  height: 36px;
+  font-size: 13px;
+}
+.meter span {
+  height: calc(4px + 12px * var(--tx-bar));
+}
+@media (prefers-reduced-motion: no-preference) {
+  .meter span {
+    animation: bar 1.1s ease-in-out infinite;
+  }
+  .meter span:nth-child(2) {
+    animation-delay: 0.12s;
+  }
+  .meter span:nth-child(3) {
+    animation-delay: 0.24s;
+  }
+  .meter span:nth-child(4) {
+    animation-delay: 0.36s;
+  }
+  .meter span:nth-child(5) {
+    animation-delay: 0.48s;
+  }
+  .pillHost[data-state="listening"] :global(.tx-presence-pill)::before {
+    animation: tx-presence-turn 3.2s linear infinite;
+  }
+}
+@keyframes bar {
+  50% {
+    transform: scaleY(0.45);
+  }
+}

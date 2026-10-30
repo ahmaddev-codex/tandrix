@@ -1,6 +1,6 @@
 // The pointing console's parts as server-built SVG, in painter's order: back to front, bottom to
 // top. Moving parts are handed to the live component, which only moves them.
-import { Dots, Line, Solid } from "../../iso/react/draw";
+import { Dots, Line, Solid } from "@/vendor/anatomy/react/draw";
 import {
   ARM_ART,
   BASE_ART,

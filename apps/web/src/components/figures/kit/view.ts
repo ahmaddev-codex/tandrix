@@ -1,7 +1,7 @@
 // Build it: a small single-board computer kit, from the case up. World units are about a
 // millimetre; x right, y toward the viewer, z up. Each part rests on the one below; exploded, it
 // waits above its landing place.
-import { fitProjection, type Plan, type Point3 } from "../../iso/iso-kit";
+import { fitProjection, type Plan, type Point3 } from "@/vendor/anatomy/iso-kit";
 
 export const WIDTH = 640;
 export const HEIGHT = 560;
