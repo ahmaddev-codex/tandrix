@@ -2,7 +2,6 @@
 // Theme toggle following modern-web-guidance: switches between light and dark, persists only when
 // diverging from the OS scheme, and syncs across OS changes and tabs.
 import { useEffect, useState } from "react";
-import styles from "./ThemeToggle.module.css";
 
 type Scheme = "light" | "dark";
 
@@ -81,12 +80,12 @@ export function ThemeToggle() {
     <button
       type="button"
       onClick={toggle}
-      className={styles.toggle}
+      className="inline-grid size-[38px] cursor-pointer place-items-center rounded-full border-0 bg-gray-100 p-0 text-text transition-colors duration-150 hover:bg-gray-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
       aria-label={scheme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
       title={scheme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
     >
       <svg
-        className={styles.sun}
+        className="hidden dark:block"
         viewBox="0 0 20 20"
         width={16}
         height={16}
@@ -101,7 +100,7 @@ export function ThemeToggle() {
         <path d="M10 2.5v2M10 15.5v2M2.5 10h2M15.5 10h2M4.7 4.7l1.4 1.4M13.9 13.9l1.4 1.4M15.3 4.7l-1.4 1.4M6.1 13.9l-1.4 1.4" />
       </svg>
       <svg
-        className={styles.moon}
+        className="block dark:hidden"
         viewBox="0 0 20 20"
         width={16}
         height={16}

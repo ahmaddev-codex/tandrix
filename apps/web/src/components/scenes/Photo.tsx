@@ -2,7 +2,7 @@
 // position is in the photo's own pixels, so the ring lands where the control really is at any size.
 import type { CSSProperties } from "react";
 import { Ring } from "./parts";
-import p from "./Photo.module.css";
+import { cn } from "@/lib/cn";
 
 type Rect = { x: number; y: number; w: number; h: number };
 
@@ -32,7 +32,11 @@ export function Photo({ spec, className }: { spec: PhotoSpec; className?: string
   });
   return (
     <div
-      className={`${p.box} ${className ?? ""}`}
+      // The ring and its caption scale with the picture, within reason.
+      className={cn(
+        "@container relative w-full overflow-hidden text-[clamp(9px,2.4cqw,15px)] select-none",
+        className,
+      )}
       style={{ aspectRatio: `${c.w} / ${c.h}` }}
       aria-hidden="true"
     >
@@ -41,7 +45,7 @@ export function Photo({ spec, className }: { spec: PhotoSpec; className?: string
         alt=""
         loading="lazy"
         decoding="async"
-        className={p.img}
+        className="absolute block h-auto max-w-none"
         style={{
           width: pct(spec.w, c.w),
           left: pct(-c.x, c.w),
@@ -51,7 +55,7 @@ export function Photo({ spec, className }: { spec: PhotoSpec; className?: string
       {spec.patches?.map((pa, i) => (
         <span
           key={i}
-          className={p.patch}
+          className="absolute flex items-center overflow-hidden bg-[#f7f7f7] font-[-apple-system,'SF_Pro_Text',var(--font-sans)] whitespace-nowrap text-[#1d1d1f]"
           style={{
             ...at(pa),
             fontSize: pa.size ? `${(pa.size / c.w) * 100}cqw` : undefined,
@@ -61,12 +65,20 @@ export function Photo({ spec, className }: { spec: PhotoSpec; className?: string
         </span>
       ))}
       {spec.boxes?.map((b, i) => (
-        <span key={i} className={p.part} style={at(b)}>
-          {b.label ? <em>{b.label}</em> : null}
+        <span
+          key={i}
+          style={{ ...at(b), animationDelay: `${i * 120}ms` }}
+          className="absolute rounded-[0.5em] border-[0.16em] border-highlight bg-[color-mix(in_srgb,var(--highlight)_12%,transparent)] shadow-[0_0_0_0.06em_rgba(255,255,255,0.8)] motion-safe:animate-outline-in"
+        >
+          {b.label ? (
+            <em className="absolute bottom-[calc(100%+0.3em)] -left-[0.16em] rounded-[0.45em] bg-highlight px-[0.55em] py-[0.2em] text-[0.85em] font-semibold whitespace-nowrap text-white not-italic">
+              {b.label}
+            </em>
+          ) : null}
         </span>
       ))}
       {spec.ring ? (
-        <span className={p.target} style={at(spec.ring)}>
+        <span className="absolute" style={at(spec.ring)}>
           <Ring
             caption={spec.ring.caption}
             {...(spec.ring.place ? { place: spec.ring.place } : {})}

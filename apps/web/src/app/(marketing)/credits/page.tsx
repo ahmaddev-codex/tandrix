@@ -1,7 +1,6 @@
 // Photo and video credits for the Tandrix site. Same facts as public/photos/CREDITS.md,
 // rendered as a page instead of a raw markdown file.
 import { ScrollReveals } from "@/components/motion/ScrollReveals";
-import styles from "./credits.module.css";
 const credits: Array<{
   file: string;
   maker: string;
@@ -107,22 +106,27 @@ const credits: Array<{
 
 export default function Credits() {
   return (
-    <div className={styles.page}>
+    <div className="min-h-svh bg-page text-ink">
       <ScrollReveals>
-        <main className={styles.inner}>
-          <p className={styles.back}>
-            <a href="/">← Tandrix</a>
+        <main className="mx-auto grid max-w-[920px] gap-[18px] px-6 pt-[72px] pb-24">
+          <p>
+            <a
+              href="/"
+              className="text-sm font-semibold text-(--link) no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+            >
+              ← Tandrix
+            </a>
           </p>
           <h1 className="heading-32">Photo and video credits</h1>
-          <p className={styles.lead}>
+          <p className="text-[17px] leading-[1.6] text-text-2">
             Photos and video on the Tandrix website, their makers and licences. App screens, the
             manual page and the pointer are drawn in code.
           </p>
-          <h2 className="heading-24" data-reveal>
+          <h2 className="heading-24 mt-[22px]" data-reveal>
             Photos
           </h2>
-          <div className={styles.card} data-reveal>
-            <table className={styles.table}>
+          <div className="overflow-x-auto rounded-3xl border border-line bg-paper p-2" data-reveal>
+            <table className="w-full border-collapse text-sm [&_a]:text-(--link) [&_a]:no-underline [&_a:hover]:underline [&_td]:border-b [&_td]:border-line [&_td]:px-4 [&_td]:py-[13px] [&_td]:align-top [&_td:first-child]:font-mono [&_td:first-child]:text-[13px] [&_td:first-child]:whitespace-nowrap [&_th]:border-b [&_th]:border-line [&_th]:px-4 [&_th]:py-3.5 [&_th]:text-left [&_th]:text-xs [&_th]:font-bold [&_th]:tracking-[0.06em] [&_th]:whitespace-nowrap [&_th]:text-text-2 [&_th]:uppercase [&_tr:last-child_td]:border-b-0">
               <thead>
                 <tr>
                   <th>File</th>
@@ -151,7 +155,7 @@ export default function Credits() {
               </tbody>
             </table>
           </div>
-          <p className={styles.note}>
+          <p className="text-sm leading-[1.65] text-text-2">
             Photos and video are resized and compressed for the web, and the skies are tinted on the
             page. The outlines drawn over the tools are the ones Tandrix&apos;s part finder drew.
           </p>

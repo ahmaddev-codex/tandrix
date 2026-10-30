@@ -234,7 +234,7 @@ const COVER_ART = (
       )}
       tone="lo"
     />
-    <path className="kit-logo" d={onTop(LOGO, COVER_TOP, P, true)} />
+    <path className="fill-(--anatomy-hi)" d={onTop(LOGO, COVER_TOP, P, true)} />
     {/* Openings for the ports, on the right-hand face. */}
     <Line
       d={joined(
@@ -257,9 +257,9 @@ const COVER_ART = (
 
 /** Where each part lands, drawn on the part below. */
 const ghost = (d: string) => (
-  <g className="kit-ghost">
-    <path className="iso-line kit-glow" data-tone="blue" d={d} />
-    <path className="iso-line" data-tone="blue" d={d} />
+  <g>
+    <path className="iso-line stroke-[6px] opacity-[0.18]" data-tone="blue" d={d} />
+    <path className="iso-line stroke-[1.6px]" data-tone="blue" d={d} />
   </g>
 );
 

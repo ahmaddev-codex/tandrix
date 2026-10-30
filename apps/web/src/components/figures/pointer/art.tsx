@@ -94,9 +94,18 @@ export const STATIC = (
 export const RINGS = (
   <g key="rings">
     {TARGETS.map((t) => (
-      <g key={t.id} data-ring={t.id} className="ptr-ring">
-        <path className="iso-line" data-tone="blue" d={ringFor(t)} />
-        <path className="iso-line ptr-glow" data-tone="blue" d={ringFor({ ...t, r: t.r + 4 })} />
+      // Lit once the head has arrived over this control.
+      <g
+        key={t.id}
+        data-ring={t.id}
+        className="opacity-0 transition-opacity duration-[260ms] in-data-arrived:data-on:opacity-100"
+      >
+        <path className="iso-line stroke-[1.6px]" data-tone="blue" d={ringFor(t)} />
+        <path
+          className="iso-line stroke-[6px] opacity-[0.18]"
+          data-tone="blue"
+          d={ringFor({ ...t, r: t.r + 4 })}
+        />
       </g>
     ))}
   </g>

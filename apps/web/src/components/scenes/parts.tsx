@@ -1,7 +1,5 @@
-// Pieces every scene shares: a Mac window that scales as one picture, and Tandrix's ring, pointer
-// and caption, attached to whatever control they sit in.
-import type { ReactNode } from "react";
-import p from "./parts.module.css";
+// Pieces the scenes share: Tandrix's pointer, its ring with the spoken step, and a check mark.
+import { cn } from "@/lib/cn";
 
 /** The Tandrix pointer, the same rounded shape the Mac overlay draws. */
 export function PointerArrow({ size = 26, className }: { size?: number; className?: string }) {
@@ -13,38 +11,9 @@ export function PointerArrow({ size = 26, className }: { size?: number; classNam
 }
 
 /**
- * A Mac window. Everything inside is sized in em and the window sets its font size from its own
- * width, so the whole picture scales as one at any size.
+ * Tandrix's ring around its parent control (which is position: relative), with the pointer and
+ * the spoken step under it. Sized in em, so it scales with the picture it's in.
  */
-export function Win({
-  title,
-  app,
-  children,
-  className,
-}: {
-  title: string;
-  app?: "excel" | "settings" | "calendar";
-  children: ReactNode;
-  className?: string;
-}) {
-  return (
-    <div className={`${p.box} ${className ?? ""}`} aria-hidden="true">
-      <div className={`${p.win} ${app ? p[app] : ""}`}>
-        <div className={p.bar}>
-          <span className={p.lights}>
-            <i />
-            <i />
-            <i />
-          </span>
-          <span className={p.title}>{title}</span>
-        </div>
-        {children}
-      </div>
-    </div>
-  );
-}
-
-/** Tandrix's ring around its parent control, with the pointer and the spoken step under it. */
 export function Ring({
   caption,
   place = "below",
@@ -54,9 +23,17 @@ export function Ring({
   place?: "below" | "right" | "belowEnd";
 }) {
   return (
-    <span className={p.ring}>
-      <PointerArrow className={p.arrow} />
-      <span className={`${p.caption} ${p[place]}`}>{caption}</span>
+    <span className="pointer-events-none absolute -inset-[0.35em] z-[5] rounded-[0.7em] border-[0.16em] border-highlight shadow-[0_0_0_0.3em_var(--highlight-tint),0_0_1.4em_0.1em_color-mix(in_srgb,var(--highlight)_35%,transparent)] motion-safe:animate-ring-pulse">
+      <PointerArrow className="absolute -right-[1.1em] -bottom-[1.3em] size-[2em] fill-[#111] stroke-white stroke-[1.5] drop-shadow-[0_0.15em_0.25em_rgba(0,0,0,0.35)]" />
+      <span
+        className={cn(
+          "absolute top-[calc(100%+1.2em)] left-0 rounded-[0.7em] bg-[#111] px-[0.85em] py-[0.55em] text-[1em] font-medium whitespace-nowrap text-white shadow-[0_0_0_0.12em_var(--highlight),0_0.4em_1em_-0.5em_rgba(0,0,0,0.25)]",
+          place === "right" && "top-1/2 left-[calc(100%+1.6em)]",
+          place === "belowEnd" && "right-0 left-auto",
+        )}
+      >
+        {caption}
+      </span>
     </span>
   );
 }

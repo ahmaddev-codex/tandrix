@@ -1,5 +1,4 @@
 import "@tandrix/ui/tokens.css";
-import "@tandrix/ui/web/styles.css";
 import "./globals.css";
 import { colors } from "@tandrix/ui";
 import { GeistMono } from "geist/font/mono";

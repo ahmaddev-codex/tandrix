@@ -92,7 +92,7 @@ export function PointerLive({ art, rings, rail, carriage, plunger, housing, arm,
   }, [active, inView, still, kick]);
 
   return (
-    <div ref={stage} className="iso-stage ptr-stage">
+    <div ref={stage} className="iso-stage relative">
       <svg
         className="iso-svg"
         viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
@@ -109,14 +109,14 @@ export function PointerLive({ art, rings, rail, carriage, plunger, housing, arm,
         <g ref={armRef}>{arm}</g>
         <g ref={sledRef}>{sled}</g>
       </svg>
-      <div className="ptr-hits">
+      <div className="absolute inset-0">
         {TARGETS.map((t, i) => {
           const [x, y] = at(t.at);
           return (
             <button
               key={t.id}
               type="button"
-              className="ptr-hit"
+              className="absolute aspect-square min-w-9 -translate-1/2 rounded-full border-0 bg-transparent p-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-highlight"
               aria-label={`Point at the ${t.name.toLowerCase()}`}
               aria-pressed={i === active}
               style={{
@@ -131,7 +131,10 @@ export function PointerLive({ art, rings, rail, carriage, plunger, housing, arm,
           );
         })}
       </div>
-      <p className="ptr-say" aria-live="polite">
+      <p
+        className="mx-auto mt-2 min-h-[1.5em] text-center text-[17px] text-text-2 [&_b]:mr-1.5 [&_b]:font-semibold [&_b]:text-ink"
+        aria-live="polite"
+      >
         <b>{target.name}</b> {target.says}
       </p>
     </div>

@@ -6,7 +6,6 @@ import { ActivePill } from "@/components/ui/ActivePill";
 import { Anatomy } from "@/components/widgets/Anatomy";
 import { Cta } from "@/components/ui/Cta";
 import { MAC_DOWNLOAD_URL, isExternal } from "@/lib/downloads";
-import styles from "./technical.module.css";
 
 export const metadata: Metadata = {
   title: "How Tandrix works",
@@ -84,38 +83,52 @@ const privacy = [
 
 export default function Technical() {
   return (
-    <div className={styles.page}>
-      <header className={styles.hero}>
-        <a href="/" className={styles.back}>
+    <div className="min-h-screen bg-page p-3 text-ink [--gap:clamp(72px,9vw,128px)]">
+      <header className="grid justify-items-start gap-[22px] rounded-[28px] bg-technical-sky px-[clamp(20px,5vw,64px)] pt-10 pb-[clamp(56px,8vw,96px)] text-white">
+        <a
+          href="/"
+          className="inline-flex items-center gap-2.5 text-base font-semibold text-white no-underline hover:underline hover:underline-offset-[5px]"
+        >
           <BrandMark size={22} /> Tandrix
         </a>
         <ActivePill state="looking" label="Looking at your screen" />
-        <h1 className={styles.title}>How Tandrix works</h1>
-        <p className={styles.lead}>
+        <h1 className="mt-5 text-[clamp(40px,5.6vw,72px)] leading-[1.02] font-medium tracking-[-0.05em]">
+          How Tandrix works
+        </h1>
+        <p className="max-w-[600px] text-lg leading-[1.55] text-white/[0.94]">
           What it adds on top of what you&apos;re doing, what it does on your Mac and your iPhone,
           and how it keeps you in control.
         </p>
       </header>
 
-      <main className={styles.body}>
+      <main className="mx-auto grid max-w-[1240px] gap-(--gap) px-[clamp(8px,3vw,40px)] py-(--gap)">
         <section aria-labelledby="anatomy-title">
-          <div className={styles.head}>
-            <h2 id="anatomy-title" className={styles.h2}>
+          <div className="mb-[clamp(32px,5vw,56px)] grid max-w-[640px] gap-3">
+            <h2
+              id="anatomy-title"
+              className="text-[clamp(30px,3.6vw,48px)] leading-[1.05] font-medium tracking-[-0.045em]"
+            >
               Inside Tandrix
             </h2>
-            <p className={styles.sub}>
+            <p className="text-[17px] text-text-2">
               Six layers over the thing you&apos;re working on. Together, they show you the way.
             </p>
           </div>
           <Anatomy />
         </section>
 
-        <section aria-labelledby="mac-title" className={styles.split}>
+        <section
+          aria-labelledby="mac-title"
+          className="grid grid-cols-1 items-center gap-[clamp(32px,6vw,80px)] min-[761px]:grid-cols-2"
+        >
           <div>
-            <h2 id="mac-title" className={styles.h2}>
+            <h2
+              id="mac-title"
+              className="text-[clamp(30px,3.6vw,48px)] leading-[1.05] font-medium tracking-[-0.045em]"
+            >
               On your Mac
             </h2>
-            <dl className={styles.list}>
+            <dl className="mt-7 grid gap-[22px] [&_dd]:mt-1.5 [&_dd]:text-base [&_dd]:leading-[1.6] [&_dd]:text-text-2 [&_dt]:text-lg [&_dt]:font-medium">
               {mac.map((m) => (
                 <div key={m.title}>
                   <dt>{m.title}</dt>
@@ -124,15 +137,24 @@ export default function Technical() {
               ))}
             </dl>
           </div>
-          <Photo spec={excelPhoto} className={styles.shot} />
+          <Photo
+            spec={excelPhoto}
+            className="rounded-2xl shadow-[0_0_0_1px_rgba(0,0,0,0.06),0_1px_2px_rgba(9,40,90,0.06),0_10px_24px_-18px_rgba(9,40,90,0.22)]"
+          />
         </section>
 
-        <section aria-labelledby="phone-title" className={`${styles.split} ${styles.flip}`}>
+        <section
+          aria-labelledby="phone-title"
+          className="grid grid-cols-1 items-center gap-[clamp(32px,6vw,80px)] min-[761px]:grid-cols-2 min-[761px]:[&>:first-child]:order-2"
+        >
           <div>
-            <h2 id="phone-title" className={styles.h2}>
+            <h2
+              id="phone-title"
+              className="text-[clamp(30px,3.6vw,48px)] leading-[1.05] font-medium tracking-[-0.045em]"
+            >
               On your iPhone
             </h2>
-            <dl className={styles.list}>
+            <dl className="mt-7 grid gap-[22px] [&_dd]:mt-1.5 [&_dd]:text-base [&_dd]:leading-[1.6] [&_dd]:text-text-2 [&_dt]:text-lg [&_dt]:font-medium">
               {phone.map((m) => (
                 <div key={m.title}>
                   <dt>{m.title}</dt>
@@ -141,20 +163,32 @@ export default function Technical() {
               ))}
             </dl>
           </div>
-          <div className={styles.shots}>
-            <Photo spec={manualPhoto} className={styles.shot} />
-            <Photo spec={partsPhoto} className={styles.shot} />
+          <div className="grid gap-4">
+            <Photo
+              spec={manualPhoto}
+              className="rounded-2xl shadow-[0_0_0_1px_rgba(0,0,0,0.06),0_1px_2px_rgba(9,40,90,0.06),0_10px_24px_-18px_rgba(9,40,90,0.22)]"
+            />
+            <Photo
+              spec={partsPhoto}
+              className="rounded-2xl shadow-[0_0_0_1px_rgba(0,0,0,0.06),0_1px_2px_rgba(9,40,90,0.06),0_10px_24px_-18px_rgba(9,40,90,0.22)]"
+            />
           </div>
         </section>
 
         <section aria-labelledby="safe-title">
-          <h2 id="safe-title" className={styles.h2}>
+          <h2
+            id="safe-title"
+            className="text-[clamp(30px,3.6vw,48px)] leading-[1.05] font-medium tracking-[-0.045em]"
+          >
             You stay in control
           </h2>
-          <div className={styles.tray}>
+          <div className="mt-8 grid grid-cols-1 gap-3 rounded-[30px] bg-mist p-3 min-[761px]:grid-cols-2 lg:grid-cols-4">
             {safe.map((g) => (
-              <article key={g.title} className={styles.card}>
-                <span className={styles.icon}>
+              <article
+                key={g.title}
+                className="grid content-start gap-3 rounded-[20px] bg-paper p-[22px] [&_h3]:text-xl [&_h3]:font-medium [&_h3]:tracking-[-0.02em] [&_p]:text-[15px] [&_p]:leading-[1.55] [&_p]:text-text-2"
+              >
+                <span className="grid size-10 place-items-center rounded-xl bg-highlight text-white">
                   <Icon name={g.icon} size={20} />
                 </span>
                 <h3>{g.title}</h3>
@@ -164,14 +198,17 @@ export default function Technical() {
           </div>
         </section>
 
-        <section aria-labelledby="privacy-title" className={styles.privacy}>
-          <h2 id="privacy-title" className={styles.h2}>
+        <section aria-labelledby="privacy-title" className="max-w-[760px]">
+          <h2
+            id="privacy-title"
+            className="text-[clamp(30px,3.6vw,48px)] leading-[1.05] font-medium tracking-[-0.045em]"
+          >
             Your privacy
           </h2>
-          <ul className={styles.checks}>
+          <ul className="mt-7 grid list-none gap-4 p-0 text-base leading-normal">
             {privacy.map((p) => (
-              <li key={p}>
-                <span className={styles.tick}>
+              <li key={p} className="flex gap-3">
+                <span className="inline-grid size-6 flex-none place-items-center rounded-full bg-highlight text-white">
                   <Icon name="check" size={16} />
                 </span>
                 {p}
@@ -180,7 +217,7 @@ export default function Technical() {
           </ul>
         </section>
 
-        <section className={styles.end}>
+        <section className="flex flex-wrap justify-center gap-3">
           <Cta href={MAC_DOWNLOAD_URL} tone="ink" external={isExternal(MAC_DOWNLOAD_URL)}>
             Get Tandrix
           </Cta>

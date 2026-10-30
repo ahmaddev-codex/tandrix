@@ -1,90 +1,28 @@
-// The site's pictures of Tandrix at work, drawn in code so they stay sharp at any size: real-looking
-// app windows (Excel, System Settings, Calendar), a printed manual page, the iPhone camera, and the
-// small cards Tandrix shows. Decorative: each is aria-hidden and the copy beside it says what it
-// shows.
+// Small cards Tandrix shows, drawn in code so they stay sharp at any size. Decorative: each is
+// aria-hidden and the copy beside it says what it shows.
+import { cn } from "@/lib/cn";
 import { Tick } from "./parts";
-import s from "./Scenes.module.css";
 
-export { CalendarScene } from "./Calendar";
-export { ExcelScene } from "./Excel";
-export { ManualScene } from "./Manual";
 export { PointerArrow } from "./parts";
-export { SettingsScene } from "./Settings";
 
-/**
- * Real output: the parts Tandrix's segmenter outlined on this photo in one run (boxes in percent
- * of the image), and the part it couldn't find.
- */
-const found: Array<{ name: string; box: [number, number, number, number] }> = [
-  { name: "Hammer", box: [15.9, 17.9, 15.8, 51.8] },
-  { name: "Cordless drill", box: [36.9, 35.2, 34.2, 39.3] },
-  { name: "Pliers", box: [69.9, 73.2, 23.7, 10.4] },
-  { name: "Pliers", box: [57.4, 58.5, 10.1, 15.9] },
-];
-
-/** The iPhone camera on a parts check: what Tandrix found, outlined, and what it didn't. */
-export function PhoneScene() {
-  return (
-    <div className={s.phoneBox} aria-hidden="true">
-      <div className={s.phone}>
-        <span className={s.island} />
-        <div className={s.screen}>
-          <div className={s.status}>
-            <b>9:41</b>
-            <span>Parts check</span>
-          </div>
-          <div className={s.camera}>
-            <img src="/photos/tools-flatlay.jpg" alt="" width={1800} height={1421} loading="lazy" />
-            {found.map((f, i) => (
-              <span
-                key={i}
-                className={s.partBox}
-                style={{
-                  left: `${f.box[0]}%`,
-                  top: `${f.box[1]}%`,
-                  width: `${f.box[2]}%`,
-                  height: `${f.box[3]}%`,
-                }}
-              >
-                {i < 3 ? <em>{f.name}</em> : null}
-              </span>
-            ))}
-          </div>
-          <div className={s.sheet}>
-            <span className={s.grab} />
-            <b>3 of 4 parts found</b>
-            <span className={s.sheetRow}>
-              <span className={s.ok}>
-                <Tick />
-              </span>
-              Hammer, cordless drill, pliers
-            </span>
-            <span className={s.sheetRow}>
-              <span className={s.ask}>?</span>
-              Spirit level not found. Is it in the box?
-            </span>
-            <span className={s.sheetButton}>Next step</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+const card =
+  "grid content-start gap-1.5 rounded-[18px] bg-white p-4 text-left font-sans text-[#111] shadow-[0_0_0_1px_rgba(0,0,0,0.06),0_1px_2px_rgba(9,40,90,0.06),0_10px_24px_-18px_rgba(9,40,90,0.22)] [&_p]:m-0 [&_p]:text-[12.5px] [&_p]:leading-[1.45] [&_p]:text-[#5c5c5a]";
+const cardTitle = "text-[15px] font-semibold";
 
 /** A step checked from a photo, as the phone shows it. */
 export function CheckCard() {
   return (
-    <div className={s.card} aria-hidden="true">
-      <div className={s.cardHead}>
-        <span className={s.verified}>
+    <div className={card} aria-hidden="true">
+      <div className="flex items-center justify-between text-[11px] text-[#6e6e73]">
+        <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-[3px] font-semibold text-blue-900">
           <Tick /> Verified
         </span>
         <span>Step 3 of 6</span>
       </div>
-      <b className={s.cardTitle}>Fit the drill bit</b>
+      <b className={cardTitle}>Fit the drill bit</b>
       <p>The bit is seated and the chuck is tight.</p>
-      <span className={s.progress}>
-        <i style={{ width: "50%" }} />
+      <span className="mt-1.5 h-[5px] rounded-[3px] bg-[#ececec]">
+        <i className="block h-full w-1/2 rounded-[inherit] bg-[#111]" />
       </span>
     </div>
   );
@@ -93,15 +31,22 @@ export function CheckCard() {
 /** A spoken exchange: what was asked and what Tandrix said back. */
 export function VoiceCard({ ask, reply }: { ask: string; reply: string }) {
   return (
-    <div className={s.voice} aria-hidden="true">
-      <p className={s.you}>{ask}</p>
-      <p className={s.reply}>
-        <span className={s.wave}>
-          <i />
-          <i />
-          <i />
-          <i />
-          <i />
+    <div
+      className="grid content-start gap-2.5 rounded-[18px] bg-[#111] p-4 text-left font-sans text-white shadow-soft"
+      aria-hidden="true"
+    >
+      <p className="m-0 max-w-[85%] justify-self-end rounded-[14px_14px_4px_14px] bg-[#2a2b2d] px-3 py-[9px] text-[13px]">
+        {ask}
+      </p>
+      <p className="m-0 flex items-start gap-2.5 text-[13.5px] leading-[1.45]">
+        <span className="inline-flex h-[18px] flex-none items-center gap-0.5">
+          {[50, 85, 100, 85, 50].map((h, i) => (
+            <i
+              key={i}
+              className="w-[3px] rounded-[2px] bg-highlight motion-safe:animate-meter"
+              style={{ height: `${h}%`, animationDelay: `${i * 0.1}s` }}
+            />
+          ))}
         </span>
         {reply}
       </p>
@@ -111,14 +56,17 @@ export function VoiceCard({ ask, reply }: { ask: string; reply: string }) {
 
 /** A safety gate: the step waits until the user confirms. */
 export function GateCard() {
+  const button = "flex-1 rounded-full px-1.5 py-2 text-center";
   return (
-    <div className={s.card} aria-hidden="true">
-      <span className={s.gateIcon}>!</span>
-      <b className={s.cardTitle}>Before you continue</b>
+    <div className={card} aria-hidden="true">
+      <span className="grid size-7 place-items-center rounded-lg bg-[#111] font-bold text-white">
+        !
+      </span>
+      <b className={cardTitle}>Before you continue</b>
       <p>Unplug the power. Tandrix waits until you say it&apos;s done.</p>
-      <span className={s.gateButtons}>
-        <span>Not yet</span>
-        <span className={s.gateGo}>It&apos;s unplugged</span>
+      <span className="mt-1 flex gap-1.5 text-xs font-medium">
+        <span className={cn(button, "shadow-[inset_0_0_0_1px_#d6d6d6]")}>Not yet</span>
+        <span className={cn(button, "bg-[#111] text-white")}>It&apos;s unplugged</span>
       </span>
     </div>
   );

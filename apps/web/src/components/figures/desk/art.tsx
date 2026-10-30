@@ -131,9 +131,13 @@ function cursorOnFace(P: Projection, x: number, z: number, y: number) {
 
 function Ringed({ d }: { d: string }) {
   return (
-    <g className="desk-ring">
-      <path className="iso-line desk-glow" data-tone="blue" d={d} />
-      <path className="iso-line" data-tone="blue" d={d} />
+    <g>
+      <path
+        className="iso-line stroke-[6px] opacity-[0.18] motion-safe:animate-breathe"
+        data-tone="blue"
+        d={d}
+      />
+      <path className="iso-line stroke-[1.6px]" data-tone="blue" d={d} />
     </g>
   );
 }
@@ -194,7 +198,7 @@ function Laptop({ P, focus, lit }: { P: Projection; focus: Focus; lit: boolean }
         tone="mid"
         lit={lit}
       />
-      <path className="desk-glass" d={faceRect(P, x0, x1, z0, z1, fy)} />
+      <path className="fill-(--anatomy-face)" d={faceRect(P, x0, x1, z0, z1, fy)} />
       <Line d={faceRect(P, x0, x1, z0, z1, fy)} tone="lo" />
       <Dots points={[iso([x + w / 2, fy, z1 + 3.5], P)]} size={0.8} tone="mid" />
       <ScreenContent P={P} focus={focus} y={fy} />
@@ -299,7 +303,12 @@ function ScreenContent({ P, focus, y }: { P: Projection; focus: Focus; y: number
       <Line d={lines.join("")} tone="faint" />
       <Line d={blue.join("")} tone="blue" />
       {ringD ? <Ringed d={ringD} /> : null}
-      {tip ? <path className="desk-cursor" d={cursorOnFace(P, tip[0], tip[1], y)} /> : null}
+      {tip ? (
+        <path
+          className="fill-(--anatomy-hi) stroke-(--anatomy-paper) stroke-[0.8px] [stroke-linejoin:round]"
+          d={cursorOnFace(P, tip[0], tip[1], y)}
+        />
+      ) : null}
     </g>
   );
 }

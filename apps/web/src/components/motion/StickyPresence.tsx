@@ -5,7 +5,7 @@
 import { useEffect, useState } from "react";
 import type { PresenceState } from "@tandrix/ui/web";
 import { ActivePill } from "@/components/ui/ActivePill";
-import styles from "./StickyPresence.module.css";
+import { cn } from "@/lib/cn";
 
 export function StickyPresence() {
   const [now, setNow] = useState<{ state: PresenceState; label: string } | null>(null);
@@ -55,7 +55,13 @@ export function StickyPresence() {
   }, []);
 
   return (
-    <div className={`${styles.dock} ${now && !aside ? styles.shown : ""}`} aria-hidden="true">
+    <div
+      aria-hidden="true"
+      className={cn(
+        "pointer-events-none fixed top-3.5 left-1/2 z-40 -translate-x-1/2 transition-[transform,opacity] duration-[420ms,300ms] ease-out-soft motion-reduce:transition-opacity motion-safe:[&>*]:animate-swap",
+        now && !aside ? "translate-y-0 opacity-100" : "-translate-y-6 opacity-0",
+      )}
+    >
       {now ? <ActivePill key={now.label} state={now.state} label={now.label} /> : null}
     </div>
   );
