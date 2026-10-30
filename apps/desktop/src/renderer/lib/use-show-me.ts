@@ -7,7 +7,7 @@ import {
   acknowledgeQueued,
   acknowledgeRedirect,
   helpKind,
-  interjection,
+  whileBusy,
   isNo,
   isYes,
   offerToDo,
@@ -229,7 +229,7 @@ export function useShowMe(jobId: string | undefined) {
 
   /** Show me: look at the screen, point at the answer, say it. */
   const showAnswer = useCallback(
-    async (job: string | undefined, question: string, shot: Promise<Shot>) => {
+    async (job: string | undefined, question: string, shot: Promise<Shot>, point = true) => {
       const { capture, evidence } = await shot;
       const lesson = wantsLesson(question);
       const named = userNameRef.current ? { userName: userNameRef.current } : {};
@@ -254,6 +254,8 @@ export function useShowMe(jobId: string | undefined) {
               ...named,
             });
       if (r.status === "unavailable") return reply(r.message);
+      // While a task has the pointer, answer in words and leave the pointer to it.
+      if (!point) return reply(r.reply);
       if (r.target?.geometry.kind === "box") {
         const b = r.target.geometry.box;
         const center = { x: b.x + Math.round(b.w / 2), y: b.y + Math.round(b.h / 2) };
@@ -289,17 +291,19 @@ export function useShowMe(jobId: string | undefined) {
       }
       const kind = helpKind(said);
       if (board.screenBusy()) {
-        if (kind === "background") {
-          board.addBackground(said);
-          return reply(acknowledgeBackground());
-        }
-        const how = interjection(said);
+        // Only another job on the screen waits its turn; everything else starts now.
+        const how = whileBusy(said);
         if (how === "stop") {
           board.stopScreen();
           await window.tandrix.doing.stop();
           return;
         }
         if (how === "redirect" && board.steer(said)) return reply(acknowledgeRedirect());
+        if (how === "background") {
+          board.addBackground(said);
+          return reply(acknowledgeBackground());
+        }
+        if (how === "look") return showAnswer(job, said, shot, false);
         board.addScreen(said);
         return reply(acknowledgeQueued());
       }
@@ -379,7 +383,11 @@ export function useShowMe(jobId: string | undefined) {
         void answer(jobId, effective, shoot(jobId));
         return;
       }
-      if (phaseRef.current !== "idle") return;
+      // Still answering the last one: answer this alongside it rather than dropping it.
+      if (phaseRef.current !== "idle") {
+        void answer(jobId, effective, shoot(jobId));
+        return;
+      }
       stopSpeaking();
       void run(() => answer(jobId, effective, shoot(jobId)), {
         state: "looking",

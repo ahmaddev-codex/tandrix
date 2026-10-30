@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  whileBusy,
   acknowledge,
   helpKind,
   interjection,
@@ -83,5 +84,22 @@ describe("offerToDo", () => {
     expect(offerToDo("Book my dentist for Thursday.", 0)).toBe(
       "I can book your dentist for Thursday for you. Want me to?",
     );
+  });
+});
+
+describe("whileBusy", () => {
+  it("starts work that needs no screen straight away", () => {
+    expect(whileBusy("Research the best standing desks under $500")).toBe("background");
+    expect(whileBusy("What's the capital of Australia?")).toBe("background");
+    expect(whileBusy("Draft a thank-you note to Sam")).toBe("background");
+  });
+  it("answers questions about the screen by looking, without the mouse", () => {
+    expect(whileBusy("Where's the export button?")).toBe("look");
+    expect(whileBusy("What is this app?")).toBe("look");
+  });
+  it("queues other screen jobs, and still stops or steers the running one", () => {
+    expect(whileBusy("Book my dentist for Thursday")).toBe("queue");
+    expect(whileBusy("Stop")).toBe("stop");
+    expect(whileBusy("Actually make it Friday")).toBe("redirect");
   });
 });

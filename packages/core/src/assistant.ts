@@ -62,6 +62,27 @@ export function interjection(text: string): "stop" | "redirect" | "queue" {
   return "queue";
 }
 
+/** Words that point at what's on the screen ("this button", "here", "that menu"). */
+const ON_SCREEN =
+  /\b(on (my|the|this) screen|screen|here|this|that|these|those|it|button|menu|window|tab|field|icon|page|app|click|cursor|toolbar|sidebar|setting|settings|option)\b/i;
+
+/**
+ * Something said while a screen task is running. Only work that needs the mouse and keyboard
+ * waits its turn; the rest starts now, alongside it:
+ * - stop / redirect: about the running task
+ * - background: needs no screen (a look-up, a question of fact, a draft): a background agent
+ * - look: a question about what's on screen: answered by looking, without taking the mouse
+ * - queue: another job on the screen: next, since there's one mouse
+ */
+export function whileBusy(text: string): "stop" | "redirect" | "background" | "look" | "queue" {
+  const how = interjection(text);
+  if (how !== "queue") return how;
+  const kind = helpKind(text);
+  if (kind === "background") return "background";
+  if (kind === "show") return ON_SCREEN.test(text) ? "look" : "background";
+  return "queue";
+}
+
 /** Long, many-part or multi-app asks: the kind that earns a light joke. */
 export function isBigAsk(text: string): boolean {
   const q = text.trim();
@@ -88,11 +109,12 @@ const BIG_ACKS = [
   "Challenge accepted. Here we go.",
 ];
 
+// Only screen jobs queue, so say why: there's one mouse.
 const QUEUED = [
-  "Got it, that's next.",
-  "Noted. I'll do that right after this.",
+  "Got it, that's next. I've only got the one mouse.",
+  "Noted. I'll do that right after this one.",
   "Sure, I'll get to that as soon as this is done.",
-  "Added to my list.",
+  "Added. It needs the screen too, so it's up next.",
 ];
 
 const REDIRECTED = ["Okay, changing course.", "Got it, adjusting.", "Sure, switching to that."];
