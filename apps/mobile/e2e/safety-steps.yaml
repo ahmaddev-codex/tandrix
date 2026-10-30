@@ -25,6 +25,7 @@ appId: app.tandrix.mobile
       id: start-step
     direction: DOWN
     timeout: 20000
+    centerElement: true
 - tapOn:
     id: start-step
 - extendedWaitUntil:
@@ -35,6 +36,7 @@ appId: app.tandrix.mobile
       id: mark-done
     direction: DOWN
     timeout: 20000
+    centerElement: true
 - tapOn:
     id: mark-done
 - extendedWaitUntil:
@@ -44,7 +46,6 @@ appId: app.tandrix.mobile
     id: reopen-step
 - takeScreenshot: step-done
 # Step 3: a torque value outside the range is refused.
-# iOS has no system back: tap the header's back button, labelled with the project title.
 - runFlow: subflows/back-to-job.yaml
 - runFlow:
     file: subflows/open-step.yaml
@@ -55,6 +56,7 @@ appId: app.tandrix.mobile
       id: start-step
     direction: DOWN
     timeout: 20000
+    centerElement: true
 - tapOn:
     id: start-step
 - scrollUntilVisible:
@@ -62,6 +64,7 @@ appId: app.tandrix.mobile
       id: measured-value
     direction: DOWN
     timeout: 20000
+    centerElement: true
 - tapOn:
     id: measured-value
 - inputText: "2"

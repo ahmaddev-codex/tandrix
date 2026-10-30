@@ -203,8 +203,6 @@ export default function Pair() {
               height: 270,
               borderRadius: 20,
               backgroundColor: t.color["gray-100"],
-              borderWidth: 1,
-              borderColor: t.color.border,
               overflow: "hidden",
               alignItems: "center",
               justifyContent: "center",
@@ -296,8 +294,6 @@ export default function Pair() {
               padding: space["space-5"],
               borderRadius: 20,
               backgroundColor: t.color["background-100"],
-              borderWidth: 1,
-              borderColor: t.color.border,
             }}
           >
             <View

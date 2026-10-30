@@ -1,14 +1,18 @@
 # Opens the project JOB_ID (made by `pnpm --filter @tandrix/api e2e:seed`, see run.sh) straight
-# from a link, as a notification or the Mac would.
+# from a link, as a notification or the Mac would. A link that lands while the app is still
+# reloading can be dropped, so it's sent again if the project doesn't show.
 appId: app.tandrix.mobile
 ---
-- openLink: tandrix://job/${JOB_ID}
-# iOS asks before a link opens the app ("Open in Tandrix?").
-- runFlow:
-    when:
-      visible: Open
+- retry:
+    maxRetries: 1
     commands:
-      - tapOn: Open
-- extendedWaitUntil:
-    visible: "${JOB_TITLE}"
-    timeout: 20000
+      - openLink: tandrix://job/${JOB_ID}
+      # iOS asks before a link opens the app ("Open in Tandrix?").
+      - runFlow:
+          when:
+            visible: Open
+          commands:
+            - tapOn: Open
+      - extendedWaitUntil:
+          visible: "${JOB_TITLE}"
+          timeout: 20000

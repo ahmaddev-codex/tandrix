@@ -46,10 +46,9 @@ export function IntakeRow({
       style={{
         gap: space["space-2"],
         padding: space["space-3"],
-        borderRadius: radius["radius-lg"],
+        // A white row on the grey page, like the website's trays: rounded, no outline.
+        borderRadius: 18,
         backgroundColor: t.color["background-100"],
-        borderWidth: 1,
-        borderColor: t.color.border,
       }}
     >
       <View style={{ flexDirection: "row", gap: space["space-2"], alignItems: "flex-start" }}>

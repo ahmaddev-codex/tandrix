@@ -1,5 +1,4 @@
-# Back from a step to the project, with the header's back button (labelled with the project
-# title; iOS has no system back). A tap during the screen's transition can be lost, so it's
+# Back from a step to the project, with the header's Back pill. A tap during the screen's transition can be lost, so it's
 # retried until the step list shows.
 appId: app.tandrix.mobile
 ---
@@ -11,7 +10,8 @@ appId: app.tandrix.mobile
             notVisible:
               id: step-list
           commands:
-            - tapOn: ${JOB_TITLE}
+            - tapOn:
+                id: header-back
       - extendedWaitUntil:
           visible:
             id: step-list

@@ -1,7 +1,8 @@
 import type { Job } from "@tandrix/contracts";
-import { formatDateTime, radius, space } from "@tandrix/ui";
+import { formatDateTime, space } from "@tandrix/ui";
 import { Icon, Text, useTheme } from "@tandrix/ui/native";
 import { Pressable, View } from "react-native";
+import { IconSquare, Row } from "@/components/kit";
 import type { HomeAction } from "@/lib/home";
 
 const statusLabel: Record<Job["status"], string> = {
@@ -41,7 +42,7 @@ export function OverviewTile({
         minHeight: 142,
         justifyContent: "space-between",
         padding: space["space-4"],
-        borderRadius: radius["radius-lg"] * 1.5,
+        borderRadius: 24,
         backgroundColor,
         borderWidth: !lightTile && t.name === "dark" ? 1 : 0,
         borderColor: t.color["gray-600"],
@@ -55,7 +56,11 @@ export function OverviewTile({
         <Icon name={icon} color={primaryInk} size={20} />
       </View>
       <View style={{ gap: space["space-1"] }}>
-        <Text variant="heading-24" color={primaryInk}>
+        <Text
+          variant="heading-32"
+          color={primaryInk}
+          style={{ fontSize: 40, lineHeight: 44, letterSpacing: -1.8 }}
+        >
           {value}
         </Text>
         <Text variant="copy-12" color={secondaryInk} numberOfLines={2}>
@@ -76,54 +81,17 @@ export function HomeActionRow({
   separator?: boolean;
   featured?: boolean;
 }) {
-  const t = useTheme();
   const stepTitle = action.title.replace(/^(Start|Continue|Review|Resolve):\s*/, "");
   return (
-    <Pressable
+    <Row
+      title={stepTitle}
+      detail={`${action.job.title}${action.stepNumber && action.stepCount ? `  ·  Step ${action.stepNumber} of ${action.stepCount}` : ""}`}
+      leading={
+        <IconSquare name={featured ? "actions" : "progress"} tone={featured ? "blue" : "quiet"} />
+      }
       onPress={onPress}
-      accessibilityRole="button"
       accessibilityLabel={`${action.title} for ${action.job.title}${action.stepNumber && action.stepCount ? `, step ${action.stepNumber} of ${action.stepCount}` : ""}`}
-      accessibilityHint="Opens this action"
-      style={({ pressed }) => ({
-        minHeight: 76,
-        flexDirection: "row",
-        alignItems: "center",
-        gap: space["space-3"],
-        padding: space["space-3"],
-        borderRadius: radius["radius-lg"],
-        backgroundColor: pressed ? t.color["gray-200"] : t.color["background-100"],
-        borderWidth: 1,
-        borderColor: t.color["gray-300"],
-      })}
-    >
-      <View
-        style={{
-          width: 36,
-          height: 36,
-          alignItems: "center",
-          justifyContent: "center",
-          borderRadius: radius["radius-full"],
-          backgroundColor: featured ? t.color["surface-paper"] : t.color["gray-300"],
-        }}
-      >
-        <Icon
-          name={featured ? "actions" : "progress"}
-          color={featured ? "ink-on-paper" : "text-secondary"}
-          size={20}
-        />
-      </View>
-      <View style={{ flex: 1, gap: space["space-1"] }}>
-        <Text variant="label-14" numberOfLines={1}>
-          {stepTitle}
-        </Text>
-        <Text variant="copy-12" color="text-secondary" numberOfLines={1}>
-          {action.job.title}
-          {action.stepNumber && action.stepCount
-            ? `  ·  Step ${action.stepNumber} of ${action.stepCount}`
-            : ""}
-        </Text>
-      </View>
-    </Pressable>
+    />
   );
 }
 
@@ -135,47 +103,17 @@ export function ProjectRow({
   onPress: () => void;
   separator?: boolean;
 }) {
-  const t = useTheme();
   const statusIcon =
     job.status === "completed" ? "check" : job.status === "stopped" ? "stop" : "progress";
   return (
-    <Pressable
+    <Row
+      title={job.title}
+      detail={`${statusLabel[job.status]} · Updated ${formatDateTime(job.updatedAt)}`}
+      leading={
+        <IconSquare name={statusIcon} tone={job.status === "completed" ? "blue" : "quiet"} />
+      }
       onPress={onPress}
-      accessibilityRole="button"
       accessibilityLabel={`${job.title}, ${statusLabel[job.status]}`}
-      accessibilityHint="Opens this project"
-      style={({ pressed }) => ({
-        minHeight: 76,
-        flexDirection: "row",
-        alignItems: "center",
-        gap: space["space-3"],
-        padding: space["space-3"],
-        borderRadius: radius["radius-lg"],
-        backgroundColor: pressed ? t.color["gray-200"] : t.color["background-100"],
-        borderWidth: 1,
-        borderColor: t.color["gray-300"],
-      })}
-    >
-      <View
-        style={{
-          width: 36,
-          height: 36,
-          alignItems: "center",
-          justifyContent: "center",
-          borderRadius: radius["radius-full"],
-          backgroundColor: t.color["gray-300"],
-        }}
-      >
-        <Icon name={statusIcon} color="text-secondary" size={20} />
-      </View>
-      <View style={{ flex: 1, gap: space["space-1"] }}>
-        <Text variant="label-14" numberOfLines={2}>
-          {job.title}
-        </Text>
-        <Text variant="copy-12" color="text-secondary">
-          {statusLabel[job.status]} · Updated {formatDateTime(job.updatedAt)}
-        </Text>
-      </View>
-    </Pressable>
+    />
   );
 }

@@ -1,13 +1,12 @@
-import { space } from "@tandrix/ui";
-import { Button, Input, Notice, Text } from "@tandrix/ui/native";
-import { Link, Stack } from "expo-router";
-import { useEffect, useState } from "react";
-import { ScrollView, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { radius, space } from "@tandrix/ui";
+import { Button, Input, Notice, Text, useTheme } from "@tandrix/ui/native";
+import { router, Stack } from "expo-router";
+import { useEffect, useState, type ReactNode } from "react";
+import { Pressable, View } from "react-native";
+import { Page, PageTitle, Row, Tray } from "@/components/kit";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { usePreferences, type ThemePreference } from "@/lib/preferences";
-import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 
 const themes: Array<{ value: ThemePreference; label: string }> = [
   { value: "system", label: "System" },
@@ -17,6 +16,7 @@ const themes: Array<{ value: ThemePreference; label: string }> = [
 ];
 
 export default function Settings() {
+  const t = useTheme();
   const { session, signOut } = useAuth();
   const { theme, setTheme } = usePreferences();
   const [error, setError] = useState<string>();
@@ -58,24 +58,27 @@ export default function Settings() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1 }} edges={["top", "bottom"]}>
+    <Page tabs>
       <Stack.Screen options={{ headerShown: false }} />
-      <ScrollView contentContainerStyle={{ padding: space["space-4"], gap: space["space-6"] }}>
-        <Text variant="heading-24">Settings</Text>
-        {error ? <Notice tone="error">{error}</Notice> : null}
-        <View style={{ gap: space["space-2"] }}>
-          <Text variant="heading-18">Account</Text>
-          <Text variant="copy-14" color="text-secondary">
-            {session?.user.email ?? "Signed in"}
-          </Text>
-          <Button variant="danger" block onPress={signOut} testID="settings-sign-out">
-            Sign out
-          </Button>
-        </View>
+      <PageTitle title="Settings" lead="These apply to this phone." />
+      {error ? <Notice tone="error">{error}</Notice> : null}
 
-        <View style={{ gap: space["space-2"] }}>
-          <Text variant="heading-18">What Tandrix calls you</Text>
-          <Text variant="copy-14" color="text-secondary">
+      <Group title="Account">
+        <Row
+          icon="user"
+          title="Signed in"
+          detail={session?.user.email ?? undefined}
+          trailing={
+            <Button variant="danger" size="md" onPress={signOut} testID="settings-sign-out">
+              Sign out
+            </Button>
+          }
+        />
+      </Group>
+
+      <Group title="What Tandrix calls you">
+        <View style={[card(t), { gap: space["space-3"] }]}>
+          <Text variant="copy-13" color="text-secondary">
             First name is fine. Tandrix uses it rarely, so it feels personal.
           </Text>
           {nameLoaded ? (
@@ -99,50 +102,80 @@ export default function Settings() {
             </>
           ) : null}
         </View>
+      </Group>
 
-        <View style={{ gap: space["space-2"] }}>
-          <Text variant="heading-18">Your devices</Text>
-          <Text variant="copy-14" color="text-secondary">
-            Sign in your Mac to pick up a project there.
-          </Text>
-          <Link href="/pair" asChild>
-            <Button variant="secondary" block icon="laptop" testID="settings-pair-mac">
-              Sign in a Mac
-            </Button>
-          </Link>
-        </View>
+      <Group title="Your devices">
+        <Row
+          icon="laptop"
+          title="Sign in a Mac"
+          detail="Pick up a project there, and ask Tandrix about your screen."
+          onPress={() => router.push("/pair")}
+          testID="settings-pair-mac"
+        />
+      </Group>
 
-        <View style={{ gap: space["space-2"] }}>
-          <Text variant="heading-18">Appearance</Text>
-          <Text variant="copy-14" color="text-secondary">
-            Choose how Tandrix looks on this phone.
-          </Text>
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space["space-2"] }}>
-            {themes.map((option) => (
-              <Button
-                key={option.value}
-                variant={theme === option.value ? "primary" : "secondary"}
-                size="md"
-                accessibilityRole="radio"
-                accessibilityState={{ checked: theme === option.value }}
-                onPress={() => void chooseTheme(option.value)}
-              >
-                {option.label}
-              </Button>
-            ))}
+      <Group title="Appearance">
+        <View style={[card(t), { gap: space["space-3"] }]}>
+          <View
+            accessibilityRole="radiogroup"
+            style={{
+              flexDirection: "row",
+              padding: 4,
+              borderRadius: radius["radius-full"],
+              backgroundColor: t.color["background-200"],
+            }}
+          >
+            {themes.map((option) => {
+              const on = theme === option.value;
+              return (
+                <Pressable
+                  key={option.value}
+                  accessibilityRole="radio"
+                  accessibilityState={{ checked: on }}
+                  accessibilityLabel={option.label}
+                  onPress={() => void chooseTheme(option.value)}
+                  style={{
+                    flex: 1,
+                    minHeight: 40,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    borderRadius: radius["radius-full"],
+                    backgroundColor: on ? t.color["surface-ink"] : "transparent",
+                  }}
+                >
+                  <Text variant="label-13" color={on ? "ink-on-surface" : "text-secondary"}>
+                    {option.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
           </View>
-          {theme === "sunlight" ? (
-            <Text variant="copy-13" color="text-secondary">
-              Sunlight mode uses stronger contrast outdoors.
-            </Text>
-          ) : null}
+          <Text variant="copy-13" color="text-secondary">
+            {theme === "sunlight"
+              ? "Sunlight mode uses stronger contrast outdoors."
+              : "System follows your phone; Sunlight is for bright light outdoors."}
+          </Text>
         </View>
-
-        <Text variant="copy-13" color="text-tertiary">
-          Tandrix settings apply to this phone.
-        </Text>
-      </ScrollView>
-      <MobileBottomNav />
-    </SafeAreaView>
+      </Group>
+    </Page>
   );
 }
+
+/** A titled tray of settings. */
+function Group({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <View style={{ gap: space["space-2"] }}>
+      <Text variant="label-13" color="text-secondary" style={{ paddingHorizontal: space["space-1"] }}>
+        {title}
+      </Text>
+      <Tray>{children}</Tray>
+    </View>
+  );
+}
+
+/** A white card inside a tray, for settings that need more than a row. */
+const card = (t: ReturnType<typeof useTheme>) => ({
+  padding: 14,
+  borderRadius: 18,
+  backgroundColor: t.color["background-100"],
+});
