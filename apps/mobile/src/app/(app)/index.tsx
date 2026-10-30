@@ -101,26 +101,6 @@ export default function Jobs() {
           </View>
 
           <View style={{ gap: space["space-3"], alignItems: "flex-start" }}>
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                gap: space["space-2"],
-                paddingVertical: 6,
-                paddingHorizontal: 12,
-                borderRadius: radius["radius-full"],
-                backgroundColor: t.color["surface-ink"],
-                borderWidth: 1.5,
-                borderColor: t.color.highlight,
-              }}
-            >
-              <View
-                style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: t.color.highlight }}
-              />
-              <Text variant="label-12" color="ink-on-surface">
-                Tandrix is ready
-              </Text>
-            </View>
             <Text variant="heading-32" color="on-blue">
               Pick up where you left off.
             </Text>
