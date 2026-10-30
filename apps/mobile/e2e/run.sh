@@ -47,6 +47,9 @@ flow() {
     -e RUN_ID="$RUN_ID" -e JOB_ID="$job_id" -e JOB_TITLE="$title" "$file"
 }
 
+# Earlier runs' projects go first, so the lists the flows scroll stay short.
+(cd ../../api && pnpm -s e2e:clean)
+
 flow sign-in-create-job.yaml -
 # These deny the camera at launch (launchApp permissions) to drive the photo picker.
 flow photo-evidence.yaml empty "$PHOTOS/board-top.jpg"
