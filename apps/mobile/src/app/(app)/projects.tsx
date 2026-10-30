@@ -1,31 +1,19 @@
-import type { Job } from "@tandrix/contracts";
 import { space } from "@tandrix/ui";
 import { Notice, ProgressState } from "@tandrix/ui/native";
-import { router, Stack, useFocusEffect } from "expo-router";
-import { useCallback, useState } from "react";
+import { router, Stack } from "expo-router";
+import { useState } from "react";
 import { View } from "react-native";
 import { Page, PageTitle, Pill, Tray } from "@/components/kit";
 import { PaginationControls } from "@/components/pagination-controls";
 import { ProjectRow } from "@/components/home-rows";
-import { api } from "@/lib/api";
+import { useJobs } from "@/lib/jobs-store";
 
 const PAGE_SIZE = 20;
 
 export default function Projects() {
-  const [jobs, setJobs] = useState<Job[]>();
+  const { jobs, error, refresh: load } = useJobs();
   const [page, setPage] = useState(0);
-  const [error, setError] = useState<string>();
   const [refreshing, setRefreshing] = useState(false);
-
-  const load = useCallback(async () => {
-    try {
-      setJobs(await api.listAllJobs());
-      setError(undefined);
-    } catch (e) {
-      setError((e as Error).message);
-    }
-  }, []);
-  useFocusEffect(useCallback(() => void load(), [load]));
 
   const all = jobs ?? [];
   const pageCount = Math.max(1, Math.ceil(all.length / PAGE_SIZE));
@@ -42,7 +30,11 @@ export default function Projects() {
       }}
     >
       <Stack.Screen options={{ headerShown: false }} />
-      <PageTitle title="Projects" soft="in one place." lead="Your plans and how far each one has got." />
+      <PageTitle
+        title="Projects"
+        soft="in one place."
+        lead="Your plans and how far each one has got."
+      />
       {jobs === undefined && !error ? (
         <ProgressState label="Loading your projects" />
       ) : error ? (

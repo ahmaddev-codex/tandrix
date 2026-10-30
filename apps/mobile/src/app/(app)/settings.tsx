@@ -165,7 +165,11 @@ export default function Settings() {
 function Group({ title, children }: { title: string; children: ReactNode }) {
   return (
     <View style={{ gap: space["space-2"] }}>
-      <Text variant="label-13" color="text-secondary" style={{ paddingHorizontal: space["space-1"] }}>
+      <Text
+        variant="label-13"
+        color="text-secondary"
+        style={{ paddingHorizontal: space["space-1"] }}
+      >
         {title}
       </Text>
       <Tray>{children}</Tray>

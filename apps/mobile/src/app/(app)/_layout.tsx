@@ -23,7 +23,9 @@ export default function AppLayout() {
           headerLeft: ({ canGoBack }) => (canGoBack ? <BackPill /> : null),
           // iOS 26 wraps header items in its own glass; the grey pill is the button on its own.
           unstable_headerLeftItems: ({ canGoBack }) =>
-            canGoBack ? [{ type: "custom", element: <BackPill />, hidesSharedBackground: true }] : [],
+            canGoBack
+              ? [{ type: "custom", element: <BackPill />, hidesSharedBackground: true }]
+              : [],
           contentStyle: { backgroundColor: t.color["background-200"] },
         }}
       >

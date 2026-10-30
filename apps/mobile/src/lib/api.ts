@@ -59,6 +59,9 @@ const REQUEST_TIMEOUT_MS = 30_000;
 /** Calls that wait on a model (reading a manual, checking a photo) get longer. */
 const MODEL_TIMEOUT_MS = 120_000;
 
+/** Told of each write that went through, with the project it touched, so held lists can catch up. */
+export const writes = new Set<(jobId: string | undefined) => void>();
+
 /** Concurrent requests share one session read instead of each queuing on storage. */
 let sessionFlight: Promise<string | null> | null = null;
 function accessToken(): Promise<string | null> {
@@ -116,6 +119,8 @@ async function request<T>(
       e.success ? e.data.error.message : "Something went wrong. Try again.",
     );
   }
+  if (init.method && init.method !== "GET")
+    for (const w of writes) w(/^\/jobs\/([^/?]+)/.exec(path)?.[1]);
   return schema.parse(body);
 }
 

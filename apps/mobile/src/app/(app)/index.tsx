@@ -1,40 +1,24 @@
-import type { Job } from "@tandrix/contracts";
 import { space } from "@tandrix/ui";
 import { BrandMark, Button, Notice, ProgressState, Text, useTheme } from "@tandrix/ui/native";
-import { router, Stack, useFocusEffect } from "expo-router";
-import { useCallback, useState } from "react";
+import { router, Stack } from "expo-router";
+import { useState } from "react";
 import { ImageBackground, View } from "react-native";
 import { Page, Pill, Row, SectionTitle, Tray } from "@/components/kit";
 import { HomeActionRow, OverviewTile, ProjectRow } from "@/components/home-rows";
-import { api } from "@/lib/api";
+
 import sky from "../../../assets/sky.jpg";
-import { loadHomeActions, type HomeAction } from "@/lib/home";
+import type { HomeAction } from "@/lib/home";
+import { useJobs } from "@/lib/jobs-store";
 
 const MAX_VISIBLE = 3;
 
 export default function Jobs() {
   const t = useTheme();
-  const [jobs, setJobs] = useState<Job[]>();
-  const [actions, setActions] = useState<HomeAction[]>([]);
-  const [actionsLoading, setActionsLoading] = useState(false);
-  const [error, setError] = useState<string>();
+  const { jobs, actions: held, error, refresh: load } = useJobs();
   const [refreshing, setRefreshing] = useState(false);
-
-  const load = useCallback(async () => {
-    try {
-      const allJobs = await api.listAllJobs();
-      setJobs(allJobs);
-      setActionsLoading(allJobs.some((job) => job.status === "active"));
-      setActions(await loadHomeActions(allJobs));
-      setError(undefined);
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setActionsLoading(false);
-    }
-  }, []);
-
-  useFocusEffect(useCallback(() => void load(), [load]));
+  // Held actions stay on screen while changed projects are looked at again.
+  const actionsLoading = jobs !== undefined && held === undefined;
+  const actions = held ?? [];
 
   const openAction = (action: HomeAction) => {
     router.push(
@@ -96,7 +80,9 @@ export default function Jobs() {
       <View style={{ flexDirection: "row", gap: space["space-3"] }}>
         <OverviewTile
           title="Next actions"
-          value={jobs === undefined || actionsLoading ? "—" : String(actions.length).padStart(2, "0")}
+          value={
+            jobs === undefined || actionsLoading ? "—" : String(actions.length).padStart(2, "0")
+          }
           detail={
             actions.length
               ? "Ready across your projects"
