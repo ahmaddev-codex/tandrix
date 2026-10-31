@@ -18,3 +18,17 @@ apps/api/.meta-spend.json
 # e2e photos staged per flow by apps/mobile/e2e/run.sh
 apps/mobile/e2e/.media/
 design/media/
+
+# Kept on this machine, not in the repository
+docs/
+tasks/
+
+# Tooling and deploy state
+.pnpm-store/
+.vercel/
+apps/film/out/
+
+# Signing credentials
+*.p12
+*.mobileprovision
+*.pem
