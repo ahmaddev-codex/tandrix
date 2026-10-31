@@ -11,14 +11,7 @@ import type {
   ProcedureStep,
   StepVisual as StepVisualData,
 } from "@tandrix/contracts";
-import {
-  citationSource,
-  space,
-  stepChip,
-  visualAspect,
-  visualLabels,
-  formatTime,
-} from "@tandrix/ui";
+import { stepSource, space, stepChip, visualAspect, visualLabels, formatTime } from "@tandrix/ui";
 import {
   Button,
   CaptureView,
@@ -398,7 +391,7 @@ export default function StepScreen() {
 
   const { step, jobStep, parts } = data;
   const chip = stepChip[jobStep.status];
-  const cite = citationSource(step.citation);
+  const cite = stepSource(step);
   const usable = permission?.granted && !cameraFailed;
   const canAskCamera = permission?.canAskAgain !== false && !cameraFailed;
   // Names as written: many are proper nouns ("Raspberry Pi 5").

@@ -36,6 +36,22 @@ export function citationSource(c: Citation): { source: string; sourceKind: Sourc
   return null;
 }
 
+/**
+ * A step's source chip, whatever it is: its citation, or for an uncited step done in software, that
+ * it's checked on screen (no manufacturer to speak of). Null: the Generic label applies.
+ */
+export function stepSource(step: {
+  citation: Citation;
+  surface: string;
+}): { source: string; sourceKind: SourceKind } | null {
+  return (
+    citationSource(step.citation) ??
+    (step.surface === "desktop"
+      ? { source: "General steps, checked on screen", sourceKind: "screen" }
+      : null)
+  );
+}
+
 /** How a step visual is named on screen: its tab, its SourceChip, and its screen-reader text. */
 export function visualLabels(v: StepVisual): {
   label: string;

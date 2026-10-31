@@ -1,5 +1,5 @@
 import { space } from "@tandrix/ui";
-import { Notice, ProgressState } from "@tandrix/ui/native";
+import { Button, Notice, ProgressState } from "@tandrix/ui/native";
 import { router, Stack } from "expo-router";
 import { useState } from "react";
 import { View } from "react-native";
@@ -47,10 +47,33 @@ export default function Actions() {
         soft="up next."
         lead="The next useful step in each of your projects."
       />
-      {jobs === undefined && !error ? (
+      {error && jobs !== undefined ? (
+        // Couldn't refresh: what's held stays on screen.
+        <Notice
+          tone="attention"
+          testID="refresh-failed"
+          action={
+            <Button variant="secondary" size="lg" onPress={load}>
+              Try again
+            </Button>
+          }
+        >
+          {error}
+        </Notice>
+      ) : null}
+      {(jobs === undefined || held === undefined) && !error ? (
         <ProgressState label="Finding your next steps" />
-      ) : error ? (
-        <Notice tone="error">{error}</Notice>
+      ) : error && jobs === undefined ? (
+        <Notice
+          tone="error"
+          action={
+            <Button variant="secondary" size="lg" onPress={load}>
+              Try again
+            </Button>
+          }
+        >
+          {error}
+        </Notice>
       ) : current.length ? (
         <View style={{ gap: space["space-3"] }}>
           <Tray>
@@ -65,9 +88,9 @@ export default function Actions() {
           </Tray>
           <PaginationControls page={page} pageCount={pageCount} onChange={setPage} />
         </View>
-      ) : (
+      ) : held ? (
         <Notice icon="sealCheck">No open actions. You’re all caught up.</Notice>
-      )}
+      ) : null}
       {actions.length === 0 && jobs?.length === 0 ? (
         <Pill block icon="plus" onPress={() => router.push("/new-job")}>
           Start a project

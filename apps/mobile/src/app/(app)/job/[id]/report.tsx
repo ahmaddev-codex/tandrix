@@ -1,5 +1,5 @@
 import type { JobReportResponse, ShareLink } from "@tandrix/contracts";
-import { citationSource, formatDateTime, space, stepChip } from "@tandrix/ui";
+import { stepSource, formatDateTime, space, stepChip } from "@tandrix/ui";
 import { Button, Notice, StepRow, SummaryCard, Text, useTheme } from "@tandrix/ui/native";
 import { Stack, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useState } from "react";
@@ -114,7 +114,7 @@ export default function ReportScreen() {
             </Text>
             {report.steps.map((step) => {
               const chip = stepChip[step.status];
-              const cite = citationSource(step.citation);
+              const cite = stepSource(step);
               return (
                 <StepRow
                   key={`${step.index}-${step.title}`}

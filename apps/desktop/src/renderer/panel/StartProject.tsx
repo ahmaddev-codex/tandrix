@@ -16,6 +16,7 @@ export function StartProject({ onCreated }: { onCreated: () => void }) {
   const [phrase, setPhrase] = useState("Planning the steps");
   const [problem, setProblem] = useState<string>();
   const recent = useRef<string[]>([]);
+  const project = useRef<string | null>(null);
 
   useEffect(() => {
     if (!busy) return;
@@ -34,13 +35,15 @@ export function StartProject({ onCreated }: { onCreated: () => void }) {
     setProblem(undefined);
     setBusy(true);
     try {
-      const job = await api.createJob(task.slice(0, 160));
-      const r = await api.generateProcedure(job.id, {
+      // A retry writes the same project's steps rather than making another.
+      project.current ??= (await api.createJob(task.slice(0, 160))).id;
+      const r = await api.generateProcedure(project.current, {
         task: task.slice(0, 300),
         allowGeneric: true,
         notes: ON_THIS_MAC,
       });
       if (r.status !== "created") return setProblem(r.message);
+      project.current = null;
       setGoal("");
       onCreated();
     } catch (err) {

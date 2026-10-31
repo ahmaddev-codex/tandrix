@@ -1,7 +1,7 @@
 // The step the Mac works on: start it, check the screen when it's done, or confirm what the
 // screen can't show.
 import type { Check, StepActionRequest, StepVisual as Visual } from "@tandrix/contracts";
-import { citationLabel, stepChip, visualAspect, visualLabels, formatTime } from "@tandrix/ui";
+import { stepSource, stepChip, visualAspect, visualLabels, formatTime } from "@tandrix/ui";
 import { Button, CheckResult, Icon, Notice, StepCard, StepVisual } from "@tandrix/ui/web";
 import { useEffect, useState, type ReactNode } from "react";
 import { api } from "../lib/api";
@@ -89,7 +89,7 @@ export function DesktopStep({
 
   const status = jobStep.status;
   const chip = stepChip[status];
-  const cite = citationLabel(step.citation);
+  const cite = stepSource(step);
   const working = status === "in_progress" || status === "needs_attention";
   const unverifiable = ownResult?.check.result === "not_verifiable" && working;
 
@@ -136,7 +136,7 @@ export function DesktopStep({
           : chip.label
             ? { statusLabel: chip.label }
             : {})}
-        {...(cite ? { source: cite } : {})}
+        {...(cite ?? {})}
         {...(visuals.length
           ? {
               visual: (

@@ -7,7 +7,7 @@ import type {
   PartsCheck,
   ProcedureDetail,
 } from "@tandrix/contracts";
-import { citationSource, radius, space, stepChip, formatDateTime } from "@tandrix/ui";
+import { stepSource, radius, space, stepChip, formatDateTime } from "@tandrix/ui";
 import {
   ActionCard,
   Button,
@@ -343,7 +343,7 @@ export default function JobScreen() {
                 {procedure.steps.map((step) => {
                   const js = jobSteps.find((s) => s.procedureStepId === step.id);
                   const chip = stepChip[js?.status ?? "todo"];
-                  const cite = citationSource(step.citation);
+                  const cite = stepSource(step);
                   return (
                     <StepRow
                       key={step.id}

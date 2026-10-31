@@ -1,5 +1,5 @@
 import type { JobDetailResponse } from "@tandrix/contracts";
-import { citationLabel, stepChip } from "@tandrix/ui";
+import { stepSource, stepChip } from "@tandrix/ui";
 import { BrandMark, Button, HandoffBanner, Icon, Input, Notice, StepRow } from "@tandrix/ui/web";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { TALK_KEYS, type ScreenAccess } from "../../shared/bridge";
@@ -59,12 +59,51 @@ function ScreenAccessNotice() {
   );
 }
 
-function JobSteps({ detail, children }: { detail: JobDetailResponse; children?: ReactNode }) {
+/** A project with no steps yet: writes them, or finds the run already writing them. */
+function WriteSteps({ jobId, onWritten }: { jobId: string; onWritten: () => void }) {
+  const [busy, setBusy] = useState(false);
+  const [problem, setProblem] = useState<string>();
+  const write = async () => {
+    setBusy(true);
+    setProblem(undefined);
+    try {
+      const r = await api.generateProcedure(jobId, { allowGeneric: true });
+      if (r.status === "created") onWritten();
+      else setProblem(r.message);
+    } catch (e) {
+      setProblem((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <Notice
+      {...(problem ? { tone: "error" as const } : {})}
+      action={
+        <Button variant="secondary" disabled={busy} onClick={() => void write()}>
+          {busy ? "Writing the steps" : "Write the steps"}
+        </Button>
+      }
+    >
+      {problem ?? "This project has no steps yet."}
+    </Notice>
+  );
+}
+
+function JobSteps({
+  detail,
+  onChanged,
+  children,
+}: {
+  detail: JobDetailResponse;
+  onChanged: () => void;
+  children?: ReactNode;
+}) {
   const { job, asset, procedure, steps } = detail;
   return (
     <section className="panel-stack-6" aria-labelledby="job-title">
       <header className="panel-stack-1">
-        <p className="label-12 panel-muted">From your phone</p>
+        <p className="label-12 panel-muted">Your project</p>
         <h2 className="heading-16" id="job-title">
           {job.title}
         </h2>
@@ -84,7 +123,7 @@ function JobSteps({ detail, children }: { detail: JobDetailResponse; children?: 
             {procedure.steps.map((step) => {
               const js = steps.find((s) => s.procedureStepId === step.id);
               const chip = stepChip[js?.status ?? "todo"];
-              const cite = citationLabel(step.citation);
+              const cite = stepSource(step);
               const label = js?.status === "blocked" && js.note ? js.note : chip.label;
               return (
                 <li key={step.id}>
@@ -93,7 +132,7 @@ function JobSteps({ detail, children }: { detail: JobDetailResponse; children?: 
                     title={step.title}
                     status={chip.status}
                     {...(label ? { statusLabel: label } : {})}
-                    {...(cite ? { source: cite } : {})}
+                    {...(cite ?? {})}
                   />
                 </li>
               );
@@ -101,7 +140,7 @@ function JobSteps({ detail, children }: { detail: JobDetailResponse; children?: 
           </ol>
         </div>
       ) : (
-        <Notice>This job has no steps yet. Write them on your phone and they show up here.</Notice>
+        <WriteSteps jobId={job.id} onWritten={onChanged} />
       )}
     </section>
   );
@@ -313,8 +352,8 @@ export function Home() {
             </Notice>
           ) : null}
           {onMac ? (
-            // A project from the phone, continued here: its step, then asking, then its steps.
-            <JobSteps detail={onMac}>
+            // A project on this Mac: its step, then asking, then its steps.
+            <JobSteps detail={onMac} onChanged={load}>
               <CurrentDesktopStep key={onMac.job.id} detail={onMac} onChanged={load} />
               <ShowMe s={showMe} />
             </JobSteps>
