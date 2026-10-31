@@ -3,6 +3,7 @@
 import {
   fileRef,
   generateProcedure,
+  stepsFromRecording,
   imageData,
   INLINE_FILE_MAX_BYTES,
   MetaApiError,
@@ -25,9 +26,21 @@ export interface GenerateInput {
 export type GenerateResult =
   { status: "drafted"; draft: ProcedureDraft } | { status: "unavailable"; message: string };
 
+export interface RecordingInput {
+  asset: { make: string; model: string } | null;
+  task: string;
+  /** In order: what was said over each photo, and when. */
+  moments: Array<{ atSec: number; said: string; photo: { bytes: Uint8Array; mimeType: string } }>;
+}
+
 export interface ProcedureGenerator {
   generate(input: GenerateInput): Promise<GenerateResult>;
+  /** Record mode: the steps from someone doing the job and saying what they do. */
+  fromRecording?(input: RecordingInput): Promise<GenerateResult>;
 }
+
+export const RECORDING_INVALID =
+  "Tandrix couldn't turn this recording into steps. Try again, or add a moment for each thing you did.";
 
 export const GENERATE_UNAVAILABLE =
   "Tandrix can't write the steps right now. Try again in a minute.";
@@ -97,6 +110,50 @@ export function metaProcedureGenerator(
               log({ level: "warn", event: "manual_file_delete_failed", error: String(e) }),
             );
         }
+      }
+    },
+  };
+}
+
+/** Record mode with Spark: each moment's photo and words, in order. */
+export function withRecording(
+  config: MetaConfig,
+  log: (l: Record<string, unknown>) => void,
+  base: ProcedureGenerator,
+  client: MetaClient = new MetaClient({
+    apiKey: config.apiKey,
+    baseUrl: config.baseUrl,
+    timeoutMs: Math.max(config.timeoutMs, 180_000),
+    maxAttempts: 2,
+  }),
+): ProcedureGenerator {
+  return {
+    ...base,
+    async fromRecording({ asset, task, moments }) {
+      try {
+        const r = await stepsFromRecording(client, config.models, {
+          job: task,
+          ...(asset ? { asset } : {}),
+          moments: moments.map((m) => ({
+            atSec: m.atSec,
+            said: m.said,
+            photo: imageData(
+              m.photo.bytes,
+              m.photo.mimeType === "image/png" ? "image/png" : "image/jpeg",
+            ),
+          })),
+        });
+        if (!r.ok) {
+          log({ level: "warn", event: "recording_invalid_output", issues: r.issues.length });
+          return { status: "unavailable", message: RECORDING_INVALID };
+        }
+        return { status: "drafted", draft: r.data };
+      } catch (e) {
+        if (e instanceof MetaApiError) {
+          log({ level: "warn", event: "recording_model_error", status: e.status, code: e.code });
+          return { status: "unavailable", message: GENERATE_UNAVAILABLE };
+        }
+        throw e;
       }
     },
   };

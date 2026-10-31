@@ -724,3 +724,23 @@ export const LookResponse = z.discriminatedUnion("status", [
   z.strictObject({ status: z.literal("unavailable"), message: text(300) }),
 ]);
 export type LookResponse = z.infer<typeof LookResponse>;
+
+/**
+ * Record mode (T28): the steps from someone doing the job and saying what they do. Each moment is
+ * a photo of the work and what was said over it, at a time into the recording; the steps cite
+ * those times.
+ */
+export const RecordedMoment = z.strictObject({
+  evidenceId: Id,
+  said: text(600),
+  /** Seconds from the start of the recording. */
+  atSec: z.number().min(0).max(36_000),
+});
+export type RecordedMoment = z.infer<typeof RecordedMoment>;
+
+export const RecordedProcedureRequest = z.strictObject({
+  moments: z.array(RecordedMoment).min(2).max(30),
+  /** What the job is, if the user said; else the project's title. */
+  task: text(300).optional(),
+});
+export type RecordedProcedureRequest = z.infer<typeof RecordedProcedureRequest>;

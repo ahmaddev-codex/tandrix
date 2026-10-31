@@ -232,6 +232,7 @@ export function createApp(deps: AppDeps) {
       evidenceStorage: deps.storage,
       procedures: deps.procedures,
       generator: deps.procedureGenerator,
+      stepState: deps.stepState,
       log,
     }),
   );

@@ -83,6 +83,39 @@ export function generateProcedure(client: MetaClient, models: Models, req: Proce
   });
 }
 
+export interface RecordingRequest {
+  job: string;
+  asset?: { make: string; model: string };
+  /** In order: what was said over each photo, and when. */
+  moments: Array<{ atSec: number; said: string; photo: InputPart }>;
+  signal?: AbortSignal;
+}
+
+const clock = (sec: number) =>
+  `${Math.floor(sec / 60)}:${String(Math.round(sec % 60)).padStart(2, "0")}`;
+
+/** Record mode: the steps from someone doing the job and saying what they do. */
+export function stepsFromRecording(client: MetaClient, models: Models, req: RecordingRequest) {
+  const about = req.asset
+    ? `Equipment: ${req.asset.make} ${req.asset.model}\nJob: ${req.job}`
+    : `Job: ${req.job}`;
+  const moments = req.moments.flatMap((m, i): InputPart[] => [
+    text(
+      `Moment ${i + 1}, at ${clock(m.atSec)} (timestampSec ${Math.round(m.atSec)}). They said: "${m.said}"`,
+    ),
+    m.photo,
+  ]);
+  return generateStructured(client, {
+    model: models.reasoning,
+    name: "procedure_draft",
+    schema: ProcedureDraft,
+    instructions: prompts.procedureRecorded,
+    input: [user(text(`${about}\nThe recording has ${req.moments.length} moments:`), ...moments)],
+    effort: "low",
+    ...(req.signal ? { signal: req.signal } : {}),
+  });
+}
+
 export interface StepQuestion {
   step: {
     title: string;

@@ -6,11 +6,14 @@ import { hazardTagsForStep } from "./safety";
 export interface DraftContext {
   /** Pages in the manual the draft was made from; null when there was no manual (generic). */
   manualPages: number | null;
+  /** Seconds in the expert recording the draft was made from; absent when there was none. */
+  recordingSec?: number;
 }
 
 export type DraftFix =
   | { kind: "citation_out_of_range"; order: number; page: number }
   | { kind: "citation_without_manual"; order: number }
+  | { kind: "citation_outside_recording"; order: number; timestampSec: number }
   | { kind: "unknown_part_ref"; order: number; ref: string }
   | { kind: "measurement_missing"; order: number }
   | { kind: "hazards_added"; order: number; tags: string[] }
@@ -19,7 +22,7 @@ export type DraftFix =
 export interface NormalizedDraft {
   draft: ProcedureDraft;
   fixes: DraftFix[];
-  /** Steps whose source is the manual; the rest are labelled Generic. */
+  /** Steps with a source (the manual or the recording); the rest are labelled Generic. */
   citedSteps: number;
 }
 
@@ -50,8 +53,16 @@ export function normalizeDraft(input: ProcedureDraft, ctx: DraftContext): Normal
       fixes.push({ kind: "citation_out_of_range", order, page: citation.page });
       citation = { kind: "generic" };
     } else if (citation.kind === "expert_recording") {
-      // Not produced from a manual run; recordings have their own path (T28).
-      citation = { kind: "generic" };
+      // Only a draft made from a recording may cite one, and only a moment inside it.
+      if (ctx.recordingSec === undefined) citation = { kind: "generic" };
+      else if (citation.timestampSec > ctx.recordingSec) {
+        fixes.push({
+          kind: "citation_outside_recording",
+          order,
+          timestampSec: citation.timestampSec,
+        });
+        citation = { kind: "generic" };
+      }
     }
 
     const partRefs = [...new Set(s.partRefs)].filter((ref) => {
@@ -90,6 +101,6 @@ export function normalizeDraft(input: ProcedureDraft, ctx: DraftContext): Normal
       steps,
     },
     fixes,
-    citedSteps: steps.filter((s) => s.citation.kind === "manual").length,
+    citedSteps: steps.filter((s) => s.citation.kind !== "generic").length,
   };
 }

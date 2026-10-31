@@ -7,7 +7,7 @@ import type {
   PartsCheck,
   ProcedureDetail,
 } from "@tandrix/contracts";
-import { citationLabel, radius, space, stepChip, formatDateTime } from "@tandrix/ui";
+import { citationSource, radius, space, stepChip, formatDateTime } from "@tandrix/ui";
 import {
   ActionCard,
   Button,
@@ -282,6 +282,26 @@ export default function JobScreen() {
               />
             ) : null}
             {next ? <ActionCard {...next} /> : null}
+            {job && !procedure ? (
+              // Someone who knows the job can show it instead: their steps, in their words.
+              <Notice
+                icon="video"
+                testID="record-steps"
+                action={
+                  <Button
+                    variant="secondary"
+                    size="lg"
+                    onPress={() => router.push({ pathname: "/job/[id]/record", params: { id } })}
+                    testID="open-record"
+                  >
+                    Record it
+                  </Button>
+                }
+              >
+                Know how it's done? Do it once while Tandrix records, and it writes the steps from
+                what you show and say.
+              </Notice>
+            ) : null}
             {procedure && partsCheck ? (
               <SummaryCard
                 testID="parts-card"
@@ -323,7 +343,7 @@ export default function JobScreen() {
                 {procedure.steps.map((step) => {
                   const js = jobSteps.find((s) => s.procedureStepId === step.id);
                   const chip = stepChip[js?.status ?? "todo"];
-                  const cite = citationLabel(step.citation);
+                  const cite = citationSource(step.citation);
                   return (
                     <StepRow
                       key={step.id}
@@ -339,7 +359,7 @@ export default function JobScreen() {
                           : chip.label
                             ? { statusLabel: chip.label }
                             : {})}
-                      {...(cite ? { source: cite } : {})}
+                      {...(cite ?? {})}
                       disabled={!js}
                       onSelect={() =>
                         js &&

@@ -12,7 +12,7 @@ import type {
   StepVisual as StepVisualData,
 } from "@tandrix/contracts";
 import {
-  citationLabel,
+  citationSource,
   space,
   stepChip,
   visualAspect,
@@ -398,7 +398,7 @@ export default function StepScreen() {
 
   const { step, jobStep, parts } = data;
   const chip = stepChip[jobStep.status];
-  const cite = citationLabel(step.citation);
+  const cite = citationSource(step.citation);
   const usable = permission?.granted && !cameraFailed;
   const canAskCamera = permission?.canAskAgain !== false && !cameraFailed;
   // Names as written: many are proper nouns ("Raspberry Pi 5").
@@ -651,7 +651,7 @@ export default function StepScreen() {
           {...(step.caution ? { caution: step.caution } : {})}
           status={queued ? "pending" : chip.status}
           {...(queued ? {} : chip.label ? { statusLabel: chip.label } : {})}
-          {...(cite ? { source: cite } : { sourceKind: "generic" as const })}
+          {...(cite ?? { sourceKind: "generic" as const })}
           visual={
             visuals.length ? (
               <StepVisual

@@ -435,7 +435,11 @@ export function memoryProcedures() {
         procedure: {
           id: procedureId,
           assetModelKey: input.assetModelKey,
-          sourceType: input.manualId ? "manual" : "generic",
+          sourceType: input.fromRecording
+            ? "expert_recording"
+            : input.manualId
+              ? "manual"
+              : "generic",
           authorId: input.ownerId,
           status: "draft",
           version: 1,

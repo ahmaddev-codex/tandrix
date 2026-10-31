@@ -62,7 +62,11 @@ export function MobileBottomNav() {
               accessibilityLabel={item.label}
               accessibilityState={{ selected }}
               testID={`main-tab-${item.label.toLowerCase()}`}
-              onPress={() => router.navigate(item.href)}
+              onPress={() => {
+                if (pathname !== item.href) {
+                  router.navigate(item.href);
+                }
+              }}
               style={({ pressed }) => ({
                 minWidth: 76,
                 paddingVertical: 7,
@@ -74,7 +78,12 @@ export function MobileBottomNav() {
                 opacity: pressed ? 0.7 : 1,
               })}
             >
-              <Icon name={item.icon} size={24} color={selected ? "highlight" : "text"} />
+              <Icon
+                name={item.icon}
+                size={24}
+                weight={selected ? "fill" : "outline"}
+                color={selected ? "highlight" : "text"}
+              />
               <Text variant="label-12" color="text">
                 {item.label}
               </Text>

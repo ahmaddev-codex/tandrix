@@ -178,6 +178,7 @@ export function IconSquare({
       <Icon
         name={name}
         size={size >= 40 ? 20 : 16}
+        weight={tone === "blue" ? "fill" : undefined}
         color={tone === "blue" ? "on-blue" : "text-secondary"}
       />
     </View>

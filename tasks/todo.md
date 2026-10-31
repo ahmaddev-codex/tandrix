@@ -86,7 +86,7 @@ Tracks: **D** design, **A** mobile & glasses, **B** API & AI, **C** desktop (mac
 ## Phase 6 — Extend and harden
 - [x] T26 Action guard for Do it for me (C; can start after Phase 1)
 - [x] T27 Do it for me on desktop (C)
-- [ ] T28 Record mode, 6 h time-box (B + A)
+- [x] T28 Record mode (B + A): "Record it" on a project without steps: take a picture at each moment and say (or type) what you're doing; Tandrix writes the steps in your words, each citing its moment ("Recorded at 0:48") with that moment's photo as its reference. Live on the Pi 5 photos: two moments became four well-split steps in 9 s, the power-off step tagged. See docs/engineering/expert-recording.md
 - [ ] T29 Multilingual (A)
 - [x] T30 Hardening pass + negative tests (all): `docs/engineering/negative-tests.md` checklist written; genuine gap found and closed (DELETE /jobs/:id removes evidence objects + cascading rows, manual bytes kept as shared); async procedure stays H10; manual-device rows stay H15
 - [ ] **Checkpoint 8:** feature freeze, negatives signed off

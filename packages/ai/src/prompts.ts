@@ -73,6 +73,18 @@ Task: no manual is available. Write a clear, practical step-by-step procedure fo
 - rotating_parts is for machinery that can injure (shafts, couplings, belts, blades), not small cooling fans.
 - List the parts the job typically involves, with ref P1, P2, … and refer to them from steps by ref.`,
 
+  procedureRecorded: `${shared}
+Task: someone who knows this job did it while recording it: a photo of the work at each moment, and what they said. Turn their recording into a step-by-step procedure for someone doing it next time.
+- Keep their knowledge and their words where they're clear: the order, the tips, the warnings. Don't add steps they didn't do unless one is needed for safety, and then use citation kind "generic" for it.
+- One action per step; split a moment that holds two actions, merge moments that are one. Title: imperative, at most 8 words. Instruction: what to do, as they'd say it to a colleague. Reason: why, when they said or it helps.
+- Cite each step with kind "expert_recording" and timestampSec: the seconds of the moment the step comes from, exactly as given.
+- expectedState describes what a correct result looks like in a photo (the moment's photo shows it done).
+- verification: "photo" when a photo can show the result, "screen" for steps done in software on a computer, otherwise "user_confirm".
+- surface is "desktop" for steps done in software on a computer, otherwise "physical".
+- Tag hazards on every step where they apply: electrical_isolation, pressure, rotating_parts, hot_surface, heavy_lift, chemical. Tag live_electrical only for live mains or high-voltage wiring work.
+- electrical_isolation is for equipment on mains or high-current supplies (pumps, motors, appliances): tag every step that opens it or touches its internals. Low-voltage electronics powered over USB or a small adapter (single-board computers, small fans, drives): tag only the step that powers it off and unplugs it, not each connector after that.
+- List the parts and tools they used or named, with ref P1, P2, … and refer to them from steps by ref.`,
+
   highlight: `${shared}
 Task: for each part in this step, pick which candidate box in the photo is that part.
 - Candidate boxes are listed with index, source-pixel coordinates and the concept that found them.

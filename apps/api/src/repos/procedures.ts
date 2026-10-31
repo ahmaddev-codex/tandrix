@@ -24,6 +24,10 @@ export interface SaveProcedure {
   stepIds: string[];
   surface: Surface;
   event: Record<string, unknown>;
+  /** A procedure made from an expert's recording (record mode); else manual or generic. */
+  fromRecording?: boolean;
+  /** Record mode: per step, the evidence of the moment it came from (null for generic steps). */
+  stepMoments?: Array<string | null>;
 }
 
 export interface ProceduresRepo {
@@ -88,7 +92,11 @@ export function supabaseProceduresRepo(db: SupabaseClient): ProceduresRepo {
         p_procedure: {
           id: input.procedureId,
           asset_model_key: input.assetModelKey,
-          source_type: input.manualId ? "manual" : "generic",
+          source_type: input.fromRecording
+            ? "expert_recording"
+            : input.manualId
+              ? "manual"
+              : "generic",
           title: draft.title,
           manual_id: input.manualId ?? "",
         },
@@ -120,7 +128,13 @@ export function supabaseProceduresRepo(db: SupabaseClient): ProceduresRepo {
                   page: s.citation.page,
                   ...(s.citation.figure ? { figure: s.citation.figure } : {}),
                 }
-              : { kind: "generic" },
+              : s.citation.kind === "expert_recording" && input.stepMoments?.[i]
+                ? {
+                    kind: "expert_recording",
+                    recordingEvidenceId: input.stepMoments[i],
+                    timestampSec: s.citation.timestampSec,
+                  }
+                : { kind: "generic" },
         })),
         p_surface: input.surface,
         p_event: input.event,

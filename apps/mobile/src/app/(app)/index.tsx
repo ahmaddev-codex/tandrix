@@ -144,7 +144,7 @@ export default function Jobs() {
                 ))}
               </Tray>
             ) : (
-              <Notice icon="check" testID="actions-empty">
+              <Notice icon="sealCheck" testID="actions-empty">
                 {(jobs ?? []).some((job) => job.status === "active")
                   ? "Open a project below to see its next step."
                   : jobs?.length

@@ -66,7 +66,7 @@ export default function Actions() {
           <PaginationControls page={page} pageCount={pageCount} onChange={setPage} />
         </View>
       ) : (
-        <Notice icon="check">No open actions. You’re all caught up.</Notice>
+        <Notice icon="sealCheck">No open actions. You’re all caught up.</Notice>
       )}
       {actions.length === 0 && jobs?.length === 0 ? (
         <Pill block icon="plus" onPress={() => router.push("/new-job")}>

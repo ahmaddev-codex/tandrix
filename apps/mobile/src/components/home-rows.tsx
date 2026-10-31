@@ -104,7 +104,7 @@ export function ProjectRow({
   separator?: boolean;
 }) {
   const statusIcon =
-    job.status === "completed" ? "check" : job.status === "stopped" ? "stop" : "progress";
+    job.status === "completed" ? "sealCheck" : job.status === "stopped" ? "stop" : "progress";
   return (
     <Row
       title={job.title}

@@ -29,9 +29,18 @@ export default function AppLayout() {
           contentStyle: { backgroundColor: t.color["background-200"] },
         }}
       >
-        <Stack.Screen name="index" options={{ title: "Tandrix", animation: "fade" }} />
-        <Stack.Screen name="actions" options={{ title: "Actions", animation: "fade" }} />
-        <Stack.Screen name="projects" options={{ title: "Projects", animation: "fade" }} />
+        <Stack.Screen
+          name="index"
+          options={{ title: "Tandrix", animation: "fade", animationDuration: 200 }}
+        />
+        <Stack.Screen
+          name="actions"
+          options={{ title: "Actions", animation: "fade", animationDuration: 200 }}
+        />
+        <Stack.Screen
+          name="projects"
+          options={{ title: "Projects", animation: "fade", animationDuration: 200 }}
+        />
         <Stack.Screen name="new-job" options={{ title: "New project" }} />
         {/* Signing in a Mac is a sheet over the screen you came from, not a new page. */}
         <Stack.Screen
@@ -45,7 +54,10 @@ export default function AppLayout() {
             sheetCornerRadius: 28,
           }}
         />
-        <Stack.Screen name="settings" options={{ title: "Settings", animation: "fade" }} />
+        <Stack.Screen
+          name="settings"
+          options={{ title: "Settings", animation: "fade", animationDuration: 200 }}
+        />
         <Stack.Screen name="job/[id]/index" options={{ title: "Project" }} />
         <Stack.Screen name="job/[id]/identify" options={{ title: "Equipment" }} />
         <Stack.Screen

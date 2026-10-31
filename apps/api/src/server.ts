@@ -21,7 +21,7 @@ import { supabasePartsChecksRepo } from "./repos/parts-checks";
 import { metaStepChecker, noModelChecker } from "./step-checker";
 import { metaVoice, noModelVoice } from "./voice";
 import { metaHighlighter, noModelHighlighter } from "./highlighter";
-import { metaProcedureGenerator, noModelGenerator } from "./procedure-generator";
+import { metaProcedureGenerator, withRecording, noModelGenerator } from "./procedure-generator";
 import { supabaseProceduresRepo } from "./repos/procedures";
 import { supabaseDetectionsRepo } from "./repos/detections";
 import { supabaseStepStateRepo } from "./repos/step-state";
@@ -61,7 +61,9 @@ if (meta) {
 }
 const nameplateReader = meta ? metaNameplateReader(meta, log) : noModelReader;
 const manualFinder = meta ? metaManualFinder(meta, log) : noModelFinder;
-const procedureGenerator = meta ? metaProcedureGenerator(meta, log) : noModelGenerator;
+const procedureGenerator = meta
+  ? withRecording(meta, log, metaProcedureGenerator(meta, log))
+  : noModelGenerator;
 const highlighter = meta ? metaHighlighter(meta, log) : noModelHighlighter;
 const checker = meta ? metaStepChecker(meta, log) : noModelChecker;
 const partsChecker = meta ? metaPartsChecker(meta, log) : noModelPartsChecker;

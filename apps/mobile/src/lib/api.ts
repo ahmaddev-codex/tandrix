@@ -4,6 +4,7 @@ import type {
   CreateEvidenceRequest,
   GenerateProcedureRequest,
   LookRequest,
+  RecordedProcedureRequest,
   SaveAssetRequest,
   StepActionRequest,
   UpdateProfileRequest,
@@ -249,6 +250,13 @@ export const api = {
     }).then((r) => r.manual),
   manualUrl: (jobId: string, manualId: string) =>
     request(`/jobs/${jobId}/manual/${manualId}/url`, z.object({ url: z.url() })).then((r) => r.url),
+  /** Record mode: the steps from someone doing the job and saying what they do. */
+  recordedProcedure: (jobId: string, body: z.input<typeof RecordedProcedureRequest>) =>
+    request(`/jobs/${jobId}/procedure/recorded`, GenerateProcedureResponse, {
+      timeoutMs: MODEL_TIMEOUT_MS,
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
   generateProcedure: (jobId: string, body: z.input<typeof GenerateProcedureRequest> = {}) =>
     request(`/jobs/${jobId}/procedure`, GenerateProcedureResponse, {
       timeoutMs: MODEL_TIMEOUT_MS,
