@@ -1,21 +1,57 @@
 "use client";
-// Build it: a small computer kit comes together as you scroll. Each part waits above its place,
-// its landing outline lights in blue, then it drops onto the one below and is checked off, the way
-// Tandrix checks a real build from a photo. The parts are drawn on the server; this only moves them.
+// Build it: a mechanical assembly comes together as you scroll. Each part waits along its
+// exploded trajectory, its landing outline lights in blue, then it docks onto the structure
+// below and is checked off, the way Tandrix verifies a physical build from a photo.
+import { Icon } from "@tandrix/ui/web";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { translateAlong } from "@/vendor/anatomy/iso-kit";
+import { translateAlong, type Projection } from "@/vendor/anatomy/iso-kit";
 import { HEIGHT, P, PARTS, WIDTH } from "../figures/kit/view";
 import { HearIt } from "@/components/ui/HearIt";
 import { cn } from "@/lib/cn";
 
-/** When each part starts dropping, in scroll progress. */
-const parts = PARTS.map((part, i) => ({ ...part, at: i === 0 ? -1 : 0.04 + (i - 1) * 0.2 }));
-const DROP = 0.14;
-const clamp = (v: number) => Math.max(0, Math.min(1, v));
+export interface AssemblePart {
+  name: string;
+  apart: number;
+  offset?: [number, number, number];
+  role?: string;
+  at?: number;
+}
 
-export function Assemble({ layers, ghosts }: { layers: ReactNode[]; ghosts: ReactNode[] }) {
+export interface AssembleProps {
+  parts?: readonly AssemblePart[];
+  projection?: Projection;
+  width?: number;
+  height?: number;
+  layers: ReactNode[];
+  ghosts: ReactNode[];
+  hearLine?: string;
+  hearLabel?: string;
+}
+
+const clamp = (v: number, min = 0, max = 1) => Math.max(min, Math.min(max, v));
+
+export function Assemble({
+  parts: customParts,
+  projection = P,
+  width = WIDTH,
+  height = HEIGHT,
+  layers,
+  ghosts,
+  hearLine = "seated",
+  hearLabel = "Hear a check",
+}: AssembleProps) {
   const section = useRef<HTMLDivElement>(null);
   const [p, setP] = useState(0);
+
+  const rawParts: readonly AssemblePart[] = customParts ?? PARTS;
+  const count = rawParts.length;
+  const stepInterval = count > 1 ? 0.82 / (count - 1) : 0.8;
+  const dropWindow = clamp(0.72 / Math.max(1, count), 0.08, 0.15);
+
+  const parts = rawParts.map((part, i) => ({
+    ...part,
+    at: i === 0 ? -1 : 0.04 + (i - 1) * stepInterval,
+  }));
 
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return setP(1);
@@ -40,50 +76,61 @@ export function Assemble({ layers, ghosts }: { layers: ReactNode[]; ghosts: Reac
     };
   }, []);
 
-  const landed = parts.filter((x) => p >= x.at + DROP).length;
+  const landed = parts.filter((x) => p >= x.at + dropWindow).length;
+
   return (
     // A tall section; its content stays pinned while the scroll drives the assembly.
-    <div ref={section} className="relative h-[170vh] min-[861px]:h-[180vh]">
+    <div ref={section} className="relative h-[175vh] min-[861px]:h-[190vh]">
       <div className="sticky top-0 mx-auto grid h-screen max-w-[1240px] grid-cols-1 content-center items-center gap-2 pt-14 pb-4 min-[861px]:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] min-[861px]:content-normal min-[861px]:gap-[clamp(24px,5vw,72px)] min-[861px]:p-0">
-        {/* The kit, drawn straight on the page: each part waits above its place until it drops. */}
+        {/* The assembly, drawn in isometric projection: each tier waits along its trajectory until it drops */}
         <div
           aria-hidden="true"
-          className="iso relative flex h-[42vh] justify-center [--anatomy-paper:var(--fig-ground,var(--background-100))] min-[861px]:h-[min(72vh,600px)] [&_.iso-svg]:h-full [&_.iso-svg]:w-auto [&_.iso-svg]:max-w-full"
+          className="iso relative flex h-[44vh] justify-center [--anatomy-paper:var(--fig-ground,var(--background-100))] min-[861px]:h-[min(74vh,620px)] [&_.iso-svg]:h-full [&_.iso-svg]:w-auto [&_.iso-svg]:max-w-full"
         >
-          <svg className="iso-svg" viewBox={`0 0 ${WIDTH} ${HEIGHT}`}>
+          <svg className="iso-svg" viewBox={`0 0 ${width} ${height}`}>
             {parts.map((x, i) => {
-              // 1 while waiting above, 0 once landed.
-              const lift = 1 - clamp((p - x.at) / DROP);
+              // 1 while waiting above/apart, 0 once landed.
+              const lift = 1 - clamp((p - x.at) / dropWindow);
               const now = lift > 0 && p >= x.at - 0.08;
+              const offset = x.offset ?? [0, 0, x.apart];
               return (
                 <g key={x.name}>
                   <g style={{ opacity: now ? 1 : 0, transition: "opacity 240ms ease" }}>
                     {ghosts[i]}
                   </g>
-                  <g transform={translateAlong(P, [0, 0, lift * x.apart])}>{layers[i]}</g>
+                  <g
+                    transform={translateAlong(projection, [
+                      offset[0] * lift,
+                      offset[1] * lift,
+                      offset[2] * lift,
+                    ])}
+                  >
+                    {layers[i]}
+                  </g>
                 </g>
               );
             })}
           </svg>
           {landed === parts.length ? (
-            <span className="absolute bottom-[4%] left-1/2 -translate-x-1/2 animate-pop rounded-full bg-highlight px-4 py-2 text-sm font-semibold text-white">
+            <span className="absolute bottom-[4%] left-1/2 -translate-x-1/2 animate-pop rounded-full bg-highlight px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-highlight/20">
               Verified
             </span>
           ) : null}
         </div>
+
         <div className="grid justify-items-start gap-[18px]">
           <p className="text-sm font-medium text-highlight">
             Step {Math.min(landed + 1, parts.length)} of {parts.length}
           </p>
-          <ol className="m-0 grid w-full max-w-[420px] list-none gap-1.5 p-0">
+          <ol className="m-0 grid w-full max-w-[460px] list-none gap-2 p-0">
             {parts.map((x) => {
-              const ok = p >= x.at + DROP;
+              const ok = p >= x.at + dropWindow;
               const now = !ok && p >= x.at;
               return (
                 <li
                   key={x.name}
                   className={cn(
-                    "flex items-center gap-3 rounded-[14px] bg-mist px-3 py-2 text-sm text-soft transition-colors duration-300 min-[861px]:px-3.5 min-[861px]:py-3 min-[861px]:text-base",
+                    "flex items-center gap-3 rounded-[14px] bg-mist px-3.5 py-2.5 text-sm text-soft transition-colors duration-300 min-[861px]:py-3 min-[861px]:text-base",
                     (ok || now) && "text-ink",
                     now && "bg-[color-mix(in_srgb,var(--highlight)_10%,var(--mist))]",
                   )}
@@ -97,33 +144,34 @@ export function Assemble({ layers, ghosts }: { layers: ReactNode[]; ghosts: Reac
                     )}
                   >
                     {ok ? (
-                      <svg viewBox="0 0 16 16" width="14" height="14">
-                        <path
-                          d="M3.5 8.4l2.8 2.8 6.2-6.4"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2.2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
+                      <Icon name="sealCheck" size={16} weight="fill" className="text-white" />
                     ) : null}
                   </span>
-                  {x.name}
-                  <span className={cn("ml-auto text-[13px]", ok && "text-highlight")}>
+                  <div className="grid min-w-0 flex-1">
+                    <span className="truncate font-medium">{x.name}</span>
+                    {x.role ? (
+                      <span className="truncate text-xs text-soft opacity-85">{x.role}</span>
+                    ) : null}
+                  </div>
+                  <span
+                    className={cn(
+                      "ml-auto flex-none text-[13px] font-medium",
+                      ok && "text-highlight",
+                    )}
+                  >
                     {ok ? "Checked" : now ? "Fitting" : ""}
                   </span>
                 </li>
               );
             })}
           </ol>
-          <div className="h-1 w-full max-w-[420px] rounded-[2px] bg-mist">
+          <div className="h-1 w-full max-w-[460px] rounded-[2px] bg-mist">
             <i
               className="block h-full rounded-[inherit] bg-highlight transition-[width] duration-300"
               style={{ width: `${(landed / parts.length) * 100}%` }}
             />
           </div>
-          <HearIt line="seated" label="Hear a check" tone="light" />
+          <HearIt line={hearLine} label={hearLabel} tone="light" />
         </div>
       </div>
     </div>
