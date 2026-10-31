@@ -119,10 +119,3 @@ export function Tray({
     </div>
   );
 }
-
-/** The blue square an icon sits in, on cards and plans. */
-export const CardIcon = ({ children }: { children: ReactNode }) => (
-  <span className="inline-grid size-[42px] place-items-center rounded-xl bg-highlight text-white">
-    {children}
-  </span>
-);

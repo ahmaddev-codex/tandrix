@@ -172,9 +172,7 @@ export default function Technical() {
               key={g.title}
               className="grid content-start gap-3 rounded-[20px] bg-paper p-[22px] [&_h3]:text-xl [&_h3]:font-medium [&_h3]:tracking-[-0.02em] [&_p]:text-[15px] [&_p]:leading-[1.55] [&_p]:text-text-2"
             >
-              <span className="grid size-10 place-items-center rounded-xl bg-highlight text-white">
-                <Icon name={g.icon} size={20} />
-              </span>
+              <Icon name={g.icon} size={24} weight="fill" className="text-highlight" />
               <h3>{g.title}</h3>
               <p>{g.body}</p>
             </article>

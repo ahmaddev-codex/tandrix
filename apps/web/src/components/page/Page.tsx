@@ -95,7 +95,7 @@ export function Feature({
   );
 }
 
-/** The grey tray of white cards, each with its icon in a blue square. */
+/** The grey tray of white cards, each with a solid blue icon. */
 export function CardTray({
   id,
   title,
@@ -126,9 +126,7 @@ export function CardTray({
             key={c.title}
             className="grid content-start gap-3 rounded-[20px] bg-paper p-[22px] [&_h3]:text-xl [&_h3]:font-medium [&_h3]:tracking-[-0.02em] [&_p]:text-[15px] [&_p]:leading-[1.55] [&_p]:text-text-2"
           >
-            <span className="grid size-10 place-items-center rounded-xl bg-highlight text-white">
-              <Icon name={c.icon} size={20} />
-            </span>
+            <Icon name={c.icon} size={24} weight="fill" className="text-highlight" />
             <h3>{c.title}</h3>
             <p>{c.body}</p>
           </article>

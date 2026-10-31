@@ -365,6 +365,7 @@ button.tx-visual-frame:focus-visible {
   max-width: 100%;
   max-height: 278px;
   object-fit: contain;
+  transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .tx-visual-open {
   position: absolute;
@@ -1558,6 +1559,12 @@ button.tx-visual-frame:focus-visible {
   gap: var(--space-4);
   box-shadow: 0 -1px 0 var(--border) inset;
   overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+.tx-tabs::-webkit-scrollbar {
+  display: none;
 }
 .tx-tab {
   display: inline-flex;
@@ -1574,6 +1581,9 @@ button.tx-visual-frame:focus-visible {
   font-size: 13px;
   font-weight: 500;
   box-shadow: 0 -2px 0 transparent inset;
+  transition:
+    color 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .tx-tab:hover {
   color: var(--text);
@@ -1598,10 +1608,23 @@ button.tx-visual-frame:focus-visible {
   line-height: 20px;
   text-align: center;
   font-variant-numeric: tabular-nums;
+  transition:
+    background-color 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+    color 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.tx-tab.is-on .tx-tab-count {
+  background: var(--gray-200);
+  color: var(--text);
 }
 .tx-tabs-lg .tx-tab {
   height: var(--control-lg);
   font-size: 14px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tx-tab,
+  .tx-tab-count {
+    transition: none;
+  }
 }
 
 /* Notice */

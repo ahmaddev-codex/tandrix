@@ -217,7 +217,7 @@ export function StatusChip({ status, children }: StatusChipProps) {
         borderColor: c.border ? t.color[c.border] : undefined,
       }}
     >
-      <Icon name={meta.icon} color={c.fg} />
+      <Icon name={meta.icon} weight={status === "verified" ? "fill" : undefined} color={c.fg} />
       <Text variant="label-12" color={c.fg}>
         {children ?? meta.label}
       </Text>

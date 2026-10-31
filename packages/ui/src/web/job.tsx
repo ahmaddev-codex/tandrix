@@ -108,7 +108,7 @@ export function CheckResult({
       {thumbnail ? <div className="tx-check-thumb">{thumbnail}</div> : null}
       <div className="tx-check-main">
         <h3 className="tx-check-title">
-          <Icon name={meta.icon} size={20} />
+          <Icon name={meta.icon} size={20} weight={result === "pass" ? "fill" : "outline"} />
           {title ?? meta.title}
         </h3>
         <p className="tx-check-reason">{reason}</p>

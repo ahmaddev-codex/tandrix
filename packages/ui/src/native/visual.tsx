@@ -59,10 +59,12 @@ export function Tabs({
             accessibilityRole="tab"
             accessibilityState={{ selected: on }}
             onPress={() => {
-              if (value === undefined) setOwn(it.id);
-              onChange?.(it.id);
+              if (it.id !== selected) {
+                if (value === undefined) setOwn(it.id);
+                onChange?.(it.id);
+              }
             }}
-            style={{
+            style={({ pressed }) => ({
               flexDirection: "row",
               alignItems: "center",
               gap: space["space-2"],
@@ -70,7 +72,8 @@ export function Tabs({
               marginBottom: -1,
               borderBottomWidth: 2,
               borderBottomColor: on ? t.color["gray-1000"] : "transparent",
-            }}
+              opacity: pressed ? 0.7 : 1,
+            })}
           >
             <Text variant="label-14" color={on ? "text" : "text-secondary"}>
               {it.label}
@@ -82,11 +85,15 @@ export function Tabs({
                   height: 20,
                   paddingHorizontal: 6,
                   borderRadius: radius["radius-full"],
-                  backgroundColor: t.color["gray-100"],
+                  backgroundColor: on ? t.color["gray-200"] : t.color["gray-100"],
                   justifyContent: "center",
                 }}
               >
-                <Text variant="label-12" color="text-secondary" style={{ textAlign: "center" }}>
+                <Text
+                  variant="label-12"
+                  color={on ? "text" : "text-secondary"}
+                  style={{ textAlign: "center" }}
+                >
                   {String(it.count)}
                 </Text>
               </View>

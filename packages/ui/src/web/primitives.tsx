@@ -105,7 +105,7 @@ export function StatusChip({ status, size = "md", children }: StatusChipProps) {
   const meta = statusMeta[status];
   return (
     <span className={cx("tx-status", `tx-status-${status}`, size === "lg" && "tx-status-lg")}>
-      <Icon name={meta.icon} />
+      <Icon name={meta.icon} weight={status === "verified" ? "fill" : undefined} />
       {children ?? meta.label}
     </span>
   );
