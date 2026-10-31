@@ -1,15 +1,16 @@
+// For deploying from this folder (`pnpm --filter @tandrix/web deploy`, which builds first).
+// ../../wrangler.jsonc is the same Worker, for Cloudflare building from the repo root.
 {
   "$schema": "../../node_modules/wrangler/config-schema.json",
   "name": "tandrix",
   "main": ".open-next/worker.js",
   "compatibility_date": "2026-10-23",
   "compatibility_flags": ["nodejs_compat"],
+  // API_PUBLIC_URL is set on the Worker in Cloudflare; a deploy must not wipe it.
+  "keep_vars": true,
   "assets": {
     "binding": "ASSETS",
     "directory": ".open-next/assets",
-  },
-  "build": {
-    "command": "pnpm run build:worker",
   },
   "observability": {
     "enabled": true,

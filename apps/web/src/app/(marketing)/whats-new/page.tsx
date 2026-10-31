@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Closer, PageShell } from "@/components/page/Page";
 
 export const metadata: Metadata = {
-  title: "What's new",
+  title: "What's new in Tandrix",
   description: "What changed in Tandrix for Mac and iPhone, newest first.",
 };
 

@@ -160,3 +160,33 @@ A phone can't reach `127.0.0.1` on your Mac. In `apps/mobile/.env.local`, replac
 - **Trying a build beside the dev app:** the single-instance lock makes it quit at once if a copy with the same profile is running, so pass `--user-data-dir=<a temp folder>`.
 
 App icons, on every surface, come from the mark in `scripts/build-app-icons.ts` (`pnpm exec tsx scripts/build-app-icons.ts`). The phone picks them up at its next native build (`pnpm --filter @tandrix/mobile ios`).
+
+## Deploying the website
+
+The website runs on Cloudflare Workers through [OpenNext](https://opennext.js.org/cloudflare). It stays well inside a free Worker (about 1.2 MB gzipped), and pages are prerendered except shared reports (`/r/[token]`).
+
+**Try it first in Cloudflare's runtime:**
+
+```bash
+pnpm --filter @tandrix/web build:worker
+pnpm --filter @tandrix/web exec opennextjs-cloudflare preview --port 8788   # 8787 is the API
+```
+
+**Settings.** `NEXT_PUBLIC_*` values are compiled in at build time, so a change needs a new build. `API_PUBLIC_URL` is read when a report opens, so it's set on the Worker.
+
+| Setting | When | Value |
+|---|---|---|
+| `NEXT_PUBLIC_SITE_URL` | Build | The site's address, such as `https://tandrix.com`: social cards and the sitemap |
+| `NEXT_PUBLIC_API_URL` | Build | The API, for the early-access form |
+| `NEXT_PUBLIC_MAC_DOWNLOAD_URL`, `NEXT_PUBLIC_IPHONE_DOWNLOAD_URL` | Build | Optional. Until set, Get Tandrix leads to the early-access form |
+| `NEXT_PUBLIC_SOURCE_URL` | Build | Optional. Adds Source to the footer |
+| `API_PUBLIC_URL` | Runtime | The API, for shared reports |
+
+On the API, add the site's address to `CORS_ORIGINS`, or the early-access form is refused.
+
+**Deploy one of two ways:**
+
+- **From this machine:** `pnpm --filter @tandrix/web exec wrangler login` once, then, with the build settings in the environment, `pnpm --filter @tandrix/web deploy`. Set `API_PUBLIC_URL` with `pnpm --filter @tandrix/web exec wrangler secret put API_PUBLIC_URL`, or as a variable in the dashboard; deploys keep it (`keep_vars`).
+- **From GitHub (Workers Builds):** connect the repo in the Cloudflare dashboard with the root directory as `/`, which uses the root `wrangler.jsonc` and its build command, and `npx wrangler deploy` as the deploy command. Put the build settings under Build variables and `API_PUBLIC_URL` under the Worker's variables.
+
+Add the custom domain under the Worker's Settings > Domains & Routes. Security headers are in `apps/web/next.config.ts`, and static file caching in `apps/web/public/_headers`. CI checks the Worker builds and fits on every push.

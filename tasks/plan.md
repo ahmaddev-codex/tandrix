@@ -481,7 +481,7 @@ Needs `supabase start` + seeded user. Blocked here: Docker socket permission-den
 `POST /jobs/:id/procedure/start` claims the job's one run and answers at once (84 ms live); `GET …/procedure/run` reports it; both apps wait through `waitForProcedure`. See Architecture. Polling over Realtime (no client policies on the table, survives a Realtime disconnect); no result cache, since a job has one procedure and starting again returns it.
 
 #### H11 Deploy pipeline (open, needs accounts)
-Fly.io API deploy, hosted Supabase (migrations/buckets/auth), Vercel web (then set metadataBase + canonical), EAS profiles (with `EXPO_PUBLIC_TANDRIX_ENV`), signed Mac build, Sentry/observability, production env checklist. CI deploy jobs after secrets exist.
+Fly.io API deploy, hosted Supabase (migrations/buckets/auth), Cloudflare Workers for the web (OpenNext; set `NEXT_PUBLIC_SITE_URL`), EAS profiles (with `EXPO_PUBLIC_TANDRIX_ENV`), signed Mac build, Sentry/observability, production env checklist. CI deploy jobs after secrets exist.
 
 #### H12–H17 Backlog (open)
 H12: `control_mode` mirror endpoint + `control_mode_changed` emission (desktop holds mode locally; DB column is write-never). H13: `expert_recording` producer or reservation doc. H14: shared rate-limit store for multi-instance API (Redis/Upstash decision). H15: device QA — physical-phone report E2E, real-device web checks, Lighthouse, OG unfurls, contrast pass. H16: Fly VM sizing vs TTS/render split; worker page-count. H17: guard sensitive-detection beyond English-keyword regex.
