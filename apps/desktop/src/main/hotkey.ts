@@ -9,9 +9,35 @@ export function registerAskHotkey(onPress: () => void): boolean {
   return globalShortcut.register(ASK_ACCELERATOR, onPress);
 }
 
-/** Esc is only taken while listening, so it keeps working everywhere else. */
-export function setCancelKey(onCancel: (() => void) | null) {
-  if (onCancel) {
-    if (!globalShortcut.isRegistered("Escape")) globalShortcut.register("Escape", onCancel);
-  } else if (globalShortcut.isRegistered("Escape")) globalShortcut.unregister("Escape");
+type CancelOwner = "listening" | "task";
+const cancels = new Map<CancelOwner, () => void>();
+const pressedEsc = () => {
+  for (const cancel of [...cancels.values()]) cancel();
+};
+
+/**
+ * Esc is only taken while listening or during a task, so it keeps working everywhere else. Each
+ * keeps its own claim: talking during a task must not take Esc away from the task.
+ */
+export function setCancelKey(owner: CancelOwner, onCancel: (() => void) | null) {
+  if (onCancel) cancels.set(owner, onCancel);
+  else cancels.delete(owner);
+  const held = globalShortcut.isRegistered("Escape");
+  if (cancels.size && !held) {
+    if (!globalShortcut.register("Escape", pressedEsc))
+      console.warn(JSON.stringify({ event: "esc_unavailable" }));
+  } else if (!cancels.size && held) globalShortcut.unregister("Escape");
+}
+
+/**
+ * Tandrix pressing Esc itself, to close a dialog: macOS would hand it to our own shortcut, stopping
+ * the task and never reaching the app, so the shortcut lets go until the key has been sent.
+ */
+export async function withEscFree<T>(press: () => Promise<T>): Promise<T> {
+  if (globalShortcut.isRegistered("Escape")) globalShortcut.unregister("Escape");
+  try {
+    return await press();
+  } finally {
+    if (cancels.size) globalShortcut.register("Escape", pressedEsc);
+  }
 }

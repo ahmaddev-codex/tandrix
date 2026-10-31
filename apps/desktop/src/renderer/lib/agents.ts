@@ -22,7 +22,13 @@ export interface AgentTask {
 export interface BoardDeps {
   runScreen: (
     task: string,
-    io: { steer: () => string[]; stopped: () => boolean },
+    io: {
+      steer: () => string[];
+      /** This run was stopped; it stays true whatever runs next. */
+      stopped: () => boolean;
+      /** Settles the moment this run is stopped, even in the middle of a model call. */
+      whenStopped: Promise<void>;
+    },
   ) => Promise<ScreenTaskResult>;
   background: (task: string) => Promise<BackgroundResult>;
   /** The list changed. */
@@ -54,6 +60,7 @@ export function createBoard(d: BoardDeps): Board {
   let screenRunning: AgentTask | null = null;
   let steering: string[] = [];
   let stopRequested = false;
+  let stopRun: (() => void) | null = null;
   let backgroundRunning = 0;
 
   const changed = () => d.onChange(tasks.map((t) => ({ ...t })));
@@ -73,17 +80,26 @@ export function createBoard(d: BoardDeps): Board {
     screenRunning = t;
     steering = [];
     stopRequested = false;
+    let stopped = false;
+    let settle!: () => void;
+    const whenStopped = new Promise<void>((resolve) => (settle = resolve));
+    stopRun = () => {
+      stopped = true;
+      settle();
+    };
     update(t, { status: "running" });
     try {
       const r = await d.runScreen(t.task, {
         steer: () => steering.splice(0),
-        stopped: () => stopRequested,
+        stopped: () => stopped,
+        whenStopped,
       });
       finish(t, { status: r.status, result: r.reply });
     } catch (e) {
       finish(t, { status: "failed", result: (e as Error).message });
     } finally {
       screenRunning = null;
+      stopRun = null;
       // A stop ends only the task it was meant for; the next one starts clean.
       if (!stopRequested) void pumpScreen();
     }
@@ -129,6 +145,7 @@ export function createBoard(d: BoardDeps): Board {
     },
     stopScreen() {
       stopRequested = true;
+      stopRun?.();
       for (const t of tasks) if (t.kind === "screen" && t.status === "queued") t.status = "stopped";
       changed();
     },

@@ -21,7 +21,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { ScreenCapture } from "../../shared/bridge";
 import { createBoard, type AgentTask, type Board } from "./agents";
 import { api } from "./api";
-import { runScreenTask } from "./screen-task";
+import { runScreenTask, STOPPED_REPLY, type ScreenTaskResult } from "./screen-task";
 import { startRecording, type Recording } from "./recorder";
 import { uploadScreenshot } from "./screenshot";
 import { recentExchanges } from "./exchanges";
@@ -165,8 +165,14 @@ export function useShowMe(jobId: string | undefined) {
             "To do things for you I need Accessibility access. Allow Tandrix in System Settings > Privacy & Security > Accessibility, then ask me again.",
         };
       await window.tandrix.doing.begin();
+      // A stop ends the task now. A model call still under way is left to finish and ignored: the
+      // task sees it was stopped as soon as the call returns, and goes no further.
+      const stopped = io.whenStopped.then((): ScreenTaskResult => ({
+        status: "stopped",
+        reply: STOPPED_REPLY,
+      }));
       try {
-        return await runScreenTask(task, {
+        const working = runScreenTask(task, {
           capture: () => window.tandrix.screen.capture(),
           apps: () => window.tandrix.doing.apps(),
           openApp: (name) => window.tandrix.doing.openApp(name),
@@ -186,6 +192,7 @@ export function useShowMe(jobId: string | undefined) {
           settle: (ms) => new Promise((r) => setTimeout(r, ms)),
           base64,
         });
+        return await Promise.race([working, stopped]);
       } finally {
         await window.tandrix.doing.end();
         if (modeRef.current !== "do") await window.tandrix.doing.setMode("show");
@@ -508,6 +515,16 @@ export function useShowMe(jobId: string | undefined) {
         else void listen("tap");
       }),
     [ask, listen],
+  );
+
+  // Esc or the hotkey during a task: stop talking and end it now.
+  useEffect(
+    () =>
+      window.tandrix.doing.onStopped(() => {
+        stopSpeaking();
+        board.stopScreen();
+      }),
+    [],
   );
 
   // The hotkey: tap to listen; a pause asks (or tap again); Esc cancels.

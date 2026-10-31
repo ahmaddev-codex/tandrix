@@ -100,4 +100,29 @@ describe("agent board", () => {
     expect(stopped).toBe(true);
     expect(board.list().map((t) => t.status)).toEqual(["stopped", "stopped"]);
   });
+
+  it("tells a stopped run at once, and it stays stopped when the next task starts", async () => {
+    const runs: Array<{ stopped: () => boolean; whenStopped: Promise<void> }> = [];
+    const board = createBoard({
+      runScreen: (_t, io) => {
+        runs.push(io);
+        return io.whenStopped.then(() => ({ status: "stopped", reply: "Stopped." }));
+      },
+      background: async () => ({ status: "unavailable", message: "x" }),
+      onChange: () => undefined,
+      onFinish: () => undefined,
+    });
+    board.addScreen("First");
+    await tick();
+    board.stopScreen();
+    await runs[0]!.whenStopped;
+    await tick();
+    expect(board.screenBusy()).toBe(false);
+
+    board.addScreen("Second");
+    await tick();
+    expect(board.screenBusy()).toBe(true);
+    expect(runs[0]!.stopped()).toBe(true);
+    expect(runs[1]!.stopped()).toBe(false);
+  });
 });
