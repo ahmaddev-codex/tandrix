@@ -113,7 +113,7 @@ const app = createApp({
     clientKeyFromHeaders(
       c.req.header("x-forwarded-for"),
       getConnInfo(c).remote.address,
-      c.req.header("fly-client-ip"),
+      c.req.header(process.env.CLIENT_IP_HEADER ?? "fly-client-ip"),
     ),
   tokenSecret: config.tokenSigningSecret,
   corsOrigins: config.corsOrigins,
