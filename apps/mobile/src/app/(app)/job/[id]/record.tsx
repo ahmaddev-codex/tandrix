@@ -1,14 +1,13 @@
 // Record mode: someone who knows the job does it once. At each moment they take a picture and
 // say (or type) what they're doing; Tandrix turns the moments into the project's steps, each one
 // citing the moment it came from, with that moment's photo as its reference picture.
-import { nextPhrase } from "@tandrix/core";
 import { space } from "@tandrix/ui";
 import { Button, Icon, Input, Notice, ProgressState, Text, useTheme } from "@tandrix/ui/native";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { router, Stack, useLocalSearchParams } from "expo-router";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "@/lib/api";
@@ -33,23 +32,12 @@ export default function Record() {
   const [moments, setMoments] = useState<Moment[]>([]);
   const startedAt = useRef<number | null>(null);
   const [busy, setBusy] = useState(false);
-  const [phrase, setPhrase] = useState("Planning the steps");
+  const [doing, setDoing] = useState("Uploading your photos");
   const [problem, setProblem] = useState<string>();
 
   const usable = permission?.granted && !cameraFailed;
   const last = moments.at(-1);
   const ready = moments.length >= 2 && moments.every((m) => m.said.trim().length > 1);
-
-  useEffect(() => {
-    if (!busy) return;
-    const recent: string[] = [];
-    const timer = setInterval(() => {
-      const p = nextPhrase("steps procedure photo", recent);
-      recent.push(p);
-      setPhrase(p);
-    }, 2200);
-    return () => clearInterval(timer);
-  }, [busy]);
 
   const add = (photo: PreparedPhoto) => {
     const now = Date.now();
@@ -84,9 +72,11 @@ export default function Record() {
 
   const write = async () => {
     setBusy(true);
+    setDoing("Uploading your photos");
     setProblem(undefined);
     try {
       const uploaded = await Promise.all(moments.map((m) => uploadPhoto(id, m.photo)));
+      setDoing("Writing the steps");
       const r = await api.recordedProcedure(id, {
         moments: moments.map((m, i) => ({
           evidenceId: uploaded[i]!.id,
@@ -110,7 +100,7 @@ export default function Record() {
       <Stack.Screen options={{ title: "Record it" }} />
       {busy ? (
         <View style={{ flex: 1, justifyContent: "center", padding: space["space-6"] }}>
-          <ProgressState label={phrase} testID="record-writing" />
+          <ProgressState label={doing} testID="record-writing" />
         </View>
       ) : (
         <ScrollView contentContainerStyle={{ padding: space["space-4"], gap: space["space-4"] }}>

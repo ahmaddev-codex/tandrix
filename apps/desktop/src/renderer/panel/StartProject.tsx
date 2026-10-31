@@ -1,9 +1,8 @@
 // A project on this Mac: say what you want to learn or get done in software, and Tandrix writes
 // the steps. Each step then has Show me and a screen check (DesktopStep), and progress is kept like
 // any project, so it carries on later or on the phone.
-import { nextPhrase } from "@tandrix/core";
 import { Button, Input, Notice } from "@tandrix/ui/web";
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { api } from "../lib/api";
 
 /** What the steps are for: done on screen, and checked from a screenshot. */
@@ -13,20 +12,8 @@ const ON_THIS_MAC =
 export function StartProject({ onCreated }: { onCreated: () => void }) {
   const [goal, setGoal] = useState("");
   const [busy, setBusy] = useState(false);
-  const [phrase, setPhrase] = useState("Planning the steps");
   const [problem, setProblem] = useState<string>();
-  const recent = useRef<string[]>([]);
   const project = useRef<string | null>(null);
-
-  useEffect(() => {
-    if (!busy) return;
-    const timer = setInterval(() => {
-      const p = nextPhrase(`${goal} steps procedure`, recent.current);
-      recent.current = [...recent.current, p].slice(-8);
-      setPhrase(p);
-    }, 2200);
-    return () => clearInterval(timer);
-  }, [busy, goal]);
 
   const start = async (e: FormEvent) => {
     e.preventDefault();
@@ -70,7 +57,7 @@ export function StartProject({ onCreated }: { onCreated: () => void }) {
             <span className="panel-agent-dot" aria-hidden="true" />
             <span className="panel-agent-main">
               <span className="panel-agent-task">{goal}</span>
-              <span className="panel-agent-meta">{phrase}</span>
+              <span className="panel-agent-meta">Writing the steps</span>
             </span>
           </li>
         </ul>

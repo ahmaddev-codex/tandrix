@@ -26,7 +26,7 @@ import { startRecording, type Recording } from "./recorder";
 import { uploadScreenshot } from "./screenshot";
 import { recentExchanges } from "./exchanges";
 import { markTried } from "./setup";
-import { present, presentAction, presentAnswer, presenceState, workingOn } from "./presence";
+import { present, presentAction, presentAnswer, presenceState } from "./presence";
 import { localNow, runBackgroundTask } from "./background-agent";
 import { base64 } from "./bytes";
 import { browseCall } from "./browse";
@@ -231,8 +231,7 @@ export function useShowMe(jobId: string | undefined) {
 
   const startScreenTask = useCallback((task: string) => {
     reply(acknowledge(task));
-    workingOn(task);
-    present({ state: "doing", label: "Getting started", keys: "Esc", keysHint: "to stop" });
+    presentAction("Looking at your screen");
     board.addScreen(task);
   }, []);
 
@@ -398,7 +397,6 @@ export function useShowMe(jobId: string | undefined) {
         return;
       }
       stopSpeaking();
-      workingOn(effective);
       void run(() => answer(jobId, effective, shoot(jobId)), {
         state: "looking",
         label: "Looking at your screen",
@@ -443,11 +441,10 @@ export function useShowMe(jobId: string | undefined) {
           }
           const effective = wake.woke ? wake.remainder : heard.transcript;
           add({ speaker: "you", text: effective });
-          workingOn(effective);
-          present({ state: "thinking", label: "Thinking" });
+          present({ state: "looking", label: "Looking at your screen" });
           await answer(jobId, effective, shot, true);
         },
-        { state: "thinking", label: "Thinking" },
+        { state: "thinking", label: "Working out what you said" },
       );
     },
     [jobId, run, shoot, answer],
