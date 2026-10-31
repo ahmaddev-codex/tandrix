@@ -27,6 +27,8 @@ tasks/
 .pnpm-store/
 .vercel/
 apps/film/out/
+apps/film/public/
+apps/film
 
 # Signing credentials
 *.p12
