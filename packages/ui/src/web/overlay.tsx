@@ -220,7 +220,7 @@ export function ConfirmDialog({
 export const doItForMeConfirmation = {
   title: "Let Tandrix click for you?",
   lead: "Clicking this allows Tandrix to control your device.",
-  note: "Press Esc or move your mouse to take back control. Tandrix still asks before paying, sending, deleting or changing security settings.",
+  note: "Press Esc to take back control. Tandrix still asks before paying, sending, deleting or changing security settings.",
   confirmLabel: "Turn on",
   cancelLabel: "Keep pointing only",
 } as const satisfies Omit<ConfirmDialogProps, "onConfirm" | "onCancel" | "tone">;

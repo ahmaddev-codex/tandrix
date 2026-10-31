@@ -37,11 +37,7 @@ const right: Group[] = [
   {
     name: "Keeps you in control",
     icon: "hand",
-    items: [
-      "Asks before it sends or pays",
-      "Esc or the mouse stops it",
-      "Wake word stays on the Mac",
-    ],
+    items: ["Asks before it sends or pays", "Esc stops it", "Wake word stays on the Mac"],
   },
   {
     name: "Works where you are",
