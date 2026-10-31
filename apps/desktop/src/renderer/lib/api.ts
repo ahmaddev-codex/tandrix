@@ -10,6 +10,7 @@ import {
   CheckStepResponse,
   DoNotesResponse,
   DoTurnResponse,
+  GenerateProcedureResponse,
   StepVisualsResponse,
   CreateEvidenceResponse,
   Evidence,
@@ -21,6 +22,7 @@ import {
   TranscribeResponse,
   type ControlMode,
   type CreateEvidenceRequest,
+  type GenerateProcedureRequest,
   type ScreenAskInlineRequest,
   type ScreenAskRequest,
   type StepActionRequest,
@@ -119,6 +121,17 @@ export const api = {
       body: JSON.stringify({ mode }),
     }).then((r) => r.job),
   listJobs: () => request("/jobs", z.object({ jobs: z.array(Job) })).then((r) => r.jobs),
+  /** A project started here: it opens on this Mac. */
+  createJob: (title: string) =>
+    request("/jobs", z.object({ job: Job }), {
+      method: "POST",
+      body: JSON.stringify({ title, surface: "desktop" }),
+    }).then((r) => r.job),
+  generateProcedure: (jobId: string, body: z.input<typeof GenerateProcedureRequest>) =>
+    request(`/jobs/${jobId}/procedure`, GenerateProcedureResponse, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
   getJob: (id: string) => request(`/jobs/${id}`, JobDetailResponse),
   createEvidence: (jobId: string, body: z.input<typeof CreateEvidenceRequest>) =>
     request(`/jobs/${jobId}/evidence`, CreateEvidenceResponse, {

@@ -149,7 +149,7 @@ export function Setup({ status }: { status: ReturnType<typeof useSetupStatus> })
         {items.map((item, i) => (
           <li key={item.title} className={item.done ? "setup-item is-done" : "setup-item"}>
             <span className="setup-mark" aria-hidden>
-              {item.done ? <Icon name="check" /> : i + 1}
+              {item.done ? <Icon name="sealCheck" size={20} weight="fill" /> : i + 1}
             </span>
             <span className="panel-stack-1">
               <span className="label-13">

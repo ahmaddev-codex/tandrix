@@ -11,6 +11,7 @@ import { useHandoffsToMac, useJobChanges, type IncomingHandoff } from "../lib/re
 import { DesktopStep, type ScreenCheck } from "./DesktopStep";
 import { Setup, useSetupStatus } from "./Setup";
 import { Settings } from "./Settings";
+import { StartProject } from "./StartProject";
 import { ShowMe } from "./ShowMe";
 import { useShowMe } from "../lib/use-show-me";
 
@@ -318,7 +319,12 @@ export function Home() {
               <ShowMe s={showMe} />
             </JobSteps>
           ) : (
-            <ShowMe s={showMe} />
+            <>
+              <ShowMe s={showMe} />
+              {state.kind === "ready" || state.kind === "none" ? (
+                <StartProject onCreated={load} />
+              ) : null}
+            </>
           )}
         </div>
       </main>

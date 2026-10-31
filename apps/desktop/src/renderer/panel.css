@@ -236,10 +236,12 @@ input {
   font-family: var(--font-mono);
   font-size: 12px;
   color: var(--text-secondary);
+  flex-shrink: 0;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .setup-item.is-done .setup-mark {
-  background: var(--primary);
-  color: var(--on-primary);
+  background: transparent;
+  color: var(--highlight);
   box-shadow: none;
 }
 .setup-item.is-done .label-13 {
