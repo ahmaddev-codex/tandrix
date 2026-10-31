@@ -133,6 +133,7 @@ export function answerStepQuestion(client: MetaClient, models: Models, q: StepQu
       ),
     ],
     effort: "low",
+    hedgeMs: INTERACTIVE_HEDGE_MS,
     ...(q.signal ? { signal: q.signal } : {}),
   });
 }
@@ -174,8 +175,12 @@ export function checkStep(client: MetaClient, models: Models, req: StepCheckRequ
     instructions: screen ? prompts.checkScreen : prompts.check,
     input: [user(...parts)],
     effort: req.effort ?? "low",
+    hedgeMs: INTERACTIVE_HEDGE_MS,
   });
 }
+
+/** Calls someone is waiting on (an answer, a check, highlights) are asked again after this long. */
+const INTERACTIVE_HEDGE_MS = 8000;
 
 export interface Candidate extends Segment {
   index: number;
@@ -306,6 +311,7 @@ export async function highlightParts(
   const r = await generateStructured(client, {
     model: models.reasoning,
     name: "highlight_pick",
+    hedgeMs: INTERACTIVE_HEDGE_MS,
     schema: HighlightPick,
     instructions: prompts.highlight,
     input: [
