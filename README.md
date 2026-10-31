@@ -1,5 +1,7 @@
 # Tandrix
 
+![The Tandrix website: tell it what you want done. It shows you the way.](apps/web/public/tandrix-web.png)
+
 Tandrix is an assistant that sees your screen and what's in front of your camera, points at the answer, and checks every step with you.
 
 - **On the Mac**, it rings the exact control and says the next step (**Show me**), does the task itself when you ask (**Do it for me**), and runs work that needs no screen in the background, several tasks at once.
