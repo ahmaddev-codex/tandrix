@@ -20,9 +20,9 @@ export const metadata: Metadata = {
     siteName: "Tandrix",
     images: [
       {
-        url: "/tandrix-web.png",
-        width: 2754,
-        height: 1616,
+        url: "/tandrix-web-og.jpg",
+        width: 1200,
+        height: 630,
         alt: "The Tandrix website: tell it what you want done. It shows you the way.",
       },
     ],
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
     title: "Tandrix: tell it what you want done",
     description:
       "Tandrix sees your screen and what's in front of your camera, points at the answer, and checks every step with you.",
-    images: ["/tandrix-web.png"],
+    images: ["/tandrix-web-og.jpg"],
   },
   icons: { icon: "/icon.svg" },
   manifest: "/manifest.webmanifest",
