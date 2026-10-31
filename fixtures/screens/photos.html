@@ -1,0 +1,118 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Photos</title>
+    <link rel="stylesheet" href="base.css" />
+    <style>
+      .body {
+        flex: 1;
+        display: flex;
+        min-height: 0;
+        background: #1e1e1e;
+      }
+      .canvas {
+        flex: 1;
+        display: grid;
+        place-items: center;
+      }
+      .photo {
+        width: 720px;
+        height: 480px;
+        border-radius: 4px;
+        background: linear-gradient(180deg, #7fb2e5 0%, #bcd7ef 45%, #6d8f4e 46%, #4d6b35 100%);
+      }
+      .panel {
+        width: 280px;
+        background: #2a2a2a;
+        color: #ddd;
+        padding: 16px;
+        font-size: 13px;
+      }
+      .panel h6 {
+        font-size: 12px;
+        color: #aaa;
+        margin: 14px 0 8px;
+      }
+      .slider {
+        height: 4px;
+        border-radius: 2px;
+        background: #555;
+        position: relative;
+        margin: 10px 0 18px;
+      }
+      .slider b {
+        position: absolute;
+        left: 50%;
+        top: -6px;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: #eee;
+      }
+      .titlebar .icon {
+        color: #555;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="menubar">
+      <b>Photos</b><span>File</span><span>Edit</span><span>Image</span><span>View</span
+      ><span>Window</span><span>Help</span>
+    </div>
+    <div class="win">
+      <div class="titlebar">
+        <span class="lights"><i></i><i></i><i></i></span>
+        <span class="btn" data-target="revert">Revert to Original</span>
+        <span class="spacer"></span>
+        <span class="icon" data-target="rotate" title="Rotate"
+          ><svg viewBox="0 0 24 24">
+            <path d="M4 12a8 8 0 108-8" />
+            <path d="M4 4v5h5" /></svg
+        ></span>
+        <span class="icon" data-target="crop" title="Crop"
+          ><svg viewBox="0 0 24 24">
+            <path d="M6 2v16h16" />
+            <path d="M2 6h16v16" /></svg
+        ></span>
+        <span class="icon" title="Filters"
+          ><svg viewBox="0 0 24 24">
+            <circle cx="9" cy="9" r="5" />
+            <circle cx="15" cy="9" r="5" />
+            <circle cx="12" cy="15" r="5" /></svg
+        ></span>
+        <span class="icon" title="Favourite"
+          ><svg viewBox="0 0 24 24">
+            <path d="M12 20s-7-4.5-7-10a4 4 0 017-2 4 4 0 017 2c0 5.5-7 10-7 10z" /></svg
+        ></span>
+        <span class="btn primary" data-target="done">Done</span>
+      </div>
+      <div class="body">
+        <div class="canvas"><div class="photo"></div></div>
+        <div class="panel">
+          <h6>Light</h6>
+          <div>Exposure</div>
+          <div class="slider" data-target="exposure"><b></b></div>
+          <div>Brilliance</div>
+          <div class="slider"><b style="left: 30%"></b></div>
+          <div>Shadows</div>
+          <div class="slider"><b style="left: 60%"></b></div>
+          <h6>Colour</h6>
+          <div>Saturation</div>
+          <div class="slider"><b style="left: 45%"></b></div>
+          <div>Warmth</div>
+          <div class="slider"><b style="left: 55%"></b></div>
+        </div>
+      </div>
+    </div>
+    <script>
+      window.__asks = {
+        crop: "How do I crop this photo?",
+        rotate: "How do I rotate the picture?",
+        exposure: "How do I make the photo brighter?",
+        done: "How do I save my edits?",
+        revert: "How do I undo all my changes to this photo?",
+      };
+    </script>
+  </body>
+</html>

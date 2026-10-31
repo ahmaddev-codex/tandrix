@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { askScreen, imageUrl, MetaClient, prompts, REPLY_RULE, TEACH_REPLY_RULE } from "../src";
+import {
+  askScreen,
+  imageUrl,
+  MetaClient,
+  prompts,
+  REPLY_RULE,
+  TEACH_REPLY_RULE,
+  unnarrate,
+} from "../src";
 import { json, noSleep, scriptedFetch } from "./helpers";
 
 const screenshot = imageUrl("data:image/jpeg;base64,AAAA");
@@ -115,9 +123,15 @@ describe("askScreen replies", () => {
     return { reply: r.reply, calls: s.calls };
   };
 
-  it("rewrites narration as the instruction, with one more call", async () => {
+  it("rewrites common narration without another call", async () => {
+    const r = await ask("I’ll highlight the Choose storage button so you can pick your SD card.");
+    expect(r.reply).toBe("Click the Choose storage button to pick your SD card.");
+    expect(r.calls).toHaveLength(1);
+  });
+
+  it("rewrites other narration with one more call", async () => {
     const r = await ask(
-      "I’ll highlight the storage button so you can pick your SD card.",
+      "I’ll highlight the storage button. Then you can pick your SD card.",
       "Click Choose storage to pick your SD card.",
     );
     expect(r.reply).toBe("Click Choose storage to pick your SD card.");
@@ -153,8 +167,8 @@ describe("askScreen replies", () => {
   });
 
   it("keeps the first reply when the rewrite still narrates", async () => {
-    const r = await ask("Let me point at Save.", "I'll point at Save for you.");
-    expect(r.reply).toBe("Let me point at Save.");
+    const r = await ask("Let me point at Save. It's top right.", "I'll point at Save for you.");
+    expect(r.reply).toBe("Let me point at Save. It's top right.");
   });
 
   it("never reads out leaked tool-call markup", async () => {
@@ -162,5 +176,36 @@ describe("askScreen replies", () => {
       '<atem:function_calls><atem:invoke name="computer.stop"><atem:parameter name="answer">Say which button you need.</atem:parameter></atem:invoke></atem:function_calls>',
     );
     expect(r.reply).toBe("Say which button you need.");
+  });
+});
+
+describe("unnarrate", () => {
+  it("turns pointing narration into the instruction", () => {
+    expect(unnarrate("I'll point to the Archive button so you can file this email.")).toBe(
+      "Click the Archive button to file this email.",
+    );
+    expect(unnarrate("Got it. I'll highlight the Wi-Fi toggle to turn it off.")).toBe(
+      "Click the Wi-Fi toggle to turn it off.",
+    );
+    expect(unnarrate("Let me point to the Add to Cart button.")).toBe(
+      "Click the Add to Cart button.",
+    );
+  });
+
+  it("uses the action's verb", () => {
+    expect(
+      unnarrate("I'll point to the Exposure slider so you can brighten the photo.", {
+        type: "drag",
+        path: [
+          { x: 1, y: 1 },
+          { x: 9, y: 1 },
+        ],
+      }),
+    ).toBe("Drag the Exposure slider to brighten the photo.");
+  });
+
+  it("leaves anything else to the model", () => {
+    expect(unnarrate("Click Export, then choose PDF.")).toBeNull();
+    expect(unnarrate("I'll point to Export. Then choose PDF.")).toBeNull();
   });
 });

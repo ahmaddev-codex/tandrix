@@ -141,8 +141,24 @@ export function sendToOverlay(displayId: number, channel: string, payload: unkno
 /** Every display that has an overlay. */
 export const overlayDisplayIds = () => [...overlays.keys()];
 
+/**
+ * Sends the pointer to a display's overlay. Points arrive relative to the display; if macOS has
+ * placed the overlay window anywhere else (below the menu bar, say), they're moved by the same
+ * amount, so the pointer lands where the model meant, not a menu bar's height lower.
+ */
 function send(displayId: number, pointer: OverlayPointer | null) {
-  overlays.get(displayId)?.webContents.send(channels.pointer, pointer);
+  const win = overlays.get(displayId);
+  if (!win) return;
+  const display = displayInfo().find((d) => d.id === displayId);
+  if (pointer && display) {
+    const w = win.getContentBounds();
+    pointer = {
+      ...pointer,
+      x: pointer.x - (w.x - display.bounds.x),
+      y: pointer.y - (w.y - display.bounds.y),
+    };
+  }
+  win.webContents.send(channels.pointer, pointer);
 }
 
 export function clearPointer() {

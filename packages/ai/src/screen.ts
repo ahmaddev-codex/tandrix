@@ -14,6 +14,8 @@ export interface ScreenQuestion {
   context?: string[];
   /** A guided lesson: one step at a time with check-ins. */
   lesson?: boolean;
+  /** How hard the model thinks before answering; less is faster. */
+  effort?: "none" | "minimal" | "low" | "medium";
   signal?: AbortSignal;
 }
 
@@ -55,6 +57,9 @@ export const REPLY_RULE =
 export const TEACH_REPLY_RULE =
   'Your text reply is read aloud as the lesson. Give only the single next step: one short explaining sentence at most, then the instruction in the imperative, naming controls as labelled on screen, for example "Docs saves as you type, so there is nothing to do there. Click File, then New. Say next when that is done." End every step with the check-in. You may open with two warm words at most ("Got it.", "Let\'s learn it."). Never describe pointing: no "I\'ll point" or "let me highlight". Plain words only: no code, markup or JSON.';
 
+/** Show me usually answers in 3 s; one still waiting at 7 is asked again. */
+const SHOW_HEDGE_MS = 7000;
+
 export async function askScreen(
   client: MetaClient,
   model: string,
@@ -62,12 +67,13 @@ export async function askScreen(
 ): Promise<ScreenAnswer> {
   const context = q.context?.filter(Boolean).join("\n");
   const rule = q.lesson ? TEACH_REPLY_RULE : REPLY_RULE;
-  const res = await client.respond(
+  const res = await client.respondHedged(
     {
       model,
       instructions: q.lesson ? prompts.teachMe : prompts.showMe,
       tools: [{ type: "computer" }],
-      reasoning: { effort: "low" },
+      // Minimal is as accurate on the pointing bench (fixtures/screens) and seconds faster.
+      reasoning: { effort: q.effort ?? "minimal" },
       input: [
         user(
           text(`${context ? `${context}\n\n` : ""}The user asks: ${q.question}\n\n${rule}`),
@@ -76,6 +82,7 @@ export async function askScreen(
       ],
     },
     q.signal,
+    SHOW_HEDGE_MS,
   );
   const actions: DesktopAction[] = [];
   let dropped = 0;
@@ -94,8 +101,10 @@ export async function askScreen(
   // narration of what Tandrix is doing.
   let reply = cleanSpokenReply(outputText(res));
   if (narrates(reply)) {
-    const at = actions.find((a) => "x" in a && "y" in a) as { x: number; y: number } | undefined;
-    reply = await asInstruction(client, model, reply, q, at).catch(() => reply);
+    // Most narration has one shape, rewritten here in no time; the rest takes a small call.
+    reply =
+      unnarrate(reply, actions[0]) ??
+      (await asInstruction(client, model, reply, q).catch(() => reply));
   }
   return { reply, actions, dropped, safetyChecks };
 }
@@ -106,30 +115,46 @@ export const narrates = (reply: string) =>
     reply,
   );
 
+const NARRATION =
+  /^(?:I['’]ll|I will|let me|I['’]m going to|I am going to)\s+(?:point (?:you )?(?:to|at)|highlight|show you|indicate|move (?:the|my) pointer (?:to|over)|click(?: on)?|select|press)\s+(.+?)(?:\s+(?:so (?:that )?you can|so you could|for you to)\s+(.+?))?[.!]?$/i;
+
+const VERB: Partial<Record<DesktopAction["type"], string>> = {
+  double_click: "Double-click",
+  drag: "Drag",
+  scroll: "Scroll",
+};
+
 /**
- * Rewrites narration as the instruction itself, with a small text-only call. The computer-use
- * model narrates despite the prompt; the user should hear what to do.
+ * "I'll point to the Archive button so you can file this email." → "Click the Archive button to
+ * file this email." One sentence in that shape only; null for anything else.
+ */
+export function unnarrate(reply: string, action?: DesktopAction): string | null {
+  const said = reply.trim().replace(/^(?:got it|sure thing|sure|okay|ok)[.!,]?\s+/i, "");
+  const m = NARRATION.exec(said);
+  if (!m || /[.!?]\s+\S/.test(said)) return null;
+  const verb = (action && VERB[action.type]) ?? "Click";
+  const control = m[1]!.replace(/[,;]$/, "");
+  const why = m[2]?.replace(/[.!]$/, "");
+  return `${verb} ${control}${why ? ` to ${why}` : ""}.`;
+}
+
+/**
+ * Rewrites narration as the instruction itself, with a small text-only call: the narration names
+ * the control already. The computer-use model narrates despite the prompt; the user should hear
+ * what to do.
  */
 async function asInstruction(
   client: MetaClient,
   model: string,
   reply: string,
   q: ScreenQuestion,
-  at?: { x: number; y: number },
 ): Promise<string> {
-  // With the screen, so controls keep their names as labelled there.
-  const where = at ? ` The pointer is on the control at (${at.x}, ${at.y}) in the screenshot.` : "";
   const res = await client.respond(
     {
       model,
       instructions: prompts.asInstruction,
-      input: [
-        user(
-          text(`The user asked: ${q.question}\nThe assistant said: ${reply}${where}`),
-          q.screenshot,
-        ),
-      ],
-      reasoning: { effort: "low" },
+      input: [user(text(`The user asked: ${q.question}\nThe assistant said: ${reply}`))],
+      reasoning: { effort: "minimal" },
     },
     q.signal,
   );

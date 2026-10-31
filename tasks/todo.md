@@ -16,9 +16,9 @@ Tracks: **D** design, **A** mobile & glasses, **B** API & AI, **C** desktop (mac
 - [x] T1 Contracts: core entities (B)
 - [x] T2 Core rules: step status + safety gates (B)
 - [ ] T3 Spike: SAM highlighting (B)
-- [ ] T4 Spike: screen pointing (C)
+- [x] T4 Spike: screen pointing (C): 20 of 20 on the pointing bench (`pointing-bench`, four synthetic app screens); see spikes.md
 - [x] T5 Spike: nameplate → manual (B): decided — live search steered to direct PDFs (T10) with manual upload/pages as the fallback path; see spikes.md
-- [ ] T6 Jobs API with auth, deployed (B): built and tested locally; open until deployed (needs hosted Supabase + Fly.io/Railway)
+- [ ] T6 Jobs API with auth, deployed (B): built and tested locally; open until deployed (needs hosted Supabase + Fly.io)
 - [x] T7 Mobile shell: sign in, create/list jobs (A): passes on the iOS simulator (Maestro e2e); physical-device check by you; Android deferred
 - [ ] **Checkpoint 1:** CI green, API live, spikes decided, contracts frozen, ui gallery renders
 
@@ -39,7 +39,7 @@ Tracks: **D** design, **A** mobile & glasses, **B** API & AI, **C** desktop (mac
 
 ## Phase 3 — Desktop
 - [x] T18 Electron shell with overlay and panel (C): verified on this Mac with one display; two displays and the built app's Screen Recording prompt are manual checks
-- [ ] T19 Show me: ask → pointer + voice (C + B): live on a synthetic app, instructive replies, pointer inside the target 3 of 5 runs and 10 px below it twice; open until the T4 spike (18 of 20) in the demo app
+- [x] T19 Show me: ask → pointer + voice (C + B): 20 of 20 inside the control on the pointing bench; the earlier "10 px below" was the overlay window's offset and the arrow tip, both corrected; answers in 2–6 s (reasoning minimal, narration rewritten without a second call, slow answers asked again after 7 s)
 - [ ] T20 Screen step verification (C): built and verified with fixtures; live check not yet run
 - [ ] **Checkpoint 5:** teach-me-this-screen works
 

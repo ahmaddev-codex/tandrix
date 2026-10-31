@@ -207,3 +207,49 @@ describe("MetaClient files", () => {
     ]);
   });
 });
+
+describe("respondHedged", () => {
+  /** A fetch whose first call hangs until cancelled and later calls answer at once. */
+  function slowFirst() {
+    let calls = 0;
+    let firstCancelled = false;
+    const fetch = ((_url: string, init?: RequestInit) => {
+      calls++;
+      if (calls === 1)
+        return new Promise<Response>((_resolve, reject) =>
+          init?.signal?.addEventListener("abort", () => {
+            firstCancelled = true;
+            reject(Object.assign(new Error("aborted"), { name: "AbortError" }));
+          }),
+        );
+      return Promise.resolve(responseWithText("second"));
+    }) as typeof globalThis.fetch;
+    return { fetch, calls: () => calls, firstCancelled: () => firstCancelled };
+  }
+
+  it("asks again when the first answer is slow, and uses whichever comes first", async () => {
+    const f = slowFirst();
+    const client = new MetaClient({ apiKey: "k", fetch: f.fetch, sleep: noSleep });
+    const r = await client.respondHedged({ model: "muse-spark-1.3", input: "hi" }, undefined, 10);
+    expect(r.output[0]).toMatchObject({ type: "message" });
+    expect(f.calls()).toBe(2);
+    expect(f.firstCancelled()).toBe(true);
+  });
+
+  it("asks once when the answer is quick", async () => {
+    const { fetch, calls } = scriptedFetch([responseWithText("quick")]);
+    const client = new MetaClient({ apiKey: "k", fetch, sleep: noSleep });
+    await client.respondHedged({ model: "muse-spark-1.3", input: "hi" }, undefined, 1000);
+    await new Promise((r) => setTimeout(r, 20));
+    expect(calls).toHaveLength(1);
+  });
+
+  it("gives up at once on a request the API refuses", async () => {
+    const { fetch, calls } = scriptedFetch([apiError(400, "invalid_request_error", "bad")]);
+    const client = new MetaClient({ apiKey: "k", fetch, sleep: noSleep });
+    await expect(
+      client.respondHedged({ model: "muse-spark-1.3", input: "hi" }, undefined, 1000),
+    ).rejects.toThrow();
+    expect(calls).toHaveLength(1);
+  });
+});

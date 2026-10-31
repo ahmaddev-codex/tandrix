@@ -11,6 +11,7 @@
     "start": "node --enable-source-maps dist/server.js",
     "spend": "tsx --env-file-if-exists=../../.env.local scripts/spend.ts",
     "live-check": "tsx --env-file=../../.env.local scripts/live-check.ts",
+    "pointing-bench": "tsx --env-file=../../.env.local scripts/pointing-bench.ts",
     "e2e:clean": "tsx --env-file=../../.env.local scripts/e2e-clean.ts",
     "e2e:seed": "tsx --env-file=../../.env.local scripts/e2e-seed.ts"
   },

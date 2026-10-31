@@ -1,0 +1,165 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Mail</title>
+    <link rel="stylesheet" href="base.css" />
+    <style>
+      .body {
+        flex: 1;
+        display: flex;
+        min-height: 0;
+      }
+      .side {
+        width: 210px;
+        background: #f3f3f5;
+        border-right: 1px solid #e3e3e3;
+        padding: 12px 8px;
+        font-size: 13px;
+      }
+      .side div {
+        padding: 6px 10px;
+        border-radius: 6px;
+      }
+      .side .sel {
+        background: #dcdce2;
+      }
+      .side h6 {
+        font-size: 11px;
+        color: #999;
+        margin: 14px 10px 4px;
+      }
+      .list {
+        width: 360px;
+        border-right: 1px solid #e3e3e3;
+      }
+      .mail {
+        padding: 10px 14px;
+        border-bottom: 1px solid #eee;
+        font-size: 13px;
+      }
+      .mail b {
+        display: block;
+        margin-bottom: 2px;
+      }
+      .mail.sel {
+        background: #2f7cf6;
+        color: #fff;
+      }
+      .read {
+        flex: 1;
+        padding: 22px 28px;
+        font-size: 14px;
+        line-height: 1.5;
+      }
+      .read h2 {
+        font-size: 20px;
+        margin-bottom: 6px;
+      }
+      .search {
+        width: 220px;
+        padding: 5px 10px;
+        border-radius: 6px;
+        border: 1px solid #d0d0d0;
+        background: #fff;
+        font-size: 13px;
+        color: #999;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="menubar">
+      <b>Mail</b><span>File</span><span>Edit</span><span>View</span><span>Mailbox</span
+      ><span>Message</span><span>Window</span><span>Help</span>
+    </div>
+    <div class="win">
+      <div class="titlebar">
+        <span class="lights"><i></i><i></i><i></i></span>
+        <span class="icon" data-target="compose" title="New Message"
+          ><svg viewBox="0 0 24 24">
+            <path d="M4 20h4l10-10-4-4L4 16v4z" />
+            <path d="M14 6l4 4" /></svg
+        ></span>
+        <span class="spacer"></span>
+        <span class="icon" data-target="archive" title="Archive"
+          ><svg viewBox="0 0 24 24">
+            <rect x="3" y="4" width="18" height="5" rx="1" />
+            <path d="M5 9v10h14V9" />
+            <path d="M10 13h4" /></svg
+        ></span>
+        <span class="icon" data-target="trash" title="Delete"
+          ><svg viewBox="0 0 24 24">
+            <path d="M4 7h16" />
+            <path d="M9 7V4h6v3" />
+            <path d="M6 7l1 13h10l1-13" /></svg
+        ></span>
+        <span class="icon" title="Junk"
+          ><svg viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="8" />
+            <path d="M7 7l10 10" /></svg
+        ></span>
+        <span class="icon" data-target="reply" title="Reply"
+          ><svg viewBox="0 0 24 24">
+            <path d="M10 8L4 13l6 5" />
+            <path d="M4 13h10a6 6 0 016 6" /></svg
+        ></span>
+        <span class="icon" title="Reply All"
+          ><svg viewBox="0 0 24 24">
+            <path d="M12 8l-6 5 6 5" />
+            <path d="M8 8l-6 5 6 5" />
+            <path d="M6 13h8a6 6 0 016 6" /></svg
+        ></span>
+        <span class="icon" title="Forward"
+          ><svg viewBox="0 0 24 24">
+            <path d="M14 8l6 5-6 5" />
+            <path d="M20 13H10a6 6 0 00-6 6" /></svg
+        ></span>
+        <span class="icon" title="Flag"
+          ><svg viewBox="0 0 24 24">
+            <path d="M5 21V4" />
+            <path d="M5 4h12l-2 4 2 4H5" /></svg
+        ></span>
+        <span class="search" data-target="search">Search</span>
+      </div>
+      <div class="body">
+        <div class="side">
+          <h6>Favourites</h6>
+          <div class="sel">Inbox</div>
+          <div>VIPs</div>
+          <div data-target="sent">Sent</div>
+          <div>Drafts</div>
+          <div>Junk</div>
+          <div>Bin</div>
+          <h6>Mailboxes</h6>
+          <div>Receipts</div>
+          <div>Travel</div>
+        </div>
+        <div class="list">
+          <div class="mail sel"><b>Priya Shah</b>Interview lineup for next week</div>
+          <div class="mail"><b>Acme Corp</b>Your order has shipped</div>
+          <div class="mail"><b>Design team</b>New mocks are up</div>
+          <div class="mail"><b>Bank</b>Your statement is ready</div>
+          <div class="mail"><b>Sam</b>Lunch tomorrow?</div>
+        </div>
+        <div class="read">
+          <h2>Interview lineup for next week</h2>
+          <p class="muted">Priya Shah · Today at 09:12</p>
+          <br />
+          <p>
+            Hi! Here's your interview lineup for next week. Let me know if any time doesn't work.
+          </p>
+        </div>
+      </div>
+    </div>
+    <script>
+      window.__asks = {
+        compose: "How do I write a new email?",
+        archive: "How do I archive this email?",
+        trash: "How do I delete this email?",
+        reply: "How do I reply to Priya?",
+        search: "Where do I search my mail?",
+        sent: "Where can I see the emails I've sent?",
+      };
+    </script>
+  </body>
+</html>

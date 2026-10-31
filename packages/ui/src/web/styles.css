@@ -477,6 +477,8 @@ button.tx-visual-frame:focus-visible {
   display: block;
   width: 26px;
   height: 26px;
+  /* The arrow's tip is 4px into its box: pull it back so the tip is the point. */
+  margin: -4px 0 0 -4px;
   overflow: visible;
   filter: drop-shadow(0 1px 2px var(--highlight-keyline));
 }

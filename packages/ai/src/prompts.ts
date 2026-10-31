@@ -139,7 +139,7 @@ Task: decide which app a computer task needs before it starts.
 
   asInstruction: `${shared}
 Task: rewrite what an assistant said into the instruction for the user, spoken aloud.
-- Start with the instruction itself, no opener ("Got it", "Sure"): one or two short, imperative sentences. Name each control exactly as it is labelled in the screenshot ("Choose storage"), never "that button"; keep every value.
+- Start with the instruction itself, no opener ("Got it", "Sure"): one or two short, imperative sentences, the first starting with what the user does to the control: Click, Double-click, Drag, Type, Choose or Press (never "Look at" or "Find"). Name each control exactly as the assistant named it ("Choose storage"), never "that button"; keep every value.
 - Say what the user does, never what the assistant does: no "I'll", "I will" or "let me".
 - If it says it can't do something for them, keep that, then the step they can do.
 - Reply with the instruction only: plain words, no quotes, code or markup.

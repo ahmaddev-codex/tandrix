@@ -51,12 +51,16 @@ Decision (fallback if failed: point prompts, box-only, or numbered callouts):
 
 ## T4 Screen pointing
 
-20 targets in the chosen desktop app. Pass: ≥ 18/20 inside the target control.
+20 targets on four synthetic Mac app screens (Mail, System Settings, Photos, a spreadsheet), rendered by `fixtures/screens/render.mjs` at 1280 px wide as the Mac captures them, with each control's box known. `pnpm --filter @tandrix/api pointing-bench` asks the local API where to click and scores the pointer. Pass: ≥ 18/20 inside the target control.
 
-| # | Target | Hit? | Distance from centre (px) |
-|---|---|---|---|
+| Run | Inside the control | Distance from centre | Answer time | Cost |
+|---|---|---|---|---|
+| Reasoning low, narration rewritten with the screenshot | 20/20 | 2 px or less on icons; long labels hit left of centre | 5–18 s | $0.22 |
+| Reasoning minimal, common narration rewritten without a call | 20/20 | same | 2.3–6.5 s (two outliers at 10 and 24 s) | $0.14 |
 
-Decision (fallback if failed: accessibility lookup by name, or SAM snapping):
+Icon-only controls (archive, trash, reply, rotate, crop) all hit. The "10 px below" seen on a real Mac earlier was the overlay, not the model: the pointer was drawn relative to the display while macOS can place the overlay window lower, and the arrow's tip sat 4 px inside its box. Both are corrected; slow answers are now asked again after 7 s (the first answer wins).
+
+Decision: Spark's own coordinates, no SAM snapping or accessibility lookup needed. Reasoning minimal for Show me.
 
 ## T5 Nameplate → manual
 

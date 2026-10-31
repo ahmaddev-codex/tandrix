@@ -102,6 +102,58 @@ export class MetaClient {
     return json;
   }
 
+  /**
+   * respond, for calls someone is waiting on: if no answer has come after `afterMs`, the same
+   * request goes again and the first answer wins (the other is cancelled). Cuts the slow tail
+   * (an answer usually takes 3 s, now and then 20) for the price of a second call only then.
+   */
+  async respondHedged(
+    body: Record<string, unknown>,
+    signal?: AbortSignal,
+    afterMs = 7000,
+  ): Promise<MetaResponse> {
+    const attempts = [new AbortController(), new AbortController()];
+    const cancelAll = () => attempts.forEach((a) => a.abort());
+    signal?.addEventListener("abort", cancelAll, { once: true });
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    try {
+      return await new Promise<MetaResponse>((resolve, reject) => {
+        let started = 1;
+        let failed = 0;
+        let done = false;
+        const run = (i: 0 | 1) =>
+          this.respond(body, attempts[i]!.signal).then(
+            (r) => {
+              if (done) return;
+              done = true;
+              clearTimeout(timer);
+              attempts[1 - i]!.abort();
+              resolve(r);
+            },
+            (e: unknown) => {
+              if (done) return;
+              // A request the API refuses outright would be refused twice: give up at once.
+              if (++failed >= started || (e instanceof MetaApiError && !e.retryable)) {
+                done = true;
+                clearTimeout(timer);
+                cancelAll();
+                reject(e);
+              }
+            },
+          );
+        void run(0);
+        timer = setTimeout(() => {
+          if (done) return;
+          started = 2;
+          void run(1);
+        }, afterMs);
+      });
+    } finally {
+      clearTimeout(timer);
+      signal?.removeEventListener("abort", cancelAll);
+    }
+  }
+
   /** POST /responses with stream: true. Retries only happen before the first event arrives. */
   async *stream(body: Record<string, unknown>, signal?: AbortSignal): AsyncGenerator<StreamEvent> {
     const model = String(body.model ?? "");

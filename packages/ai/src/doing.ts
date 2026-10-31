@@ -80,6 +80,9 @@ export function readTurn(res: MetaResponse): DoTurn {
   };
 }
 
+/** A turn slower than this is asked again, and the first answer used. */
+const TURN_HEDGE_MS = 10_000;
+
 export interface DoStart {
   screenshot: InputPart;
   /** What the user asked Tandrix to do. */
@@ -90,7 +93,7 @@ export interface DoStart {
 
 export async function startDoing(client: MetaClient, model: string, q: DoStart): Promise<DoTurn> {
   const context = q.context?.filter(Boolean).join("\n");
-  const res = await client.respond(
+  const res = await client.respondHedged(
     {
       model,
       store: true,
@@ -105,6 +108,7 @@ export async function startDoing(client: MetaClient, model: string, q: DoStart):
       ],
     },
     q.signal,
+    TURN_HEDGE_MS,
   );
   return readTurn(res);
 }
@@ -124,7 +128,7 @@ export async function continueDoing(
   model: string,
   c: DoContinue,
 ): Promise<DoTurn> {
-  const res = await client.respond(
+  const res = await client.respondHedged(
     {
       model,
       store: true,
@@ -141,6 +145,7 @@ export async function continueDoing(
       ],
     },
     c.signal,
+    TURN_HEDGE_MS,
   );
   return readTurn(res);
 }
