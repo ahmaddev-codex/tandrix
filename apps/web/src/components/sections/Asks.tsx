@@ -15,10 +15,13 @@ export function Asks() {
       <div
         tabIndex={0}
         aria-label="Examples"
-        className="grid snap-x snap-mandatory auto-cols-[min(400px,84vw)] grid-flow-col justify-[safe_center] gap-4 overflow-x-auto pr-gutter pb-3 [scrollbar-width:none] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus [&::-webkit-scrollbar]:hidden"
+        className="grid snap-x snap-mandatory auto-cols-[min(400px,84vw)] grid-flow-col justify-[safe_center] gap-8 sm:gap-10 overflow-x-auto pr-gutter pb-3 [scrollbar-width:none] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus [&::-webkit-scrollbar]:hidden"
       >
         {asks.map((a) => (
-          <article key={a.ask} className="grid snap-start grid-rows-[auto_1fr]">
+          <article
+            key={a.ask}
+            className="relative grid snap-start grid-rows-[auto_1fr] after:absolute after:top-4 after:bottom-4 after:-right-4 sm:after:-right-5 after:w-px after:bg-[var(--border)] after:content-[''] last:after:hidden"
+          >
             <div className="flex aspect-[4/3]">{a.figure}</div>
             <div className="grid content-start justify-items-start gap-3 px-1 pt-3">
               <p className="text-[13px] font-medium text-text-2">{a.when}</p>

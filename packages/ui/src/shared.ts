@@ -9,11 +9,8 @@ import { icons, type IconName, type IconWeight } from "./generated/icons";
 export const iconWeightFor = (size: number): IconWeight => (size >= 20 ? "outline" : "fill");
 
 /** The paths to draw for an icon at a size, in the weight the rule gives unless one is asked for. */
-/** Block and caution read lighter as outlines, at any size: a solid one shouts. */
-const ALWAYS_OUTLINE = new Set<IconName>(["stop", "alert"]);
-
 export const iconPathsFor = (name: IconName, size: number, weight?: IconWeight) =>
-  icons[name][weight ?? (ALWAYS_OUTLINE.has(name) ? "outline" : iconWeightFor(size))];
+  icons[name][weight ?? iconWeightFor(size)];
 
 export type StepStatus =
   "verified" | "confirmed" | "attention" | "unverifiable" | "blocked" | "pending" | "progress";

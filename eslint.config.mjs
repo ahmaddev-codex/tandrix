@@ -53,8 +53,8 @@ export default tseslint.config(
     rules: { "@typescript-eslint/no-require-imports": "off" },
   },
   {
-    // Node-run helper scripts for the end-to-end flows.
-    files: ["apps/mobile/e2e/**/*.mjs"],
+    // Node-run helper scripts for the end-to-end flows and benches.
+    files: ["apps/mobile/e2e/**/*.mjs", "fixtures/**/*.mjs"],
     languageOptions: {
       globals: {
         process: "readonly",

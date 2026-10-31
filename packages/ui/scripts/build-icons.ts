@@ -26,6 +26,11 @@ const outlineOnly = new Set<string>([
   "menu",
   "expand",
   "actions",
+  // Block and caution: a solid one shouts from a chip.
+  "stop",
+  "alert",
+  "chevronDown",
+  "arrowUpRight",
 ]);
 
 /** Tandrix icon name → Phosphor icon. Names say what the icon means in Tandrix. */
@@ -65,6 +70,11 @@ const map = {
   hand: "hand-pointing",
   image: "image",
   expand: "arrows-out-simple",
+  chevronDown: "caret-down",
+  arrowUpRight: "arrow-up-right",
+  play: "play",
+  sun: "sun",
+  moon: "moon",
 } as const;
 
 type Path = { d: string; o?: number };
