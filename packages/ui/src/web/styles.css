@@ -29,7 +29,8 @@
   gap: var(--space-2);
   height: var(--control-md);
   padding: 0 var(--space-3);
-  border-radius: var(--radius-md);
+  /* Pills, as on the website. */
+  border-radius: var(--radius-full);
   font-family: var(--font-sans);
   font-size: 13px;
   line-height: 18px;
@@ -98,12 +99,109 @@
   background: var(--mandatory);
   color: var(--on-mandatory);
 }
+.tx-btn-ring {
+  position: relative;
+  background: var(--text);
+  color: var(--background-100);
+  border-radius: var(--radius-full);
+  padding: 0 var(--space-4);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--highlight) 40%, transparent),
+    var(--shadow-sm);
+  transition:
+    transform 160ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 160ms cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 160ms ease;
+}
+.tx-btn-ring:hover:not([disabled]) {
+  transform: translateY(-1px);
+  box-shadow:
+    0 0 0 1.5px var(--highlight),
+    0 0 18px -2px color-mix(in srgb, var(--highlight) 45%, transparent),
+    var(--shadow-md);
+}
+.tx-btn-ring:active:not([disabled]) {
+  transform: translateY(0) scale(0.985);
+  box-shadow:
+    0 0 0 1.5px var(--highlight),
+    0 0 10px -2px color-mix(in srgb, var(--highlight) 30%, transparent);
+}
+.tx-btn-ring:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 3px;
+}
 .tx-btn-icon {
   padding: 0;
   aspect-ratio: 1;
 }
 @media (prefers-reduced-motion: reduce) {
   .tx-btn {
+    transition: none;
+  }
+}
+
+/* Brand Wordmark (Binary-inspired) */
+.tx-wordmark-link {
+  text-decoration: none;
+  color: inherit;
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--radius-sm);
+  transition: opacity 140ms ease;
+}
+.tx-wordmark-link:hover {
+  opacity: 0.88;
+}
+.tx-wordmark-link:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 3px;
+}
+.tx-wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  color: var(--text);
+  line-height: 1;
+}
+.tx-wordmark-glyph {
+  display: inline-block;
+  flex-shrink: 0;
+  color: var(--text);
+  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.tx-wordmark-link:hover .tx-wordmark-glyph {
+  transform: scale(1.06);
+}
+/* The mark: the pointer on a dark tile, in the blue ring Tandrix wears while active. */
+.tx-mark-tile {
+  fill: #0b0b0c;
+}
+.tx-mark-pointer {
+  fill: #ffffff;
+}
+.tx-mark-ring-a {
+  stop-color: var(--highlight);
+}
+.tx-mark-ring-b {
+  stop-color: #a9cbff;
+}
+.tx-wordmark-sm {
+  font-size: 15px;
+  gap: 7px;
+}
+.tx-wordmark-md {
+  font-size: 18px;
+  gap: 9px;
+}
+.tx-wordmark-lg {
+  font-size: 24px;
+  gap: 12px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tx-wordmark-glyph {
     transition: none;
   }
 }
@@ -267,6 +365,7 @@ button.tx-visual-frame:focus-visible {
   max-width: 100%;
   max-height: 278px;
   object-fit: contain;
+  transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .tx-visual-open {
   position: absolute;
@@ -379,6 +478,8 @@ button.tx-visual-frame:focus-visible {
   display: block;
   width: 26px;
   height: 26px;
+  /* The arrow's tip is 4px into its box: pull it back so the tip is the point. */
+  margin: -4px 0 0 -4px;
   overflow: visible;
   filter: drop-shadow(0 1px 2px var(--highlight-keyline));
 }
@@ -389,6 +490,58 @@ button.tx-visual-frame:focus-visible {
   stroke-linejoin: round;
   stroke-linecap: round;
   paint-order: stroke fill;
+}
+.tx-ptr-ring {
+  position: absolute;
+  left: -34px;
+  top: -22px;
+  overflow: visible;
+  pointer-events: none;
+}
+.tx-ptr-ring-halo {
+  fill: var(--highlight-tint);
+  stroke: var(--highlight-halo);
+  stroke-width: 4px;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+}
+.tx-ptr-ring-stroke {
+  fill: none;
+  stroke: var(--highlight);
+  stroke-width: 2px;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+}
+.tx-ptr-step {
+  position: absolute;
+  left: 20px;
+  top: -10px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--highlight);
+  color: var(--highlight-halo);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 0 2px var(--highlight-halo);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .tx-ptr-ring-halo,
+  .tx-ptr-ring-stroke {
+    animation: tx-ring-draw 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+}
+@keyframes tx-ring-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
 }
 .tx-ptr-cap {
   position: absolute;
@@ -638,6 +791,37 @@ button.tx-visual-frame:focus-visible {
 }
 
 /* Confirm dialog */
+/* The modal's backdrop: the page dimmed, the dialog centred and easing in. */
+.tx-dialog-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: var(--space-4);
+  background: var(--overlay-scrim);
+  animation: tx-scrim-in 160ms ease-out both;
+}
+.tx-dialog-scrim > .tx-dialog {
+  animation: tx-dialog-in 220ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+@keyframes tx-scrim-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes tx-dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tx-dialog-scrim,
+  .tx-dialog-scrim > .tx-dialog {
+    animation: none;
+  }
+}
 .tx-dialog {
   width: 100%;
   max-width: 440px;
@@ -1050,7 +1234,7 @@ button.tx-visual-frame:focus-visible {
   grid-template-columns: 1fr 1fr;
   gap: 2px;
   padding: 3px;
-  border-radius: 9px;
+  border-radius: var(--radius-full);
   background: var(--gray-100);
   box-shadow: 0 0 0 1px var(--border) inset;
 }
@@ -1061,7 +1245,7 @@ button.tx-visual-frame:focus-visible {
   gap: 6px;
   height: 34px;
   padding: 0 var(--space-3);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-full);
   border: 0;
   background: transparent;
   color: var(--text-secondary);
@@ -1375,6 +1559,12 @@ button.tx-visual-frame:focus-visible {
   gap: var(--space-4);
   box-shadow: 0 -1px 0 var(--border) inset;
   overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+.tx-tabs::-webkit-scrollbar {
+  display: none;
 }
 .tx-tab {
   display: inline-flex;
@@ -1391,6 +1581,9 @@ button.tx-visual-frame:focus-visible {
   font-size: 13px;
   font-weight: 500;
   box-shadow: 0 -2px 0 transparent inset;
+  transition:
+    color 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .tx-tab:hover {
   color: var(--text);
@@ -1415,10 +1608,23 @@ button.tx-visual-frame:focus-visible {
   line-height: 20px;
   text-align: center;
   font-variant-numeric: tabular-nums;
+  transition:
+    background-color 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+    color 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.tx-tab.is-on .tx-tab-count {
+  background: var(--gray-200);
+  color: var(--text);
 }
 .tx-tabs-lg .tx-tab {
   height: var(--control-lg);
   font-size: 14px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tx-tab,
+  .tx-tab-count {
+    transition: none;
+  }
 }
 
 /* Notice */
@@ -1504,8 +1710,10 @@ button.tx-visual-frame:focus-visible {
   min-width: 0;
 }
 .tx-steprow-head {
+  /* Status first, then the action under it. */
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
   gap: var(--space-2);
 }
 .tx-steprow-title {

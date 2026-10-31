@@ -8,9 +8,9 @@ export type SensitiveCategory =
 
 export interface GuardContext {
   mode: ControlMode;
-  /** What the model said it is doing this turn (ScreenReply.say). */
+  /** What the model said it is doing this turn (ScreenAnswer.reply). */
   intent: string;
-  /** Name of the control being acted on (ScreenReply.targetLabel). */
+  /** Name of the control being acted on, as shown in the app. */
   targetLabel?: string;
   /** Text read from the target region of the screenshot, if available. */
   targetText?: string;
@@ -32,43 +32,174 @@ export type DenyCode =
   "show_mode" | "action_limit" | "rate_limit" | "secure_field" | "secret_text" | "system_shortcut";
 
 export const guardLimits = {
-  maxActionsPerRequest: 25,
-  minGapMs: 300,
-  maxPerMinute: 60,
+  /** One task: three calendar events from a chat take about 30 actions. Esc stops any task. */
+  maxActionsPerRequest: 150,
+  /** A floor against a runaway loop; the pointer's own pause sets the pace. */
+  minGapMs: 30,
+  /** Above the pace the pointer's announce allows (about two a second), so it never throttles. */
+  maxPerMinute: 120,
 } as const;
+
+/**
+ * Whole-word match with Unicode-aware boundaries: `\b` breaks on accented letters (the ñ in
+ * "contraseña" is a non-word character to it), so lookarounds on Unicode letters do the job.
+ */
+const words = (alts: string[]) =>
+  new RegExp(`(?<![\\p{L}\\p{N}_])(?:${alts.join("|")})(?![\\p{L}\\p{N}_])`, "iu");
 
 const sensitivePatterns: Array<{ category: SensitiveCategory; pattern: RegExp; verb: string }> = [
   {
     category: "payment",
-    pattern:
-      /\b(pay|payment|checkout|check out|purchase|buy|place order|subscribe|card number|billing)\b/i,
+    pattern: words([
+      "pay",
+      "payment",
+      "checkout",
+      "check out",
+      "purchase",
+      "buy",
+      "place order",
+      "subscribe",
+      "card number",
+      "billing",
+      // de fr es it pt: the words a pay button actually shows.
+      "bezahlen",
+      "zahlung",
+      "kaufen",
+      "bestellen",
+      "payer",
+      "paiement",
+      "acheter",
+      "commande",
+      "pagar",
+      "pago",
+      "comprar",
+      "pedido",
+      "acquistare",
+    ]),
     verb: "make a payment",
   },
   {
     category: "send",
-    pattern: /\b(send|submit|post|publish|share|reply|forward|email|message)\b/i,
+    pattern: words([
+      "send",
+      "submit",
+      "post",
+      "publish",
+      "share",
+      "reply",
+      "forward",
+      "email",
+      "message",
+      "senden",
+      "weiterleiten",
+      "teilen",
+      "antworten",
+      "envoyer",
+      "partager",
+      "enviar",
+      "compartir",
+      "responder",
+      "publicar",
+      "inviare",
+      "condividere",
+    ]),
     verb: "send something",
   },
   {
     category: "delete",
-    pattern: /\b(delete|remove|erase|discard|trash|wipe|uninstall|reset|factory reset|format)\b/i,
+    pattern: words([
+      "delete",
+      "remove",
+      "erase",
+      "discard",
+      "trash",
+      "wipe",
+      "uninstall",
+      "reset",
+      "factory reset",
+      "format",
+      "löschen",
+      "entfernen",
+      "supprimer",
+      "effacer",
+      "eliminar",
+      "borrar",
+      "excluir",
+      "apagar",
+    ]),
     verb: "delete something",
   },
   {
     category: "credentials",
-    pattern:
-      /\b(password|passcode|pin|sign in|log in|login|2fa|two[- ]factor|api key|token|secret)\b/i,
+    pattern: words([
+      "password",
+      "passcode",
+      "pin",
+      "sign in",
+      "log in",
+      "login",
+      "2fa",
+      "two[- ]factor",
+      "api key",
+      "token",
+      "secret",
+      "passwort",
+      "anmelden",
+      "mot de passe",
+      "se connecter",
+      "contraseña",
+      "iniciar sesión",
+      "accedi",
+      "senha",
+      "entrar",
+    ]),
     verb: "enter or change sign-in details",
   },
   {
     category: "install",
-    pattern: /\b(install|download|update now|upgrade|\.dmg|\.pkg|run script|terminal)\b/i,
+    pattern: words([
+      "install",
+      "download",
+      "update now",
+      "upgrade",
+      "\\.dmg",
+      "\\.pkg",
+      "run script",
+      "terminal",
+      "installieren",
+      "herunterladen",
+      "installer",
+      "télécharger",
+      "instalar",
+      "descargar",
+      "installare",
+      "scaricare",
+      "baixar",
+    ]),
     verb: "install or run software",
   },
   {
     category: "security_settings",
-    pattern:
-      /\b(firewall|privacy|permission|security|filevault|gatekeeper|admin(istrator)?|sudo|accessibility access|screen recording access|firmware)\b/i,
+    pattern: words([
+      "firewall",
+      "privacy",
+      "permission",
+      "security",
+      "filevault",
+      "gatekeeper",
+      "admin(istrator)?",
+      "sudo",
+      "accessibility access",
+      "screen recording access",
+      "firmware",
+      "datenschutz",
+      "sicherheit",
+      "sécurité",
+      "confidentialité",
+      "seguridad",
+      "privacidad",
+      "sicurezza",
+    ]),
     verb: "change security settings",
   },
 ];

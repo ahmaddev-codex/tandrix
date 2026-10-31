@@ -56,6 +56,7 @@ export default defineConfig(({ command, mode }) => {
         input: {
           panel: resolve(renderer, "panel.html"),
           overlay: resolve(renderer, "overlay.html"),
+          gallery: resolve(renderer, "gallery.html"),
         },
       },
     },

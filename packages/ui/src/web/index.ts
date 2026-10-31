@@ -5,3 +5,4 @@ export * from "./overlay";
 export * from "./job";
 export * from "./cards";
 export * from "./voice";
+export * from "./wordmark";

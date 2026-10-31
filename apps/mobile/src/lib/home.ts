@@ -1,5 +1,4 @@
 import type { Job, JobDetailResponse, JobStep } from "@tandrix/contracts";
-import { api } from "@/lib/api";
 
 export interface HomeAction {
   job: Job;
@@ -89,20 +88,4 @@ export function actionFor(detail: JobDetailResponse): HomeAction {
     stepNumber: next.step.order,
     stepCount: procedure.steps.length,
   };
-}
-
-export async function loadHomeActions(jobs: Job[]): Promise<HomeAction[]> {
-  const active = jobs.filter((job) => job.status === "active");
-  const actions: HomeAction[] = [];
-  for (let i = 0; i < active.length; i += 20) {
-    const results = await Promise.allSettled(
-      active.slice(i, i + 20).map((job) => api.getJob(job.id)),
-    );
-    actions.push(
-      ...results.flatMap((result) =>
-        result.status === "fulfilled" ? [actionFor(result.value)] : [],
-      ),
-    );
-  }
-  return actions;
 }

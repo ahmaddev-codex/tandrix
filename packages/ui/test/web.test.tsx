@@ -1,16 +1,20 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  BrandWordmark,
   Button,
   CheckResult,
   ConfirmDialog,
   ControlIndicator,
   doItForMeConfirmation,
   HandoffBanner,
+  Icon,
   Input,
   JobReport,
   ModeToggle,
   Notice,
+  PointerBuddy,
+  PresenceBar,
   SourceChip,
   StatusChip,
   StepCard,
@@ -22,11 +26,62 @@ import {
 
 afterEach(cleanup);
 
+describe("Icon", () => {
+  it("renders Phosphor outline SVG by default for >= 20px", () => {
+    const { container } = render(<Icon name="camera" size={20} />);
+    const svg = container.querySelector("svg");
+    expect(svg).toBeTruthy();
+    expect(svg?.getAttribute("class")).toContain("tx-ico-20");
+    expect(svg?.getAttribute("viewBox")).toBe("0 0 256 256");
+    expect(svg?.getAttribute("fill")).toBe("currentColor");
+  });
+
+  it("renders solid filled Phosphor paths when weight=fill", () => {
+    const { container } = render(<Icon name="camera" size={20} weight="fill" />);
+    const svg = container.querySelector("svg");
+    expect(svg).toBeTruthy();
+    expect(svg?.getAttribute("class")).toContain("tx-ico-20");
+    expect(svg?.getAttribute("viewBox")).toBe("0 0 256 256");
+    expect(svg?.getAttribute("fill")).toBe("currentColor");
+    const path = svg?.querySelector("path");
+    expect(path?.getAttribute("d")).toBeTruthy();
+  });
+
+  it("renders PiSealCheckFill for sealCheck with weight=fill", () => {
+    const { container } = render(<Icon name="sealCheck" size={20} weight="fill" />);
+    const svg = container.querySelector("svg");
+    expect(svg).toBeTruthy();
+    expect(svg?.getAttribute("viewBox")).toBe("0 0 256 256");
+    const path = svg?.querySelector("path");
+    // Verify Phosphor seal-check-fill path
+    expect(path?.getAttribute("d")).toContain("M225.86,102.82");
+  });
+
+  it("always uses outline for retake (reload icon) because its fill is terrible", () => {
+    const { container: outlineContainer } = render(
+      <Icon name="retake" size={20} weight="outline" />,
+    );
+    const { container: fillContainer } = render(<Icon name="retake" size={20} weight="fill" />);
+    const outlinePath = outlineContainer.querySelector("path")?.getAttribute("d");
+    const fillPath = fillContainer.querySelector("path")?.getAttribute("d");
+    // Both must use the clean circular arrow outline path, never the solid pie wedge
+    expect(outlinePath).toBe(fillPath);
+    expect(fillPath).toContain("M224,128a96,96,0,0,1-94.71,96H128");
+  });
+});
+
 describe("StatusChip", () => {
   it("never labels user-confirmed as verified", () => {
     render(<StatusChip status="confirmed" />);
     expect(screen.getByText("You confirmed")).toBeTruthy();
     expect(screen.queryByText("Verified")).toBeNull();
+  });
+
+  it("renders sealCheck for verified status with solid fill", () => {
+    const { container } = render(<StatusChip status="verified" />);
+    expect(screen.getByText("Verified")).toBeTruthy();
+    const path = container.querySelector("path");
+    expect(path?.getAttribute("d")).toContain("M225.86,102.82");
   });
 });
 
@@ -45,6 +100,24 @@ describe("Button", () => {
     expect(btn.getAttribute("type")).toBe("button");
     fireEvent.click(btn);
     expect(onClick).toHaveBeenCalledOnce();
+  });
+
+  it("supports the ring variant with signature styling", () => {
+    render(<Button variant="ring">Explore workflow</Button>);
+    const btn = screen.getByRole("button", { name: "Explore workflow" });
+    expect(btn.className).toContain("tx-btn-ring");
+  });
+});
+
+describe("BrandWordmark", () => {
+  it("renders binary-inspired brand mark and wordmark text", () => {
+    render(<BrandWordmark size="md" href="#top" />);
+    const link = screen.getByRole("link", { name: "Tandrix Home" });
+    expect(link.getAttribute("href")).toBe("#top");
+    expect(screen.getByText("Tandrix")).toBeTruthy();
+    expect(link.querySelector(".tx-wordmark-glyph")).toBeTruthy();
+    expect(link.querySelector(".tx-mark-pointer")).toBeTruthy();
+    expect(link.querySelector(".tx-mark-tile")).toBeTruthy();
   });
 });
 
@@ -117,6 +190,29 @@ describe("Tabs", () => {
     fireEvent.keyDown(steps, { key: "ArrowLeft" });
     expect(screen.getByRole("tab", { name: "Parts" }).getAttribute("aria-selected")).toBe("true");
     expect(steps.getAttribute("tabindex")).toBe("-1");
+  });
+
+  it("applies is-on class to active tab smoothly", () => {
+    const onChange = vi.fn();
+    render(
+      <Tabs
+        label="Job"
+        items={[
+          { id: "steps", label: "Steps" },
+          { id: "parts", label: "Parts", count: 3 },
+        ]}
+        onChange={onChange}
+      />,
+    );
+    const steps = screen.getByRole("tab", { name: "Steps" });
+    const parts = screen.getByRole("tab", { name: "Parts 3" });
+    expect(steps.classList.contains("is-on")).toBe(true);
+    expect(parts.classList.contains("is-on")).toBe(false);
+
+    fireEvent.click(parts);
+    expect(onChange).toHaveBeenCalledWith("parts");
+    expect(parts.classList.contains("is-on")).toBe(true);
+    expect(steps.classList.contains("is-on")).toBe(false);
   });
 });
 
@@ -244,5 +340,31 @@ describe("StepCard", () => {
     expect(screen.getByRole("region", { name: "Step 3 of 4" })).toBeTruthy();
     expect(screen.getByText("Generic, not from the manufacturer")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Check my screen" })).toBeTruthy();
+  });
+});
+
+describe("PresenceBar and PointerBuddy", () => {
+  it("never renders request or response text on the screen", () => {
+    render(
+      <>
+        <PresenceBar state="answering" label="Tandrix" text="Click Export in the top right." />
+        <PointerBuddy x={100} y={120} caption="Click Export in the top right." />
+      </>,
+    );
+    expect(screen.getByText("Tandrix")).toBeTruthy();
+    expect(screen.queryByText("Click Export in the top right.")).toBeNull();
+  });
+
+  it("renders only pointer arrow by default (Mode A), ring when box is given (Mode B), step badge when step is given (Mode C)", () => {
+    const { container: defaultContainer } = render(<PointerBuddy x={100} y={120} />);
+    expect(defaultContainer.querySelector(".tx-ptr-ring")).toBeNull();
+    expect(defaultContainer.querySelector(".tx-ptr-arrow")).toBeTruthy();
+
+    const { container: boxContainer } = render(
+      <PointerBuddy x={100} y={120} box={{ width: 120, height: 60 }} step={2} />,
+    );
+    expect(boxContainer.querySelector(".tx-ptr-ring")).toBeTruthy();
+    expect(boxContainer.querySelector(".tx-ptr-arrow")).toBeTruthy();
+    expect(screen.getByText("2")).toBeTruthy();
   });
 });

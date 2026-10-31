@@ -41,17 +41,31 @@ export async function frontApp(): Promise<string | undefined> {
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-/** Opens an installed app by name and waits (up to 5 s) until it's in front. */
+/** Opens an installed app by name and waits until it's in front. */
 export async function openApp(name: string): Promise<boolean> {
-  if (!installedApps().includes(name)) return false;
-  await new Promise<void>((resolve) => execFile("/usr/bin/open", ["-a", name], () => resolve()));
-  for (let i = 0; i < 25; i++) {
-    if ((await drive({ op: "front" })).app === name) {
+  // Only an app installed in the standard places, by its own name: never a path or a name the
+  // model made up (a page on screen could try to steer it to anything).
+  const target = installedApps().find((a) => a.toLowerCase() === name.trim().toLowerCase());
+  if (!target) return false;
+  const opened = await new Promise<boolean>((resolve) =>
+    execFile("/usr/bin/open", ["-a", target], (err) => resolve(!err)),
+  );
+  if (!opened) return false;
+  const targetLower = target.toLowerCase();
+  for (let i = 0; i < 15; i++) {
+    const front = (await drive({ op: "front" })).app?.toLowerCase();
+    if (
+      front &&
+      front.length >= 3 &&
+      (front === targetLower || front.includes(targetLower) || targetLower.includes(front))
+    ) {
       // A moment for its window to draw before the screenshot.
       await sleep(600);
       return true;
     }
     await sleep(200);
   }
+  // Launched but never came to the front (a login prompt, a crash): the task must not act on
+  // whatever window is in front instead.
   return false;
 }

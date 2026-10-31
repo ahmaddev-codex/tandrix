@@ -111,6 +111,17 @@ describe("POST /jobs/:id/evidence/:eid/complete", () => {
     expect(storage.removed).toEqual([evidence.storageKey]);
   });
 
+  it("rejects a file whose stored type is unknown", async () => {
+    const { create, call, storage } = setup();
+    const { evidence } = CreateEvidenceResponse.parse(await (await create()).json());
+    storage.objects.set(evidence.storageKey, { size: 1000, contentType: null });
+    const res = await call(`/jobs/${JOB_OK}/evidence/${evidence.id}/complete`, "a", {
+      method: "POST",
+    });
+    expect(res.status).toBe(400);
+    expect(storage.removed).toEqual([evidence.storageKey]);
+  });
+
   it("rejects an empty or oversized file", async () => {
     const { create, call, storage } = setup();
     for (const size of [0, 50 * 1024 * 1024]) {

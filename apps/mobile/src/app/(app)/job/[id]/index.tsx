@@ -7,7 +7,7 @@ import type {
   PartsCheck,
   ProcedureDetail,
 } from "@tandrix/contracts";
-import { citationLabel, radius, space, stepChip, formatDateTime } from "@tandrix/ui";
+import { citationSource, radius, space, stepChip, formatDateTime } from "@tandrix/ui";
 import {
   ActionCard,
   Button,
@@ -19,6 +19,7 @@ import {
   useTheme,
   type ActionCardProps,
 } from "@tandrix/ui/native";
+import { File } from "expo-file-system";
 import { Image } from "expo-image";
 import { router, Stack, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -26,7 +27,7 @@ import { FlatList, Linking, RefreshControl, useWindowDimensions, View } from "re
 import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "@/lib/api";
 import { useJobChanges } from "@/lib/realtime";
-import { loadJob, offlineQueue, useOfflineStatus } from "@/offline";
+import { isOffline, loadJob, manualCache, offlineQueue, useOfflineStatus } from "@/offline";
 
 const COLUMNS = 3;
 
@@ -107,12 +108,24 @@ export default function JobScreen() {
     }
   };
 
+  // Kept on the phone (see keepForSite), the manual opens in place, with or without a connection;
+  // not kept yet, it opens from the server and is kept for next time.
   const openManual = async (m: Manual) => {
     setOpening(true);
     try {
-      await Linking.openURL(await api.manualUrl(id, m.id));
+      const kept = manualCache.file(m.id);
+      if (kept.exists) await File.preview(kept, { title: m.title });
+      else {
+        const url = await api.manualUrl(id, m.id);
+        void manualCache.keep(m.id, url).catch(() => {});
+        await Linking.openURL(url);
+      }
     } catch (e) {
-      setError((e as Error).message);
+      setError(
+        isOffline(e)
+          ? "This manual isn't on your phone yet. Open it once with a connection and it stays."
+          : (e as Error).message,
+      );
     } finally {
       setOpening(false);
     }
@@ -269,6 +282,26 @@ export default function JobScreen() {
               />
             ) : null}
             {next ? <ActionCard {...next} /> : null}
+            {job && !procedure ? (
+              // Someone who knows the job can show it instead: their steps, in their words.
+              <Notice
+                icon="video"
+                testID="record-steps"
+                action={
+                  <Button
+                    variant="secondary"
+                    size="lg"
+                    onPress={() => router.push({ pathname: "/job/[id]/record", params: { id } })}
+                    testID="open-record"
+                  >
+                    Record it
+                  </Button>
+                }
+              >
+                Know how it's done? Do it once while Tandrix records, and it writes the steps from
+                what you show and say.
+              </Notice>
+            ) : null}
             {procedure && partsCheck ? (
               <SummaryCard
                 testID="parts-card"
@@ -310,7 +343,7 @@ export default function JobScreen() {
                 {procedure.steps.map((step) => {
                   const js = jobSteps.find((s) => s.procedureStepId === step.id);
                   const chip = stepChip[js?.status ?? "todo"];
-                  const cite = citationLabel(step.citation);
+                  const cite = citationSource(step.citation);
                   return (
                     <StepRow
                       key={step.id}
@@ -326,7 +359,7 @@ export default function JobScreen() {
                           : chip.label
                             ? { statusLabel: chip.label }
                             : {})}
-                      {...(cite ? { source: cite } : {})}
+                      {...(cite ?? {})}
                       disabled={!js}
                       onSelect={() =>
                         js &&
@@ -339,6 +372,24 @@ export default function JobScreen() {
                   );
                 })}
               </View>
+            ) : null}
+            {procedure ? (
+              <SummaryCard
+                testID="report-card"
+                label="Report"
+                title="The project so far, ready to share"
+                action={
+                  <Button
+                    variant="secondary"
+                    size="lg"
+                    block
+                    onPress={() => router.push({ pathname: "/job/[id]/report", params: { id } })}
+                    testID="open-report"
+                  >
+                    Open the report
+                  </Button>
+                }
+              />
             ) : null}
             <Text variant="label-14" color="text-secondary">
               {photos ? `${photos.length} ${photos.length === 1 ? "photo" : "photos"}` : " "}

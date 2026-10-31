@@ -3,6 +3,7 @@
 // model loads once (warmed at start), syntheses run one at a time, and recent phrases are cached.
 // When this can't speak, the apps fall back to a Premium or Enhanced device voice, else text only;
 // never a robotic voice.
+import { ASSISTANT_LINES } from "@tandrix/core";
 
 export interface Speaker {
   /** The reply as a WAV, or null when speech isn't available. */
@@ -52,13 +53,29 @@ export function kokoroSpeaker(log: (l: Record<string, unknown>) => void): Speake
   warm(): void;
 } {
   let model: Promise<Kokoro | null> | undefined;
+  let readyModel: Kokoro | null = null;
+  let attempts = 0;
+  let retry: ReturnType<typeof setTimeout> | undefined;
   const load = () =>
     (model ??= import("kokoro-js")
       .then(({ KokoroTTS }) => KokoroTTS.from_pretrained(MODEL, { dtype: "q8", device: "cpu" }))
-      .then((m) => m as unknown as Kokoro)
+      .then((m) => {
+        readyModel = m as unknown as Kokoro;
+        return readyModel;
+      })
       .catch((e: Error) => {
-        log({ level: "warn", event: "speech_model_unavailable", error: e.message });
-        model = undefined; // try again on the next reply
+        log({
+          level: "warn",
+          event: "speech_model_unavailable",
+          error: e.message,
+          attempt: ++attempts,
+        });
+        model = undefined;
+        // Keep trying in the background (the model downloads on first use and a download can
+        // fail), backing off to a minute, so the voice comes back without waiting for a reply.
+        clearTimeout(retry);
+        retry = setTimeout(() => void load(), Math.min(60_000, 2_000 * 2 ** Math.min(attempts, 5)));
+        retry.unref?.();
         return null;
       }));
 
@@ -69,7 +86,24 @@ export function kokoroSpeaker(log: (l: Record<string, unknown>) => void): Speake
   return {
     warm() {
       const started = Date.now();
-      void load().then((m) => m && log({ event: "speech_model_ready", ms: Date.now() - started }));
+      void load().then(async (m) => {
+        if (!m) return;
+        log({ event: "speech_model_ready", ms: Date.now() - started });
+        // Warm up and pre-cache common wake and completion phrases so they return instantly.
+        for (const phrase of [
+          "I'm here. What would you like to do?",
+          "I'm here. Tell me what you want to do or ask about this step.",
+          "Done.",
+          ...ASSISTANT_LINES,
+        ]) {
+          try {
+            const audio = await m.generate(phrase, { voice: VOICE });
+            cache.set(phrase, pcm16Wav(audio.audio, audio.sampling_rate));
+          } catch {
+            // Ignore pre-warming failure.
+          }
+        }
+      });
     },
     async speak(raw) {
       const text = raw.replace(/\s+/g, " ").trim().slice(0, MAX_SPEAK_CHARS);
@@ -81,9 +115,9 @@ export function kokoroSpeaker(log: (l: Record<string, unknown>) => void): Speake
         cache.set(text, hit);
         return hit;
       }
+      const m = await load();
+      if (!m) return null;
       const run = queue.then(async () => {
-        const m = await load();
-        if (!m) return null;
         const started = Date.now();
         const audio = await m.generate(text, { voice: VOICE });
         const wav = pcm16Wav(audio.audio, audio.sampling_rate);

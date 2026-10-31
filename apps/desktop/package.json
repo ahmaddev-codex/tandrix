@@ -11,7 +11,8 @@
     "start": "electron .",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json",
-    "build:native": "mkdir -p dist/native && swiftc -O -o dist/native/tandrix-input native/input/main.swift"
+    "build:native": "mkdir -p dist/native && swiftc -O -o dist/native/tandrix-input native/input/main.swift && swiftc -O -o dist/native/tandrix-wake native/wake/main.swift native/wake/voiceprint.swift -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __info_plist -Xlinker native/wake/Info.plist",
+    "task-bench": "esbuild scripts/task-bench.ts --bundle --platform=node --format=esm --external:electron --outfile=dist/task-bench.mjs --log-level=warning && env -u ELECTRON_RUN_AS_NODE electron dist/task-bench.mjs"
   },
   "dependencies": {
     "@expo-google-fonts/geist": "^0.4.2",

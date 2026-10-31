@@ -45,6 +45,17 @@ const title = titleArg ?? `Pi 5 e2e ${Date.now() % 1_000_000}`;
 const jobs = supabaseJobsRepo(db);
 const job = await jobs.create({ ownerId: owner.id, title, language: "en", surface: "phone" });
 
+// A project shows the manual it already has for the same model, so the "asset" flow (which
+// makes the manual from photographed pages) starts with none left from an earlier run.
+if (scenario === "asset") {
+  const { error: cleared } = await db
+    .from("manuals")
+    .delete()
+    .eq("owner_id", owner.id)
+    .eq("asset_model_key", assetModelKey("Cooler kit", "CK-5"));
+  if (cleared) throw cleared;
+}
+
 if (scenario !== "empty") {
   await supabaseAssetsRepo(db).saveForJob({
     ownerId: owner.id,

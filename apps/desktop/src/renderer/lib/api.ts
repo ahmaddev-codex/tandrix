@@ -1,20 +1,32 @@
 // Typed client for the Tandrix API. Responses are validated with the shared contracts.
-import type { DoContinueRequest, DoStartRequest } from "@tandrix/contracts";
+import type {
+  DoContinueRequest,
+  DoNotesRequest,
+  DoStartRequest,
+  BackgroundRequest,
+} from "@tandrix/contracts";
 import {
+  BackgroundResponse,
   CheckStepResponse,
+  DoNotesResponse,
   DoTurnResponse,
+  GenerateProcedureResponse,
   StepVisualsResponse,
   CreateEvidenceResponse,
   Evidence,
   Job,
   JobDetailResponse,
+  ProfileResponse,
   ScreenAskResponse,
   StepActionResponse,
   TranscribeResponse,
+  type ControlMode,
   type CreateEvidenceRequest,
+  type GenerateProcedureRequest,
   type ScreenAskInlineRequest,
   type ScreenAskRequest,
   type StepActionRequest,
+  type UpdateProfileRequest,
 } from "@tandrix/contracts";
 import { z } from "zod";
 import { env } from "./env";
@@ -77,22 +89,49 @@ async function speech(text: string, signal: AbortSignal): Promise<Blob | null> {
   const { data } = await supabase.auth.getSession();
   const token = data.session?.access_token;
   if (!token) return null;
-  try {
-    const res = await fetch(`${env.apiUrl}/voice/speak`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ text }),
-      signal,
-    });
-    return res.status === 200 ? await res.blob() : null;
-  } catch {
-    return null;
+  // The voice can still be loading on the server (204): wait a moment and ask once more, rather
+  // than going quiet on the first reply.
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const res = await fetch(`${env.apiUrl}/voice/speak`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+        signal: AbortSignal.any([signal, AbortSignal.timeout(20_000)]),
+      });
+      if (res.status === 200) return await res.blob();
+      if (res.status !== 204 || attempt > 0) return null;
+    } catch {
+      return null;
+    }
+    await new Promise((r) => setTimeout(r, 1500));
+    if (signal.aborted) return null;
   }
+  return null;
 }
 
 export const api = {
   speech,
+  getProfile: () => request("/profile", ProfileResponse),
+  updateProfile: (body: UpdateProfileRequest) =>
+    request("/profile", ProfileResponse, { method: "PUT", body: JSON.stringify(body) }),
+  setControlMode: (jobId: string, mode: ControlMode) =>
+    request(`/jobs/${jobId}/control-mode`, z.object({ job: Job }), {
+      method: "PATCH",
+      body: JSON.stringify({ mode }),
+    }).then((r) => r.job),
   listJobs: () => request("/jobs", z.object({ jobs: z.array(Job) })).then((r) => r.jobs),
+  /** A project started here: it opens on this Mac. */
+  createJob: (title: string) =>
+    request("/jobs", z.object({ job: Job }), {
+      method: "POST",
+      body: JSON.stringify({ title, surface: "desktop" }),
+    }).then((r) => r.job),
+  generateProcedure: (jobId: string, body: z.input<typeof GenerateProcedureRequest>) =>
+    request(`/jobs/${jobId}/procedure`, GenerateProcedureResponse, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
   getJob: (id: string) => request(`/jobs/${id}`, JobDetailResponse),
   createEvidence: (jobId: string, body: z.input<typeof CreateEvidenceRequest>) =>
     request(`/jobs/${jobId}/evidence`, CreateEvidenceResponse, {
@@ -106,6 +145,7 @@ export const api = {
   transcribe: (wav: Uint8Array) => {
     const form = new FormData();
     form.append("audio", new Blob([wav as BlobPart], { type: "audio/wav" }), "question.wav");
+    form.append("keywords", JSON.stringify(["Tandrix", "Hey Tandrix", "Wake up Tandrix"]));
     return request("/voice/transcribe", TranscribeResponse, { method: "POST", body: form }, false);
   },
   /** Recorded as the Mac's doing in the job's history. */
@@ -125,9 +165,17 @@ export const api = {
   /** Do it for me: the first turn of a task on the screen shown (inline, not kept). */
   doStart: (body: z.input<typeof DoStartRequest>) =>
     request("/screen/do", DoTurnResponse, { method: "POST", body: JSON.stringify(body) }),
-  /** The next turn: the screen after the last batch ran. */
+  /** The next turn of the same model conversation: the screen after the last batch ran. */
+  doNotes: (body: z.input<typeof DoNotesRequest>) =>
+    request("/screen/do/notes", DoNotesResponse, { method: "POST", body: JSON.stringify(body) }),
   doContinue: (body: z.input<typeof DoContinueRequest>) =>
     request("/screen/do/continue", DoTurnResponse, { method: "POST", body: JSON.stringify(body) }),
+  /** A task that needs no screen, done in the background. */
+  background: (body: BackgroundRequest) =>
+    request("/screen/background", BackgroundResponse, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
   /** A question outside any job: the screenshot travels inline and isn't kept. */
   screenAskInline: (body: z.input<typeof ScreenAskInlineRequest>) =>
     request("/screen/ask", ScreenAskResponse, { method: "POST", body: JSON.stringify(body) }),

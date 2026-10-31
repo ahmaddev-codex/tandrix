@@ -8,7 +8,7 @@ import {
 import { describe, expect, it } from "vitest";
 import { createApp } from "../src/app";
 import type { JobsRepo } from "../src/repos/jobs";
-import { LINK_GONE } from "../src/routes/report";
+import { LINK_GONE, MAX_ACTIVE_SHARES } from "../src/routes/report";
 import {
   memoryAssets,
   memoryEvidence,
@@ -222,6 +222,21 @@ describe("share links", () => {
       links: Array<{ revokedAt: string | null }>;
     };
     expect(links[0]!.revokedAt).not.toBeNull();
+  });
+
+  it("caps live links per job; turning one off frees a slot", async () => {
+    const s = await setup();
+    const mint = () =>
+      s.call(`/jobs/${JOB}/share`, { method: "POST", token: "a", body: { days: 2 } });
+    for (let i = 0; i < MAX_ACTIVE_SHARES; i++) expect((await mint()).status).toBe(201);
+    expect((await mint()).status).toBe(409);
+    const { links } = (await (await s.call(`/jobs/${JOB}/share`, { token: "a" })).json()) as {
+      links: Array<{ id: string }>;
+    };
+    expect(
+      (await s.call(`/jobs/${JOB}/share/${links[0]!.id}`, { method: "DELETE", token: "a" })).status,
+    ).toBe(204);
+    expect((await mint()).status).toBe(201);
   });
 
   it("refuses others' jobs, bad lengths and made-up tokens", async () => {

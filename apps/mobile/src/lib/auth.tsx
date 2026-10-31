@@ -2,6 +2,7 @@ import type { Session } from "@supabase/supabase-js";
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { isLocal } from "./env";
 import { supabase } from "./supabase";
+import { resetJobs } from "./jobs-store";
 
 interface AuthState {
   /** undefined while the stored session loads; null when signed out. */
@@ -32,7 +33,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session));
-    const { data } = supabase.auth.onAuthStateChange((_event, s) => setSession(s));
+    const { data } = supabase.auth.onAuthStateChange((event, s) => {
+      // Another account's projects must not show for a moment after the next sign-in.
+      if (event === "SIGNED_OUT") resetJobs();
+      setSession(s);
+    });
     return () => data.subscription.unsubscribe();
   }, []);
 

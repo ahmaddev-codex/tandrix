@@ -2,6 +2,7 @@
 // highlight. Everything is scoped to the caller's job.
 import {
   parseVoiceCommand,
+  parseWakePhrase,
   refusalFor,
   refusalForRequest,
   requiredGates,
@@ -27,8 +28,9 @@ import {
 import { Hono } from "hono";
 import type { z } from "zod";
 import type { AuthEnv } from "../auth";
-import { HttpError, invalid, notFound } from "../errors";
+import { HttpError, invalid, notFound, tooMany } from "../errors";
 import type { Highlighter } from "../highlighter";
+import { modelLimiter, type RateLimiter } from "../rate-limit";
 import type { DetectionsRepo } from "../repos/detections";
 import type { EvidenceRepo, EvidenceStorage } from "../repos/evidence";
 import type { JobsRepo } from "../repos/jobs";
@@ -76,6 +78,7 @@ export interface StepDeps {
   renderer: PageRenderer;
   log: (l: Record<string, unknown>) => void;
   now?: () => number;
+  limiter?: RateLimiter;
 }
 
 /** The caller's job step with its procedure step and the parts that step names. */
@@ -106,6 +109,7 @@ async function stepFor(d: StepDeps, ownerId: string, rawJobId?: string, rawStepI
 
 export function stepRoutes(d: StepDeps) {
   const now = d.now ?? Date.now;
+  const limiter = d.limiter ?? modelLimiter();
   const visualDeps: VisualDeps = d;
   return (
     new Hono<AuthEnv>()
@@ -166,6 +170,7 @@ export function stepRoutes(d: StepDeps) {
 
       .post("/:stepId/check", async (c) => {
         const user = c.get("user");
+        if (!limiter.allow(user.id)) throw tooMany();
         const { jobId, jobStep, step } = await stepFor(
           d,
           user.id,
@@ -213,19 +218,22 @@ export function stepRoutes(d: StepDeps) {
           return reply({ status: "rejected", code: precheck.code, message: precheck.message });
 
         // A reference helps the check but is never required: without one it checks on words alone.
-        const reference = await checkReference(visualDeps, {
-          ownerId: user.id,
-          jobId,
-          jobStepId: jobStep.id,
-          step,
-        }).catch((e: Error) => {
-          d.log({ level: "warn", event: "check_reference_failed", error: e.message });
-          return null;
-        });
+        const [reference, photoBytes] = await Promise.all([
+          checkReference(visualDeps, {
+            ownerId: user.id,
+            jobId,
+            jobStepId: jobStep.id,
+            step,
+          }).catch((e: Error) => {
+            d.log({ level: "warn", event: "check_reference_failed", error: e.message });
+            return null;
+          }),
+          d.storage.download(ev.storageKey),
+        ]);
         const outcome = await d.checker.check({
           jobStepId: jobStep.id,
           medium,
-          photo: { bytes: await d.storage.download(ev.storageKey), mimeType: ev.mimeType },
+          photo: { bytes: photoBytes, mimeType: ev.mimeType },
           instruction: step.instruction,
           expectedState: step.expectedState,
           ...(reference ? { reference } : {}),
@@ -268,6 +276,7 @@ export function stepRoutes(d: StepDeps) {
       })
       .post("/:stepId/ask", async (c) => {
         const user = c.get("user");
+        if (!limiter.allow(user.id)) throw tooMany();
         const { job, step, parts, procedure } = await stepFor(
           d,
           user.id,
@@ -277,13 +286,22 @@ export function stepRoutes(d: StepDeps) {
         const parsed = AskStepRequest.safeParse(await c.req.json().catch(() => undefined));
         if (!parsed.success) throw invalid(issues(parsed.error));
         const reply = (r: AskStepResponse) => c.json(r);
-        const { text, stuck } = parsed.data;
+        const { text, stuck, userName } = parsed.data;
+        const wake = parseWakePhrase(text);
+        if (wake.woke && !wake.remainder) {
+          return reply({
+            status: "answer",
+            answer: "I'm here. Tell me what you want to do or ask about this step.",
+            fromStep: false,
+          });
+        }
+        const effectiveText = wake.woke ? wake.remainder : text;
 
         // Safety first, without the model: wiring and live work are refused whatever is asked.
-        const refusal = refusalForRequest(text);
+        const refusal = refusalForRequest(effectiveText);
         if (refusal) return reply({ status: "refused", message: refusal.reason });
 
-        const command = stuck ? null : parseVoiceCommand(text);
+        const command = stuck ? null : parseVoiceCommand(effectiveText);
         if (command && command.kind !== "stuck") return reply({ status: "command", command });
 
         const asset = job.assetId ? await d.assets.getForOwner(user.id, job.assetId) : null;
@@ -301,14 +319,17 @@ export function stepRoutes(d: StepDeps) {
             .filter((s) => s.id !== step.id)
             .map((s) => ({ order: s.order, title: s.title, instruction: s.instruction })),
           question:
-            command?.kind === "stuck" && command.detail ? `I'm stuck on ${command.detail}` : text,
+            command?.kind === "stuck" && command.detail
+              ? `I'm stuck on ${command.detail}`
+              : effectiveText,
           stuck: stuck || command?.kind === "stuck",
+          ...(userName ? { userName } : {}),
         });
         return reply(r);
       })
       .post("/:stepId/actions", async (c) => {
         const user = c.get("user");
-        const { jobId, jobStep, step } = await stepFor(
+        const { jobStep, step } = await stepFor(
           d,
           user.id,
           c.req.param("id"),
@@ -319,8 +340,7 @@ export function stepRoutes(d: StepDeps) {
         const action = parsed.data;
         const surface = clientSurface(c.req.header(SURFACE_HEADER));
         const reply = (r: StepActionResponse) => c.json(r);
-        const forStep = async () =>
-          (await d.stepState.confirmations(jobId)).filter((x) => x.jobStepId === jobStep.id);
+        const forStep = () => d.stepState.confirmationsForStep(jobStep.id);
 
         if (action.action === "confirm_safety") {
           // A refused step has nothing to confirm: Tandrix doesn't guide it at all.
@@ -334,7 +354,10 @@ export function stepRoutes(d: StepDeps) {
           return reply({ status: "applied", step: jobStep, confirmations: await forStep() });
         }
 
-        const confirmations = await forStep();
+        const [confirmations, lastCheck] = await Promise.all([
+          forStep(),
+          jobStep.startedAt ? d.stepState.lastCheckSince(jobStep.id, jobStep.startedAt) : null,
+        ]);
         // An action replayed from the offline queue keeps when it happened, within limits.
         const at = actionTime(action.occurredAt, now());
         const event: StepEvent =
@@ -356,9 +379,7 @@ export function stepRoutes(d: StepDeps) {
             status: jobStep.status,
             startedAt: jobStep.startedAt,
             statusEvidenceId: jobStep.statusEvidenceId,
-            lastCheck: jobStep.startedAt
-              ? await d.stepState.lastCheckSince(jobStep.id, jobStep.startedAt)
-              : null,
+            lastCheck,
             ...(jobStep.note ? { note: jobStep.note } : {}),
           },
           event,
@@ -400,6 +421,7 @@ export function stepRoutes(d: StepDeps) {
       })
       .post("/:stepId/highlight", async (c) => {
         const user = c.get("user");
+        if (!limiter.allow(user.id)) throw tooMany();
         const { jobId, step, parts } = await stepFor(
           d,
           user.id,

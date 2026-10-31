@@ -1,0 +1,18 @@
+# Back from a step to the project, with the header's Back pill. A tap during the screen's transition can be lost, so it's
+# retried until the step list shows.
+appId: app.tandrix.mobile
+---
+- retry:
+    maxRetries: 2
+    commands:
+      - runFlow:
+          when:
+            notVisible:
+              id: step-list
+          commands:
+            - tapOn:
+                id: header-back
+      - extendedWaitUntil:
+          visible:
+            id: step-list
+          timeout: 8000

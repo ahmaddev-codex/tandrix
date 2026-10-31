@@ -1,11 +1,6 @@
 // Formatting and fetching for shared job reports (/r/[token]).
-import {
-  JobReportResponse,
-  type Job,
-  type ReportStep,
-  type SafetyGate,
-} from "@tandrix/contracts";
-import { citationLabel, formatDate, formatTime, stepChip, type SourceKind } from "@tandrix/ui";
+import { JobReportResponse, type Job, type ReportStep, type SafetyGate } from "@tandrix/contracts";
+import { citationSource, formatDate, formatTime, stepChip, type SourceKind } from "@tandrix/ui";
 import type { JobReportStep } from "@tandrix/ui/web";
 
 export const LINK_GONE = "This report link has expired or was turned off. Ask for a new one.";
@@ -41,8 +36,8 @@ export function reportMeta(report: JobReportResponse): string {
 }
 
 export function reportStepSource(step: ReportStep): { source: string; sourceKind: SourceKind } {
-  const cited = citationLabel(step.citation);
-  if (cited) return { source: cited, sourceKind: "manual" };
+  const cited = citationSource(step.citation);
+  if (cited) return cited;
   if (step.surface === "desktop") return { source: "Screen", sourceKind: "screen" };
   return { source: "Generic, not from the manufacturer", sourceKind: "generic" };
 }
@@ -98,4 +93,3 @@ export async function fetchSharedReport(
     return { kind: "error", message: REPORT_UNAVAILABLE };
   }
 }
-

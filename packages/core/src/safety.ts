@@ -25,7 +25,7 @@ const keywordRules: Array<{ tag: HazardTag; pattern: RegExp }> = [
   {
     tag: "live_electrical",
     pattern:
-      /\b(live|energi[sz]ed|hot)\s+(wir(e|es|ing)|circuit|conductor|terminal)s?\b|\bwhile (it is |it's )?(powered|energi[sz]ed|running)\b|\b(rewire|wire up|connect the (mains|supply|motor leads))\b/i,
+      /\b(live|energi[sz]ed|hot)\s+(wir(e|es|ing)|circuit|conductor|terminal|mains)s?\b|\bwhile (it is |it's )?energi[sz]ed\b|\b(touch|cut|strip|splice|handle|grab)\b[^.?!]{0,40}\b(wires?|cables?|leads?|conductors?|terminals?)\b[^.?!]{0,30}\bwhile (it is |it's |it's still )?(powered|plugged in|live|on)\b|\b(rewire|wire up the (mains|starter|breaker|panel|motor)|connect the (mains|supply|motor leads))\b/i,
   },
   {
     tag: "electrical_isolation",

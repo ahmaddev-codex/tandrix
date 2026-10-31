@@ -3,8 +3,9 @@ import { Id, IdentifyAssetRequest, SaveAssetRequest } from "@tandrix/contracts";
 import { Hono } from "hono";
 import type { z } from "zod";
 import type { AuthEnv } from "../auth";
-import { invalid, notFound } from "../errors";
+import { invalid, notFound, tooMany } from "../errors";
 import type { NameplateReader } from "../nameplate";
+import { modelLimiter, type RateLimiter } from "../rate-limit";
 import type { AssetsRepo } from "../repos/assets";
 import type { EvidenceRepo, EvidenceStorage } from "../repos/evidence";
 
@@ -16,7 +17,9 @@ export function assetRoutes(deps: {
   storage: EvidenceStorage;
   assets: AssetsRepo;
   reader: NameplateReader;
+  limiter?: RateLimiter;
 }) {
+  const limiter = deps.limiter ?? modelLimiter();
   const jobIdParam = (raw: string | undefined) => {
     const id = Id.safeParse(raw);
     if (!id.success) throw notFound("Job");
@@ -33,6 +36,7 @@ export function assetRoutes(deps: {
   return new Hono<AuthEnv>()
     .post("/identify", async (c) => {
       const user = c.get("user");
+      if (!limiter.allow(user.id)) throw tooMany();
       const jobId = jobIdParam(c.req.param("id"));
       const parsed = IdentifyAssetRequest.safeParse(await c.req.json().catch(() => undefined));
       if (!parsed.success) throw invalid(issues(parsed.error));

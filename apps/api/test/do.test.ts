@@ -30,7 +30,7 @@ function setup(script: DoTurn[] = [turn()], planned: string | null = null) {
       return planned;
     },
     async start(i) {
-      seen.push({ kind: "start", task: i.task });
+      seen.push({ kind: "start", task: i.task, ...(i.memory?.length ? { memory: i.memory } : {}) });
       return { status: "turn", turn: script.shift() ?? turn({ callId: null, actions: [] }) };
     },
     async continue(i) {
@@ -78,7 +78,23 @@ function setup(script: DoTurn[] = [turn()], planned: string | null = null) {
     post(user, "/screen/do", { screenshot, geometry, task: "Turn on notifications", ...extra });
   const next = (session: string, user = "u1", acknowledged: object[] = []) =>
     post(user, "/screen/do/continue", { session, screenshot, geometry, acknowledged });
-  return { start, next, seen, advance: (ms: number) => (clock += ms) };
+  const background = async (body: object, withWorker = true) => {
+    if (withWorker)
+      doer.background = async (task) => ({
+        status: "done",
+        spoken: `Found it: ${task}`,
+        detail: "All of it.",
+        sources: [],
+      });
+    else delete doer.background;
+    const res = await app("u1").request("/screen/background", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    return { status: res.status, body: await res.json() };
+  };
+  return { start, next, seen, background, doer, app, advance: (ms: number) => (clock += ms) };
 }
 
 const act = (b: DoTurnResponse | null) => {
@@ -187,5 +203,117 @@ describe("POST /screen/do", () => {
       }),
     });
     expect(DoTurnResponse.parse(await res.json())).toMatchObject({ status: "unavailable" });
+  });
+});
+
+describe("fresh turns with memory", () => {
+  it("passes what's been done to the model and keeps the turn count", async () => {
+    const s = setup();
+    const r = act(
+      (
+        await s.start("u1", {
+          planned: true,
+          turn: 7,
+          memory: ["Opened Notes", "Clicked Shopping"],
+        })
+      ).body,
+    );
+    expect(r.turn).toBe(7);
+    expect(s.seen).toContainEqual({
+      kind: "start",
+      task: "Turn on notifications",
+      memory: ["Opened Notes", "Clicked Shopping"],
+    });
+  });
+
+  it("hands control back at the ceiling instead of running forever", async () => {
+    const s = setup();
+    const r = (await s.start("u1", { planned: true, turn: DO_MAX_TURNS })).body;
+    expect(r?.status).toBe("act");
+    expect(DO_MAX_TURNS).toBeGreaterThanOrEqual(100);
+  });
+});
+
+describe("POST /screen/do/notes", () => {
+  it("writes down what the screen holds for the task, or says it's unavailable", async () => {
+    const s = setup();
+    const ask = (body: object) =>
+      s.app("u1").request("/screen/do/notes", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+      });
+    const shot = { mimeType: "image/png", data: Buffer.from("png").toString("base64") };
+    expect((await (await ask({ screenshot: shot, task: "x" })).json()).status).toBe("unavailable");
+    s.doer.notes = async ({ task }) => ({ note: `Acme Tue 10:00 (for ${task})` });
+    expect(await (await ask({ screenshot: shot, task: "add it" })).json()).toEqual({
+      status: "done",
+      note: "Acme Tue 10:00 (for add it)",
+    });
+    expect((await ask({ task: "no screenshot" })).status).toBe(400);
+  });
+});
+
+describe("POST /screen/background", () => {
+  it("does a task with no screen and answers what to say and what to read", async () => {
+    const s = setup();
+    const r = await s.background({ task: "When does the store close?" });
+    expect(r.status).toBe(200);
+    expect(r.body).toEqual({
+      status: "done",
+      spoken: "Found it: When does the store close?",
+      detail: "All of it.",
+      sources: [],
+    });
+  });
+
+  it("asks the Mac to run tools, then answers once their outputs come back", async () => {
+    const s = setup();
+    const seen: object[] = [];
+    const steps = [
+      { id: "c1", name: "reminders_add", arguments: '{"title":"Call Sam"}', output: '{"ok":true}' },
+    ];
+    s.doer.background = async (task, opts) => {
+      seen.push({ task, ...opts });
+      return opts?.steps?.length
+        ? { status: "done", spoken: "Added it.", detail: "Reminder: Call Sam.", sources: [] }
+        : {
+            status: "call",
+            calls: [{ id: "c1", name: "reminders_add", arguments: '{"title":"Call Sam"}' }],
+          };
+    };
+    const ask = (body: object) =>
+      s.app("u1").request("/screen/background", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+      });
+    const first = await (
+      await ask({ task: "Remind me to call Sam", tools: true, now: "2026-10-30T09:00+01:00" })
+    ).json();
+    expect(first).toEqual({
+      status: "call",
+      calls: [{ id: "c1", name: "reminders_add", arguments: '{"title":"Call Sam"}' }],
+    });
+    const second = await (await ask({ task: "Remind me to call Sam", tools: true, steps })).json();
+    expect(second.status).toBe("done");
+    expect(seen[0]).toMatchObject({ tools: true, steps: [], now: "2026-10-30T09:00+01:00" });
+    expect(seen[1]).toMatchObject({ steps });
+  });
+
+  it("refuses a tool the Mac doesn't have", async () => {
+    const s = setup();
+    const r = await s.background({
+      task: "x",
+      tools: true,
+      steps: [{ id: "c", name: "shell_run", arguments: "{}", output: "" }],
+    });
+    expect(r.status).toBe(400);
+  });
+
+  it("says it's unavailable without a model, and refuses an empty task", async () => {
+    const s = setup();
+    expect((await s.background({ task: "x" }, false)).body.status).toBe("unavailable");
+    expect((await s.background({ task: "" })).status).toBe(400);
   });
 });

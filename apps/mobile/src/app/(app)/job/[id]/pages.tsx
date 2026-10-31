@@ -1,6 +1,6 @@
 // Photograph a paper manual page by page. Each page uploads as it's taken; "Make manual" combines
 // them, in order, into a private PDF.
-import { radius, space } from "@tandrix/ui";
+import { space } from "@tandrix/ui";
 import { Button, CaptureView, Icon, Text, useTheme, Notice } from "@tandrix/ui/native";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import * as ImagePicker from "expo-image-picker";
@@ -153,10 +153,8 @@ export default function Pages() {
           alignItems: "center",
           gap: space["space-2"],
           padding: space["space-3"],
-          borderRadius: radius["radius-md"],
+          borderRadius: 18,
           backgroundColor: t.color["background-100"],
-          borderWidth: 1,
-          borderColor: t.color.border,
         }}
       >
         <Icon name="file" size={20} color="text-secondary" />

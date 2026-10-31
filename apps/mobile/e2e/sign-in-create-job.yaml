@@ -5,7 +5,7 @@ appId: app.tandrix.mobile
 env:
   # Plain text only: Maestro matches visible text as a regular expression. RUN_ID (set by run.sh)
   # keeps the title unique, so leftovers from earlier runs can't satisfy the checks.
-  JOB_TITLE: Assemble a 12U home server rack ${RUN_ID}
+  JOB_TITLE: Assemble a 12U home server rack e2e ${RUN_ID}
 ---
 - launchApp:
     clearState: true
@@ -20,16 +20,16 @@ env:
 # Wait for the app to finish loading (signed in or not) before deciding anything.
 - extendedWaitUntil:
     visible:
-      text: "(Local test sign-in|Start a project|Get started)"
+      text: "(Local test sign-in|Get started|Pick up where you left off.)"
     timeout: 60000
 # The keychain can outlive clearState on iOS, so sign out first if a session survived.
 - runFlow:
     when:
       visible:
-        id: open-settings
+        id: main-tab-settings
     commands:
       - tapOn:
-          id: open-settings
+          id: main-tab-settings
       - tapOn:
           id: settings-sign-out
 # Signed out on a fresh install: the welcome screen first.
@@ -95,9 +95,15 @@ env:
       visible: Open
     commands:
       - tapOn: Open
+# Signed in on relaunch: home loads, then the project row (below the sky header) is there.
 - extendedWaitUntil:
-    # Project rows expose one accessibility label: "<title>, <status>".
-    visible: ${JOB_TITLE},.*
+    visible:
+      id: new-job
     timeout: 30000
+- scrollUntilVisible:
+    # Project rows expose one accessibility label: "<title>, <status>".
+    element: ${JOB_TITLE},.*
+    direction: DOWN
+    timeout: 20000
 - assertNotVisible: Local test sign-in
 - takeScreenshot: jobs-after-restart

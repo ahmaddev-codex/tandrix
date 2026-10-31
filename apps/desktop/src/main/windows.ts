@@ -87,8 +87,8 @@ export function showPanel(anchor: Rectangle) {
   togglePanel(anchor);
 }
 
-export function sendToPanel(channel: string) {
-  panel?.webContents.send(channel);
+export function sendToPanel(channel: string, ...args: unknown[]) {
+  panel?.webContents.send(channel, ...args);
 }
 
 const displayInfo = (): DisplayInfo[] =>
@@ -141,8 +141,24 @@ export function sendToOverlay(displayId: number, channel: string, payload: unkno
 /** Every display that has an overlay. */
 export const overlayDisplayIds = () => [...overlays.keys()];
 
+/**
+ * Sends the pointer to a display's overlay. Points arrive relative to the display; if macOS has
+ * placed the overlay window anywhere else (below the menu bar, say), they're moved by the same
+ * amount, so the pointer lands where the model meant, not a menu bar's height lower.
+ */
 function send(displayId: number, pointer: OverlayPointer | null) {
-  overlays.get(displayId)?.webContents.send(channels.pointer, pointer);
+  const win = overlays.get(displayId);
+  if (!win) return;
+  const display = displayInfo().find((d) => d.id === displayId);
+  if (pointer && display) {
+    const w = win.getContentBounds();
+    pointer = {
+      ...pointer,
+      x: pointer.x - (w.x - display.bounds.x),
+      y: pointer.y - (w.y - display.bounds.y),
+    };
+  }
+  win.webContents.send(channels.pointer, pointer);
 }
 
 export function clearPointer() {
@@ -151,12 +167,60 @@ export function clearPointer() {
 }
 
 /** Draws the pointer at a global point (in points), on whichever display shows it. */
-export function showPointer(at: Point, caption?: string) {
+export function showPointer(
+  at: Point,
+  caption?: string,
+  box?: { width: number; height: number },
+  step?: number,
+) {
   clearTimeout(clearTimer);
   const target = toOverlay(at, displayInfo());
   for (const id of overlays.keys())
-    send(id, target?.displayId === id ? { ...target.point, caption } : null);
+    send(id, target?.displayId === id ? { ...target.point, caption, box, step } : null);
   clearTimer = setTimeout(clearPointer, ANSWER_POINTER_MS);
+}
+
+let workAt: Point | null = null;
+
+/** The pointer never leaves the screen: a point past an edge sits just inside the nearest display. */
+export function onScreen(p: Point): Point {
+  const b = screen.getDisplayNearestPoint(p).bounds;
+  const inset = 2;
+  return {
+    x: Math.min(Math.max(p.x, b.x + inset), b.x + b.width - inset),
+    y: Math.min(Math.max(p.y, b.y + inset), b.y + b.height - inset),
+  };
+}
+let workSeq = 0;
+/**
+ * Tandrix's pointer doing the work: it stays on screen for the whole task (no timer), glides to each
+ * target, and shows what it's doing. "here" keeps it where it is (typing, keys).
+ */
+export function showWorkPointer(
+  at: Point | "here",
+  caption: string,
+  act: NonNullable<OverlayPointer["working"]>["act"],
+) {
+  clearTimeout(clearTimer);
+  if (at !== "here") workAt = onScreen(at);
+  if (!workAt) return;
+  const target = toOverlay(workAt, displayInfo());
+  workSeq++;
+  for (const id of overlays.keys())
+    send(
+      id,
+      target?.displayId === id
+        ? { ...target.point, caption, working: { act, seq: workSeq } }
+        : null,
+    );
+}
+
+/** Where Tandrix's pointer is working, if it is. */
+export const workPointerAt = () => workAt;
+
+export function clearWorkPointer() {
+  workAt = null;
+  clearPointer();
 }
 
 /** The pointer at the centre of every display, so the user can see each overlay works. */

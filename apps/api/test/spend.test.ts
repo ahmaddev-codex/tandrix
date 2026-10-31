@@ -12,16 +12,18 @@ const entry = (usd: number) => ({
 });
 
 describe("fileSpendMeter", () => {
-  it("adds up spend in a file that survives a restart, and stops at the cap", () => {
+  it("adds up spend in a file that survives a restart, and stops at the cap", async () => {
     const path = join(mkdtempSync(join(tmpdir(), "spend-")), "ledger.json");
     const logs: Array<Record<string, unknown>> = [];
     const meter = fileSpendMeter(path, 0.05, (l) => logs.push(l));
     meter.allow("muse-spark-1.3");
     meter.record(entry(0.03));
+    await meter.flush();
     // A new process picks up where the last left off.
     const again = fileSpendMeter(path, 0.05, (l) => logs.push(l));
     again.allow("muse-spark-1.3");
     again.record(entry(0.03));
+    await again.flush();
     expect(readLedger(path)).toMatchObject({
       calls: 2,
       byModel: { "muse-spark-1.3": { calls: 2 } },

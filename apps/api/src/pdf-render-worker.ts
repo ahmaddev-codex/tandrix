@@ -4,7 +4,7 @@
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 import { pathToFileURL } from "node:url";
-import { parentPort, workerData } from "node:worker_threads";
+import { parentPort } from "node:worker_threads";
 import { createCanvas } from "@napi-rs/canvas";
 import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
 
@@ -60,9 +60,26 @@ async function render(job: RenderJob): Promise<RenderReply> {
   }
 }
 
+export interface WorkerRequest {
+  id: number;
+  job: RenderJob;
+}
+
+export interface WorkerResponse {
+  id: number;
+  reply: RenderReply;
+}
+
 if (parentPort) {
   const port = parentPort;
-  render(workerData as RenderJob)
-    .catch((): RenderReply => ({ ok: false, reason: "unreadable" }))
-    .then((reply) => port.postMessage(reply, reply.ok ? [reply.jpeg.buffer as ArrayBuffer] : []));
+  // One job at a time per worker (the pool guarantees it), so replies need no queue.
+  port.on("message", (req: WorkerRequest) => {
+    render(req.job)
+      .catch((): RenderReply => ({ ok: false, reason: "unreadable" }))
+      .then((reply) =>
+        port.postMessage({ id: req.id, reply } satisfies WorkerResponse, [
+          ...(reply.ok ? [reply.jpeg.buffer as ArrayBuffer] : []),
+        ]),
+      );
+  });
 }

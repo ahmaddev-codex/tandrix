@@ -1,17 +1,19 @@
 import type { JobDetailResponse } from "@tandrix/contracts";
 import { citationLabel, stepChip } from "@tandrix/ui";
-import { Button, HandoffBanner, Notice, StepRow } from "@tandrix/ui/web";
+import { BrandMark, Button, HandoffBanner, Icon, Input, Notice, StepRow } from "@tandrix/ui/web";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import type { ScreenAccess } from "../../shared/bridge";
+import { TALK_KEYS, type ScreenAccess } from "../../shared/bridge";
 import { activeJob } from "../lib/active-job";
 import { api } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { desktopStep, finished, stepOf } from "../lib/desktop-step";
-import { isLocal } from "../lib/env";
 import { useHandoffsToMac, useJobChanges, type IncomingHandoff } from "../lib/realtime";
 import { DesktopStep, type ScreenCheck } from "./DesktopStep";
 import { Setup, useSetupStatus } from "./Setup";
+import { Settings } from "./Settings";
+import { StartProject } from "./StartProject";
 import { ShowMe } from "./ShowMe";
+import { useShowMe } from "../lib/use-show-me";
 
 type JobState =
   | { kind: "loading" }
@@ -105,6 +107,65 @@ function JobSteps({ detail, children }: { detail: JobDetailResponse; children?: 
   );
 }
 
+/** What Tandrix calls the user, editable any time. Shared with the phone. */
+function NameRow() {
+  const [name, setName] = useState<string | null>(null);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState("");
+  const [loaded, setLoaded] = useState(false);
+  useEffect(() => {
+    api
+      .getProfile()
+      .then((p) => {
+        setName(p.displayName);
+        setLoaded(true);
+      })
+      .catch(() => setLoaded(true));
+  }, []);
+  if (!loaded) return null;
+  if (!editing) {
+    return (
+      <div className="name-row">
+        <p className="copy-13 panel-muted">
+          {name ? `Tandrix calls you ${name}.` : "Tandrix doesn't have a name for you yet."}
+        </p>
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={() => {
+            setDraft(name ?? "");
+            setEditing(true);
+          }}
+        >
+          {name ? "Change" : "Tell it"}
+        </Button>
+      </div>
+    );
+  }
+  const save = () => {
+    const displayName = draft.trim();
+    if (!displayName) return;
+    api
+      .updateProfile({ displayName })
+      .then((p) => {
+        setName(p.displayName);
+        setEditing(false);
+      })
+      .catch(() => undefined);
+  };
+  return (
+    <div className="name-row">
+      <Input label="What Tandrix calls you" value={draft} onChange={setDraft} />
+      <Button variant="primary" size="sm" onClick={save} disabled={!draft.trim()}>
+        Save
+      </Button>
+      <Button variant="tertiary" size="sm" onClick={() => setEditing(false)}>
+        Cancel
+      </Button>
+    </div>
+  );
+}
+
 function CurrentDesktopStep({
   detail,
   onChanged,
@@ -179,63 +240,94 @@ export function Home() {
     state.kind === "ready" && state.detail.job.activeSurface === "desktop"
       ? state.detail
       : undefined;
+  // One assistant for the panel: Settings reads and changes it, and opening Settings never stops
+  // a task that's running.
+  const showMe = useShowMe(onMac?.job.id);
+  const [view, setView] = useState<"home" | "settings">("home");
 
   return (
-    <main className="panel-page">
-      <header className="panel-bar">
-        <h1 className="heading-14">Tandrix</h1>
-        <Button variant="tertiary" size="sm" onClick={() => void auth.signOut()}>
-          Sign out
-        </Button>
-      </header>
-      <div className="panel-body panel-stack-6">
-        {banner?.step ? (
-          <HandoffBanner
-            state="incoming"
-            step={banner.step.order}
-            stepTitle={banner.step.title}
-            job={banner.job.title}
-            device={`your ${banner.h.from}`}
-            onAction={() => {
-              setIncoming(undefined);
-              document.getElementById("desktop-step")?.scrollIntoView({ behavior: "smooth" });
-            }}
-          />
-        ) : null}
-        {setup.show ? <Setup status={setup} /> : <ScreenAccessNotice />}
-        {state.kind === "error" ? (
-          <Notice
-            tone="error"
-            action={
-              <Button variant="secondary" onClick={load}>
-                Try again
-              </Button>
-            }
-          >
-            {state.message}
-          </Notice>
-        ) : null}
-        {onMac ? (
-          // A project from the phone, continued here: its step, then asking, then its steps.
-          <JobSteps detail={onMac}>
-            <CurrentDesktopStep key={onMac.job.id} detail={onMac} onChanged={load} />
-            <ShowMe jobId={onMac.job.id} />
-          </JobSteps>
-        ) : (
-          <ShowMe />
-        )}
-      </div>
-      {isLocal ? (
-        <footer className="panel-foot">
-          <Button
-            variant="secondary"
-            icon="pointer"
-            onClick={() => void window.tandrix.overlay.testPointer()}
-          >
-            Test the pointer
-          </Button>
-        </footer>
+    <>
+      {view === "settings" ? (
+        <Settings
+          s={showMe}
+          name={<NameRow />}
+          onBack={() => {
+            setView("home");
+            window.scrollTo(0, 0);
+          }}
+        />
       ) : null}
-    </main>
+      {/* The main page stays mounted (just hidden) while Settings is open, so nothing in progress
+          is lost. */}
+      <main className="panel-page" hidden={view === "settings"}>
+        {/* The sky header, as on the website: the mark, and that Tandrix is ready. */}
+        <header className="panel-sky">
+          <div className="panel-sky-row">
+            <h1 className="panel-brand">
+              <BrandMark size={26} />
+              Tandrix
+            </h1>
+            <button
+              type="button"
+              className="panel-glass panel-glass-icon"
+              aria-label="Settings"
+              onClick={() => {
+                setView("settings");
+                window.scrollTo(0, 0);
+              }}
+            >
+              <Icon name="gear" size={16} />
+            </button>
+          </div>
+          <p className="panel-ready">
+            <span className="panel-ready-dot" aria-hidden="true" />
+            Ready. Hold <kbd>{TALK_KEYS}</kbd> to talk.
+          </p>
+        </header>
+        {/* Kept mounted (just hidden) while Settings is open, so nothing in progress is lost. */}
+        <div className="panel-body panel-stack-6">
+          {banner?.step ? (
+            <HandoffBanner
+              state="incoming"
+              step={banner.step.order}
+              stepTitle={banner.step.title}
+              job={banner.job.title}
+              device={`your ${banner.h.from}`}
+              onAction={() => {
+                setIncoming(undefined);
+                document.getElementById("desktop-step")?.scrollIntoView({ behavior: "smooth" });
+              }}
+            />
+          ) : null}
+          {setup.show ? <Setup status={setup} /> : <ScreenAccessNotice />}
+          {state.kind === "error" ? (
+            <Notice
+              tone="error"
+              action={
+                <Button variant="secondary" onClick={load}>
+                  Try again
+                </Button>
+              }
+            >
+              {state.message}
+            </Notice>
+          ) : null}
+          {onMac ? (
+            // A project from the phone, continued here: its step, then asking, then its steps.
+            <JobSteps detail={onMac}>
+              <CurrentDesktopStep key={onMac.job.id} detail={onMac} onChanged={load} />
+              <ShowMe s={showMe} />
+            </JobSteps>
+          ) : (
+            <>
+              <ShowMe s={showMe} />
+              {state.kind === "ready" || state.kind === "none" ? (
+                <StartProject onCreated={load} />
+              ) : null}
+            </>
+          )}
+        </div>
+      </main>
+    </>
   );
 }

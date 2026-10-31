@@ -1,0 +1,565 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Desktop</title>
+    <!-- The task bench's Mac: WhatsApp, Calendar, Spotlight and a dock, with window.__state holding
+         what was done (events added, messages sent) for apps/desktop/scripts/task-bench.ts. -->
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        font-family: -apple-system, "Helvetica Neue", Arial, sans-serif;
+      }
+      body {
+        width: 1280px;
+        height: 800px;
+        overflow: hidden;
+        background: linear-gradient(160deg, #5b7fa8, #2e4a6b);
+        position: relative;
+      }
+      #menubar {
+        height: 26px;
+        background: rgba(240, 240, 240, 0.85);
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        padding: 0 14px;
+        font-size: 13px;
+      }
+      #menubar b {
+        font-weight: 700;
+      }
+      #dock {
+        position: absolute;
+        bottom: 8px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 14px;
+        padding: 8px 14px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.35);
+      }
+      .dockapp {
+        width: 60px;
+        height: 60px;
+        border-radius: 14px;
+        display: grid;
+        place-items: center;
+        color: #fff;
+        font-size: 11px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .win {
+        position: absolute;
+        left: 90px;
+        top: 50px;
+        width: 1100px;
+        height: 640px;
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+        display: none;
+        overflow: hidden;
+      }
+      .win.front {
+        display: flex;
+        flex-direction: column;
+      }
+      .titlebar {
+        height: 36px;
+        display: flex;
+        align-items: center;
+        padding: 0 12px;
+        gap: 8px;
+        border-bottom: 1px solid #ddd;
+        background: #f6f6f6;
+        font-size: 13px;
+        font-weight: 600;
+        color: #333;
+      }
+      .lights {
+        display: flex;
+        gap: 6px;
+        margin-right: 10px;
+      }
+      .lights i {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #ff5f57;
+      }
+      .lights i:nth-child(2) {
+        background: #febc2e;
+      }
+      .lights i:nth-child(3) {
+        background: #28c840;
+      }
+      #wa .body {
+        display: flex;
+        flex: 1;
+        min-height: 0;
+      }
+      #wa .list {
+        width: 330px;
+        border-right: 1px solid #e5e5e5;
+        display: flex;
+        flex-direction: column;
+      }
+      #wa .search {
+        margin: 10px;
+        padding: 8px 12px;
+        border-radius: 8px;
+        border: 1px solid #ddd;
+        font-size: 14px;
+      }
+      .chat {
+        padding: 12px 14px;
+        border-bottom: 1px solid #f0f0f0;
+        cursor: pointer;
+      }
+      .chat b {
+        display: block;
+        font-size: 15px;
+        margin-bottom: 3px;
+      }
+      .chat span {
+        font-size: 13px;
+        color: #777;
+      }
+      .chat.sel {
+        background: #e9f7ef;
+      }
+      #wa .pane {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        background: #efeae2;
+      }
+      #wa .head {
+        padding: 12px 16px;
+        background: #f0f2f5;
+        font-weight: 600;
+        font-size: 15px;
+        border-bottom: 1px solid #ddd;
+      }
+      #wa .msgs {
+        flex: 1;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        overflow: auto;
+      }
+      .msg {
+        max-width: 70%;
+        background: #fff;
+        padding: 8px 12px;
+        border-radius: 8px;
+        font-size: 14px;
+        line-height: 1.4;
+        box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+      }
+      .msg.mine {
+        align-self: flex-end;
+        background: #d9fdd3;
+      }
+      .empty {
+        margin: auto;
+        color: #888;
+        font-size: 14px;
+      }
+      #wa .composer {
+        display: none;
+        padding: 10px 14px;
+        background: #f0f2f5;
+        border-top: 1px solid #ddd;
+      }
+      #wa .composer.on {
+        display: block;
+      }
+      #wa .composer input {
+        width: 100%;
+        padding: 9px 12px;
+        border-radius: 8px;
+        border: 1px solid #ddd;
+        font-size: 14px;
+      }
+      #cal .bar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 14px;
+        border-bottom: 1px solid #e5e5e5;
+      }
+      #cal .bar button {
+        padding: 6px 12px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+        background: #fff;
+        font-size: 13px;
+        cursor: pointer;
+      }
+      #cal .grid {
+        flex: 1;
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 1px;
+        background: #e5e5e5;
+        min-height: 0;
+      }
+      .day {
+        background: #fff;
+        padding: 8px;
+        font-size: 12px;
+        overflow: hidden;
+      }
+      .day h4 {
+        font-size: 13px;
+        margin-bottom: 6px;
+        color: #333;
+      }
+      .ev {
+        background: #dbeafe;
+        color: #1e3a8a;
+        border-radius: 4px;
+        padding: 3px 5px;
+        margin-bottom: 4px;
+        font-size: 11px;
+      }
+      #form {
+        position: absolute;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.25);
+        display: none;
+        align-items: center;
+        justify-content: center;
+      }
+      #form.open {
+        display: flex;
+      }
+      #form .card {
+        background: #fff;
+        border-radius: 10px;
+        padding: 18px;
+        width: 380px;
+        display: grid;
+        gap: 10px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      }
+      #form label {
+        font-size: 12px;
+        color: #555;
+        display: grid;
+        gap: 4px;
+      }
+      #form input {
+        padding: 7px 9px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        font-size: 14px;
+      }
+      #form .row {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+      }
+      #form button {
+        padding: 7px 14px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+        background: #fff;
+        font-size: 13px;
+        cursor: pointer;
+      }
+      #form button.primary {
+        background: #2563eb;
+        color: #fff;
+        border-color: #2563eb;
+      }
+      #spot {
+        position: absolute;
+        left: 50%;
+        top: 180px;
+        transform: translateX(-50%);
+        width: 600px;
+        display: none;
+        background: rgba(250, 250, 250, 0.97);
+        border-radius: 12px;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+        padding: 10px;
+      }
+      #spot.open {
+        display: block;
+      }
+      #spot input {
+        width: 100%;
+        font-size: 22px;
+        padding: 8px 10px;
+        border: 0;
+        outline: 0;
+        background: transparent;
+      }
+      #spot .hit {
+        padding: 8px 10px;
+        font-size: 15px;
+        color: #333;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="menubar">
+      <b id="appname">Finder</b><span>File</span><span>Edit</span><span>View</span
+      ><span>Window</span><span>Help</span>
+    </div>
+
+    <div class="win" id="wa">
+      <div class="titlebar">
+        <span class="lights"><i></i><i></i><i></i></span>WhatsApp
+      </div>
+      <div class="body">
+        <div class="list">
+          <input class="search" id="wasearch" placeholder="Search or start a new chat" />
+          <div id="chats"></div>
+        </div>
+        <div class="pane">
+          <div class="head" id="chathead">&nbsp;</div>
+          <div class="msgs" id="msgs">
+            <div class="empty">Select a chat to start messaging</div>
+          </div>
+          <div class="composer" id="composer">
+            <input id="compose" placeholder="Type a message" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="win" id="cal">
+      <div class="titlebar">
+        <span class="lights"><i></i><i></i><i></i></span>Calendar
+      </div>
+      <div class="bar">
+        <button id="newev">+ New Event</button
+        ><span style="font-size: 14px; font-weight: 600">November 2026 · Week of Mon 2 Nov</span>
+      </div>
+      <div class="grid" id="days"></div>
+      <div id="form">
+        <div class="card">
+          <b>New Event</b>
+          <label>Title<input id="f-title" /></label>
+          <label>Date<input id="f-date" placeholder="e.g. Tue 3 Nov" /></label>
+          <label>Starts<input id="f-start" placeholder="e.g. 10:00" /></label>
+          <label>Ends<input id="f-end" placeholder="e.g. 11:00" /></label>
+          <div class="row">
+            <button id="f-cancel">Cancel</button><button class="primary" id="f-add">Add</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="spot">
+      <input id="spotin" placeholder="Spotlight Search" />
+      <div class="hit" id="spothit"></div>
+    </div>
+
+    <div id="dock">
+      <div class="dockapp" style="background: #3b82f6" data-app="Finder">Finder</div>
+      <div class="dockapp" style="background: #25d366" data-app="WhatsApp">WhatsApp</div>
+      <div class="dockapp" style="background: #ef4444" data-app="Calendar">Calendar</div>
+      <div class="dockapp" style="background: #f59e0b" data-app="Notes">Notes</div>
+    </div>
+
+    <script>
+      const chats = [
+        { name: "Mum", last: "Call me when you're free", msgs: ["Call me when you're free"] },
+        {
+          name: "Design team",
+          last: "New mocks are up",
+          msgs: ["New mocks are up", "Have a look before Thursday"],
+        },
+        { name: "Sam", last: "Lunch tomorrow?", msgs: ["Lunch tomorrow?"] },
+        { name: "Gym buddies", last: "6am tomorrow 💪", msgs: ["6am tomorrow 💪"] },
+        { name: "Landlord", last: "Rent reminder", msgs: ["Rent reminder for November"] },
+        {
+          name: "Recruiting — Priya",
+          last: "Here's your interview lineup",
+          msgs: [
+            "Hi! Here's your interview lineup for next week:",
+            "1) Acme Corp — Tue 3 Nov, 10:00–10:45 (video)",
+            "2) Globex — Wed 4 Nov, 14:30–15:15 (onsite)",
+            "3) Initech — Fri 6 Nov, 09:00–09:30 (phone)",
+            "Good luck!",
+          ],
+        },
+        { name: "Bank alerts", last: "Your statement is ready", msgs: ["Your statement is ready"] },
+      ];
+      window.__state = { events: [], sent: [], front: "Finder" };
+      let open = null;
+      const days = [
+        "Mon 2 Nov",
+        "Tue 3 Nov",
+        "Wed 4 Nov",
+        "Thu 5 Nov",
+        "Fri 6 Nov",
+        "Sat 7 Nov",
+        "Sun 8 Nov",
+      ];
+      function renderChats(filter = "") {
+        const el = document.getElementById("chats");
+        el.innerHTML = "";
+        chats
+          .filter(
+            (c) =>
+              !filter ||
+              c.name.toLowerCase().includes(filter) ||
+              c.msgs.join(" ").toLowerCase().includes(filter),
+          )
+          .forEach((c) => {
+            const d = document.createElement("div");
+            d.className = "chat" + (open === c ? " sel" : "");
+            d.innerHTML = `<b>${c.name}</b><span>${c.msgs.at(-1)}</span>`;
+            d.onclick = () => openChat(c);
+            el.appendChild(d);
+          });
+      }
+      function openChat(c) {
+        open = c;
+        renderChats(document.getElementById("wasearch").value.toLowerCase());
+        document.getElementById("chathead").textContent = c.name;
+        const m = document.getElementById("msgs");
+        m.innerHTML = "";
+        c.msgs.forEach((t, i) => {
+          const x = document.createElement("div");
+          x.className = "msg" + (c.mine?.includes(i) ? " mine" : "");
+          x.textContent = t;
+          m.appendChild(x);
+        });
+        document.getElementById("composer").classList.add("on");
+      }
+      document
+        .getElementById("wasearch")
+        .addEventListener("input", (e) => renderChats(e.target.value.toLowerCase()));
+      document.getElementById("compose").addEventListener("keydown", (e) => {
+        if (e.key !== "Enter" || !open) return;
+        const text = e.target.value.trim();
+        if (!text) return;
+        open.mine = [...(open.mine ?? []), open.msgs.length];
+        open.msgs.push(text);
+        __state.sent.push({ to: open.name, text });
+        e.target.value = "";
+        openChat(open);
+      });
+      function renderDays() {
+        const g = document.getElementById("days");
+        g.innerHTML = "";
+        days.forEach((dn) => {
+          const d = document.createElement("div");
+          d.className = "day";
+          d.innerHTML = `<h4>${dn}</h4>`;
+          __state.events
+            .filter((e) => matchDay(e.date, dn))
+            .forEach((e) => {
+              const x = document.createElement("div");
+              x.className = "ev";
+              x.textContent = `${e.start} ${e.title}`;
+              d.appendChild(x);
+            });
+          g.appendChild(d);
+        });
+      }
+      function matchDay(date, dn) {
+        const n = dn.split(" ")[1];
+        return new RegExp(`\\b${n}\\b`).test(date) && !/oct|dec/i.test(date);
+      }
+      function openApp(name) {
+        const n = (name || "").toLowerCase();
+        document.querySelectorAll(".win").forEach((w) => w.classList.remove("front"));
+        if (n.includes("whatsapp")) {
+          document.getElementById("wa").classList.add("front");
+          __state.front = "WhatsApp";
+        } else if (n.includes("calendar")) {
+          document.getElementById("cal").classList.add("front");
+          __state.front = "Calendar";
+        } else __state.front = name;
+        document.getElementById("appname").textContent = __state.front;
+        return true;
+      }
+      window.__openApp = openApp;
+      document
+        .querySelectorAll(".dockapp")
+        .forEach((d) => (d.onclick = () => openApp(d.dataset.app)));
+      document.getElementById("newev").onclick = () => {
+        document.getElementById("form").classList.add("open");
+        document.getElementById("f-title").focus();
+      };
+      document.getElementById("f-cancel").onclick = () =>
+        document.getElementById("form").classList.remove("open");
+      function addEvent() {
+        const v = (id) => document.getElementById(id).value.trim();
+        if (!v("f-title")) return;
+        __state.events.push({
+          title: v("f-title"),
+          date: v("f-date"),
+          start: v("f-start"),
+          end: v("f-end"),
+        });
+        ["f-title", "f-date", "f-start", "f-end"].forEach(
+          (i) => (document.getElementById(i).value = ""),
+        );
+        document.getElementById("form").classList.remove("open");
+        renderDays();
+      }
+      document.getElementById("f-add").onclick = addEvent;
+      document.getElementById("form").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") addEvent();
+      });
+      const spot = document.getElementById("spot"),
+        spotin = document.getElementById("spotin");
+      const isSpace = (e) => e.code === "Space" || e.key === " ";
+      document.addEventListener("keydown", (e) => {
+        const k = (e.key || "").toLowerCase();
+        if (e.metaKey && isSpace(e)) {
+          e.preventDefault();
+          spot.classList.add("open");
+          spotin.value = "";
+          document.getElementById("spothit").textContent = "";
+          spotin.focus();
+          return;
+        }
+        if (e.metaKey && k === "n" && __state.front === "Calendar") {
+          e.preventDefault();
+          document.getElementById("newev").click();
+          return;
+        }
+        if (e.metaKey && k === "f" && __state.front === "WhatsApp") {
+          e.preventDefault();
+          document.getElementById("wasearch").focus();
+          return;
+        }
+        if (k === "escape") {
+          spot.classList.remove("open");
+          document.getElementById("form").classList.remove("open");
+        }
+      });
+      const appsList = ["WhatsApp", "Calendar", "Notes", "Finder"];
+      spotin.addEventListener("input", () => {
+        const q = spotin.value.toLowerCase();
+        const hit = appsList.find((a) => a.toLowerCase().startsWith(q));
+        document.getElementById("spothit").textContent = hit ? `↩ ${hit}` : "";
+      });
+      spotin.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          const q = spotin.value.toLowerCase();
+          const hit = appsList.find((a) => a.toLowerCase().startsWith(q)) || spotin.value;
+          spot.classList.remove("open");
+          openApp(hit);
+        }
+      });
+      renderChats();
+      renderDays();
+    </script>
+  </body>
+</html>

@@ -12,7 +12,7 @@ import type {
   StepVisual as StepVisualData,
 } from "@tandrix/contracts";
 import {
-  citationLabel,
+  citationSource,
   space,
   stepChip,
   visualAspect,
@@ -25,6 +25,7 @@ import {
   CheckResult,
   HandoffBanner,
   HighlightCorrection,
+  Icon,
   Notice,
   PartHighlight,
   StepCard,
@@ -38,10 +39,11 @@ import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ScrollView, View, type ScrollViewInstance } from "react-native";
+import { Pressable, ScrollView, View, type ScrollViewInstance } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "@/lib/api";
-import { isOffline, keepPhoto, loadJob, offlineQueue } from "@/offline";
+import { speak } from "@/voice/tts";
+import { isOffline, keepPhoto, loadJob, offlineQueue, visualCache } from "@/offline";
 import { preparePhoto, uploadPhoto, type PreparedPhoto } from "@/lib/evidence";
 import { useStepWork } from "@/components/step-work";
 import { useJobChanges } from "@/lib/realtime";
@@ -139,12 +141,16 @@ export default function StepScreen() {
       })
       .catch((e: Error) => setError(e.message));
   }, [id, stepId]);
-  // Pictures help but aren't needed to work the step: offline or failing, the step shows without.
+  // Pictures help but aren't needed to work the step: offline, the ones kept on the phone show;
+  // failing, the step shows without.
   const loadVisuals = useCallback(() => {
     api
       .stepVisuals(id, stepId)
-      .then((r) => setVisuals(r.visuals))
-      .catch(() => {});
+      .then((r) => {
+        setVisuals(r.visuals);
+        void visualCache.save(stepId, r.visuals).catch(() => {});
+      })
+      .catch(async () => setVisuals(await visualCache.load(stepId)));
   }, [id, stepId]);
   useEffect(load, [load]);
   useEffect(loadVisuals, [loadVisuals]);
@@ -265,6 +271,12 @@ export default function StepScreen() {
           setPhase("preview");
           return;
         }
+        // Say the verdict aloud like someone standing next to them.
+        const verdict =
+          r.check.result === "pass"
+            ? `That's correct. ${r.check.reason}`
+            : [r.check.reason, r.check.whatToShowNext].filter(Boolean).join(" ");
+        speak(verdict);
         setCheck(r.check);
         setData((d) => (d ? { ...d, jobStep: r.step } : d));
         setPhase("result");
@@ -386,7 +398,7 @@ export default function StepScreen() {
 
   const { step, jobStep, parts } = data;
   const chip = stepChip[jobStep.status];
-  const cite = citationLabel(step.citation);
+  const cite = citationSource(step.citation);
   const usable = permission?.granted && !cameraFailed;
   const canAskCamera = permission?.canAskAgain !== false && !cameraFailed;
   // Names as written: many are proper nouns ("Raspberry Pi 5").
@@ -529,6 +541,18 @@ export default function StepScreen() {
           title: `Step ${data.index}`,
           animation: "slide_from_right",
           animationTypeForReplace: "push",
+          // Point the camera at a part and ask about it, with this step as the context.
+          headerRight: () => (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Point the camera"
+              testID="step-look"
+              hitSlop={10}
+              onPress={() => router.push({ pathname: "/look", params: { jobId: id, stepId } })}
+            >
+              <Icon name="camera" size={24} color="text" />
+            </Pressable>
+          ),
         }}
       />
       <ScrollView
@@ -627,7 +651,7 @@ export default function StepScreen() {
           {...(step.caution ? { caution: step.caution } : {})}
           status={queued ? "pending" : chip.status}
           {...(queued ? {} : chip.label ? { statusLabel: chip.label } : {})}
-          {...(cite ? { source: cite } : { sourceKind: "generic" as const })}
+          {...(cite ?? { sourceKind: "generic" as const })}
           visual={
             visuals.length ? (
               <StepVisual

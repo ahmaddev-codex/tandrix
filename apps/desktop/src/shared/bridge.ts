@@ -1,6 +1,12 @@
 // The only surface the renderer has into the main process (exposed by the preload as
 // window.tandrix). Channel names and payloads live here so both sides agree.
-import type { ControlMode, DesktopAction, SafetyCheck, ScreenGeometry } from "@tandrix/contracts";
+import type {
+  AgentCall,
+  ControlMode,
+  DesktopAction,
+  SafetyCheck,
+  ScreenGeometry,
+} from "@tandrix/contracts";
 
 export const channels = {
   storageGet: "storage:get",
@@ -26,6 +32,21 @@ export const channels = {
   talkStart: "voice:talk-start",
   talkEnd: "voice:talk-end",
   talkKeysAccess: "voice:talk-keys-access",
+  wakeSet: "voice:wake-set",
+  wakeStatus: "voice:wake-status",
+  wake: "voice:wake",
+  wakeIgnored: "voice:wake-ignored",
+  voiceprint: "voice:print",
+  voicePhrase: "voice:print-phrase",
+  voiceFinish: "voice:print-finish",
+  voiceOnlyMine: "voice:print-only-mine",
+  voiceDelete: "voice:print-delete",
+  agentTool: "agent:tool",
+  browserOpen: "browser:open",
+  browserCapture: "browser:capture",
+  browserRun: "browser:run",
+  browserClose: "browser:close",
+  browserSignIn: "browser:sign-in",
   setPresence: "presence:set",
   controlMode: "do:mode",
   setControlMode: "do:set-mode",
@@ -34,6 +55,7 @@ export const channels = {
   doEnd: "do:end",
   doStop: "do:stop",
   doApps: "do:apps",
+  doFront: "do:front",
   doOpenApp: "do:open-app",
   presence: "overlay:presence",
 } as const;
@@ -52,6 +74,10 @@ export interface OverlayPointer {
   x: number;
   y: number;
   caption?: string;
+  /** Doing the work (Do it for me): the pointer glides between steps and shows each action. */
+  working?: { act: "click" | "type" | "keys" | "move" | "scroll" | "drag"; seq: number };
+  box?: { width: number; height: number };
+  step?: number;
 }
 
 /** What Tandrix is doing, for the presence bar at the top of the screen. Null: idle, nothing shown. */
@@ -74,6 +100,8 @@ export interface ScreenCapture {
   mimeType: "image/jpeg";
   geometry: ScreenGeometry;
   capturedAt: string;
+  /** The screen at 48×30, one brightness (0–255) per cell: tells a real change from a caret blink. */
+  sketch?: number[];
 }
 
 /** One batch of model-proposed actions for the main process to check and run. */
@@ -100,6 +128,8 @@ export interface TandrixBridge {
     stop(): Promise<void>;
     /** Installed apps, and the one in front (not Tandrix), for the task's plan. */
     apps(): Promise<{ apps: string[]; front?: string }>;
+    /** The app in front now (not Tandrix), to tell when a task moves between apps. */
+    front(): Promise<string | undefined>;
     /** Opens an installed app during a task; false if it isn't installed or no task runs. */
     openApp(name: string): Promise<boolean>;
   };
@@ -136,6 +166,8 @@ export interface TandrixBridge {
       geometry: ScreenGeometry,
       point: { x: number; y: number },
       caption: string,
+      box?: { width: number; height: number },
+      step?: number,
     ): Promise<void>;
     clear(): Promise<void>;
     /** Overlay windows only: called with the pointer to draw, or null to clear it. */
@@ -144,6 +176,22 @@ export interface TandrixBridge {
     setPresence(presence: Presence | null): Promise<void>;
     /** Overlay windows only: the presence to draw, or null. */
     onPresence(listener: (presence: OverlayPresence | null) => void): () => void;
+  };
+  /** Background agents' tools: run on this Mac without its screen, mouse or keyboard. */
+  agent: {
+    runTool(call: AgentCall): Promise<string>;
+  };
+  /**
+   * Tandrix's own browser: hidden tabs a background agent drives without the user's screen,
+   * mouse or keyboard, on a profile where the user signs in to sites once.
+   */
+  browser: {
+    open(url: string): Promise<number>;
+    capture(id: number): Promise<ScreenCapture & { url: string }>;
+    run(id: number, batch: DoBatch): Promise<DoBatchResult>;
+    close(id: number): Promise<void>;
+    /** A visible window on that profile, to sign in to a site. */
+    signIn(url: string): Promise<void>;
   };
   voice: {
     /** Asks macOS for the microphone the first time; true when Tandrix may use it. */
@@ -159,6 +207,34 @@ export interface TandrixBridge {
     /** Speaks a reply in the best macOS voice installed; false if it can't. */
     speak(text: string): Promise<boolean>;
     stopSpeaking(): Promise<void>;
+    /** Switches the on-device wake word ("Hey Tandrix") on or off. */
+    setWakeWord(on: boolean): Promise<void>;
+    /** The wake word's state, and why it can't listen when it can't. */
+    onWakeStatus(
+      listener: (s: {
+        status: "off" | "starting" | "listening" | "unavailable";
+        message?: string;
+      }) => void,
+    ): () => void;
+    /** "Hey Tandrix" was heard; `rest` is anything said after it in the same breath. */
+    onWake(listener: (rest: string) => void): () => void;
+    /** "Hey Tandrix" was heard in a voice that isn't the user's, and only-my-voice is on. */
+    onWakeIgnored(listener: () => void): () => void;
+    /** Whether this Mac knows the user's voice, and whether it answers only that voice. */
+    voiceprint(): Promise<{ enrolled: boolean; onlyMine: boolean }>;
+    /**
+     * Records setup phrase `index` (0–2): `start`, then `stop` when they've said it. Needs the wake
+     * word listening. `ok` false with a reason when there wasn't enough voice.
+     */
+    voicePhrase(
+      index: number,
+      action: "start" | "stop",
+    ): Promise<{ ok: true } | { ok: false; reason: string }>;
+    /** Saves the voiceprint from the three phrases, or names the one to say again. */
+    voiceFinish(): Promise<{ ok: true } | { ok: false; redo: number }>;
+    setOnlyMyVoice(on: boolean): Promise<void>;
+    /** Deletes the voiceprint from this Mac. */
+    deleteVoice(): Promise<void>;
     /** ⌥⌘ held: start listening (the screen is captured as it is now). */
     onTalkStart(listener: () => void): () => void;
     /** ⌥⌘ let go: ask. */

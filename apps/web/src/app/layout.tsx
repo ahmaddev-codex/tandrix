@@ -1,5 +1,4 @@
 import "@tandrix/ui/tokens.css";
-import "@tandrix/ui/web/styles.css";
 import "./globals.css";
 import { colors } from "@tandrix/ui";
 import { GeistMono } from "geist/font/mono";
@@ -8,9 +7,33 @@ import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 
 export const metadata: Metadata = {
-  title: "Tandrix — a clear next step for the work in front of you",
+  title: "Tandrix: tell it what you want done",
   description:
-    "On your phone, Tandrix guides physical work with checked steps. On your Mac, it points to the control you need in any app.",
+    "Tandrix sees your screen and what's in front of your camera, points at the answer, and checks every step with you. On your Mac and your iPhone.",
+  openGraph: {
+    title: "Tandrix: tell it what you want done",
+    description:
+      "Tandrix sees your screen and what's in front of your camera, points at the answer, and checks every step with you.",
+    type: "website",
+    siteName: "Tandrix",
+    images: [
+      {
+        url: "/og.png",
+        width: 1200,
+        height: 630,
+        alt: "Tandrix: tell it what you want done. It shows you the way.",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Tandrix: tell it what you want done",
+    description:
+      "Tandrix sees your screen and what's in front of your camera, points at the answer, and checks every step with you.",
+    images: ["/og.png"],
+  },
+  icons: { icon: "/icon.svg" },
+  manifest: "/manifest.webmanifest",
 };
 
 export const viewport: Viewport = {
@@ -20,8 +43,8 @@ export const viewport: Viewport = {
   ],
 };
 
-// Light by default; dark follows the system. Set before paint so the page never flashes.
-const theme = `document.documentElement.dataset.theme=matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"`;
+// Apply stored theme override or system preference before paint to prevent FOUC.
+const themeScript = `(function(){try{var s=localStorage.getItem("color-scheme");var m=document.querySelector('meta[name="color-scheme"]');var d=matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";var t=s==="dark"||s==="light"?s:d;document.documentElement.dataset.theme=t;if(m)m.content=s==="dark"||s==="light"?s:"light dark";}catch(e){document.documentElement.dataset.theme=matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";}})()`;
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
@@ -31,7 +54,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       suppressHydrationWarning
     >
       <head>
-        <script dangerouslySetInnerHTML={{ __html: theme }} />
+        <meta name="color-scheme" content="light dark" />
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body>{children}</body>
     </html>

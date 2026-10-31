@@ -6,6 +6,7 @@ import { PointerBuddy, PresenceBar } from "@tandrix/ui/web";
 import { StrictMode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import type { OverlayPointer, OverlayPresence } from "../shared/bridge";
+import { WorkPointer } from "./WorkPointer";
 
 function Overlay() {
   const [pointer, setPointer] = useState<OverlayPointer | null>(null);
@@ -15,7 +16,11 @@ function Overlay() {
   return (
     <>
       {presence ? <PresenceBar {...presence} /> : null}
-      {pointer ? <PointerBuddy x={pointer.x} y={pointer.y} caption={pointer.caption} /> : null}
+      {pointer?.working ? (
+        <WorkPointer p={pointer} />
+      ) : pointer ? (
+        <PointerBuddy x={pointer.x} y={pointer.y} box={pointer.box} step={pointer.step} />
+      ) : null}
     </>
   );
 }

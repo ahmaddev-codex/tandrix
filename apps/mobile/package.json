@@ -11,6 +11,7 @@
     "@tandrix/ui": "workspace:*",
     "expo": "~58.0.19",
     "expo-audio": "~58.0.10",
+    "expo-blur": "~58.0.5",
     "expo-camera": "~58.0.12",
     "expo-constants": "~58.0.13",
     "expo-dev-client": "~58.0.15",

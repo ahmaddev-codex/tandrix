@@ -23,6 +23,7 @@ const bridge: TandrixBridge = {
     end: () => ipcRenderer.invoke(channels.doEnd),
     stop: () => ipcRenderer.invoke(channels.doStop),
     apps: () => ipcRenderer.invoke(channels.doApps),
+    front: () => ipcRenderer.invoke(channels.doFront),
     openApp: (name) => ipcRenderer.invoke(channels.doOpenApp, name),
   },
   storage: {
@@ -63,7 +64,38 @@ const bridge: TandrixBridge = {
       };
     },
   },
+  agent: {
+    runTool: (call) => ipcRenderer.invoke(channels.agentTool, call),
+  },
+  browser: {
+    open: (url) => ipcRenderer.invoke(channels.browserOpen, url),
+    capture: (id) => ipcRenderer.invoke(channels.browserCapture, id),
+    run: (id, batch) => ipcRenderer.invoke(channels.browserRun, id, batch),
+    close: (id) => ipcRenderer.invoke(channels.browserClose, id),
+    signIn: (url) => ipcRenderer.invoke(channels.browserSignIn, url),
+  },
   voice: {
+    setWakeWord: (on) => ipcRenderer.invoke(channels.wakeSet, on),
+    onWakeStatus: (listener) => {
+      const fn = (_e: unknown, s: Parameters<typeof listener>[0]) => listener(s);
+      ipcRenderer.on(channels.wakeStatus, fn);
+      return () => {
+        ipcRenderer.off(channels.wakeStatus, fn);
+      };
+    },
+    onWake: (listener) => {
+      const fn = (_e: unknown, rest: string) => listener(rest);
+      ipcRenderer.on(channels.wake, fn);
+      return () => {
+        ipcRenderer.off(channels.wake, fn);
+      };
+    },
+    onWakeIgnored: (listener) => subscribe(channels.wakeIgnored, listener),
+    voiceprint: () => ipcRenderer.invoke(channels.voiceprint),
+    voicePhrase: (index, action) => ipcRenderer.invoke(channels.voicePhrase, index, action),
+    voiceFinish: () => ipcRenderer.invoke(channels.voiceFinish),
+    setOnlyMyVoice: (on) => ipcRenderer.invoke(channels.voiceOnlyMine, on),
+    deleteVoice: () => ipcRenderer.invoke(channels.voiceDelete),
     onTalkStart: (listener) => subscribe(channels.talkStart, listener),
     onTalkEnd: (listener) => subscribe(channels.talkEnd, listener),
     talkKeysAccess: (ask) => ipcRenderer.invoke(channels.talkKeysAccess, ask),

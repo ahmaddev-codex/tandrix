@@ -1,14 +1,30 @@
-# Photo credits
+# Photo and video credits
 
-Photos on the Tandrix website, their makers and licences. The site's footer links here.
+Photos and video on the Tandrix website, their makers and licences. The site's credits page
+(/credits) shows the same. App screens, the manual page and the pointer are drawn in code.
 
-| File | Photographer | Licence | Source |
-| --- | --- | --- | --- |
-| technician-rack.jpg | Valentin Lacoste | [Unsplash License](https://unsplash.com/license) | [Technician working on server equipment with tools](https://unsplash.com/photos/ufT32_VFS-I) |
-| fitting-ssd.jpg | Samsung Memory | [Unsplash License](https://unsplash.com/license) | [A person holding a device](https://unsplash.com/photos/siy3D89AqJw) |
-| editing-app.jpg | Zulfugar Karimov | [Unsplash License](https://unsplash.com/license) | [Photo editing software is shown on a laptop screen](https://unsplash.com/photos/PevdsGAUrKA) |
-| desk-setup.jpg | Andreas Palmer | [Unsplash License](https://unsplash.com/license) | [Turned on MacBook Pro beside monitor on desk](https://unsplash.com/photos/UJSjxFNLFWY) |
-| pi5-board.jpg | SimonWaldherr | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0) | [File:Raspberry Pi 5.jpg](https://commons.wikimedia.org/wiki/File:Raspberry_Pi_5.jpg); Tandrix's part outline drawn over it |
-| pi5-board-cooler.jpg | SimonWaldherr | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0) | [File:Raspberry Pi 5 with active cooler.jpg](https://commons.wikimedia.org/wiki/File:Raspberry_Pi_5_with_active_cooler.jpg) |
+## Photos
 
-Images are resized for the web. The outline on pi5-board.jpg is the real one Tandrix's part finder drew in a test run.
+| File              | Maker            | Licence                                                        | Source                                                                                                                                  |
+| ----------------- | ---------------- | -------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| sky-bright.jpg    | W.carter         | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) | [Summer clouds over Tuntorp 3](https://commons.wikimedia.org/wiki/File:Summer_clouds_over_Tuntorp_3.jpg)                                |
+| sky-fluffy.jpg    | Lee Ann Ratledge | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0)       | [Cumulus Humilis Clouds, Tennessee](https://commons.wikimedia.org/wiki/File:Cumulus_Humilis_Clouds_-_Tennessee,_USA_-_July_7,_2014.jpg) |
+| tools-flatlay.jpg | Wilfredor        | [CC0](https://creativecommons.org/publicdomain/zero/1.0)       | [Tools 66](https://commons.wikimedia.org/wiki/File:Tools_66.jpg)                                                                        |
+
+## Video (public/videos)
+
+All from [Mixkit](https://mixkit.co), under the [Mixkit Stock Video Free License](https://mixkit.co/license/#videoFree).
+
+| File             | Source                                                                                                                                       |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| sky-clouds.mp4   | [White clouds moving across a clear blue sky](https://mixkit.co/free-stock-video/white-clouds-moving-across-a-clear-blue-sky-quickly-51105/) |
+| laptop-desk.mp4  | [Man working on his laptop](https://mixkit.co/free-stock-video/man-working-on-his-laptop-308/)                                               |
+| laptop-pair.mp4  | [Hands working on a computer](https://mixkit.co/free-stock-video/hands-of-a-girl-working-on-a-computer-4938/)                                |
+| laptop-woman.mp4 | [Woman in front of her computer](https://mixkit.co/free-stock-video/young-very-frustrated-woman-in-front-of-her-computer-25575/)             |
+| phone-coffee.mp4 | [Phone while serving coffee](https://mixkit.co/free-stock-video/person-on-social-media-while-serving-coffee-4919/)                           |
+| workshop.mp4     | [A carpenter cleaning his tools](https://mixkit.co/free-stock-video/a-carpenter-cleaning-his-tools-773/)                                     |
+| woodwork.mp4     | [Carpenter preparing a project](https://mixkit.co/free-stock-video/expert-carpenter-prepares-to-work-on-a-project-in-his-44861/)             |
+| laptop-home.mp4  | [Woman researching on the computer](https://mixkit.co/free-stock-video/woman-researching-on-the-computer-4713/)                              |
+
+Photos and video are resized and compressed for the web, and the skies are tinted on the page.
+The outlines drawn over the tools are the ones Tandrix's part finder drew.

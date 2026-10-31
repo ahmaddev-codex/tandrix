@@ -24,6 +24,8 @@ export interface EvidenceRepo {
   getForOwner(ownerId: string, jobId: string, evidenceId: string): Promise<Evidence | null>;
   markUploaded(evidenceId: string, byteSize: number): Promise<Evidence>;
   listUploaded(jobId: string): Promise<Evidence[]>;
+  /** Storage keys of every uploaded object for the job, for deletion. */
+  keysForJob(jobId: string): Promise<string[]>;
 }
 
 export interface StoredObject {
@@ -145,6 +147,22 @@ export function supabaseEvidenceRepo(db: SupabaseClient): EvidenceRepo {
         .limit(200);
       if (error) throw dbError(error);
       return data.map(toEvidence);
+    },
+    async keysForJob(jobId) {
+      const keys: string[] = [];
+      for (let from = 0; ; from += 1000) {
+        const { data, error } = await db
+          .from("evidence")
+          .select("storage_key")
+          .eq("job_id", jobId)
+          .not("uploaded_at", "is", null)
+          .is("deleted_at", null)
+          .range(from, from + 999);
+        if (error) throw dbError(error);
+        keys.push(...(data as Row[]).map((r) => String(r.storage_key)));
+        if (data.length < 1000) break;
+      }
+      return keys;
     },
   };
 }

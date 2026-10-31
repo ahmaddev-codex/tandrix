@@ -7,3 +7,51 @@ body,
   overflow: hidden;
   background: transparent;
 }
+
+/* Tandrix's pointer doing the work: it glides between steps (the transform transitions). */
+.work-ptr {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 10;
+  pointer-events: none;
+  transition: transform 240ms cubic-bezier(0.2, 0.7, 0.15, 1);
+  will-change: transform;
+}
+.work-arrow {
+  position: absolute;
+  left: -4px;
+  top: -4px;
+  fill: #0b0b0c;
+  stroke: #fff;
+  stroke-width: 1.5;
+  filter: drop-shadow(0 0 6px var(--highlight)) drop-shadow(0 2px 3px rgba(0, 0, 0, 0.35));
+}
+.work-ripple {
+  position: absolute;
+  left: -22px;
+  top: -22px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 2.5px solid var(--highlight);
+  animation: work-ripple 620ms ease-out forwards;
+}
+@keyframes work-ripple {
+  from {
+    transform: scale(0.3);
+    opacity: 1;
+  }
+  to {
+    transform: scale(1.4);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .work-ptr {
+    transition: none;
+  }
+  .work-ripple {
+    animation: none;
+  }
+}

@@ -1,8 +1,13 @@
 // POST /jobs/:id/screen/ask: Show me on the Mac. The screenshot is the job's evidence; the answer
 // is words plus where to point. Proposed actions are returned for drawing, never executed here.
+import { calledLine } from "@tandrix/ai";
 import {
   DO_MAX_TURNS,
+  BackgroundRequest,
+  BackgroundResponse,
   DoContinueRequest,
+  DoNotesRequest,
+  DoNotesResponse,
   DoStartRequest,
   Id,
   INLINE_SCREENSHOT_MAX_BYTES,
@@ -19,13 +24,19 @@ import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { z } from "zod";
 import type { AuthEnv } from "../auth";
 import { HttpError, invalid, notFound, tooMany } from "../errors";
-import { rateLimiter, type RateLimiter } from "../rate-limit";
+import { modelLimiter, rateLimiter, type RateLimiter } from "../rate-limit";
 import type { AssetsRepo } from "../repos/assets";
 import type { EvidenceRepo, EvidenceStorage } from "../repos/evidence";
 import type { JobsRepo } from "../repos/jobs";
 import type { ProceduresRepo } from "../repos/procedures";
 import type { ScreenGuide, ScreenGuideOutcome } from "../screen-guide";
-import { noModelScreenDoer, type DoOutcome, type ScreenDoer } from "../screen-doer";
+import {
+  BACKGROUND_UNAVAILABLE,
+  DO_UNAVAILABLE,
+  noModelScreenDoer,
+  type DoOutcome,
+  type ScreenDoer,
+} from "../screen-doer";
 import { signToken, verifyToken } from "../signed-token";
 
 export interface ScreenDeps {
@@ -35,6 +46,7 @@ export interface ScreenDeps {
   evidence: EvidenceRepo;
   storage: EvidenceStorage;
   guide: ScreenGuide;
+  limiter?: RateLimiter;
 }
 
 const verbs: Partial<Record<DesktopAction["type"], string>> = {
@@ -54,7 +66,7 @@ export function pointerFor(
   for (const a of actions) {
     const at = a.type === "drag" ? a.path[0] : "x" in a ? { x: a.x, y: a.y } : undefined;
     if (!at) continue;
-    if (at.x >= size.width || at.y >= size.height) return null;
+    if (at.x < 0 || at.y < 0 || at.x >= size.width || at.y >= size.height) return null;
     return {
       surface: "screen",
       evidenceId,
@@ -71,8 +83,10 @@ const issues = (e: z.ZodError) =>
 export const CANT_POINT = "I can't see how to do that on this screen. Try asking another way.";
 
 export function screenRoutes(d: ScreenDeps) {
+  const limiter = d.limiter ?? modelLimiter();
   return new Hono<AuthEnv>().post("/ask", async (c) => {
     const user = c.get("user");
+    if (!limiter.allow(user.id)) throw tooMany();
     const jobId = Id.safeParse(c.req.param("id"));
     if (!jobId.success) throw notFound("Job");
     const found = await d.jobs.getForOwner(user.id, jobId.data);
@@ -90,30 +104,33 @@ export function screenRoutes(d: ScreenDeps) {
     const jobStep =
       steps.find((s) => s.id === job.currentStepId) ??
       steps.find((s) => s.status === "in_progress");
-    const [asset, procedure] = await Promise.all([
+    const [asset, procedure, shotData] = await Promise.all([
       job.assetId ? d.assets.getForOwner(user.id, job.assetId) : null,
       jobStep && job.procedureId ? d.procedures.getDetail(user.id, job.procedureId) : null,
+      d.storage.download(ev.storageKey),
     ]);
     const step = procedure?.steps.find((s) => s.id === jobStep?.procedureStepId);
     const context = [
       asset ? `Equipment: ${asset.make} ${asset.model}` : "",
       step ? `Step: ${step.title}` : "",
       step ? `Instruction: ${step.instruction}` : "",
+      req.userName ? calledLine(req.userName) : "",
     ].filter(Boolean);
 
     const size = { width: req.geometry.imageWidth, height: req.geometry.imageHeight };
     const outcome = await d.guide.ask({
       screenshot: {
-        bytes: await d.storage.download(ev.storageKey),
+        bytes: shotData,
         mimeType: ev.mimeType,
         ...size,
       },
       question: req.transcript,
       context,
+      ...(req.lesson ? { lesson: req.lesson } : {}),
     });
     if (outcome.status === "unavailable") return reply(outcome);
 
-    return reply(answered(outcome, ev.id, size));
+    return reply(answered(outcome, ev.id, size, req.transcript));
   });
 }
 
@@ -122,8 +139,34 @@ function answered(
   outcome: Extract<ScreenGuideOutcome, { status: "answered" }>,
   evidenceId: string | null,
   size: { width: number; height: number },
+  question = "",
 ): ScreenAskResponse {
-  const target = pointerFor(outcome.actions, evidenceId, size);
+  const isRegion =
+    /\b(ribbon|toolbar|panel|sidebar|section|area|inspector|tabs|range|table|column|row)\b/i.test(
+      question,
+    ) ||
+    /\b(ribbon|toolbar|panel|sidebar|section|area|inspector|tabs|range|table)\b/i.test(
+      outcome.reply,
+    );
+  const dragAction = outcome.actions.find((a) => a.type === "drag" && a.path.length >= 2);
+  let target: PointerTarget | null = null;
+  if (isRegion && dragAction && dragAction.type === "drag") {
+    const p0 = dragAction.path[0]!;
+    const p1 = dragAction.path[dragAction.path.length - 1]!;
+    const x = Math.min(p0.x, p1.x);
+    const y = Math.min(p0.y, p1.y);
+    const w = Math.abs(p1.x - p0.x);
+    const h = Math.abs(p1.y - p0.y);
+    if (w >= 20 && h >= 16 && x + w <= size.width && y + h <= size.height) {
+      target = {
+        surface: "screen",
+        evidenceId,
+        label: "Section",
+        geometry: { kind: "box", box: { x, y, w, h } },
+      };
+    }
+  }
+  if (!target) target = pointerFor(outcome.actions, evidenceId, size);
   return {
     status: "answered",
     reply: (outcome.reply || (target ? `${target.label}.` : CANT_POINT)).slice(0, 600),
@@ -202,6 +245,8 @@ export function inlineScreenRoutes(d: {
 }) {
   const limiter = d.limiter ?? rateLimiter(30, 60_000);
   const doLimiter = d.doLimiter ?? rateLimiter(120, 60_000);
+  // Each tool step of a background task is a request, and several tasks run at once.
+  const backgroundLimiter = rateLimiter(60, 60_000);
   const doer = d.doer ?? noModelScreenDoer;
   const now = d.now ?? Date.now;
 
@@ -243,13 +288,34 @@ export function inlineScreenRoutes(d: {
       const req = parsed.data;
       const bytes = shotBytes(req.screenshot);
       const size = { width: req.geometry.imageWidth, height: req.geometry.imageHeight };
+      const context = historyContext(req.history);
+      if (req.userName) context.push(calledLine(req.userName));
       const outcome = await d.guide.ask({
         screenshot: { bytes, mimeType: req.screenshot.mimeType, ...size },
         question: req.transcript,
-        context: historyContext(req.history),
+        context,
+        ...(req.lesson ? { lesson: req.lesson } : {}),
       });
       if (outcome.status === "unavailable") return c.json(outcome satisfies ScreenAskResponse);
-      return c.json(answered(outcome, null, size));
+      return c.json(answered(outcome, null, size, req.transcript));
+    })
+    .post("/background", async (c) => {
+      const user = c.get("user");
+      if (!backgroundLimiter.allow(user.id)) throw tooMany();
+      const parsed = BackgroundRequest.safeParse(await c.req.json().catch(() => undefined));
+      if (!parsed.success) throw invalid(issues(parsed.error));
+      const { task, tools, steps, now } = parsed.data;
+      const out = doer.background
+        ? await doer.background(task, { tools, steps, ...(now ? { now } : {}) })
+        : ({ status: "unavailable", message: BACKGROUND_UNAVAILABLE } as const);
+      // What happened (never the task's words): enough to see where tasks stall.
+      d.log?.({
+        event: "background_task",
+        status: out.status,
+        steps: steps.length,
+        ...(out.status === "call" ? { calls: out.calls.map((c) => c.name).join(",") } : {}),
+      });
+      return c.json(BackgroundResponse.parse(out));
     })
     .post("/do", screenshotLimit, async (c) => {
       const user = c.get("user");
@@ -274,8 +340,29 @@ export function inlineScreenRoutes(d: {
           mimeType: parsed.data.screenshot.mimeType,
         },
         task: parsed.data.task,
+        memory: parsed.data.memory,
       });
-      return c.json(turnResponse(user.id, outcome, 1));
+      return c.json(turnResponse(user.id, outcome, parsed.data.turn));
+    })
+    .post("/do/notes", screenshotLimit, async (c) => {
+      const user = c.get("user");
+      if (!doLimiter.allow(user.id)) throw tooMany();
+      const parsed = DoNotesRequest.safeParse(await c.req.json().catch(() => undefined));
+      if (!parsed.success) throw invalid(issues(parsed.error));
+      const r = doer.notes
+        ? await doer.notes({
+            screenshot: {
+              bytes: shotBytes(parsed.data.screenshot),
+              mimeType: parsed.data.screenshot.mimeType,
+            },
+            task: parsed.data.task,
+          })
+        : null;
+      return c.json(
+        DoNotesResponse.parse(
+          r ? { status: "done", note: r.note } : { status: "unavailable", message: DO_UNAVAILABLE },
+        ),
+      );
     })
     .post("/do/continue", screenshotLimit, async (c) => {
       const user = c.get("user");

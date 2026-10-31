@@ -20,6 +20,22 @@ export function citationLabel(c: Citation): string | null {
   return `Manual p.${c.page}${fig ? `, fig. ${fig}` : ""}`;
 }
 
+/**
+ * Where a step comes from, for its source chip: the manual page, or the moment in an expert's
+ * recording. Null for a generic step.
+ */
+export function citationSource(c: Citation): { source: string; sourceKind: SourceKind } | null {
+  if (c.kind === "manual") return { source: citationLabel(c)!, sourceKind: "manual" };
+  if (c.kind === "expert_recording") {
+    const s = Math.round(c.timestampSec);
+    return {
+      source: `Recorded at ${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`,
+      sourceKind: "expert",
+    };
+  }
+  return null;
+}
+
 /** How a step visual is named on screen: its tab, its SourceChip, and its screen-reader text. */
 export function visualLabels(v: StepVisual): {
   label: string;

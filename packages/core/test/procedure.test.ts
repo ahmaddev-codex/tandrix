@@ -105,3 +105,25 @@ describe("normalizeDraft", () => {
     expect(r.fixes.some((f) => f.kind === "hazards_added")).toBe(true);
   });
 });
+
+describe("normalizeDraft from a recording", () => {
+  const rec = (t: number) => step({ citation: { kind: "expert_recording", timestampSec: t } });
+  it("keeps moments inside the recording and counts them as cited", () => {
+    const r = normalizeDraft(draft([rec(12)]), { manualPages: null, recordingSec: 90 });
+    expect(r.draft.steps[0]!.citation).toEqual({ kind: "expert_recording", timestampSec: 12 });
+    expect(r.citedSteps).toBe(1);
+  });
+  it("makes a moment past the end generic", () => {
+    const r = normalizeDraft(draft([rec(200)]), { manualPages: null, recordingSec: 90 });
+    expect(r.draft.steps[0]!.citation).toEqual({ kind: "generic" });
+    expect(r.fixes).toContainEqual({
+      kind: "citation_outside_recording",
+      order: 1,
+      timestampSec: 200,
+    });
+  });
+  it("never lets a draft without a recording cite one", () => {
+    const r = normalizeDraft(draft([rec(5)]), { manualPages: 10 });
+    expect(r.draft.steps[0]!.citation).toEqual({ kind: "generic" });
+  });
+});

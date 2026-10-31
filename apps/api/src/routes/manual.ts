@@ -11,8 +11,9 @@ import { randomUUID } from "node:crypto";
 import { Hono } from "hono";
 import type { z } from "zod";
 import type { AuthEnv } from "../auth";
-import { HttpError, invalid, notFound } from "../errors";
+import { HttpError, invalid, notFound, tooMany } from "../errors";
 import type { ManualFinder } from "../manual-finder";
+import { modelLimiter, type RateLimiter } from "../rate-limit";
 import { imagesToPdf, pdfPageCount } from "../pdf";
 import type { AssetsRepo } from "../repos/assets";
 import type { EvidenceRepo, EvidenceStorage } from "../repos/evidence";
@@ -39,10 +40,12 @@ export interface ManualDeps {
   tokenSecret: string;
   fetchOptions?: Partial<SafeFetchOptions>;
   now?: () => number;
+  limiter?: RateLimiter;
 }
 
 export function manualRoutes(d: ManualDeps) {
   const now = d.now ?? Date.now;
+  const limiter = d.limiter ?? modelLimiter();
 
   /** The caller's job and its asset; a manual needs the equipment identified first. */
   const jobAsset = async (ownerId: string, rawJobId: string | undefined): Promise<Asset> => {
@@ -79,6 +82,7 @@ export function manualRoutes(d: ManualDeps) {
   return new Hono<AuthEnv>()
     .post("/search", async (c) => {
       const user = c.get("user");
+      if (!limiter.allow(user.id)) throw tooMany();
       const asset = await jobAsset(user.id, c.req.param("id"));
       const key = assetModelKey(asset.make, asset.model);
       const cached = await d.manuals.findForModel(user.id, key);
@@ -170,15 +174,21 @@ export function manualRoutes(d: ManualDeps) {
       if (!uploadId.success) throw notFound("Upload");
       const up = await d.manuals.getUpload(user.id, Id.parse(c.req.param("id")), uploadId.data);
       if (!up || up.completedAt) throw notFound("Upload");
+      // Claim the upload before the slow checks: a concurrent complete loses the race here and
+      // sees it as already done instead of inserting a second manual.
+      if (!(await d.manuals.completeUpload(up.id))) throw notFound("Upload");
       const obj = await d.manualStorage.stat(up.storageKey);
-      if (!obj)
+      if (!obj) {
+        await d.manuals.reopenUpload(up.id);
         throw new HttpError(
           409,
           "conflict",
           "The file hasn't arrived yet. Upload it, then try again.",
         );
+      }
       const reject = async (msg: string) => {
         await d.manualStorage.remove(up.storageKey);
+        await d.manuals.reopenUpload(up.id);
         throw invalid([msg]);
       };
       if (obj.size > MAX_MANUAL_BYTES) await reject("file is larger than 60 MB");
@@ -193,7 +203,6 @@ export function manualRoutes(d: ManualDeps) {
         pageCount: pages!,
         ownerId: user.id, // private: a customer's manual may be proprietary
       });
-      await d.manuals.completeUpload(up.id);
       await d.manuals.recordAttached(up.jobId, manual.id, "upload");
       return c.json({ manual }, 201);
     })

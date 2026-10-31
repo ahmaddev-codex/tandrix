@@ -80,7 +80,7 @@ export function SafetyGate({
           accessibilityRole="text"
           style={{ flexDirection: "row", gap: space["space-2"], alignItems: "center" }}
         >
-          <Icon name="check" size={20} color="green-900" />
+          <Icon name="sealCheck" size={20} weight="fill" color="green-900" />
           <Text variant="label-14" color="green-900">
             {confirmedLabel}
           </Text>
@@ -153,7 +153,12 @@ export function CheckResult({
       ) : null}
       <View style={{ flex: 1, gap: space["space-2"], alignItems: "flex-start" }}>
         <View style={{ flexDirection: "row", gap: space["space-2"], alignItems: "center" }}>
-          <Icon name={meta.icon} size={20} color={c.fg} />
+          <Icon
+            name={meta.icon}
+            size={20}
+            weight={result === "pass" ? "fill" : "outline"}
+            color={c.fg}
+          />
           <Text variant="heading-16" color={c.fg}>
             {title ?? meta.title}
           </Text>

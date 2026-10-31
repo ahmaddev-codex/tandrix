@@ -1,5 +1,5 @@
-# Opens the new-job form. Right after launch the jobs list may still be loading and swallow the
-# first tap, so the tap is retried once the form hasn't appeared.
+# Opens the new-job form from the home's Start a project button. Right after launch the home may
+# still be loading and swallow the first tap, so it's retried once the form hasn't appeared.
 appId: app.tandrix.mobile
 ---
 - retry:

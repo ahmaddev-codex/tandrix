@@ -133,18 +133,6 @@ export const PartsAssignment = z.strictObject({
 });
 export type PartsAssignment = z.infer<typeof PartsAssignment>;
 
-/** Text half of a desktop turn; the pointer target comes from the computer-use action. */
-export const ScreenReply = z.strictObject({
-  say: text(600),
-  /** The control's name as shown in the app, used for the caption and accessibility fallback. */
-  targetLabel: optionalText(120),
-  /** What should change on screen after the user acts; used to verify the screen step. */
-  expectedChange: optionalText(300),
-  /** True when the target isn't visible and the user must scroll or open something first. */
-  targetNotVisible: z.boolean().default(false),
-});
-export type ScreenReply = z.infer<typeof ScreenReply>;
-
 /** What each part looks like in plain words, for the segmenter when its name finds nothing. */
 export const VisualConcepts = z.strictObject({
   concepts: z.array(
@@ -159,3 +147,24 @@ export const TaskPlan = z.strictObject({
   openApp: z.string().max(120).nullable(),
 });
 export type TaskPlan = z.infer<typeof TaskPlan>;
+
+/** Point the camera: the answer, and the one thing it's about with a rough box (thousandths). */
+export const LookAnswer = z.strictObject({
+  reply: z.string().min(1).max(500),
+  target: z
+    .strictObject({
+      /** As the user would call it: "the fan connector". */
+      label: z.string().min(1).max(60),
+      /** What it looks like, for the segmenter: "white connector". */
+      looksLike: z.string().min(1).max(40),
+      /** Rough box around it, in thousandths of the image's width and height. */
+      box: z.strictObject({
+        x: z.number().min(0).max(1000),
+        y: z.number().min(0).max(1000),
+        w: z.number().min(1).max(1000),
+        h: z.number().min(1).max(1000),
+      }),
+    })
+    .nullable(),
+});
+export type LookAnswer = z.infer<typeof LookAnswer>;

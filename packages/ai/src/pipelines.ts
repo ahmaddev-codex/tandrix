@@ -11,7 +11,7 @@ import {
 } from "@tandrix/contracts";
 import type { MetaClient } from "./client";
 import { text, user, type InputPart } from "./content";
-import { prompts } from "./prompts";
+import { calledLine, prompts } from "./prompts";
 import { normalizeConcept, segment, type Segment } from "./sam";
 import { generateStructured, type ReasoningEffort } from "./structured";
 
@@ -83,6 +83,39 @@ export function generateProcedure(client: MetaClient, models: Models, req: Proce
   });
 }
 
+export interface RecordingRequest {
+  job: string;
+  asset?: { make: string; model: string };
+  /** In order: what was said over each photo, and when. */
+  moments: Array<{ atSec: number; said: string; photo: InputPart }>;
+  signal?: AbortSignal;
+}
+
+const clock = (sec: number) =>
+  `${Math.floor(sec / 60)}:${String(Math.round(sec % 60)).padStart(2, "0")}`;
+
+/** Record mode: the steps from someone doing the job and saying what they do. */
+export function stepsFromRecording(client: MetaClient, models: Models, req: RecordingRequest) {
+  const about = req.asset
+    ? `Equipment: ${req.asset.make} ${req.asset.model}\nJob: ${req.job}`
+    : `Job: ${req.job}`;
+  const moments = req.moments.flatMap((m, i): InputPart[] => [
+    text(
+      `Moment ${i + 1}, at ${clock(m.atSec)} (timestampSec ${Math.round(m.atSec)}). They said: "${m.said}"`,
+    ),
+    m.photo,
+  ]);
+  return generateStructured(client, {
+    model: models.reasoning,
+    name: "procedure_draft",
+    schema: ProcedureDraft,
+    instructions: prompts.procedureRecorded,
+    input: [user(text(`${about}\nThe recording has ${req.moments.length} moments:`), ...moments)],
+    effort: "low",
+    ...(req.signal ? { signal: req.signal } : {}),
+  });
+}
+
 export interface StepQuestion {
   step: {
     title: string;
@@ -93,6 +126,8 @@ export interface StepQuestion {
     hazards: string[];
   };
   equipment?: string;
+  /** What Tandrix calls the user; used rarely, never in every reply. */
+  userName?: string;
   /** The procedure's other steps, so an answer can point to the step that covers the question. */
   otherSteps?: Array<{ order: number; title: string; instruction: string }>;
   question: string;
@@ -105,6 +140,7 @@ export function answerStepQuestion(client: MetaClient, models: Models, q: StepQu
   const s = q.step;
   const context = [
     q.equipment ? `Equipment: ${q.equipment}` : "",
+    q.userName ? calledLine(q.userName) : "",
     `Step: ${s.title}`,
     `Instruction: ${s.instruction}`,
     s.reason ? `Why: ${s.reason}` : "",
@@ -130,6 +166,7 @@ export function answerStepQuestion(client: MetaClient, models: Models, q: StepQu
       ),
     ],
     effort: "low",
+    hedgeMs: INTERACTIVE_HEDGE_MS,
     ...(q.signal ? { signal: q.signal } : {}),
   });
 }
@@ -144,6 +181,7 @@ export interface StepCheckRequest {
   referenceKind?: "reference" | "manual_page";
   instruction: string;
   expectedState: string;
+  effort?: ReasoningEffort;
 }
 
 export function checkStep(client: MetaClient, models: Models, req: StepCheckRequest) {
@@ -169,9 +207,13 @@ export function checkStep(client: MetaClient, models: Models, req: StepCheckRequ
     schema: StepCheckOutput,
     instructions: screen ? prompts.checkScreen : prompts.check,
     input: [user(...parts)],
-    effort: "medium",
+    effort: req.effort ?? "low",
+    hedgeMs: INTERACTIVE_HEDGE_MS,
   });
 }
+
+/** Calls someone is waiting on (an answer, a check, highlights) are asked again after this long. */
+const INTERACTIVE_HEDGE_MS = 8000;
 
 export interface Candidate extends Segment {
   index: number;
@@ -238,16 +280,21 @@ export async function highlightParts(
   const fast = req.fastPathConfidence ?? 0.75;
   const byRef = new Map<string, Candidate[]>();
   const all: Candidate[] = [];
-  for (const part of req.parts) {
-    const concept = normalizeConcept(part.name);
-    const { segments } = await segment(client, {
-      model: models.segmentation,
-      image: req.photo,
-      concept,
-    });
-    const cands = segments.map((s) => ({ ...s, concept, index: all.length + segments.indexOf(s) }));
+  const firstPass = await Promise.all(
+    req.parts.map(async (part) => {
+      const concept = normalizeConcept(part.name);
+      const { segments } = await segment(client, {
+        model: models.segmentation,
+        image: req.photo,
+        concept,
+      });
+      return { ref: part.ref, concept, segments };
+    }),
+  );
+  for (const { ref, concept, segments } of firstPass) {
+    const cands = segments.map((s, i) => ({ ...s, concept, index: all.length + i }));
     all.push(...cands);
-    byRef.set(part.ref, cands);
+    byRef.set(ref, cands);
   }
 
   // Names like "Raspberry Pi 5" or "Active Cooler" mean nothing to the segmenter. For parts their
@@ -255,12 +302,17 @@ export async function highlightParts(
   const unfound = req.parts.filter((p) => !byRef.get(p.ref)!.length);
   if (unfound.length) {
     const looks = await visualConceptsFor(client, models, req.instruction, unfound);
-    for (const [ref, concept] of looks) {
-      const { segments } = await segment(client, {
-        model: models.segmentation,
-        image: req.photo,
-        concept,
-      });
+    const secondPass = await Promise.all(
+      [...looks.entries()].map(async ([ref, concept]) => {
+        const { segments } = await segment(client, {
+          model: models.segmentation,
+          image: req.photo,
+          concept,
+        });
+        return { ref, concept, segments };
+      }),
+    );
+    for (const { ref, concept, segments } of secondPass) {
       const cands = segments.map((s, i) => ({ ...s, concept, index: all.length + i }));
       all.push(...cands);
       byRef.set(ref, cands);
@@ -292,6 +344,7 @@ export async function highlightParts(
   const r = await generateStructured(client, {
     model: models.reasoning,
     name: "highlight_pick",
+    hedgeMs: INTERACTIVE_HEDGE_MS,
     schema: HighlightPick,
     instructions: prompts.highlight,
     input: [
@@ -327,6 +380,7 @@ export interface PartsCheckRequest {
   parts: Array<{ ref: string; name: string; qty: number }>;
   /** Generic concept used to find every object on the tarp. */
   concept?: string;
+  effort?: ReasoningEffort;
 }
 
 /** Most distinct descriptions a parts check segments for, to bound cost on long parts lists. */
@@ -352,8 +406,12 @@ export async function checkParts(client: MetaClient, models: Models, req: PartsC
         ),
       ].slice(0, MAX_PART_CONCEPTS);
   const segments: Segment[] = [];
-  for (const concept of concepts) {
-    const found = await segment(client, { model: models.segmentation, image: req.photo, concept });
+  const foundResults = await Promise.all(
+    concepts.map((concept) =>
+      segment(client, { model: models.segmentation, image: req.photo, concept }),
+    ),
+  );
+  for (const found of foundResults) {
     for (const seg of found.segments) {
       const same = segments.findIndex((x) => overlap(x.box, seg.box) > 0.7);
       if (same < 0) segments.push(seg);
@@ -376,7 +434,7 @@ export async function checkParts(client: MetaClient, models: Models, req: PartsC
         req.photo,
       ),
     ],
-    effort: "medium",
+    effort: req.effort ?? "low",
   });
   if (!r.ok) return r;
   // Every listed part exactly once: unknown refs dropped, unreported parts count as missing.

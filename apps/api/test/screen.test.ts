@@ -183,6 +183,20 @@ describe("POST /jobs/:id/screen/ask", () => {
     expect(Buffer.from(s.asked[0]!.screenshot.bytes).equals(Buffer.from(PNG))).toBe(true);
   });
 
+  it("passes a lesson and the user's name to the guide", async () => {
+    const s = await setup({ status: "answered", reply: "Click Ramp time.", actions: [click] });
+    const ev = await s.upload();
+    const { res } = await s.ask({
+      ...s.question(ev.id),
+      lesson: true,
+      userName: "Ari",
+    });
+    expect(res.status).toBe(200);
+    expect(s.asked).toHaveLength(1);
+    expect(s.asked[0]!.lesson).toBe(true);
+    expect(s.asked[0]!.context).toContainEqual(expect.stringContaining('"Ari"'));
+  });
+
   it("only accepts this job's uploaded screenshots", async () => {
     const s = await setup({ status: "answered", reply: "x", actions: [] });
     expect((await s.ask(s.question((await s.upload({ kind: "photo" })).id))).res.status).toBe(404);
@@ -257,6 +271,15 @@ describe("pointerFor", () => {
 
   it("has nothing to point at for typing or key presses alone", () => {
     expect(pointerFor([{ type: "type", text: "10" }], "ev", size)).toBeNull();
+  });
+
+  it("rejects coordinates outside the screenshot, including negative ones", () => {
+    expect(pointerFor([{ type: "click", x: 101, y: 50, button: "left" }], "ev", size)).toBeNull();
+    expect(pointerFor([{ type: "click", x: -1, y: 50, button: "left" }], "ev", size)).toBeNull();
+    expect(pointerFor([{ type: "click", x: 50, y: -1, button: "left" }], "ev", size)).toBeNull();
+    expect(
+      pointerFor([{ type: "click", x: 50, y: 50, button: "left" }], "ev", size),
+    ).not.toBeNull();
   });
 });
 

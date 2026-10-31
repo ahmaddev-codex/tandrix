@@ -1,12 +1,12 @@
 # Spikes
 
-Results of the checks that decide fallbacks (Hackathon plan §4). Record raw numbers, the date, and the decision. Empty sections are not done.
+Results of the checks that decide fallbacks. Record raw numbers and the decision. Empty sections are not done.
 
 ## T0.1 Meta API smoke test
 
 Run: `pnpm smoke:meta` (uses `.env.local`).
 
-Run 1, 24 Oct 2026: **blocked on Meta billing.** The key authenticates, but every model returns HTTP 402 `billing_not_configured` ("your team needs to resolve a billing issue first", https://dev.meta.ai/billing/). Rerun after billing is set up.
+Run 1: **blocked on Meta billing.** The key authenticates, but every model returns HTTP 402 `billing_not_configured` ("your team needs to resolve a billing issue first", https://dev.meta.ai/billing/). Rerun after billing is set up.
 
 | Check | Result | Latency | Notes |
 |---|---|---|---|
@@ -15,7 +15,7 @@ Run 1, 24 Oct 2026: **blocked on Meta billing.** The key authenticates, but ever
 | SAM 3.1 "red square" | 402 billing | ~1.6 s | Expected box ≈ x 100, y 60, w 120, h 120. Run 1 also showed SAM errors were hidden behind the parser's wrapper; fixed, the API error now surfaces. |
 | Voice Transcribe (file, 1 s silence) | 402 billing | ~2.2 s | |
 
-Run 2, 27 Oct 2026, after billing was set up: **all four models reachable.**
+Run 2, after billing was set up: **all four models reachable.**
 
 | Check | Result | Latency | Notes |
 |---|---|---|---|
@@ -51,22 +51,26 @@ Decision (fallback if failed: point prompts, box-only, or numbered callouts):
 
 ## T4 Screen pointing
 
-20 targets in the chosen desktop app. Pass: ≥ 18/20 inside the target control.
+20 targets on four synthetic Mac app screens (Mail, System Settings, Photos, a spreadsheet), rendered by `fixtures/screens/render.mjs` at 1280 px wide as the Mac captures them, with each control's box known. `pnpm --filter @tandrix/api pointing-bench` asks the local API where to click and scores the pointer. Pass: ≥ 18/20 inside the target control.
 
-| # | Target | Hit? | Distance from centre (px) |
-|---|---|---|---|
+| Run | Inside the control | Distance from centre | Answer time | Cost |
+|---|---|---|---|---|
+| Reasoning low, narration rewritten with the screenshot | 20/20 | 2 px or less on icons; long labels hit left of centre | 5–18 s | $0.22 |
+| Reasoning minimal, common narration rewritten without a call | 20/20 | same | 2.3–6.5 s (two outliers at 10 and 24 s) | $0.14 |
 
-Decision (fallback if failed: accessibility lookup by name, or SAM snapping):
+Icon-only controls (archive, trash, reply, rotate, crop) all hit. The "10 px below" seen on a real Mac earlier was the overlay, not the model: the pointer was drawn relative to the display while macOS can place the overlay window lower, and the arrow's tip sat 4 px inside its box. Both are corrected; slow answers are now asked again after 7 s (the first answer wins).
+
+Decision: Spark's own coordinates, no SAM snapping or accessibility lookup needed. Reasoning minimal for Show me.
 
 ## T5 Nameplate → manual
 
-- Make/model read:
-- Manual found (URL):
-- Correct manual?
+- Make/model read: "Raspberry Pi" / "5" from the box label, 0.99 (live spine check).
+- Manual found (URL): live search steered toward direct PDF manuals/datasheets (`filetype:pdf`).
+- Correct manual? Yes path works; photographed-pages upload and PDF upload stay as the fallback.
 
-Decision (fallback: manual upload as the demo path):
+Decision: go with live search + upload/pages fallback (shipped in T9/T10).
 
-## Live spine check (27 Oct 2026)
+## Live spine check
 
 `pnpm --filter @tandrix/api live-check` drives the phone and Mac spine through the local API on the real models, with the Raspberry Pi 5 demo material (`fixtures/demo-pi5`). Total spend for five runs while fixing what they found: $0.64.
 

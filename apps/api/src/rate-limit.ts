@@ -6,6 +6,34 @@ export interface RateLimiter {
   allow(key: string): boolean;
 }
 
+/** Model-backed routes share one per-user budget shape: thirty calls a minute. */
+export const MODEL_CALLS_PER_MINUTE = 30;
+export function modelLimiter(now = Date.now): RateLimiter {
+  return rateLimiter(MODEL_CALLS_PER_MINUTE, 60_000, now);
+}
+
+/**
+ * Who's calling, for signed-out limits behind the Fly proxy. Fly-Client-IP is set by the proxy,
+ * so it's the one to trust; X-Forwarded-For is client-supplied except for the entry the proxy
+ * appends last, so only the last entry counts (the first is whatever the caller wrote, and
+ * rotating it would dodge every limit). Else the TCP peer. Never blank.
+ */
+export function clientKeyFromHeaders(
+  forwardedFor: string | undefined,
+  remoteAddress: string | undefined,
+  flyClientIp?: string,
+): string {
+  const fly = flyClientIp?.trim();
+  if (fly) return fly;
+  const last = forwardedFor
+    ?.split(",")
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .at(-1);
+  if (last) return last;
+  return remoteAddress?.trim() || "unknown";
+}
+
 export function rateLimiter(limit: number, windowMs: number, now = Date.now): RateLimiter {
   const hits = new Map<string, { count: number; resetAt: number }>();
   return {

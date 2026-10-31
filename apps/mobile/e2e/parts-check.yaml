@@ -30,7 +30,7 @@ appId: app.tandrix.mobile
     timeout: 120000
 - takeScreenshot: parts-checked
 # The step that needs the cable waits for it.
-- tapOn: ${JOB_TITLE}
+- runFlow: subflows/back-to-job.yaml
 - scrollUntilVisible:
     element: "Step 4: Connect the network cable, Missing part: Ethernet cable.*"
     direction: DOWN
@@ -39,10 +39,12 @@ appId: app.tandrix.mobile
 - takeScreenshot: step-waiting-for-part
 # It turns up: say so on the parts list, and the step is free again.
 # The parts list reopens on the latest check: no new photo needed.
+# Centred, so the button isn't under the translucent header when it's tapped.
 - scrollUntilVisible:
     element:
       id: open-parts
     direction: UP
+    centerElement: true
     timeout: 20000
 - tapOn:
     id: open-parts
@@ -57,7 +59,7 @@ appId: app.tandrix.mobile
     timeout: 10000
 - tapOn:
     id: part-here
-- tapOn: ${JOB_TITLE}
+- runFlow: subflows/back-to-job.yaml
 - scrollUntilVisible:
     element: "Step 4: Connect the network cable, To do.*"
     direction: DOWN

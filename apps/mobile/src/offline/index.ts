@@ -6,9 +6,9 @@ import { AppState } from "react-native";
 import { api, ApiError } from "@/lib/api";
 import { uploadPhoto } from "@/lib/evidence";
 import { createQueue, type FlushReport, type QueuedOp, type RunResult } from "./queue";
-import { fileQueueStore, forgetPhoto, jobCache } from "./store";
+import { fileQueueStore, forgetPhoto, jobCache, manualCache, visualCache } from "./store";
 
-export { keepPhoto } from "./store";
+export { keepPhoto, manualCache, visualCache } from "./store";
 export type { QueuedOp } from "./queue";
 
 /** Offline: no connection, the API down, or the session lapsed. Anything else is a real answer. */
@@ -127,6 +127,7 @@ export async function loadJob(
   try {
     const detail = await api.getJob(jobId);
     jobCache.save(detail);
+    keepForSite(detail);
     // Online again: send anything that was waiting.
     if (waiting) syncNow();
     return { detail, offline: false };
@@ -136,4 +137,31 @@ export async function loadJob(
     if (!cached) throw e;
     return { detail: cached, offline: true };
   }
+}
+
+/** A project's files are kept again at most this often while the app runs. */
+const KEEP_EVERY_MS = 10 * 60_000;
+const keptAt = new Map<string, number>();
+
+/**
+ * Keeps what the project needs on site in the background: the manual PDF and every step's
+ * pictures, so they open without a connection. One step at a time, to stay out of the way.
+ */
+function keepForSite(detail: JobDetailResponse) {
+  const jobId = detail.job.id;
+  if (Date.now() - (keptAt.get(jobId) ?? 0) < KEEP_EVERY_MS) return;
+  keptAt.set(jobId, Date.now());
+  void (async () => {
+    const manual = detail.manual;
+    if (manual && !manualCache.file(manual.id).exists)
+      await api
+        .manualUrl(jobId, manual.id)
+        .then((url) => manualCache.keep(manual.id, url))
+        .catch(() => {});
+    for (const step of detail.steps)
+      await api
+        .stepVisuals(jobId, step.id)
+        .then((r) => visualCache.save(step.id, r.visuals))
+        .catch(() => {});
+  })();
 }

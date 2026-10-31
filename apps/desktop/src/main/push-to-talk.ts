@@ -13,18 +13,6 @@ const kind = (keycode: number): TalkKey =>
   OPTION.has(keycode) ? "option" : COMMAND.has(keycode) ? "command" : "other";
 
 let started = false;
-/** Called on any key, click or mouse movement, for Do it for me to hand control back. */
-const userInput = new Set<() => void>();
-
-/** Subscribes to the user's own input (from the same hook); returns the unsubscribe. */
-export function onUserInput(listener: () => void): () => void {
-  userInput.add(listener);
-  return () => userInput.delete(listener);
-}
-const notify = () => userInput.forEach((l) => l());
-
-/** Whether the hook is running, so the user's input can be noticed. */
-export const inputWatched = () => started;
 
 /** Whether Tandrix may notice ⌥⌘ in other apps; `ask` shows macOS's prompt. */
 export function talkKeysAccess(ask: boolean): boolean {
@@ -45,23 +33,8 @@ export function setupPushToTalk(on: { start(): void; send(channel: string): void
   const tryStart = async () => {
     if (started || !talkKeysAccess(false)) return false;
     const { uIOhook } = await import("uiohook-napi");
-    uIOhook.on("keydown", (e) => {
-      keys.down(kind(e.keycode));
-      notify();
-    });
+    uIOhook.on("keydown", (e) => keys.down(kind(e.keycode)));
     uIOhook.on("keyup", (e) => keys.up(kind(e.keycode)));
-    uIOhook.on("mousedown", notify);
-    // A hand resting on the trackpad jitters; only a real movement means the user is acting.
-    let anchor: { x: number; y: number; at: number } | undefined;
-    uIOhook.on("mousemove", (e) => {
-      const now = Date.now();
-      if (!anchor || now - anchor.at > 600) anchor = { x: e.x, y: e.y, at: now };
-      if (Math.abs(e.x - anchor.x) + Math.abs(e.y - anchor.y) > 12) {
-        anchor = undefined;
-        notify();
-      }
-    });
-    uIOhook.on("wheel", notify);
     uIOhook.start();
     started = true;
     return true;

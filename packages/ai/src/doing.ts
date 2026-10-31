@@ -4,6 +4,7 @@
 // proposing actions. Turns are chained with previous_response_id, so the model's side of the
 // session is stored by the API for the length of the task. Nothing here executes anything.
 import { DesktopAction, TaskPlan } from "@tandrix/contracts";
+import { z } from "zod";
 import type { Models } from "./pipelines";
 import { generateStructured } from "./structured";
 import { outputText, type MetaClient, type MetaResponse } from "./client";
@@ -79,6 +80,11 @@ export function readTurn(res: MetaResponse): DoTurn {
   };
 }
 
+/** How hard each turn thinks: low plans multi-app tasks right (task-bench 3 of 3). */
+const TURN_EFFORT = "low";
+/** A turn slower than this is asked again, and the first answer used. */
+const TURN_HEDGE_MS = 10_000;
+
 export interface DoStart {
   screenshot: InputPart;
   /** What the user asked Tandrix to do. */
@@ -89,12 +95,13 @@ export interface DoStart {
 
 export async function startDoing(client: MetaClient, model: string, q: DoStart): Promise<DoTurn> {
   const context = q.context?.filter(Boolean).join("\n");
-  const res = await client.respond(
+  const res = await client.respondHedged(
     {
       model,
       store: true,
       instructions: prompts.doItForMe,
       tools: [{ type: "computer" }],
+      reasoning: { effort: TURN_EFFORT },
       input: [
         user(
           text(`${context ? `${context}\n\n` : ""}Do this for the user: ${q.task}`),
@@ -103,6 +110,7 @@ export async function startDoing(client: MetaClient, model: string, q: DoStart):
       ],
     },
     q.signal,
+    TURN_HEDGE_MS,
   );
   return readTurn(res);
 }
@@ -122,12 +130,13 @@ export async function continueDoing(
   model: string,
   c: DoContinue,
 ): Promise<DoTurn> {
-  const res = await client.respond(
+  const res = await client.respondHedged(
     {
       model,
       store: true,
       previous_response_id: c.previousResponseId,
       tools: [{ type: "computer" }],
+      reasoning: { effort: TURN_EFFORT },
       input: [
         {
           type: "computer_call_output",
@@ -138,6 +147,7 @@ export async function continueDoing(
       ],
     },
     c.signal,
+    TURN_HEDGE_MS,
   );
   return readTurn(res);
 }
@@ -146,6 +156,25 @@ export async function continueDoing(
  * Before the first step: which app the task needs. Opening it directly is quicker and steadier
  * than finding it on screen. Null when the app in front will do.
  */
+const ScreenNote = z.object({ note: z.string().max(1200).nullable() });
+
+/** Writes down what a screen holds that the task needs, before the task leaves it. */
+export function noteScreen(
+  client: MetaClient,
+  models: Models,
+  q: { task: string; screenshot: InputPart; signal?: AbortSignal },
+) {
+  return generateStructured(client, {
+    model: models.reasoning,
+    name: "screen_note",
+    schema: ScreenNote,
+    instructions: prompts.noteScreen,
+    input: [user(text(`Task: ${q.task}`), q.screenshot)],
+    effort: "low",
+    ...(q.signal ? { signal: q.signal } : {}),
+  });
+}
+
 export function planTask(
   client: MetaClient,
   models: Models,

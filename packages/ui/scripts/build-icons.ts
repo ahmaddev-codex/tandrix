@@ -16,12 +16,27 @@ const assets = join(root, "node_modules/@phosphor-icons/core/assets");
 const OUT_TS = join(root, "src/generated/icons.ts");
 const BUNDLE = join(root, "../../docs/design/system/components/bundle.js");
 
-/** Icons always drawn in outline, even small: their solid forms read too heavy next to text. */
-const outlineOnly = new Set<string>(["check", "progress"]);
+/** Icons always drawn in outline, even small: their solid forms read too heavy, boxed, or distorted (like reload). */
+const outlineOnly = new Set<string>([
+  "check",
+  "progress",
+  "retake",
+  "x",
+  "plus",
+  "menu",
+  "expand",
+  "actions",
+  // Block and caution: a solid one shouts from a chip.
+  "stop",
+  "alert",
+  "chevronDown",
+  "arrowUpRight",
+]);
 
 /** Tandrix icon name → Phosphor icon. Names say what the icon means in Tandrix. */
 const map = {
   check: "check",
+  sealCheck: "seal-check",
   user: "user",
   alert: "warning",
   eyeOff: "eye-slash",
@@ -38,6 +53,8 @@ const map = {
   power: "power",
   gauge: "gauge",
   arrowRight: "arrow-right",
+  chevronLeft: "caret-left",
+  chevronRight: "caret-right",
   actions: "list-checks",
   projects: "folder-simple",
   home: "house",
@@ -53,6 +70,11 @@ const map = {
   hand: "hand-pointing",
   image: "image",
   expand: "arrows-out-simple",
+  chevronDown: "caret-down",
+  arrowUpRight: "arrow-up-right",
+  play: "play",
+  sun: "sun",
+  moon: "moon",
 } as const;
 
 type Path = { d: string; o?: number };

@@ -37,7 +37,12 @@ export interface ManualsRepo {
   insert(m: NewManual): Promise<Manual>;
   createUpload(u: Omit<PendingUpload, "completedAt">): Promise<PendingUpload>;
   getUpload(ownerId: string, jobId: string, uploadId: string): Promise<PendingUpload | null>;
-  completeUpload(uploadId: string): Promise<void>;
+  /**
+   * Claims an upload for completion; false when another request claimed it first. A failed
+   * complete reopens the claim with reopenUpload so the user can retry.
+   */
+  completeUpload(uploadId: string): Promise<boolean>;
+  reopenUpload(uploadId: string): Promise<void>;
   /** Audit trail: which manual a job attached, and how it arrived. */
   recordAttached(
     jobId: string,
@@ -150,9 +155,20 @@ export function supabaseManualsRepo(db: SupabaseClient): ManualsRepo {
     },
 
     async completeUpload(uploadId) {
-      const { error } = await db
+      const { data, error } = await db
         .from("manual_uploads")
         .update({ completed_at: new Date().toISOString() })
+        .eq("id", uploadId)
+        .is("completed_at", null)
+        .select("id");
+      if (error) throw dbError(error);
+      return (data ?? []).length > 0;
+    },
+
+    async reopenUpload(uploadId) {
+      const { error } = await db
+        .from("manual_uploads")
+        .update({ completed_at: null })
         .eq("id", uploadId);
       if (error) throw dbError(error);
     },

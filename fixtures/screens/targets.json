@@ -1,0 +1,234 @@
+[
+  {
+    "screen": "mail",
+    "file": "mail.jpg",
+    "width": 1280,
+    "height": 800,
+    "targets": [
+      {
+        "id": "compose",
+        "ask": "How do I write a new email?",
+        "box": {
+          "x": 130,
+          "y": 53,
+          "w": 27,
+          "h": 25
+        }
+      },
+      {
+        "id": "archive",
+        "ask": "How do I archive this email?",
+        "box": {
+          "x": 770,
+          "y": 53,
+          "w": 27,
+          "h": 25
+        }
+      },
+      {
+        "id": "trash",
+        "ask": "How do I delete this email?",
+        "box": {
+          "x": 805,
+          "y": 53,
+          "w": 27,
+          "h": 25
+        }
+      },
+      {
+        "id": "reply",
+        "ask": "How do I reply to Priya?",
+        "box": {
+          "x": 876,
+          "y": 53,
+          "w": 27,
+          "h": 25
+        }
+      },
+      {
+        "id": "search",
+        "ask": "Where do I search my mail?",
+        "box": {
+          "x": 1019,
+          "y": 53,
+          "w": 196,
+          "h": 25
+        }
+      },
+      {
+        "id": "sent",
+        "ask": "Where can I see the emails I've sent?",
+        "box": {
+          "x": 60,
+          "y": 177,
+          "w": 172,
+          "h": 25
+        }
+      }
+    ]
+  },
+  {
+    "screen": "settings",
+    "file": "settings.jpg",
+    "width": 1280,
+    "height": 800,
+    "targets": [
+      {
+        "id": "bluetooth",
+        "ask": "Where are the Bluetooth settings?",
+        "box": {
+          "x": 62,
+          "y": 164,
+          "w": 204,
+          "h": 27
+        }
+      },
+      {
+        "id": "displays",
+        "ask": "How do I change my screen resolution?",
+        "box": {
+          "x": 62,
+          "y": 334,
+          "w": 204,
+          "h": 27
+        }
+      },
+      {
+        "id": "wifi-toggle",
+        "ask": "How do I turn Wi-Fi off?",
+        "box": {
+          "x": 1149,
+          "y": 157,
+          "w": 34,
+          "h": 20
+        }
+      },
+      {
+        "id": "details",
+        "ask": "Where do I see the details of my Wi-Fi connection?",
+        "box": {
+          "x": 1113,
+          "y": 197,
+          "w": 70,
+          "h": 25
+        }
+      },
+      {
+        "id": "advanced",
+        "ask": "Where are the advanced Wi-Fi options?",
+        "box": {
+          "x": 1071,
+          "y": 467,
+          "w": 87,
+          "h": 25
+        }
+      }
+    ]
+  },
+  {
+    "screen": "photos",
+    "file": "photos.jpg",
+    "width": 1280,
+    "height": 800,
+    "targets": [
+      {
+        "id": "revert",
+        "ask": "How do I undo all my changes to this photo?",
+        "box": {
+          "x": 130,
+          "y": 53,
+          "w": 113,
+          "h": 25
+        }
+      },
+      {
+        "id": "rotate",
+        "ask": "How do I rotate the picture?",
+        "box": {
+          "x": 1021,
+          "y": 53,
+          "w": 27,
+          "h": 25
+        }
+      },
+      {
+        "id": "crop",
+        "ask": "How do I crop this photo?",
+        "box": {
+          "x": 1057,
+          "y": 53,
+          "w": 27,
+          "h": 25
+        }
+      },
+      {
+        "id": "done",
+        "ask": "How do I save my edits?",
+        "box": {
+          "x": 1164,
+          "y": 53,
+          "w": 51,
+          "h": 25
+        }
+      },
+      {
+        "id": "exposure",
+        "ask": "How do I make the photo brighter?",
+        "box": {
+          "x": 992,
+          "y": 159,
+          "w": 220,
+          "h": 4
+        }
+      }
+    ]
+  },
+  {
+    "screen": "sheet",
+    "file": "sheet.jpg",
+    "width": 1280,
+    "height": 800,
+    "targets": [
+      {
+        "id": "bold",
+        "ask": "How do I make this text bold?",
+        "box": {
+          "x": 66,
+          "y": 112,
+          "w": 23,
+          "h": 23
+        }
+      },
+      {
+        "id": "chart",
+        "ask": "How do I add a chart?",
+        "box": {
+          "x": 205,
+          "y": 96,
+          "w": 38,
+          "h": 40
+        }
+      },
+      {
+        "id": "sort",
+        "ask": "How do I sort this table?",
+        "box": {
+          "x": 301,
+          "y": 96,
+          "w": 33,
+          "h": 40
+        }
+      },
+      {
+        "id": "q3",
+        "ask": "How do I get to the Q3 sheet?",
+        "box": {
+          "x": 140,
+          "y": 737,
+          "w": 35,
+          "h": 20
+        }
+      }
+    ]
+  }
+]

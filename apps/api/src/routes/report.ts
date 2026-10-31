@@ -21,6 +21,9 @@ const DAY_MS = 86_400_000;
 
 export const LINK_GONE = "This report link has expired or was turned off. Ask for a new one.";
 
+/** Live links per job: enough for a crew, bounded for the link list. */
+export const MAX_ACTIVE_SHARES = 10;
+
 export interface ReportRouteDeps extends ReportDeps {
   now?: () => number;
   clientKey?: (c: Context) => string;
@@ -48,6 +51,14 @@ export function jobReportRoutes(d: ReportRouteDeps) {
     })
     .post("/share", async (c) => {
       const id = await owned(c);
+      const at = new Date(now()).toISOString();
+      const live = (await d.reports.listShares(id)).filter((l) => !l.revokedAt && l.expiresAt > at);
+      if (live.length >= MAX_ACTIVE_SHARES)
+        throw new HttpError(
+          409,
+          "conflict",
+          `This job already has ${MAX_ACTIVE_SHARES} live report links. Turn one off first.`,
+        );
       const parsed = CreateShareRequest.safeParse(await c.req.json().catch(() => ({})));
       if (!parsed.success) throw invalid(issues(parsed.error));
       const token = randomBytes(32).toString("base64url");

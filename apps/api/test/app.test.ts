@@ -53,6 +53,18 @@ function memoryRepo(): JobsRepo & { jobs: Job[]; handoffs: Array<{ by: string }>
       const job = jobs.find((j) => j.id === id && j.ownerId === ownerId);
       return job ? { job, steps: [] } : null;
     },
+    async setControlMode(input) {
+      const job = jobs.find((j) => j.id === input.jobId && j.ownerId === input.ownerId);
+      if (!job) return null;
+      job.controlMode = input.mode;
+      return job;
+    },
+    async remove(ownerId, id) {
+      const i = jobs.findIndex((j) => j.id === id && j.ownerId === ownerId);
+      if (i < 0) return false;
+      jobs.splice(i, 1);
+      return true;
+    },
     async ownsAsset(ownerId, assetId) {
       return ownerId === A && assetId === ASSET;
     },

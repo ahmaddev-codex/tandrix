@@ -42,6 +42,88 @@ input {
 .panel-foot {
   box-shadow: inset 0 1px 0 var(--border);
 }
+/* The sky header, as on the website. */
+.panel-sky {
+  display: grid;
+  gap: var(--space-3);
+  margin: var(--space-2) var(--space-2) 0;
+  padding: var(--space-3) var(--space-3) var(--space-4);
+  border-radius: 18px;
+  color: #fff;
+  background:
+    linear-gradient(180deg, rgba(18, 104, 214, 0.55), rgba(46, 125, 255, 0.12)),
+    url("./assets/sky.jpg") center 70% / cover no-repeat,
+    var(--highlight);
+}
+.panel-sky-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.panel-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.panel-glass {
+  height: 28px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: rgba(11, 11, 12, 0.55);
+  color: #fff;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.panel-glass:hover {
+  background: rgba(11, 11, 12, 0.72);
+}
+.panel-glass:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+.panel-ready {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: var(--radius-full);
+  background: #0b0b0c;
+  font-size: 12px;
+  font-weight: 500;
+  box-shadow:
+    0 0 0 1.5px var(--highlight),
+    0 0 16px -2px color-mix(in srgb, var(--highlight) 70%, transparent);
+}
+.panel-ready kbd {
+  padding: 1px 5px;
+  border-radius: 5px;
+  background: #2a2a2d;
+  font-family: var(--font-sans);
+  font-size: 11px;
+}
+.panel-ready-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--highlight);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .panel-ready-dot {
+    animation: panel-blink 1.6s ease-in-out infinite;
+  }
+}
+@keyframes panel-blink {
+  50% {
+    opacity: 0.35;
+  }
+}
 .panel-body {
   flex: 1;
   overflow-y: auto;
@@ -154,14 +236,35 @@ input {
   font-family: var(--font-mono);
   font-size: 12px;
   color: var(--text-secondary);
+  flex-shrink: 0;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .setup-item.is-done .setup-mark {
-  background: var(--primary);
-  color: var(--on-primary);
+  background: transparent;
+  color: var(--highlight);
   box-shadow: none;
 }
 .setup-item.is-done .label-13 {
   color: var(--text-secondary);
+}
+.setup-name-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+.name-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+/* Editing: the field takes the room, the buttons sit at its foot. */
+.name-row:has(.tx-field) {
+  align-items: flex-end;
+}
+.name-row .tx-field {
+  flex: 1 1 160px;
+  min-width: 0;
 }
 .visually-hidden {
   position: absolute;
@@ -217,4 +320,236 @@ input {
   display: block;
   width: 100%;
   height: auto;
+}
+
+/* Tandrix offering to do something, waiting for a yes. */
+.panel-offer {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--highlight) 10%, var(--background-100));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--highlight) 40%, transparent);
+}
+.panel-offer-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+/* The task board: what Tandrix is doing, has queued, and has finished. */
+.panel-agents {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.panel-agents li {
+  display: flex;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: 12px;
+  background: var(--background-100);
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+.panel-agent-dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  margin-top: 6px;
+  border-radius: 50%;
+  background: var(--gray-500);
+}
+[data-status="running"] .panel-agent-dot {
+  background: var(--highlight);
+  box-shadow: 0 0 0 3px var(--highlight-tint);
+}
+[data-status="done"] .panel-agent-dot {
+  background: var(--green-700);
+}
+[data-status="stuck"] .panel-agent-dot,
+[data-status="failed"] .panel-agent-dot {
+  background: var(--amber-700);
+}
+.panel-agent-main {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.panel-agent-task {
+  font-size: 13px;
+  font-weight: 500;
+}
+.panel-agent-meta {
+  font-size: 11.5px;
+  color: var(--text-secondary);
+}
+.panel-agent-result {
+  margin-top: 2px;
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--text);
+}
+@media (prefers-reduced-motion: no-preference) {
+  [data-status="running"] .panel-agent-dot {
+    animation: panel-blink 1.4s ease-in-out infinite;
+  }
+}
+
+/* Know my voice: three phrases, then a toggle. */
+.panel-voice {
+  display: grid;
+  gap: var(--space-2);
+  justify-items: start;
+}
+.panel-voice-phrase {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+.panel-voice-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: panel-voice-pulse 1s ease-in-out infinite;
+}
+@keyframes panel-voice-pulse {
+  50% {
+    opacity: 0.3;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .panel-voice-dot {
+    animation: none;
+  }
+}
+.panel-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--highlight);
+  font: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.panel-glass-icon {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  padding: 0;
+}
+/* `hidden` must win over the layout's own display. */
+[hidden] {
+  display: none !important;
+}
+
+/* Settings: its own page. A sticky header, then groups, each a card of rows. */
+.panel-settings-head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-3) var(--space-2);
+  background: color-mix(in srgb, var(--background-100) 88%, transparent);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+}
+.panel-settings-head h1 {
+  margin: 0;
+}
+.panel-settings-body {
+  display: grid;
+  gap: var(--space-5);
+  padding: var(--space-4) var(--space-3) var(--space-8);
+}
+.panel-group {
+  display: grid;
+  gap: var(--space-2);
+}
+.panel-group-title {
+  margin: 0;
+  padding: 0 var(--space-1);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+.panel-card {
+  border-radius: 12px;
+  background: var(--background-200);
+  box-shadow: inset 0 0 0 1px var(--border);
+  overflow: hidden;
+}
+.panel-card > .panel-row + .panel-row {
+  border-top: 1px solid var(--border);
+}
+.panel-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3);
+}
+.panel-row > .tx-toggle-row {
+  flex: 1;
+}
+.panel-row-block {
+  display: grid;
+  justify-content: stretch;
+  gap: var(--space-3);
+}
+.panel-row-text {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.panel-row-title {
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 500;
+}
+.panel-row-desc {
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+}
+.panel-inline-form {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-2);
+}
+.panel-inline-form > :first-child {
+  flex: 1;
+}
+
+/* Moving between the main page and Settings: a short fade and slide, not a cut. The animation
+   replays whenever a page comes back from display: none. */
+@media (prefers-reduced-motion: no-preference) {
+  .panel-page {
+    /* backwards, not both: a held transform would trap fixed overlays (the dialog) in the page. */
+    animation: panel-page-in 220ms cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
+  }
+  .panel-settings {
+    animation-name: panel-settings-in;
+  }
+}
+@keyframes panel-page-in {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+}
+@keyframes panel-settings-in {
+  from {
+    opacity: 0;
+    transform: translateX(14px);
+  }
 }

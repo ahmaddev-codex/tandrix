@@ -1,36 +1,32 @@
-import {
-  Button,
-  ConfirmDialog,
-  doItForMeConfirmation,
-  Input,
-  ModeToggle,
-  Notice,
-  VoiceTranscript,
-} from "@tandrix/ui/web";
+import { Button, Input, Notice } from "@tandrix/ui/web";
 import { useState, type FormEvent } from "react";
 import { TALK_KEYS } from "../../shared/bridge";
-import { useShowMe } from "../lib/use-show-me";
+import type { AgentTask } from "../lib/agents";
+import type { useShowMe } from "../lib/use-show-me";
 
 const examples = [
-  "Add a layer mask in Photoshop",
-  "Change my Wi-Fi password",
-  "Make a pivot table",
-];
-/** Do it for me takes tasks, not questions. */
-const tasks = [
-  "Turn on Calendar notifications",
-  "Make this window full screen",
-  "Sort this table by date",
+  "Where's the export button?",
+  "Add bread to my shopping note",
+  "Research the best standing desks under $500",
 ];
 
-/** Ask about whatever is on screen. Inside a job, the screenshot is kept as its evidence. */
-export function ShowMe({ jobId }: { jobId?: string }) {
-  const s = useShowMe(jobId);
+const statusLabel: Record<AgentTask["status"], string> = {
+  queued: "Up next",
+  running: "Working",
+  done: "Done",
+  stopped: "Stopped",
+  stuck: "Needs you",
+  failed: "Couldn't finish",
+};
+
+/**
+ * Ask anything. Tandrix shows the way, offers to do it, or works on it in the background, and you
+ * can keep handing it tasks while it works.
+ */
+export function ShowMe({ s }: { s: ReturnType<typeof useShowMe> }) {
   const [question, setQuestion] = useState("");
-  // Turning on Do it for me asks first (design system: ModeToggle).
-  const [confirming, setConfirming] = useState(false);
-  const busy = s.phase !== "idle";
-  const doing = s.mode === "do";
+  const working = s.agents.some((a) => a.status === "running" || a.status === "queued");
+  const finished = s.agents.some((a) => a.status !== "running" && a.status !== "queued");
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
@@ -42,50 +38,77 @@ export function ShowMe({ jobId }: { jobId?: string }) {
     <section className="panel-stack-4" aria-labelledby="show-me-title">
       <header className="panel-stack-1">
         <h2 className="heading-16" id="show-me-title">
-          {doing ? "What should Tandrix do?" : "What do you need help with?"}
+          What can I help with?
         </h2>
         <p className="copy-13 panel-muted">
-          {doing
-            ? "Describe one task. Tandrix shows each action and asks before anything that sends, pays or deletes. "
-            : "Ask about the app in front of you. Tandrix points to the control and explains what to do. "}
-          Type below, or hold <kbd className="panel-kbd">{TALK_KEYS}</kbd> anywhere to talk.
+          Ask about anything on screen, or tell me what you want done. I&rsquo;ll show you, offer to
+          do it, or work on it in the background. Hold <kbd className="panel-kbd">{TALK_KEYS}</kbd>{" "}
+          to talk, or type below.
         </p>
       </header>
-      <ModeToggle
-        mode={s.mode}
-        onChange={(next) => (next === "do" ? setConfirming(true) : void s.setMode("show"))}
-      />
-      {confirming ? (
-        <ConfirmDialog
-          {...doItForMeConfirmation}
-          onConfirm={() => {
-            setConfirming(false);
-            void s.setMode("do");
-          }}
-          onCancel={() => setConfirming(false)}
-        />
+
+      {s.offer ? (
+        <div className="panel-offer" role="group" aria-label="Tandrix offers to do this">
+          <p className="copy-13">
+            Want me to do it? <span className="panel-muted">&ldquo;{s.offer}&rdquo;</span>
+          </p>
+          <div className="panel-offer-actions">
+            <Button size="sm" variant="primary" onClick={s.acceptOffer}>
+              Yes, do it
+            </Button>
+            <Button size="sm" onClick={s.declineOffer}>
+              Just show me
+            </Button>
+          </div>
+        </div>
       ) : null}
+
+      {s.agents.length ? (
+        <div className="panel-stack-2" aria-label="Tasks">
+          <ul className="panel-agents">
+            {s.agents.map((a) => (
+              <li key={a.id} data-status={a.status}>
+                <span className="panel-agent-dot" aria-hidden="true" />
+                <span className="panel-agent-main">
+                  <span className="panel-agent-task">{a.task}</span>
+                  <span className="panel-agent-meta">
+                    {a.kind === "background" ? "In the background" : "On your screen"} ·{" "}
+                    {statusLabel[a.status]}
+                  </span>
+                  {a.result && a.status !== "running" ? (
+                    <span className="panel-agent-result">{a.result}</span>
+                  ) : null}
+                </span>
+              </li>
+            ))}
+          </ul>
+          {finished ? (
+            <Button size="sm" variant="tertiary" onClick={s.clearFinished}>
+              Clear finished
+            </Button>
+          ) : null}
+        </div>
+      ) : null}
+
       {s.problem ? <Notice tone="error">{s.problem}</Notice> : null}
-      <VoiceTranscript
-        state={s.phase}
-        turns={s.turns}
-        listeningLabel="Listening. Let go to ask, or press Esc to cancel."
-      />
+
       <form className="panel-stack-2" onSubmit={submit} noValidate>
         <div className="panel-ask">
           <Input
-            label={doing ? "Task" : "Question"}
+            label={working ? "Another task, or a correction" : "Ask or tell Tandrix"}
             value={question}
             onChange={setQuestion}
-            placeholder={doing ? "What would you like done?" : "What are you trying to do?"}
-            disabled={busy}
+            placeholder={
+              working ? "Add a task, or say what to change…" : "What do you want to get done?"
+            }
+            disabled={s.phase === "listening"}
           />
           <Button
             icon="mic"
             size="sm"
+            variant={s.phase === "listening" ? "ring" : "secondary"}
             aria-label="Hold to talk"
             aria-pressed={s.phase === "listening"}
-            disabled={s.phase === "working"}
             onPointerDown={() => void s.press()}
             onPointerUp={s.release}
             onPointerLeave={s.release}
@@ -93,17 +116,22 @@ export function ShowMe({ jobId }: { jobId?: string }) {
             Hold to talk
           </Button>
         </div>
-        {!s.turns.length && !question ? (
+        {!s.turns.length && !question && !s.agents.length ? (
           <div className="ask-examples" aria-label="Examples">
-            {(doing ? tasks : examples).map((e) => (
+            {examples.map((e) => (
               <Button key={e} size="sm" onClick={() => setQuestion(e)}>
                 {e}
               </Button>
             ))}
           </div>
         ) : null}
-        <Button type="submit" variant="primary" block disabled={busy || !question.trim()}>
-          {s.phase === "working" ? (doing ? "Working…" : "Looking…") : doing ? "Do it" : "Show me"}
+        <Button
+          type="submit"
+          variant="primary"
+          block
+          disabled={s.phase === "listening" || !question.trim()}
+        >
+          {s.phase === "listening" ? "Listening…" : working ? "Add it" : "Go"}
         </Button>
       </form>
     </section>

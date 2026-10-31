@@ -6,6 +6,8 @@ const Env = z.object({
   apiUrl: z.url(),
   supabaseUrl: z.url(),
   supabasePublishableKey: z.string().min(1),
+  /** Where report share links open (the web app). Local builds default to the dev server. */
+  webUrl: z.url(),
 });
 
 export const env = Env.parse({
@@ -13,6 +15,9 @@ export const env = Env.parse({
   apiUrl: process.env.EXPO_PUBLIC_API_URL,
   supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL,
   supabasePublishableKey: process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+  webUrl:
+    process.env.EXPO_PUBLIC_WEB_URL ||
+    (process.env.EXPO_PUBLIC_TANDRIX_ENV === "local" ? "http://localhost:3000" : undefined),
 });
 
 /** Local-only conveniences (such as password sign-in) are gated on this. */

@@ -1,0 +1,165 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>System Settings</title>
+    <link rel="stylesheet" href="base.css" />
+    <style>
+      .body {
+        flex: 1;
+        display: flex;
+        min-height: 0;
+      }
+      .side {
+        width: 250px;
+        background: #f1f1f4;
+        border-right: 1px solid #e3e3e3;
+        padding: 12px 10px;
+        font-size: 13px;
+      }
+      .side div {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        padding: 5px 8px;
+        border-radius: 6px;
+      }
+      .side i {
+        width: 20px;
+        height: 20px;
+        border-radius: 5px;
+        background: #2f7cf6;
+        display: inline-block;
+      }
+      .side .sel {
+        background: #2f7cf6;
+        color: #fff;
+      }
+      .side .gap {
+        height: 12px;
+      }
+      .main {
+        flex: 1;
+        padding: 22px 34px;
+        font-size: 13px;
+      }
+      .main h1 {
+        font-size: 20px;
+        margin-bottom: 18px;
+      }
+      .group {
+        border: 1px solid #e4e4e4;
+        border-radius: 10px;
+        background: #fafafa;
+        margin-bottom: 18px;
+      }
+      .row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 11px 14px;
+        border-bottom: 1px solid #ececec;
+      }
+      .row:last-child {
+        border-bottom: 0;
+      }
+      .toggle {
+        width: 38px;
+        height: 22px;
+        border-radius: 11px;
+        background: #34c759;
+        position: relative;
+      }
+      .toggle::after {
+        content: "";
+        position: absolute;
+        right: 2px;
+        top: 2px;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: #fff;
+      }
+      .toggle.off {
+        background: #d5d5d8;
+      }
+      .toggle.off::after {
+        right: auto;
+        left: 2px;
+      }
+      .lock {
+        color: #999;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="menubar">
+      <b>System Settings</b><span>Edit</span><span>View</span><span>Window</span><span>Help</span>
+    </div>
+    <div class="win">
+      <div class="titlebar">
+        <span class="lights"><i></i><i></i><i></i></span>Wi-Fi
+      </div>
+      <div class="body">
+        <div class="side">
+          <div><i style="background: #8e8e93"></i>Ahmad</div>
+          <div class="gap"></div>
+          <div class="sel"><i></i>Wi-Fi</div>
+          <div data-target="bluetooth"><i></i>Bluetooth</div>
+          <div><i></i>Network</div>
+          <div><i style="background: #ff9500"></i>Battery</div>
+          <div class="gap"></div>
+          <div><i style="background: #8e8e93"></i>General</div>
+          <div><i style="background: #5856d6"></i>Appearance</div>
+          <div><i style="background: #2f7cf6"></i>Accessibility</div>
+          <div data-target="displays"><i style="background: #2f7cf6"></i>Displays</div>
+          <div><i style="background: #ff2d55"></i>Sound</div>
+          <div><i style="background: #5856d6"></i>Focus</div>
+          <div><i style="background: #8e8e93"></i>Privacy &amp; Security</div>
+        </div>
+        <div class="main">
+          <h1>Wi-Fi</h1>
+          <div class="group">
+            <div class="row">
+              <span>Wi-Fi</span><span class="spacer"></span
+              ><span class="toggle" data-target="wifi-toggle"></span>
+            </div>
+            <div class="row">
+              <span>Home-5G</span><span class="muted">Connected</span><span class="spacer"></span
+              ><span class="btn" data-target="details">Details…</span>
+            </div>
+          </div>
+          <div class="group">
+            <div class="row"><b>Known networks</b></div>
+            <div class="row">
+              <span>Office</span><span class="spacer"></span><span class="lock">🔒</span>
+            </div>
+            <div class="row"><span>Cafe Guest</span><span class="spacer"></span></div>
+          </div>
+          <div class="group">
+            <div class="row">
+              <span>Ask to join hotspots</span><span class="spacer"></span
+              ><span class="toggle off"></span>
+            </div>
+            <div class="row">
+              <span>Ask to join networks</span><span class="spacer"></span
+              ><span class="toggle off"></span>
+            </div>
+          </div>
+          <div style="display: flex; gap: 10px; justify-content: flex-end">
+            <span class="btn" data-target="advanced">Advanced…</span><span class="btn">?</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script>
+      window.__asks = {
+        "wifi-toggle": "How do I turn Wi-Fi off?",
+        details: "Where do I see the details of my Wi-Fi connection?",
+        bluetooth: "Where are the Bluetooth settings?",
+        displays: "How do I change my screen resolution?",
+        advanced: "Where are the advanced Wi-Fi options?",
+      };
+    </script>
+  </body>
+</html>

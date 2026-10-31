@@ -9,6 +9,7 @@ import {
   Job,
   JobStep,
   Manual,
+  MaskOutline,
   PointerTarget,
   PartSpec,
   PartStatus,
@@ -21,7 +22,16 @@ import {
 } from "./entities";
 import { ManualSearchOutput, NameplateReading } from "./model-outputs";
 import { DesktopAction, ScreenGeometry } from "./desktop";
-import { ControlMode, Id, Language, Surface, Timestamp, optionalText, text } from "./primitives";
+import {
+  Box,
+  ControlMode,
+  Id,
+  Language,
+  Surface,
+  Timestamp,
+  optionalText,
+  text,
+} from "./primitives";
 
 export const CreateJobRequest = z.strictObject({
   title: text(160),
@@ -269,7 +279,32 @@ export const HandoffRequest = z.strictObject({ to: Surface, stepId: Id.optional(
 export const HandoffResponse = z.strictObject({ job: Job });
 export type HandoffResponse = z.infer<typeof HandoffResponse>;
 
+/** DELETE /jobs/:id: the job, its steps and its evidence objects are gone. */
+export const DeleteJobResponse = z.strictObject({ deleted: z.literal(true) });
+export type DeleteJobResponse = z.infer<typeof DeleteJobResponse>;
+
 export const ControlModeRequest = z.strictObject({ mode: ControlMode });
+
+/** POST /early-access: a visitor asks to hear when Tandrix is ready for their device. Public. */
+export const EarlyAccessRequest = z.strictObject({
+  /** Trimmed and lower-cased before it's checked, so pasted addresses with spaces still work. */
+  email: z.string().trim().toLowerCase().pipe(z.email().max(254)),
+  platform: z.enum(["mac", "iphone"]).optional(),
+});
+export type EarlyAccessRequest = z.infer<typeof EarlyAccessRequest>;
+/** The same answer whether or not the address was already on the list. */
+export const EarlyAccessResponse = z.strictObject({ ok: z.literal(true) });
+export type EarlyAccessResponse = z.infer<typeof EarlyAccessResponse>;
+
+/** GET /profile: what Tandrix calls this user, if they have said. */
+export const ProfileResponse = z.strictObject({ displayName: z.string().nullable() });
+export type ProfileResponse = z.infer<typeof ProfileResponse>;
+
+/** PUT /profile: set or clear it (null clears). */
+export const UpdateProfileRequest = z.strictObject({
+  displayName: z.string().trim().min(1).max(40).nullable(),
+});
+export type UpdateProfileRequest = z.infer<typeof UpdateProfileRequest>;
 
 /**
  * POST /jobs/:id/screen/ask: a question about an uploaded screenshot (evidence kind
@@ -280,6 +315,10 @@ export const ScreenAskRequest = z.strictObject({
   transcript: text(2000),
   geometry: ScreenGeometry,
   mode: ControlMode,
+  /** "Teach me…": one step at a time with check-ins, instead of a single answer. */
+  lesson: z.boolean().default(false),
+  /** What Tandrix calls the user; used rarely, never in every reply. */
+  userName: z.string().trim().min(1).max(40).optional(),
 });
 
 /** The largest inline screenshot a question outside a job may carry (base64 of a 1280 px JPEG is far smaller). */
@@ -310,6 +349,10 @@ export const ScreenAskInlineRequest = z.strictObject({
   mode: ControlMode,
   /** Oldest first; the last four at most. */
   history: z.array(ScreenTurn).max(4).default([]),
+  /** "Teach me…": one step at a time with check-ins, instead of a single answer. */
+  lesson: z.boolean().default(false),
+  /** What Tandrix calls the user; used rarely, never in every reply. */
+  userName: z.string().trim().min(1).max(40).optional(),
 });
 
 export const ScreenAskResponse = z.discriminatedUnion("status", [
@@ -348,7 +391,69 @@ export const ROUTINE_ACTION_CHECK = "computer_action_requires_confirmation";
 export type SafetyCheck = z.infer<typeof SafetyCheck>;
 
 /** Turns in one Do it for me task before Tandrix stops and hands back. */
-export const DO_MAX_TURNS = 30;
+/** A hard ceiling on one task's turns; well before it, the Mac checks in with the user. */
+export const DO_MAX_TURNS = 200;
+
+/** POST /screen/background: a task that needs no screen, done while the user carries on. */
+/**
+ * What background agents can do on the Mac without its screen, mouse or keyboard. The Mac runs
+ * each one with a fixed script; nothing here sends, pays or deletes.
+ */
+export const MAC_TOOLS = [
+  "calendar_add_event",
+  "calendar_list_events",
+  "reminders_add",
+  "notes_create",
+  "mail_draft",
+  "files_list",
+  "browse",
+] as const;
+export const MacToolName = z.enum(MAC_TOOLS);
+export type MacToolName = z.infer<typeof MacToolName>;
+
+/** A tool the background agent asked the Mac to run, and what came back. */
+export const AgentStep = z.strictObject({
+  id: text(200),
+  name: MacToolName,
+  /** JSON, as the model wrote it. */
+  arguments: z.string().max(4000),
+  /** What the Mac reports back (JSON or plain words). */
+  output: z.string().max(8000),
+});
+export type AgentStep = z.infer<typeof AgentStep>;
+
+export const BackgroundRequest = z.strictObject({
+  task: text(2000),
+  /** The Mac can run MAC_TOOLS; without it the agent only searches the web and answers. */
+  tools: z.boolean().default(false),
+  /** Tools run so far for this task, in order. Each call is fresh: the server keeps nothing. */
+  steps: z.array(AgentStep).max(16).default([]),
+  /** The Mac's local time, with its offset (for "tomorrow at 9"). */
+  now: optionalText(40),
+});
+export type BackgroundRequest = z.input<typeof BackgroundRequest>;
+
+export const AgentCall = z.strictObject({
+  id: text(200),
+  name: MacToolName,
+  arguments: z.string().max(4000),
+});
+export type AgentCall = z.infer<typeof AgentCall>;
+
+export const BackgroundResponse = z.discriminatedUnion("status", [
+  /** Run these on the Mac, then ask again with their outputs added to `steps`. */
+  z.strictObject({ status: z.literal("call"), calls: z.array(AgentCall).min(1).max(6) }),
+  z.strictObject({
+    status: z.literal("done"),
+    /** Said aloud when it's ready. */
+    spoken: z.string().max(400),
+    /** The full answer, to read. */
+    detail: z.string().max(6000),
+    sources: z.array(z.string().max(2000)).max(8),
+  }),
+  z.strictObject({ status: z.literal("unavailable"), message: text(300) }),
+]);
+export type BackgroundResponse = z.infer<typeof BackgroundResponse>;
 
 /** POST /screen/do: start doing a task on the screen shown. The screenshot isn't stored here. */
 export const DoStartRequest = z.strictObject({
@@ -361,7 +466,26 @@ export const DoStartRequest = z.strictObject({
   frontApp: optionalText(120),
   /** The Mac already opened the app the plan chose: start on this screen. */
   planned: z.boolean().default(false),
+  /**
+   * What's been done so far, one line each, kept by the Mac. Each turn is a fresh model call with
+   * this memory and the current screen, so turns stay fast instead of growing with every screenshot.
+   */
+  memory: z.array(text(300)).max(40).default([]),
+  /** Which turn of the task this is (1 for the first). */
+  turn: z.number().int().min(1).max(DO_MAX_TURNS).default(1),
 });
+
+/**
+ * POST /screen/do/notes: what a screen holds that the task needs, written down before Tandrix
+ * leaves that app (the next turn sees only the new screen). The screenshot isn't stored.
+ */
+export const DoNotesRequest = z.strictObject({ screenshot: InlineScreenshot, task: text(2000) });
+export const DoNotesResponse = z.discriminatedUnion("status", [
+  /** The details, or null when the screen holds nothing the task needs. */
+  z.strictObject({ status: z.literal("done"), note: z.string().max(1200).nullable() }),
+  z.strictObject({ status: z.literal("unavailable"), message: text(300) }),
+]);
+export type DoNotesResponse = z.infer<typeof DoNotesResponse>;
 
 /** POST /screen/do/continue: the screen after the last batch ran, with the checks accepted. */
 export const DoContinueRequest = z.strictObject({
@@ -463,6 +587,8 @@ export const AskStepRequest = z.strictObject({
   text: text(1000),
   /** From the "I'm stuck" command: ask for the next physical thing to do. */
   stuck: z.boolean().default(false),
+  /** What Tandrix calls the user; used rarely, never in every reply. */
+  userName: z.string().trim().min(1).max(40).optional(),
 });
 
 export const AskStepResponse = z.discriminatedUnion("status", [
@@ -566,3 +692,55 @@ export const CorrectPartResponse = z.strictObject({
   partsCheck: PartsCheck,
   steps: z.array(JobStep),
 });
+
+/**
+ * Point the camera (L1): one frame from the phone's live camera and a question about it ("what is
+ * this?", "where does this go?"). Inline, never stored. With a job, its equipment and the step in
+ * hand are the context.
+ */
+export const LookRequest = z.strictObject({
+  photo: InlineScreenshot,
+  width: z.number().int().min(1).max(20_000),
+  height: z.number().int().min(1).max(20_000),
+  question: text(500),
+  jobId: Id.optional(),
+  stepId: Id.optional(),
+  userName: z.string().trim().min(1).max(40).optional(),
+});
+export type LookRequest = z.infer<typeof LookRequest>;
+
+export const LookResponse = z.discriminatedUnion("status", [
+  z.strictObject({
+    status: z.literal("answered"),
+    /** Said aloud: the answer in a sentence or two. */
+    reply: text(600),
+    /** What the answer is about, outlined on the frame (in its pixels); null when nothing is. */
+    highlight: z
+      .strictObject({ label: text(80), box: Box, mask: MaskOutline.nullable() })
+      .nullable(),
+  }),
+  /** Work Tandrix won't guide (wiring, live work): the reason, said plainly. */
+  z.strictObject({ status: z.literal("refused"), message: text(300) }),
+  z.strictObject({ status: z.literal("unavailable"), message: text(300) }),
+]);
+export type LookResponse = z.infer<typeof LookResponse>;
+
+/**
+ * Record mode (T28): the steps from someone doing the job and saying what they do. Each moment is
+ * a photo of the work and what was said over it, at a time into the recording; the steps cite
+ * those times.
+ */
+export const RecordedMoment = z.strictObject({
+  evidenceId: Id,
+  said: text(600),
+  /** Seconds from the start of the recording. */
+  atSec: z.number().min(0).max(36_000),
+});
+export type RecordedMoment = z.infer<typeof RecordedMoment>;
+
+export const RecordedProcedureRequest = z.strictObject({
+  moments: z.array(RecordedMoment).min(2).max(30),
+  /** What the job is, if the user said; else the project's title. */
+  task: text(300).optional(),
+});
+export type RecordedProcedureRequest = z.infer<typeof RecordedProcedureRequest>;

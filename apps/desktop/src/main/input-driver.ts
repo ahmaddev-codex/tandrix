@@ -1,7 +1,5 @@
 // The input driver for Do it for me: the tandrix-input helper (native/input/main.swift) posts the
-// mouse and key events, one command at a time. Meanwhile any input from the user (a key, a
-// click, moving the mouse) takes control back at once; the driver's own events are told apart
-// by timing, since each command is awaited before the next.
+// mouse and key events, one command at a time. Only Esc or the hotkey stops a task (do-session.ts).
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
@@ -24,13 +22,9 @@ export interface DriverReply {
   app?: string;
 }
 
-/** Input arriving this soon after one of ours is ours. */
-const OWN_INPUT_MS = 250;
-
 let helper: ChildProcessWithoutNullStreams | undefined;
 let lines: Array<(r: DriverReply) => void> = [];
 let buffer = "";
-let busyUntil = 0;
 
 function helperPath(): string {
   // Packaged: Contents/Resources/native; in dev: apps/desktop/dist/native.
@@ -71,18 +65,11 @@ function start(): ChildProcessWithoutNullStreams {
 /** Runs one command; resolves when the helper has posted its events. */
 export function drive(cmd: DriverCommand): Promise<DriverReply> {
   const child = start();
-  busyUntil = Number.POSITIVE_INFINITY;
   return new Promise<DriverReply>((resolve) => {
-    lines.push((r) => {
-      busyUntil = Date.now() + OWN_INPUT_MS;
-      resolve(r);
-    });
+    lines.push(resolve);
     child.stdin.write(`${JSON.stringify(cmd)}\n`);
   });
 }
-
-/** True while input could be the driver's own. */
-export const driving = () => Date.now() < busyUntil;
 
 export function stopDriver() {
   helper?.kill();

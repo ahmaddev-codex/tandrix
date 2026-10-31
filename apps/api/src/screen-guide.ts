@@ -1,12 +1,23 @@
 // Show me on the Mac: Spark's computer-use tool looks at a screenshot and says what to do and
 // where. Model failures become "unavailable"; nothing the model proposes is executed here.
-import { askScreen, imageData, MetaApiError, MetaClient, type MetaConfig } from "@tandrix/ai";
+import {
+  askScreen,
+  imageData,
+  MetaApiError,
+  MetaClient,
+  needsOnlineLookup,
+  searchOnlineSolution,
+  type MetaConfig,
+  onlineNotes,
+} from "@tandrix/ai";
 import type { DesktopAction } from "@tandrix/contracts";
 
 export interface ScreenQuestionInput {
   screenshot: { bytes: Uint8Array; mimeType: string; width: number; height: number };
   question: string;
   context: string[];
+  /** A guided lesson: one step at a time with check-ins. */
+  lesson?: boolean;
 }
 
 export type ScreenGuideOutcome =
@@ -30,13 +41,25 @@ export function metaScreenGuide(
   }),
 ): ScreenGuide {
   return {
-    async ask({ screenshot, question, context }) {
+    async ask({ screenshot, question, context, lesson }) {
       const mime = screenshot.mimeType === "image/png" ? "image/png" : "image/jpeg";
       try {
+        let enrichedContext = context;
+        if (needsOnlineLookup(question)) {
+          const online = await searchOnlineSolution(
+            client,
+            config.models.reasoning,
+            question,
+          ).catch(() => null);
+          if (online?.notes) {
+            enrichedContext = [...context, onlineNotes(online.notes)];
+          }
+        }
         const r = await askScreen(client, config.models.computerUse, {
           screenshot: imageData(screenshot.bytes, mime),
           question,
-          context,
+          context: enrichedContext,
+          ...(lesson ? { lesson } : {}),
         });
         if (r.dropped || r.safetyChecks)
           log({

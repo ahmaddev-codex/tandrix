@@ -2,6 +2,8 @@
 import type { ShareLink } from "@tandrix/contracts";
 import type { ReportsRepo, StepCheck } from "../src/repos/reports";
 import type { NewPairing, PairingRow, PairingsRepo } from "../src/repos/pairings";
+import type { ProfilesRepo } from "../src/repos/profiles";
+import type { EarlyAccessRepo } from "../src/repos/early-access";
 import { noModelScreenGuide } from "../src/screen-guide";
 import type {
   PartsCheck,
@@ -81,6 +83,11 @@ export function memoryEvidence(
     },
     async listUploaded(jobId) {
       return [...rows.values()].filter((e) => e.jobId === jobId && e.uploadedAt && !e.deletedAt);
+    },
+    async keysForJob(jobId) {
+      return [...rows.values()]
+        .filter((e) => e.jobId === jobId && e.uploadedAt && !e.deletedAt)
+        .map((e) => e.storageKey);
     },
   };
   return repo;
@@ -216,7 +223,14 @@ export function memoryManuals() {
       return up && up.ownerId === ownerId && up.jobId === jobId ? up : null;
     },
     async completeUpload(id) {
-      uploads.set(id, { ...uploads.get(id)!, completedAt: "2026-10-26T10:00:10.000Z" });
+      const up = uploads.get(id);
+      if (!up || up.completedAt) return false;
+      uploads.set(id, { ...up, completedAt: "2026-10-26T10:00:10.000Z" });
+      return true;
+    },
+    async reopenUpload(id) {
+      const up = uploads.get(id);
+      if (up) uploads.set(id, { ...up, completedAt: null });
     },
     async recordAttached(jobId, manualId, how) {
       repo.events.push({ jobId, manualId, how });
@@ -255,6 +269,8 @@ export const noManuals = () => ({
   partsChecker: noModelPartsChecker,
   screenGuide: noModelScreenGuide,
   pairings: memoryPairings(),
+  profiles: memoryProfiles(),
+  earlyAccess: memoryEarlyAccess(),
   reports: memoryReports(),
   sessionMinter: { mint: async () => null },
   manualPages: memoryManualPages(),
@@ -338,6 +354,20 @@ export function memoryReports(owners = new Map<string, string>()) {
 }
 
 /** Pairings with the same guarded updates as the database. */
+export function memoryProfiles() {
+  const rows = new Map<string, string | null>();
+  const repo: ProfilesRepo & { rows: typeof rows } = {
+    rows,
+    async get(userId) {
+      return { displayName: rows.get(userId) ?? null };
+    },
+    async set(userId, displayName) {
+      rows.set(userId, displayName);
+    },
+  };
+  return repo;
+}
+
 export function memoryPairings() {
   type P = NewPairing & {
     id: string;
@@ -405,7 +435,11 @@ export function memoryProcedures() {
         procedure: {
           id: procedureId,
           assetModelKey: input.assetModelKey,
-          sourceType: input.manualId ? "manual" : "generic",
+          sourceType: input.fromRecording
+            ? "expert_recording"
+            : input.manualId
+              ? "manual"
+              : "generic",
           authorId: input.ownerId,
           status: "draft",
           version: 1,
@@ -522,6 +556,9 @@ export function memoryStepState(jobOf: (jobStepId: string) => string = () => "")
     async confirmations(jobId) {
       return confirmations.filter((x) => jobOf(x.jobStepId) === jobId);
     },
+    async confirmationsForStep(jobStepId) {
+      return confirmations.filter((x) => x.jobStepId === jobStepId);
+    },
     async lastCheckSince(jobStepId, since) {
       const hits = checks.filter((x) => x.jobStepId === jobStepId && x.at >= since);
       return hits.at(-1)?.result ?? null;
@@ -622,6 +659,17 @@ export function memoryPartsChecks(steps?: Map<string, JobStep>) {
       checks[i] = { ...checks[i]!, results: c.results };
       apply(c);
       return checks[i]!;
+    },
+  };
+  return repo;
+}
+
+export function memoryEarlyAccess() {
+  const rows = new Map<string, { platform: "mac" | "iphone" | null; at: string }>();
+  const repo: EarlyAccessRepo & { rows: typeof rows } = {
+    rows,
+    async add(email, platform, now) {
+      if (!rows.has(email)) rows.set(email, { platform, at: now });
     },
   };
   return repo;

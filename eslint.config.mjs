@@ -27,6 +27,8 @@ export default tseslint.config(
       "apps/mobile/android/**",
       "apps/mobile/expo-env.d.ts",
       ".maestro/**",
+      // Third-party: the Anatomy figure kit (MIT), kept as published.
+      "apps/web/src/vendor/**",
     ],
   },
   js.configs.recommended,
@@ -51,8 +53,8 @@ export default tseslint.config(
     rules: { "@typescript-eslint/no-require-imports": "off" },
   },
   {
-    // Node-run helper scripts for the end-to-end flows.
-    files: ["apps/mobile/e2e/**/*.mjs"],
+    // Node-run helper scripts for the end-to-end flows and benches.
+    files: ["apps/mobile/e2e/**/*.mjs", "fixtures/**/*.mjs"],
     languageOptions: {
       globals: {
         process: "readonly",

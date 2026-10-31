@@ -16,7 +16,7 @@ export type StepStatus =
   "verified" | "confirmed" | "attention" | "unverifiable" | "blocked" | "pending" | "progress";
 
 export const statusMeta: Record<StepStatus, { icon: IconName; label: string }> = {
-  verified: { icon: "check", label: "Verified" },
+  verified: { icon: "sealCheck", label: "Verified" },
   confirmed: { icon: "user", label: "You confirmed" },
   attention: { icon: "alert", label: "Needs attention" },
   unverifiable: { icon: "eyeOff", label: "Can't check from a photo" },
@@ -40,14 +40,14 @@ export const partStatusMeta: Record<
   PartStatus,
   { icon: IconName; label: string; chip: StepStatus }
 > = {
-  found: { icon: "check", label: "Found", chip: "verified" },
+  found: { icon: "sealCheck", label: "Found", chip: "verified" },
   possible: { icon: "alert", label: "Possible match", chip: "attention" },
   missing: { icon: "stop", label: "Missing", chip: "blocked" },
 };
 
 export type CheckOutcome = "pass" | "fail" | "not_verifiable";
 export const checkMeta: Record<CheckOutcome, { icon: IconName; title: string }> = {
-  pass: { icon: "check", title: "Looks right" },
+  pass: { icon: "sealCheck", title: "Looks right" },
   fail: { icon: "alert", title: "Needs attention" },
   not_verifiable: { icon: "eyeOff", title: "Can't check this from a photo" },
 };
