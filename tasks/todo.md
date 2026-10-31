@@ -15,7 +15,7 @@ Tracks: **D** design, **A** mobile & glasses, **B** API & AI, **C** desktop (mac
 ## Phase 1 — Foundation and spikes
 - [x] T1 Contracts: core entities (B)
 - [x] T2 Core rules: step status + safety gates (B)
-- [ ] T3 Spike: SAM highlighting (B)
+- [x] T3 Spike: SAM highlighting (B): shipped as step highlighting (SAM per part, plain-word fallback, Spark picks); e2e `highlight-step` passes on the real models
 - [x] T4 Spike: screen pointing (C): 20 of 20 on the pointing bench (`pointing-bench`, four synthetic app screens); see spikes.md
 - [x] T5 Spike: nameplate → manual (B): decided — live search steered to direct PDFs (T10) with manual upload/pages as the fallback path; see spikes.md
 - [ ] T6 Jobs API with auth, deployed (B): built and tested locally; open until deployed (needs hosted Supabase + Fly.io)
@@ -40,7 +40,7 @@ Tracks: **D** design, **A** mobile & glasses, **B** API & AI, **C** desktop (mac
 ## Phase 3 — Desktop
 - [x] T18 Electron shell with overlay and panel (C): verified on this Mac with one display; two displays and the built app's Screen Recording prompt are manual checks
 - [x] T19 Show me: ask → pointer + voice (C + B): 20 of 20 inside the control on the pointing bench; the earlier "10 px below" was the overlay window's offset and the arrow tip, both corrected; answers in 2–6 s (reasoning minimal, narration rewritten without a second call, slow answers asked again after 7 s)
-- [ ] T20 Screen step verification (C): built and verified with fixtures; live check not yet run
+- [x] T20 Screen step verification (C): live on the real model with the synthetic Settings screen: "turn Wi-Fi off" fails (the switch is still on, said why), "open the Wi-Fi page" passes; 2–4 s
 - [ ] **Checkpoint 5:** teach-me-this-screen works
 
 ## Phase 4a — Product surfaces
