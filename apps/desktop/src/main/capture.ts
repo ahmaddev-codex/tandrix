@@ -1,12 +1,23 @@
 // Screenshots for Show me: the display under the cursor at native resolution, downsized to a
 // fixed width, with the geometry needed to map the model's pixels back onto that display.
-import { desktopCapturer, screen } from "electron";
+import { desktopCapturer, screen, type NativeImage } from "electron";
 import type { ScreenCapture } from "../shared/bridge";
 import { captureSize, type DisplayInfo } from "./displays";
 
 /** Wide enough to read UI text; small enough to upload and send to the model quickly. */
 export const CAPTURE_MAX_WIDTH = 1280;
 const JPEG_QUALITY = 80;
+
+export const SKETCH = { width: 48, height: 30 } as const;
+
+/** The image shrunk to 48×30 brightness values: small enough to compare every turn. */
+export function sketchOf(image: NativeImage): number[] {
+  const bgra = image.resize({ ...SKETCH, quality: "good" }).toBitmap();
+  const out: number[] = [];
+  for (let i = 0; i + 3 < bgra.length; i += 4)
+    out.push(Math.round(0.114 * bgra[i]! + 0.587 * bgra[i + 1]! + 0.299 * bgra[i + 2]!));
+  return out;
+}
 
 export const captureDisplayUnderCursor = () => captureDisplayAt(screen.getCursorScreenPoint());
 
@@ -24,6 +35,7 @@ export async function captureDisplayAt(at: { x: number; y: number }): Promise<Sc
     throw new Error("Tandrix couldn't capture the screen. Check Screen Recording access.");
   const size = source.thumbnail.getSize();
   return {
+    sketch: sketchOf(source.thumbnail),
     image: new Uint8Array(source.thumbnail.toJPEG(JPEG_QUALITY)),
     mimeType: "image/jpeg",
     capturedAt,

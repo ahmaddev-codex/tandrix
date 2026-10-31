@@ -8,7 +8,9 @@ import {
   fingerprint,
   likeness,
   memoryLine,
+  repeats,
   runScreenTask,
+  screenChanged,
   type ScreenTaskDeps,
 } from "../src/renderer/lib/screen-task";
 
@@ -181,7 +183,12 @@ describe("going in circles", () => {
     const r = await runScreenTask("Fix it", s.d);
     expect(r.status).toBe("stuck");
     expect(
-      s.sent.some((t) => t.memory.some((m) => m.startsWith("You've spent several turns"))),
+      s.sent.some((t) =>
+        t.memory.some(
+          (m) =>
+            m.startsWith("You've spent several turns") || m.startsWith("You've now done exactly"),
+        ),
+      ),
     ).toBe(true);
   });
 });
@@ -252,5 +259,43 @@ describe("plans and notes", () => {
     expect(spokenPart("Okay, got it — adding the first one.")).toBe("adding the first one.");
     expect(spokenPart("NOTE: Acme Tue 10:00")).toBe("");
     expect(spokenPart("PLAN: open WhatsApp; open Calendar.")).toBe("");
+  });
+});
+
+describe("telling a real change from noise", () => {
+  const flat = Array.from({ length: 1440 }, () => 200);
+  it("ignores a caret blinking in one cell", () => {
+    const blink = [...flat];
+    blink[700] = 120;
+    expect(screenChanged(flat, blink)).toBe(false);
+  });
+  it("sees a field filling or a window opening", () => {
+    const opened = flat.map((v, i) => (i % 48 > 10 && i % 48 < 30 && i > 300 ? 90 : v));
+    expect(screenChanged(flat, opened)).toBe(true);
+  });
+  it("can't tell without sketches", () => {
+    expect(screenChanged(undefined, flat)).toBeNull();
+  });
+});
+
+describe("repeats", () => {
+  const send = (y: number) => ({
+    actions: [
+      { type: "click" as const, x: 804, y, button: "left" as const },
+      { type: "type" as const, text: "Free for lunch tomorrow" },
+      { type: "keypress" as const, keys: ["Return"] },
+    ],
+  });
+  it("counts the same batch aimed a pixel or two away", () => {
+    expect(repeats([send(689), send(688), send(690)])).toBe(3);
+  });
+  it("doesn't count different steps", () => {
+    expect(
+      repeats([
+        send(689),
+        { actions: [{ type: "click" as const, x: 100, y: 100, button: "left" as const }] },
+        send(689),
+      ]),
+    ).toBe(2);
   });
 });

@@ -67,6 +67,9 @@ const SPEAK_EVERY_MS = 3500;
 const CHAIN = 0;
 /** Turns of only clicking and near-identical narration before Tandrix calls it going in circles. */
 const CIRCLE_TURNS = 5;
+/** The same batch this often in the last six turns: told to change tack, then stopped. */
+const REPEAT_NUDGE = 3;
+const REPEAT_STOP = 5;
 
 const words = (s: string) => new Set(s.toLowerCase().match(/[a-z]{3,}/g) ?? []);
 /** How alike two lines are, 0 to 1, by the words they share. */
@@ -144,6 +147,43 @@ export function spokenPart(reply: string): string {
     .replace(/\b(PLAN|NOTE):[\s\S]*?(?=\s*\b(?:PLAN|NOTE):|$)/g, "")
     .replace(/^\s*((got it|okay|ok|sure|alright|all right|on it|right|great)\b[\s,.!—–-]*)+/i, "")
     .trim();
+}
+
+/**
+ * Whether the screen changed between two sketches (48×30 brightness): more than a few cells
+ * moved by more than a little. A blinking caret or a ticking clock is one faint cell, not a change.
+ */
+export function screenChanged(a: number[] | undefined, b: number[] | undefined): boolean | null {
+  if (!a || !b || a.length !== b.length) return null;
+  let moved = 0;
+  for (let i = 0; i < a.length; i++) if (Math.abs(a[i]! - b[i]!) > 10) moved++;
+  return moved > 3;
+}
+
+/** A batch as a pattern: positions to about 16 px, so the same step aimed a pixel away still counts. */
+export function batchPattern(actions: DesktopAction[]): string {
+  return JSON.stringify(
+    actions
+      .filter((a) => a.type !== "wait" && a.type !== "screenshot")
+      .map((a) =>
+        "x" in a && "y" in a
+          ? { ...a, x: Math.round(a.x / 16), y: Math.round(a.y / 16) }
+          : a.type === "drag"
+            ? {
+                type: a.type,
+                from: a.path.map((p) => [Math.round(p.x / 16), Math.round(p.y / 16)]),
+              }
+            : a,
+      ),
+  );
+}
+
+/** How many of the last few batches were this same batch again. */
+export function repeats(recent: Array<{ actions: DesktopAction[] }>, window = 6): number {
+  const last = recent.at(-1);
+  if (!last || !last.actions.length) return 0;
+  const p = batchPattern(last.actions);
+  return recent.slice(-window).filter((t) => batchPattern(t.actions) === p).length;
 }
 
 /** A cheap fingerprint of a screenshot, to tell whether a step changed anything. */
@@ -300,6 +340,21 @@ export async function runScreenTask(task: string, d: ScreenTaskDeps): Promise<Sc
     memory.push(memoryLine(spokenPart(r.reply) || "Planned and noted.", r.actions));
     checked = false;
     recent.push({ reply: r.reply, actions: r.actions });
+    // The same step again and again (a click landing just off a field, then typing into nothing):
+    // the screen may change each time, but the job doesn't move.
+    const again = repeats(recent);
+    if (again >= REPEAT_STOP)
+      return {
+        status: "stuck",
+        reply:
+          "I've tried the same step five times and it isn't working, so I've stopped. Want to take it from here, or tell me what to try?",
+      };
+    if (again >= REPEAT_NUDGE) {
+      chain = null;
+      memory.push(
+        `You've now done exactly this ${again} times and it hasn't done the job: ${memoryLine("", r.actions)}. Your click is probably landing just off its target. Aim at the very middle of the control, well inside its edges, or reach it another way: a keyboard shortcut, Tab to it, or its button.`,
+      );
+    }
     if (circling(recent)) {
       if (nudged)
         return {
@@ -316,10 +371,13 @@ export async function runScreenTask(task: string, d: ScreenTaskDeps): Promise<Sc
     }
 
     await d.settle(SETTLE_MS);
+    const before = capture;
     capture = await d.capture();
     const print = fingerprint(capture.image);
     const sig = JSON.stringify(r.actions);
-    if (print === lastPrint && sig === lastSig) {
+    // By the sketches when there are some (a caret blink isn't a change), else exact bytes.
+    const changed = screenChanged(before.sketch, capture.sketch) ?? print !== lastPrint;
+    if (!changed && sig === lastSig) {
       noEffect++;
       memory.push("That last step had no effect: the screen didn't change. Try a different way.");
       chain = null;

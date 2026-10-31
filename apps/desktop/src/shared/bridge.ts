@@ -100,6 +100,8 @@ export interface ScreenCapture {
   mimeType: "image/jpeg";
   geometry: ScreenGeometry;
   capturedAt: string;
+  /** The screen at 48×30, one brightness (0–255) per cell: tells a real change from a caret blink. */
+  sketch?: number[];
 }
 
 /** One batch of model-proposed actions for the main process to check and run. */

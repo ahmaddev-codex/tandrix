@@ -32,9 +32,11 @@ export type DenyCode =
   "show_mode" | "action_limit" | "rate_limit" | "secure_field" | "secret_text" | "system_shortcut";
 
 export const guardLimits = {
-  maxActionsPerRequest: 25,
+  /** One task: three calendar events from a chat take about 30 actions. Esc stops any task. */
+  maxActionsPerRequest: 150,
   minGapMs: 300,
-  maxPerMinute: 60,
+  /** Above the pace the pointer's announce allows (about two a second), so it never throttles. */
+  maxPerMinute: 120,
 } as const;
 
 /**
