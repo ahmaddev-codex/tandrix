@@ -151,6 +151,17 @@ A phone can't reach `127.0.0.1` on your Mac. In `apps/mobile/.env.local`, replac
 - `pnpm test:integration` needs the local stack. It checks the API end to end and the database rules directly: users see only their own data, clients can't write anything, and a step can't be stored as verified without evidence.
 - `tsx --env-file=.env.local scripts/probe-agent.ts` runs the background agent on three real tasks with the Mac's tools simulated (nothing touches the Mac); it spends a few cents.
 
+## Checks on real models
+
+With the API running, each prints what it finds and what it spent:
+
+| Command | What it checks | Cost |
+|---|---|---|
+| `pnpm --filter @tandrix/api pointing-bench` | Show me's pointer against 20 known controls on synthetic app screens | About 15 cents |
+| `pnpm --filter @tandrix/desktop task-bench` | Do it for me on a synthetic Mac: WhatsApp to Calendar, a message, an event | A few cents a task |
+| `pnpm --filter @tandrix/api demo-check` | Pointing the camera, record mode and steps from a goal, on a bike and a home network | About 7 cents |
+| `pnpm --filter @tandrix/api live-check` | The phone and Mac spine on the Raspberry Pi 5 | Under $1 |
+
 ## Building the Mac app
 
 `pnpm --filter @tandrix/desktop dist` writes a DMG to `apps/desktop/release/`. It needs Xcode's command line tools for the Swift helpers.

@@ -53,7 +53,7 @@ Tracks: **D** design, **A** mobile & glasses, **B** API & AI, **C** desktop (mac
 - [x] **Checkpoint 4a:** clear what each app does; project from a sentence; Mac teaches with no job
 
 - [x] P7 Step visuals: each step shows the user's reference photo, the cited manual page (rendered once, zoomable) and the latest photo, on the phone and the Mac; the photo check compares against the reference. Open: crop to the cited figure; reference in the report (with T23)
-- [ ] P8 Mixed demo material: more than one product (electronics build, a bike repair, a home-network install) plus synthetic app screens for Show me and the T4 spike
+- [x] P8 Mixed demo material: `fixtures/demo-bike` (a photo series of changing an inner tube) and `fixtures/demo-network` (router, switch, cabling), openly licensed with attribution, beside the Pi 5 and the synthetic app screens (`fixtures/screens`). `pnpm --filter @tandrix/api demo-check` runs the product on them for about 7 cents: pointing the camera answered all four correctly (the yellow cable really is in port 3), record mode made 5 steps from 4 moments in 10 s, and a goal alone made 14 network steps in 20 s
 
 ## Phase 4b — Real product, end to end
 - [x] R1 No demo data: no fixture mode in API/config/scripts/docs (only honest noModel "unavailable" fallbacks, unreachable in prod since META_API_KEY is required). The 88 local test projects deleted with their photos (the two live Pi 5 projects kept); each e2e run now clears earlier runs' projects first (`e2e:clean`). E2E on real models: all ten flows pass
