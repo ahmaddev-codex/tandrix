@@ -5,9 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "next dev --port 3000",
-    "build": "next build",
-    "build:worker": "opennextjs-cloudflare build",
-    "deploy": "wrangler deploy",
+    "build": "opennextjs-cloudflare build",
+    "build:next": "next build",
+    "build:worker": "pnpm run build",
+    "deploy": "pnpm run build && wrangler deploy",
     "preview": "opennextjs-cloudflare preview",
     "start": "next start --port 3000",
     "typecheck": "tsc -p tsconfig.json --noEmit"
