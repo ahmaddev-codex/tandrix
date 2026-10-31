@@ -2,6 +2,7 @@
 // Early access while the apps aren't public yet: an email and which device, sent to the API. Every
 // Get-Tandrix button leads here until real download links are set.
 import { useState, type FormEvent } from "react";
+import { celebrate } from "@/lib/celebrate";
 import { cn } from "@/lib/cn";
 
 const box =
@@ -20,6 +21,7 @@ export function EarlyAccess() {
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
+    const form = e.currentTarget;
     setState({ kind: "sending" });
     try {
       const res = await fetch(`${API}/early-access`, {
@@ -27,7 +29,10 @@ export function EarlyAccess() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, platform }),
       });
-      if (res.ok) return setState({ kind: "done" });
+      if (res.ok) {
+        void celebrate(form.getBoundingClientRect());
+        return setState({ kind: "done" });
+      }
       setState({
         kind: "error",
         message:
