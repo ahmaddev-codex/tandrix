@@ -29,6 +29,7 @@ import { PAIRING_TOKEN_HEADER, pairingRoutes } from "./routes/pairing";
 import { jobReportRoutes, publicReportRoutes } from "./routes/report";
 import type { ReportsRepo } from "./repos/reports";
 import { inlineScreenRoutes, screenRoutes } from "./routes/screen";
+import { lookRoutes } from "./routes/look";
 import type { PairingsRepo } from "./repos/pairings";
 import { profileRoutes } from "./routes/profile";
 import { earlyAccessRoutes } from "./routes/early-access";
@@ -41,6 +42,7 @@ import type { PageRenderer } from "./pdf-render";
 import type { Speaker } from "./speech";
 import type { ScreenDoer } from "./screen-doer";
 import type { ScreenGuide } from "./screen-guide";
+import { noModelLooker, type Looker } from "./looker";
 
 export interface AppDeps {
   verifyToken: VerifyToken;
@@ -72,6 +74,8 @@ export interface AppDeps {
   pageRenderer: PageRenderer;
   /** Tandrix's spoken voice; without it the apps use a natural device voice or text only. */
   speaker?: Speaker;
+  /** Point the camera; without it the phone says it can't look right now. */
+  looker?: Looker;
   /** Do it for me; without it the Mac says it can't work on the screen right now. */
   screenDoer?: ScreenDoer;
   /** Who's calling, for rate limits on signed-out routes (the client's address). */
@@ -180,6 +184,16 @@ export function createApp(deps: AppDeps) {
     }),
   );
   app.route("/voice", voiceRoutes(deps.transcriber, deps.speaker));
+  app.use("/look", requireUser(deps.verifyToken));
+  app.route(
+    "/look",
+    lookRoutes({
+      looker: deps.looker ?? noModelLooker,
+      jobs: deps.jobs,
+      assets: deps.assets,
+      procedures: deps.procedures,
+    }),
+  );
   app.use("/jobs", requireUser(deps.verifyToken));
   // Evidence first: the more specific path must win over /jobs/:id.
   app.route("/jobs/:id/evidence", evidenceRoutes(deps.evidence, deps.storage));

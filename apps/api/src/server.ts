@@ -15,6 +15,7 @@ import { supabaseJobsRepo } from "./repos/jobs";
 import { metaManualFinder, noModelFinder } from "./manual-finder";
 import { supabaseManualsRepo } from "./repos/manuals";
 import { metaScreenGuide, noModelScreenGuide } from "./screen-guide";
+import { metaLooker, noModelLooker } from "./looker";
 import { metaPartsChecker, noModelPartsChecker } from "./parts-checker";
 import { supabasePartsChecksRepo } from "./repos/parts-checks";
 import { metaStepChecker, noModelChecker } from "./step-checker";
@@ -103,6 +104,7 @@ const app = createApp({
   pageRenderer: workerPageRenderer(),
   speaker,
   screenDoer: meta ? metaScreenDoer(meta, log) : noModelScreenDoer,
+  looker: meta ? metaLooker(meta, log) : noModelLooker,
   clientKey: (c) =>
     clientKeyFromHeaders(
       c.req.header("x-forwarded-for"),

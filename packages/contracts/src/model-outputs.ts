@@ -147,3 +147,24 @@ export const TaskPlan = z.strictObject({
   openApp: z.string().max(120).nullable(),
 });
 export type TaskPlan = z.infer<typeof TaskPlan>;
+
+/** Point the camera: the answer, and the one thing it's about with a rough box (thousandths). */
+export const LookAnswer = z.strictObject({
+  reply: z.string().min(1).max(500),
+  target: z
+    .strictObject({
+      /** As the user would call it: "the fan connector". */
+      label: z.string().min(1).max(60),
+      /** What it looks like, for the segmenter: "white connector". */
+      looksLike: z.string().min(1).max(40),
+      /** Rough box around it, in thousandths of the image's width and height. */
+      box: z.strictObject({
+        x: z.number().min(0).max(1000),
+        y: z.number().min(0).max(1000),
+        w: z.number().min(1).max(1000),
+        h: z.number().min(1).max(1000),
+      }),
+    })
+    .nullable(),
+});
+export type LookAnswer = z.infer<typeof LookAnswer>;

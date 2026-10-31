@@ -9,6 +9,7 @@ import {
   Job,
   JobStep,
   Manual,
+  MaskOutline,
   PointerTarget,
   PartSpec,
   PartStatus,
@@ -21,7 +22,16 @@ import {
 } from "./entities";
 import { ManualSearchOutput, NameplateReading } from "./model-outputs";
 import { DesktopAction, ScreenGeometry } from "./desktop";
-import { ControlMode, Id, Language, Surface, Timestamp, optionalText, text } from "./primitives";
+import {
+  Box,
+  ControlMode,
+  Id,
+  Language,
+  Surface,
+  Timestamp,
+  optionalText,
+  text,
+} from "./primitives";
 
 export const CreateJobRequest = z.strictObject({
   title: text(160),
@@ -682,3 +692,35 @@ export const CorrectPartResponse = z.strictObject({
   partsCheck: PartsCheck,
   steps: z.array(JobStep),
 });
+
+/**
+ * Point the camera (L1): one frame from the phone's live camera and a question about it ("what is
+ * this?", "where does this go?"). Inline, never stored. With a job, its equipment and the step in
+ * hand are the context.
+ */
+export const LookRequest = z.strictObject({
+  photo: InlineScreenshot,
+  width: z.number().int().min(1).max(20_000),
+  height: z.number().int().min(1).max(20_000),
+  question: text(500),
+  jobId: Id.optional(),
+  stepId: Id.optional(),
+  userName: z.string().trim().min(1).max(40).optional(),
+});
+export type LookRequest = z.infer<typeof LookRequest>;
+
+export const LookResponse = z.discriminatedUnion("status", [
+  z.strictObject({
+    status: z.literal("answered"),
+    /** Said aloud: the answer in a sentence or two. */
+    reply: text(600),
+    /** What the answer is about, outlined on the frame (in its pixels); null when nothing is. */
+    highlight: z
+      .strictObject({ label: text(80), box: Box, mask: MaskOutline.nullable() })
+      .nullable(),
+  }),
+  /** Work Tandrix won't guide (wiring, live work): the reason, said plainly. */
+  z.strictObject({ status: z.literal("refused"), message: text(300) }),
+  z.strictObject({ status: z.literal("unavailable"), message: text(300) }),
+]);
+export type LookResponse = z.infer<typeof LookResponse>;

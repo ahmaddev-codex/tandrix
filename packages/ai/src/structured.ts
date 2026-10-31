@@ -19,6 +19,8 @@ export interface StructuredRequest<S extends z.ZodType> {
   input: InputMessage[];
   effort?: ReasoningEffort;
   signal?: AbortSignal;
+  /** For calls someone is waiting on: ask again after this long, the first answer winning. */
+  hedgeMs?: number;
   /** Extra Responses API fields, e.g. tools: [{ type: "web_search" }], include: [...]. */
   extra?: Record<string, unknown>;
 }
@@ -70,7 +72,9 @@ export async function generateStructured<S extends z.ZodType>(
     ...req.extra,
   };
 
-  const first = await client.respond({ ...base, input: req.input }, req.signal);
+  const first = req.hedgeMs
+    ? await client.respondHedged({ ...base, input: req.input }, req.signal, req.hedgeMs)
+    : await client.respond({ ...base, input: req.input }, req.signal);
   const a = parse(req.schema, outputText(first));
   if (a.success)
     return {

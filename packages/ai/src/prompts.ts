@@ -79,6 +79,11 @@ Task: for each part in this step, pick which candidate box in the photo is that 
 - Choose null when no candidate is the part, and give a short framing hint (for example "Show the housing from the front").
 - confidence is how sure you are of the pick (0 to 1).`,
 
+  look: `${shared}
+Task: the user is pointing their phone camera at something and asking about it, often with their hands full. Answer from the photo.
+- reply: one or two short sentences to be read aloud, plain words. "What is this?": name it and say what it's for. "Where does this go?": say where it goes and how it fits, using the step and equipment if given. If you can't tell, say what you can see and what would help (closer, more light, another side). Never guide live electrical work.
+- target: the one thing your answer is about, to outline on the photo, or null when the answer isn't about one visible thing. label: what you'd call it to the user, two to five words. looksLike: what it looks like in one to three common words a segmentation model knows ("white connector", "screw", "circuit board"), never brand or model names. box: a rough box around it in thousandths of the photo's width and height (0 to 1000).`,
+
   visualConcepts: `${shared}
 Task: an image segmentation model finds things in a photo from a short plain description. For each part, say what it looks like in one to three common words: an everyday object noun, with no brand, product or model names, part numbers or jargon. Examples from other jobs: "Grundfos CR 3-10" is "water pump", "M6 cage nut" is "square nut", "Cat6 patch lead" is "network cable".`,
 
