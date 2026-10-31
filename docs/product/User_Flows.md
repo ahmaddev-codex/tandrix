@@ -23,7 +23,7 @@ flowchart TD
 ```
 
 - **Show me.** The pointer rings the control and the reply is spoken and shown in the presence pill at the top of the screen. "Teach me …" gives one step per turn; "next" moves on.
-- **Do it for me.** The pill says Tandrix is in control. Each action: the pointer moves to the target, says what it's doing, acts, and looks again. Paying, sending, deleting, passwords and security settings stop for a confirm. Moving the mouse, typing or Esc stops it. When finished, it checks the result and says what it did.
+- **Do it for me.** The pill says Tandrix is in control. Each action: the pointer moves to the target, says what it's doing, acts, and looks again. Paying, sending, deleting, passwords and security settings stop for a confirm. Esc or the Tandrix hotkey stops it; moving the mouse or typing doesn't. When finished, it checks the result and says what it did.
 - **Background agent.** It answers by voice when ready and lists the task, with its full answer, on the panel's task board. It may add a calendar event, a reminder or a note, save an email draft, list files, or use a website in Tandrix's own hidden browser.
 
 **While a screen task runs**, what the user says is routed:

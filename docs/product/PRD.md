@@ -53,7 +53,7 @@ Hold ⌥⌘ in any app, ask, let go (or say "Hey Tandrix"). Tandrix looks at the
 ### 5.2 Do it for me (Mac)
 Asked to do something, Tandrix offers ("Want me to do it?") and acts on a spoken or clicked yes; "do it for me" acts straight away; a setting makes it always act without asking first. While it works:
 - A presence pill shows Tandrix is in control; its pointer moves to each target and says what it's doing.
-- Moving the mouse, typing or pressing Esc stops it at once.
+- Pressing Esc or the Tandrix hotkey stops it at once. Moving the mouse or typing doesn't, so a brushed trackpad can't throw the work away.
 - Paying, sending, deleting, typing a password or changing security settings always stops for a confirm.
 - It finishes the whole task unless stopped, checks the result before saying it's done, and asks for help rather than repeating itself.
 - Said while it works: "stop" stops it, a correction steers it, a new screen task queues next.
