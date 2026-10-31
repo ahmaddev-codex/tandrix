@@ -1,0 +1,17 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "tandrix",
+  "main": "apps/web/.open-next/worker.js",
+  "compatibility_date": "2026-10-23",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "binding": "ASSETS",
+    "directory": "apps/web/.open-next/assets",
+  },
+  "build": {
+    "command": "pnpm --filter @tandrix/web build:worker",
+  },
+  "observability": {
+    "enabled": true,
+  },
+}

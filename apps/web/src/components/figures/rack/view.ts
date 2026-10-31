@@ -128,4 +128,3 @@ export const P = fitProjection(BOUNDS, WIDTH, HEIGHT, {
   pad: 28,
   azimuth: 40,
 });
-
