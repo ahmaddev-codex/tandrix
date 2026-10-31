@@ -49,7 +49,7 @@ Tracks: **D** design, **A** mobile & glasses, **B** API & AI, **C** desktop (mac
 - [x] P3 Mac: Show me without a job; Clicky-first panel; first-run setup
 - [x] P4 Phone: intro, permissions, home ("What are you building or fixing?"); all phone flows pass
 - [x] P5 Website: consumer-first rebuild, then rebuilt again in Phase 9 (W1–W3): drawn figures instead of product photos, App Router structure, Tailwind; report page /r/[token] verified
-- [ ] P6 Known gaps: offline manual/reference caching, deploy readiness, Mac icons and packaging, design system additions
+- [x] P6 Known gaps: offline caching (T17); Mac icons and packaging: every app icon generated from the mark, the pointer in the menu bar, and a DMG built and launched from a clean profile (ad-hoc signed until Apple credentials are set; see Local_Dev); design system: Phosphor-only icon rule. Deploy readiness stays with D1 and H11
 - [x] **Checkpoint 4a:** clear what each app does; project from a sentence; Mac teaches with no job
 
 - [x] P7 Step visuals: each step shows the user's reference photo, the cited manual page (rendered once, zoomable) and the latest photo, on the phone and the Mac; the photo check compares against the reference. Open: crop to the cited figure; reference in the report (with T23)

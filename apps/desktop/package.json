@@ -1,6 +1,6 @@
 {
   "name": "@tandrix/desktop",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
   "main": "dist/main/index.cjs",
@@ -12,7 +12,8 @@
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json",
     "build:native": "tsx scripts/build-native.ts",
-    "task-bench": "esbuild scripts/task-bench.ts --bundle --platform=node --format=esm --external:electron --outfile=dist/task-bench.mjs --log-level=warning && env -u ELECTRON_RUN_AS_NODE electron dist/task-bench.mjs"
+    "task-bench": "esbuild scripts/task-bench.ts --bundle --platform=node --format=esm --external:electron --outfile=dist/task-bench.mjs --log-level=warning && env -u ELECTRON_RUN_AS_NODE electron dist/task-bench.mjs",
+    "dist": "pnpm run build && electron-builder --config electron-builder.yml --mac"
   },
   "dependencies": {
     "@expo-google-fonts/geist": "^0.4.2",
@@ -32,7 +33,10 @@
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "6.1.2",
     "electron": "44.7.0",
+    "electron-builder": "^26.18.0",
     "esbuild": "0.28.2",
     "vite": "8.3.5"
-  }
+  },
+  "description": "Tandrix for Mac",
+  "author": "Tandrix"
 }

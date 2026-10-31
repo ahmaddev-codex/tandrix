@@ -1,0 +1,47 @@
+# The Mac app. `pnpm --filter @tandrix/desktop dist` builds a signed, notarized DMG when Apple
+# credentials are set (CSC_LINK and CSC_KEY_PASSWORD, or a Developer ID in the keychain; and
+# APPLE_ID, APPLE_APP_SPECIFIC_PASSWORD, APPLE_TEAM_ID), and an ad-hoc signed one otherwise, which
+# runs only on the Mac that built it. See docs/engineering/Local_Dev.md.
+appId: app.tandrix.desktop
+productName: Tandrix
+copyright: © 2026 Tandrix
+directories:
+  output: release
+  buildResources: build
+# esbuild and Vite bundle everything into dist/; only the input hook's native module stays outside.
+files:
+  - package.json
+  - dist/**
+  - "!dist/native/**"
+  - "!dist/task-bench.mjs"
+  - "!**/*.map"
+  - "!node_modules/**"
+  - node_modules/uiohook-napi/**
+  - node_modules/node-gyp-build/**
+asarUnpack:
+  - node_modules/uiohook-napi/**
+extraResources:
+  - from: dist/native
+    to: native
+  - from: build
+    to: tray
+    filter:
+      - trayTemplate*.png
+mac:
+  target:
+    - target: dmg
+      arch: arm64
+  category: public.app-category.productivity
+  icon: build/icon.icns
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.plist
+  extendInfo:
+    # A menu-bar app: no Dock icon or app menu.
+    LSUIElement: true
+    NSMicrophoneUsageDescription: Tandrix listens when you hold ⌥⌘ or say its name, so you can ask by voice.
+    NSSpeechRecognitionUsageDescription: Tandrix listens for its name on this Mac, so you can say "Hey Tandrix" instead of pressing keys. Nothing leaves your Mac until you say it.
+    NSAppleEventsUsageDescription: Tandrix works with your apps, like Calendar and Reminders, when you ask it to.
+dmg:
+  title: Tandrix

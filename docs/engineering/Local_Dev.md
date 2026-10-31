@@ -150,3 +150,13 @@ A phone can't reach `127.0.0.1` on your Mac. In `apps/mobile/.env.local`, replac
 - `pnpm test` needs no services: model calls and the database are faked. This is what CI runs.
 - `pnpm test:integration` needs the local stack. It checks the API end to end and the database rules directly: users see only their own data, clients can't write anything, and a step can't be stored as verified without evidence.
 - `tsx --env-file=.env.local scripts/probe-agent.ts` runs the background agent on three real tasks with the Mac's tools simulated (nothing touches the Mac); it spends a few cents.
+
+## Building the Mac app
+
+`pnpm --filter @tandrix/desktop dist` writes a DMG to `apps/desktop/release/`. It needs Xcode's command line tools for the Swift helpers.
+
+- **Where it points:** the renderer's `VITE_API_URL`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` and `TANDRIX_ENV` are compiled in at build time, from `.env.local` unless they're set in the environment. Set them to production's before building one to hand out.
+- **Signing:** with no credentials the build is ad-hoc signed and runs only on the Mac that built it. For a build others can open, set `CSC_LINK` and `CSC_KEY_PASSWORD` (or have a Developer ID in the keychain), plus `APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD` and `APPLE_TEAM_ID` to notarize. Settings are in `apps/desktop/electron-builder.yml`.
+- **Trying a build beside the dev app:** the single-instance lock makes it quit at once if a copy with the same profile is running, so pass `--user-data-dir=<a temp folder>`.
+
+App icons, on every surface, come from the mark in `scripts/build-app-icons.ts` (`pnpm exec tsx scripts/build-app-icons.ts`). The phone picks them up at its next native build (`pnpm --filter @tandrix/mobile ios`).

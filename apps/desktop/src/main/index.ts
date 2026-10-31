@@ -1,6 +1,8 @@
 // Tandrix for Mac: a menu-bar panel plus a pointer overlay on every display.
 import { execFileSync } from "node:child_process";
+import { existsSync } from "node:fs";
 import os from "node:os";
+import { join } from "node:path";
 import {
   app,
   BrowserWindow,
@@ -304,8 +306,13 @@ function registerIpc() {
 }
 
 function createTray() {
-  tray = new Tray(nativeImage.createEmpty());
-  tray.setTitle("Tandrix");
+  // The pointer, as a template image so macOS tints it to suit the menu bar.
+  const packaged = join(process.resourcesPath ?? "", "tray", "trayTemplate.png");
+  const icon = nativeImage.createFromPath(
+    existsSync(packaged) ? packaged : join(app.getAppPath(), "build", "trayTemplate.png"),
+  );
+  icon.setTemplateImage(true);
+  tray = new Tray(icon);
   tray.setToolTip("Tandrix");
   const menu = Menu.buildFromTemplate([{ label: "Quit Tandrix", role: "quit" }]);
   tray.on("click", () => tray && togglePanel(tray.getBounds()));
