@@ -29,8 +29,10 @@ export interface ScreenTaskDeps {
     acknowledged: DoBatch["safetyChecks"];
   }) => Promise<DoTurnResponse>;
   run: (batch: DoBatch) => Promise<DoBatchResult>;
-  /** Says a progress line aloud and shows it at the top of the screen. */
+  /** Says a progress line aloud. */
   say: (line: string) => void;
+  /** What it's doing right now, for the bar at the top ("Opening Calendar"). */
+  doing?: (label: string) => void;
   /** Corrections the user said since the last turn ("no, Thursday the 13th"). */
   steer: () => string[];
   stopped: () => boolean;
@@ -186,6 +188,32 @@ export function repeats(recent: Array<{ actions: DesktopAction[] }>, window = 6)
   return recent.slice(-window).filter((t) => batchPattern(t.actions) === p).length;
 }
 
+/**
+ * What Tandrix is doing this turn, short enough for the bar: the first sentence of what it said,
+ * else what its actions are ("Typing", "Scrolling").
+ */
+export function actionLabel(reply: string, actions: DesktopAction[]): string {
+  const said = spokenPart(reply)
+    .split(/(?<=[.!?])\s/)[0]
+    ?.replace(/[.!]+$/, "")
+    .trim();
+  if (said) return said.length > 64 ? `${said.slice(0, 63).trimEnd()}…` : said;
+  const a = actions.find((x) => x.type !== "wait" && x.type !== "screenshot");
+  if (!a) return "Looking at the screen";
+  switch (a.type) {
+    case "type":
+      return "Typing";
+    case "keypress":
+      return "Pressing keys";
+    case "scroll":
+      return "Scrolling";
+    case "drag":
+      return "Dragging";
+    default:
+      return "Clicking";
+  }
+}
+
 /** A cheap fingerprint of a screenshot, to tell whether a step changed anything. */
 export function fingerprint(bytes: Uint8Array): string {
   let h = 2166136261;
@@ -289,6 +317,7 @@ export async function runScreenTask(task: string, d: ScreenTaskDeps): Promise<Sc
     if (d.stopped()) return { status: "stopped", reply: "Stopped. You have control back." };
 
     if (r.status === "open_app") {
+      d.doing?.(`Opening ${r.app}`);
       if (++opened > 6 || !(await d.openApp(r.app)))
         return {
           status: "failed",
@@ -325,6 +354,7 @@ export async function runScreenTask(task: string, d: ScreenTaskDeps): Promise<Sc
       if (n.startsWith("You noted:")) notedInApp = true;
     }
     shotInApp = capture;
+    d.doing?.(actionLabel(r.reply, r.actions));
     if (r.reply) say(r.reply);
     const ran = await d.run({
       actions: r.actions,

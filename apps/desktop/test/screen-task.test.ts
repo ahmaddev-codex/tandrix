@@ -6,6 +6,7 @@ import {
   spokenPart,
   circling,
   fingerprint,
+  actionLabel,
   likeness,
   memoryLine,
   repeats,
@@ -297,5 +298,16 @@ describe("repeats", () => {
         send(689),
       ]),
     ).toBe(2);
+  });
+});
+
+describe("actionLabel", () => {
+  it("is what Tandrix said it's doing, first sentence only", () => {
+    expect(actionLabel("Got it. Opening your calendar to add them. PLAN: three events", [])).toBe(
+      "Opening your calendar to add them",
+    );
+  });
+  it("falls back to the action", () => {
+    expect(actionLabel("", [{ type: "type", text: "Acme" }])).toBe("Typing");
   });
 });

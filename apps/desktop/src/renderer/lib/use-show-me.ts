@@ -26,7 +26,7 @@ import { startRecording, type Recording } from "./recorder";
 import { uploadScreenshot } from "./screenshot";
 import { recentExchanges } from "./exchanges";
 import { markTried } from "./setup";
-import { noteWork, present, presentAnswer, presenceState, workingOn } from "./presence";
+import { present, presentAction, presentAnswer, presenceState, workingOn } from "./presence";
 import { localNow, runBackgroundTask } from "./background-agent";
 import { base64 } from "./bytes";
 import { browseCall } from "./browse";
@@ -178,11 +178,9 @@ export function useShowMe(jobId: string | undefined) {
             return r.status === "done" ? r.note : null;
           },
           run: (batch) => window.tandrix.doing.run(batch),
-          // Spoken, and it steers the bar's phrases; the bar never shows the words.
-          say: (line) => {
-            speak(line);
-            noteWork(line);
-          },
+          say: (line) => speak(line),
+          // The bar carries the user along: what it's doing now.
+          doing: presentAction,
           steer: io.steer,
           stopped: io.stopped,
           settle: (ms) => new Promise((r) => setTimeout(r, ms)),
