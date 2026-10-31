@@ -1,5 +1,6 @@
 "use client";
 // A header menu: opens on hover or click, closes on Esc, a click elsewhere, or leaving it.
+import { Icon } from "@tandrix/ui/web";
 import { useEffect, useRef, useState } from "react";
 import type { NavLink } from "@/content/site";
 
@@ -34,22 +35,11 @@ export function NavDropdown({ label, links }: { label: string; links: NavLink[] 
         className="inline-flex cursor-pointer items-center gap-1.5 border-0 bg-transparent p-0 text-[15px] font-medium text-white opacity-90 hover:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus"
       >
         {label}
-        <svg
-          viewBox="0 0 12 12"
-          width={12}
-          height={12}
-          aria-hidden="true"
+        <Icon
+          name="chevronDown"
+          size={16}
           className={open ? "rotate-180 transition-transform" : "transition-transform"}
-        >
-          <path
-            d="M3 4.5L6 7.5L9 4.5"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.6"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
+        />
       </button>
       {open ? (
         // The gap above is part of the menu, so moving down onto it doesn't close it.

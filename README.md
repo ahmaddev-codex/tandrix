@@ -63,4 +63,4 @@ Start with the [documentation index](docs/README.md): the product requirements, 
 
 ## Status
 
-The Mac, iPhone, API and website are built and verified locally. Deploying (hosted Supabase, Fly.io, Vercel, EAS and a signed Mac build), the glasses, record mode and multilingual support are still to do. The live list is [tasks/todo.md](tasks/todo.md).
+The Mac, iPhone, API and website are built and verified locally. Deploying (hosted Supabase, Fly.io, Cloudflare for the website, EAS and a signed Mac build), the glasses, record mode and multilingual support are still to do. The live list is [tasks/todo.md](tasks/todo.md).

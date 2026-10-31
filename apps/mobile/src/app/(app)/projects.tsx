@@ -1,5 +1,5 @@
 import { space } from "@tandrix/ui";
-import { Notice, ProgressState } from "@tandrix/ui/native";
+import { Button, Notice, ProgressState } from "@tandrix/ui/native";
 import { router, Stack } from "expo-router";
 import { useState } from "react";
 import { View } from "react-native";
@@ -35,10 +35,33 @@ export default function Projects() {
         soft="in one place."
         lead="Your plans and how far each one has got."
       />
+      {error && jobs !== undefined ? (
+        // Couldn't refresh: what's held stays on screen.
+        <Notice
+          tone="attention"
+          testID="refresh-failed"
+          action={
+            <Button variant="secondary" size="lg" onPress={load}>
+              Try again
+            </Button>
+          }
+        >
+          {error}
+        </Notice>
+      ) : null}
       {jobs === undefined && !error ? (
         <ProgressState label="Loading your projects" />
-      ) : error ? (
-        <Notice tone="error">{error}</Notice>
+      ) : error && jobs === undefined ? (
+        <Notice
+          tone="error"
+          action={
+            <Button variant="secondary" size="lg" onPress={load}>
+              Try again
+            </Button>
+          }
+        >
+          {error}
+        </Notice>
       ) : all.length ? (
         <View style={{ gap: space["space-3"] }}>
           <Tray>

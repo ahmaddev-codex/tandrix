@@ -1,5 +1,6 @@
 node_modules/
 dist/
+apps/desktop/release/
 coverage/
 .expo/
 .turbo/
@@ -10,6 +11,8 @@ coverage/
 !.env.example
 .maestro/
 .next/
+.open-next/
+.wrangler/
 *.tsbuildinfo
 fixtures/demo-pi5/manuals/
 apps/api/.meta-spend.json

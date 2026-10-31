@@ -29,7 +29,11 @@ const outlineOnly = new Set<string>([
   // Block and caution: a solid one shouts from a chip.
   "stop",
   "alert",
+  // Direction: a solid caret is a heavy triangle.
   "chevronDown",
+  "chevronLeft",
+  "chevronRight",
+  "arrowRight",
   "arrowUpRight",
 ]);
 

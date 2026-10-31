@@ -1,5 +1,6 @@
 // Photo and video credits for the Tandrix site. Same facts as public/photos/CREDITS.md,
 // rendered as a page instead of a raw markdown file.
+import { Icon } from "@tandrix/ui/web";
 import { ScrollReveals } from "@/components/motion/ScrollReveals";
 const credits: Array<{
   file: string;
@@ -112,9 +113,9 @@ export default function Credits() {
           <p>
             <a
               href="/"
-              className="text-sm font-semibold text-(--link) no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+              className="inline-flex items-center gap-1 text-sm font-semibold text-(--link) no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
             >
-              ← Tandrix
+              <Icon name="chevronLeft" size={16} /> Tandrix
             </a>
           </p>
           <h1 className="heading-32">Photo and video credits</h1>

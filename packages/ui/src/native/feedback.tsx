@@ -2,7 +2,6 @@
 // same names): what stands before a step, what a check found, the parts check, and the handoff.
 import type { ReactNode } from "react";
 import { Pressable, View } from "react-native";
-import Svg, { Circle, G, Path } from "react-native-svg";
 import { radius, size as sizes, space, type ColorToken } from "../generated/tokens";
 import { checkMeta, partStatusMeta, type CheckOutcome, type PartStatus } from "../shared";
 import { Button, Icon, SourceChip, StatusChip, Text } from "./components";
@@ -23,21 +22,23 @@ export interface SafetyGateProps {
   testID?: string;
 }
 
-/** The ISO 7010 disc: blue mandatory action, or red prohibition. */
+/** The ISO 7010 disc, with a Phosphor glyph: blue mandatory action, or red prohibition. */
 function SafetyDisc({ stop }: { stop: boolean }) {
   const t = useTheme();
   return (
-    <Svg width={28} height={28} viewBox="0 0 36 36" accessibilityElementsHidden>
-      <Circle cx={18} cy={18} r={18} fill={stop ? t.color["red-700"] : t.color.mandatory} />
-      {stop ? (
-        <Path d="M10 10l16 16" stroke={t.color["on-red"]} strokeWidth={3.5} strokeLinecap="round" />
-      ) : (
-        <G fill="none" stroke={t.color["on-mandatory"]} strokeWidth={3} strokeLinecap="round">
-          <Path d="M18 9v9" />
-          <Path d="M12 13a8 8 0 1 0 12 0" />
-        </G>
-      )}
-    </Svg>
+    <View
+      accessibilityElementsHidden
+      style={{
+        width: 28,
+        height: 28,
+        borderRadius: 14,
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: stop ? t.color["red-700"] : t.color.mandatory,
+      }}
+    >
+      <Icon name={stop ? "stop" : "power"} size={20} color={stop ? "on-red" : "on-mandatory"} />
+    </View>
   );
 }
 

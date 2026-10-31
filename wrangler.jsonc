@@ -1,0 +1,23 @@
+// The website, for Cloudflare Workers Builds connected at the repo root. apps/web/wrangler.jsonc
+// is the same Worker, for deploying from that folder: keep the two in step.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "tandrix",
+  "main": "apps/web/.open-next/worker.js",
+  "compatibility_date": "2026-10-23",
+  "compatibility_flags": ["nodejs_compat"],
+  // API_PUBLIC_URL is set on the Worker in Cloudflare; a deploy must not wipe it.
+  "keep_vars": true,
+  "assets": {
+    "binding": "ASSETS",
+    "directory": "apps/web/.open-next/assets",
+  },
+  "build": {
+    "command": "pnpm --filter @tandrix/web build:worker",
+  },
+  // Branch previews (npx wrangler preview) need this block, even empty.
+  "previews": {},
+  "observability": {
+    "enabled": true,
+  },
+}

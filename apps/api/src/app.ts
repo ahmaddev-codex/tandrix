@@ -43,6 +43,7 @@ import type { Speaker } from "./speech";
 import type { ScreenDoer } from "./screen-doer";
 import type { ScreenGuide } from "./screen-guide";
 import { noModelLooker, type Looker } from "./looker";
+import type { ProcedureRunsRepo } from "./repos/procedure-runs";
 
 export interface AppDeps {
   verifyToken: VerifyToken;
@@ -74,6 +75,8 @@ export interface AppDeps {
   pageRenderer: PageRenderer;
   /** Tandrix's spoken voice; without it the apps use a natural device voice or text only. */
   speaker?: Speaker;
+  /** Writing steps in the background; without it only the waiting call is there. */
+  procedureRuns?: ProcedureRunsRepo;
   /** Point the camera; without it the phone says it can't look right now. */
   looker?: Looker;
   /** Do it for me; without it the Mac says it can't work on the screen right now. */
@@ -233,6 +236,7 @@ export function createApp(deps: AppDeps) {
       procedures: deps.procedures,
       generator: deps.procedureGenerator,
       stepState: deps.stepState,
+      ...(deps.procedureRuns ? { runs: deps.procedureRuns } : {}),
       log,
     }),
   );

@@ -1,6 +1,6 @@
 // The hero carousel's cards: each one idea, readable at a glance. Real photos and footage of people
 // at it, between the moments Tandrix shows on screen.
-import { BrandMark } from "@tandrix/ui/web";
+import { BrandMark, Icon } from "@tandrix/ui/web";
 import type { ReactNode } from "react";
 import { Clip } from "@/components/ui/Clip";
 import { cn } from "@/lib/cn";
@@ -86,16 +86,7 @@ export function VerifiedTile() {
     <Tile className={light}>
       <span className={kicker}>Step 3 of 6</span>
       <span className="grid size-[52px] place-items-center rounded-full bg-highlight text-white shadow-[0_10px_24px_-10px_var(--highlight)]">
-        <svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true">
-          <path
-            d="M5 12.5l4.5 4.5L19 7.5"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.6"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
+        <Icon name="check" size={24} />
       </span>
       <b className={title}>Verified</b>
       <span className={sub}>Cooler seated on all four posts</span>

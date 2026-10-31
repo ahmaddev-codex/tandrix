@@ -1,5 +1,6 @@
 "use client";
 // The site's pages on small screens, where the header's links don't fit.
+import { Icon } from "@tandrix/ui/web";
 import { useState } from "react";
 import { primary, product } from "@/content/site";
 
@@ -19,14 +20,12 @@ export function NavMenu() {
     >
       <button
         type="button"
-        className="inline-flex size-11 cursor-pointer flex-col items-center justify-center gap-[5px] rounded-full border-0 bg-[rgba(10,14,24,0.75)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus [&>span]:block [&>span]:h-0.5 [&>span]:w-[18px] [&>span]:rounded-[2px] [&>span]:bg-white"
+        className="inline-grid size-11 cursor-pointer place-items-center rounded-full border-0 bg-[rgba(10,14,24,0.75)] text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
         aria-expanded={open}
         aria-label={open ? "Close menu" : "Open menu"}
         onClick={() => setOpen(!open)}
       >
-        <span aria-hidden="true" />
-        <span aria-hidden="true" />
-        <span aria-hidden="true" />
+        <Icon name={open ? "x" : "menu"} size={20} />
       </button>
       {open ? (
         <nav

@@ -21,3 +21,6 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build
+      # The website as Cloudflare runs it: builds, and fits a Worker.
+      - run: pnpm --filter @tandrix/web build:worker
+      - run: pnpm --filter @tandrix/web exec wrangler deploy --dry-run --outdir .open-next/dry-run

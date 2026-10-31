@@ -477,11 +477,11 @@ Owner supplied 5 real-task clips; 4 cycle as the fullscreen hero reel (`HeroReel
 #### H9 Integration suites (open, blocked in sandbox)
 Needs `supabase start` + seeded user. Blocked here: Docker socket permission-denied; Supabase CLI also needs a writable HOME (`HOME=/tmp/sbhome` works around its telemetry crash — use a writable HOME outside the sandbox too if it recurs).
 
-#### H10 Async procedure pipeline (open)
-Procedure generation stays a synchronous 1–3 min call. Design: background job + progress over Realtime + result caching. Spec + build as its own task.
+#### H10 Async procedure pipeline (done)
+`POST /jobs/:id/procedure/start` claims the job's one run and answers at once (84 ms live); `GET …/procedure/run` reports it; both apps wait through `waitForProcedure`. See Architecture. Polling over Realtime (no client policies on the table, survives a Realtime disconnect); no result cache, since a job has one procedure and starting again returns it.
 
 #### H11 Deploy pipeline (open, needs accounts)
-Fly.io API deploy, hosted Supabase (migrations/buckets/auth), Vercel web (then set metadataBase + canonical), EAS profiles (with `EXPO_PUBLIC_TANDRIX_ENV`), signed Mac build, Sentry/observability, production env checklist. CI deploy jobs after secrets exist.
+Fly.io API deploy, hosted Supabase (migrations/buckets/auth), Cloudflare Workers for the web (OpenNext; set `NEXT_PUBLIC_SITE_URL`), EAS profiles (with `EXPO_PUBLIC_TANDRIX_ENV`), signed Mac build, Sentry/observability, production env checklist. CI deploy jobs after secrets exist.
 
 #### H12–H17 Backlog (open)
 H12: `control_mode` mirror endpoint + `control_mode_changed` emission (desktop holds mode locally; DB column is write-never). H13: `expert_recording` producer or reservation doc. H14: shared rate-limit store for multi-instance API (Redis/Upstash decision). H15: device QA — physical-phone report E2E, real-device web checks, Lighthouse, OG unfurls, contrast pass. H16: Fly VM sizing vs TTS/render split; worker page-count. H17: guard sensitive-detection beyond English-keyword regex.

@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { CardTray, Closer, PageShell, heading } from "@/components/page/Page";
 
 export const metadata: Metadata = {
-  title: "Safety and privacy",
+  title: "Tandrix safety and privacy",
   description:
     "How Tandrix keeps you in control of your Mac and your work, and what it keeps, for how long, and where.",
 };

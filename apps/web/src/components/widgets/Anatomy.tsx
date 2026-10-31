@@ -1,7 +1,7 @@
 "use client";
 // The anatomy of Tandrix, as an exploded product view: the layers it puts over what you're doing,
 // stacked in 3D, pulling apart the first time the view is on screen, each with its callout.
-import { BrandMark } from "@tandrix/ui/web";
+import { BrandMark, Icon } from "@tandrix/ui/web";
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { PointerArrow } from "@/components/scenes/Scenes";
 import { cn } from "@/lib/cn";
@@ -71,22 +71,9 @@ const layers: Layer[] = [
     says: "Looks again when you're done and only moves on when it's right.",
     plate: (
       <span className="inline-flex items-center gap-2.5 rounded-full bg-white py-2.5 pr-4 pl-2.5 text-[15px] font-semibold text-[#0b0b0c] shadow-soft">
-        <svg
-          viewBox="0 0 24 24"
-          width="26"
-          height="26"
-          aria-hidden="true"
-          className="size-[38px] rounded-full bg-highlight p-1.5 text-white"
-        >
-          <path
-            d="M5 12.5l4.5 4.5L19 7.5"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.6"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
+        <span className="grid size-[38px] place-items-center rounded-full bg-highlight text-white">
+          <Icon name="check" size={24} />
+        </span>
         Verified
       </span>
     ),

@@ -1,20 +1,10 @@
 // The site's buttons: pills, with the arrow in its own disc on the ones that lead somewhere.
+import { Icon } from "@tandrix/ui/web";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
 
-export function ArrowUpRight({ size = 16 }: { size?: number }) {
-  return (
-    <svg viewBox="0 0 16 16" width={size} height={size} aria-hidden="true">
-      <path
-        d="M5 11L11 5M6 5h5v5"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
+export function ArrowUpRight() {
+  return <Icon name="arrowUpRight" size={16} />;
 }
 
 type Tone = "ink" | "light" | "blue" | "white" | "glass" | "outline";

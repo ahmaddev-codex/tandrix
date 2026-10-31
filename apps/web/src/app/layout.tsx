@@ -5,8 +5,10 @@ import { GeistMono } from "geist/font/mono";
 import { GeistSans } from "geist/font/sans";
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
+import { SITE_URL } from "@/lib/site";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: "Tandrix: tell it what you want done",
   description:
     "Tandrix sees your screen and what's in front of your camera, points at the answer, and checks every step with you. On your Mac and your iPhone.",

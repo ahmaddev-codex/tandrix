@@ -5,7 +5,8 @@ import { colors, type ThemeName } from "./generated/tokens";
 export { icons, type IconName, type IconWeight } from "./generated/icons";
 import { icons, type IconName, type IconWeight } from "./generated/icons";
 
-/** The design system's rule: solid (fill) for small inline icons, outline at 20 px and up. */
+/** The design system's rule: solid (fill) for small inline icons, outline at 20 px and up.
+ * Block, caution and line-shaped icons are outline at every size (scripts/build-icons.ts). */
 export const iconWeightFor = (size: number): IconWeight => (size >= 20 ? "outline" : "fill");
 
 /** The paths to draw for an icon at a size, in the weight the rule gives unless one is asked for. */
