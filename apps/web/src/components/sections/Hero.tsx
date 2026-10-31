@@ -5,7 +5,7 @@ import { ActivePill } from "@/components/ui/ActivePill";
 import { Cta } from "@/components/ui/Cta";
 import { Carousel3D } from "@/components/widgets/Carousel3D";
 import { ring } from "@/content/home";
-import { MAC_DOWNLOAD_URL, isExternal } from "@/lib/downloads";
+import { GET_MAC_LABEL, MAC_DOWNLOAD_URL, isExternal } from "@/lib/downloads";
 
 export function Hero() {
   return (
@@ -33,7 +33,7 @@ export function Hero() {
             See how it works
           </Cta>
           <Cta href={MAC_DOWNLOAD_URL} tone="white" external={isExternal(MAC_DOWNLOAD_URL)}>
-            Download for Mac
+            {GET_MAC_LABEL}
           </Cta>
         </div>
       </div>

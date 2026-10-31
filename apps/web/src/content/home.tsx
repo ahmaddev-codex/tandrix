@@ -16,7 +16,13 @@ import {
   VerifiedTile,
   VideoTile,
 } from "@/components/widgets/Tiles";
-import { EARLY_ACCESS, IPHONE_DOWNLOAD_URL, MAC_DOWNLOAD_URL, isExternal } from "@/lib/downloads";
+import {
+  EARLY_ACCESS,
+  GET_MAC_LABEL,
+  IPHONE_DOWNLOAD_URL,
+  MAC_DOWNLOAD_URL,
+  isExternal,
+} from "@/lib/downloads";
 
 /** The hero carousel: real photos and footage between the moments Tandrix shows on screen. */
 export const ring: ReactNode[] = [
@@ -309,7 +315,7 @@ export const platforms: Array<{
       "Optional wake word, heard on the Mac only",
     ],
     cta: {
-      label: EARLY_ACCESS ? "Get early access" : "Download for Mac",
+      label: GET_MAC_LABEL,
       href: MAC_DOWNLOAD_URL,
       external: isExternal(MAC_DOWNLOAD_URL),
     },

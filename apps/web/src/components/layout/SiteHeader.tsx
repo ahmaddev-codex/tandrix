@@ -1,8 +1,9 @@
 // The header over a page's sky: the wordmark, the Product menu and the other pages, the theme switch
-// and Download.
+// and the way to get it.
 import { BrandWordmark } from "@tandrix/ui/web";
 import { Cta } from "@/components/ui/Cta";
 import { primary, product } from "@/content/site";
+import { GET_LABEL } from "@/lib/downloads";
 import { NavDropdown } from "./NavDropdown";
 import { NavMenu } from "./NavMenu";
 import { ThemeToggle } from "./ThemeToggle";
@@ -27,7 +28,7 @@ export function SiteHeader() {
         <ThemeToggle />
         <span className="hidden sm:inline">
           <Cta href="/#get" tone="white" arrow={false}>
-            Download
+            {GET_LABEL}
           </Cta>
         </span>
         <NavMenu />

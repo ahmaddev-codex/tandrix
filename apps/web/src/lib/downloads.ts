@@ -8,6 +8,9 @@ export const IPHONE_DOWNLOAD_URL = env(process.env.NEXT_PUBLIC_IPHONE_DOWNLOAD_U
 export const SOURCE_URL = env(process.env.NEXT_PUBLIC_SOURCE_URL);
 /** True while the buttons lead to the sign-up rather than a download. */
 export const EARLY_ACCESS = !env(process.env.NEXT_PUBLIC_MAC_DOWNLOAD_URL);
+/** What the buttons say: never "Download" until there's something to download. */
+export const GET_LABEL = EARLY_ACCESS ? "Get early access" : "Download";
+export const GET_MAC_LABEL = EARLY_ACCESS ? "Get early access" : "Download for Mac";
 
 /** Opens in a new tab only when it leaves the site. */
 export const isExternal = (url: string) => url.startsWith("https://");

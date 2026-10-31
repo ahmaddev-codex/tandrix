@@ -1,6 +1,6 @@
-// The closing banner: say it once more, with both downloads.
+// The closing banner: say it once more, with the way to get it.
 import { Cta } from "@/components/ui/Cta";
-import { IPHONE_DOWNLOAD_URL, MAC_DOWNLOAD_URL, isExternal } from "@/lib/downloads";
+import { GET_MAC_LABEL, IPHONE_DOWNLOAD_URL, MAC_DOWNLOAD_URL, isExternal } from "@/lib/downloads";
 
 export function Closing() {
   return (
@@ -21,16 +21,13 @@ export function Closing() {
         </p>
         <div className="mt-1.5 flex flex-wrap gap-3">
           <Cta href={MAC_DOWNLOAD_URL} tone="white" external={isExternal(MAC_DOWNLOAD_URL)}>
-            Download for Mac
+            {GET_MAC_LABEL}
           </Cta>
-          <Cta
-            href={IPHONE_DOWNLOAD_URL}
-            tone="glass"
-            arrow={false}
-            external={isExternal(IPHONE_DOWNLOAD_URL)}
-          >
-            Get for iPhone
-          </Cta>
+          {isExternal(IPHONE_DOWNLOAD_URL) ? (
+            <Cta href={IPHONE_DOWNLOAD_URL} tone="glass" arrow={false} external>
+              Get for iPhone
+            </Cta>
+          ) : null}
         </div>
       </div>
     </section>
