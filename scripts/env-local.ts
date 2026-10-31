@@ -52,9 +52,9 @@ const apiPort = keep("API_PORT", "8787");
 const localApi = `http://localhost:${apiPort}`;
 
 const sections: Array<[string, Array<[string, string]>]> = [
-  ["Environment", [["TANDRIX_ENV", "local"]]],
+  ["API: environment (the desktop app reads it too)", [["TANDRIX_ENV", "local"]]],
   [
-    "Meta Model API (server only). Use a separate dev key so local runs never touch production quota or billing.",
+    "API: Meta Model API (server only). Use a separate dev key so local runs never touch production quota or billing.",
     [
       ["META_API_KEY", kept.get("META_API_KEY") ?? ""],
       ["META_API_BASE_URL", keep("META_API_BASE_URL")],
@@ -63,10 +63,13 @@ const sections: Array<[string, Array<[string, string]>]> = [
       ["META_MODEL_SEGMENTATION", keep("META_MODEL_SEGMENTATION")],
       ["META_MODEL_TRANSCRIBE", keep("META_MODEL_TRANSCRIBE")],
       ["META_TIMEOUT_MS", keep("META_TIMEOUT_MS")],
+      ...(kept.get("META_SPEND_LIMIT_USD")
+        ? ([["META_SPEND_LIMIT_USD", kept.get("META_SPEND_LIMIT_USD")!]] as Array<[string, string]>)
+        : []),
     ],
   ],
   [
-    "Local Supabase (from `supabase status`; fixed local keys, not secrets)",
+    "API: local Supabase (from `supabase status`; fixed local keys, not secrets)",
     [
       ["SUPABASE_URL", apiUrl],
       ["SUPABASE_SECRET_KEY", status.SECRET_KEY],
@@ -77,7 +80,7 @@ const sections: Array<[string, Array<[string, string]>]> = [
     ],
   ],
   [
-    "Tandrix API",
+    "API: server",
     [
       ["API_PORT", apiPort],
       ["API_PUBLIC_URL", localApi],
@@ -98,8 +101,9 @@ const sections: Array<[string, Array<[string, string]>]> = [
       ],
     ],
   ],
+  ["Website (Next.js): reads Vercel or apps/web/.env.local, not this file", []],
   [
-    "Phone app. A physical phone can't reach 127.0.0.1: replace with this Mac's LAN IP to test on device.",
+    "Mobile (Expo): the app reads its copy in apps/mobile/.env.local. A physical phone can't reach 127.0.0.1: replace with this Mac's LAN IP to test on device.",
     [
       ["EXPO_PUBLIC_API_URL", localApi],
       ["EXPO_PUBLIC_SUPABASE_URL", apiUrl],
@@ -107,7 +111,7 @@ const sections: Array<[string, Array<[string, string]>]> = [
     ],
   ],
   [
-    "Mac app",
+    "Desktop (Electron, Vite)",
     [
       ["VITE_API_URL", localApi],
       ["VITE_SUPABASE_URL", apiUrl],
