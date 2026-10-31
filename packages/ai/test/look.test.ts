@@ -41,6 +41,20 @@ describe("lookAt", () => {
     expect(r).toMatchObject({ highlight: null, segmented: false });
   });
 
+  it("doesn't outline the whole view", async () => {
+    const { fetch, calls } = scriptedFetch([
+      answer({
+        label: "Raspberry Pi 5",
+        looksLike: "circuit board",
+        box: { x: 50, y: 50, w: 900, h: 850 },
+      }),
+    ]);
+    const client = new MetaClient({ apiKey: "k", fetch, sleep: noSleep });
+    const r = await lookAt(client, models, { photo, size, question: "What is this?" });
+    expect(r).toMatchObject({ highlight: null });
+    expect(calls).toHaveLength(1);
+  });
+
   it("outlines Spark's own box when the segmenter can't help", async () => {
     const { fetch, calls } = scriptedFetch([
       answer({

@@ -71,9 +71,14 @@ export default function Jobs() {
           >
             Pick up where you left off.
           </Text>
-          <Pill tone="white" icon="plus" onPress={() => router.push("/new-job")} testID="new-job">
-            Start a project
-          </Pill>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space["space-2"] }}>
+            <Pill tone="white" icon="plus" onPress={() => router.push("/new-job")} testID="new-job">
+              Start a project
+            </Pill>
+            <Pill tone="ink" icon="camera" onPress={() => router.push("/look")} testID="open-look">
+              Point the camera
+            </Pill>
+          </View>
         </View>
       </ImageBackground>
 

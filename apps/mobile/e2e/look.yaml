@@ -1,0 +1,42 @@
+# L1: point the camera. On the simulator (no camera; denied at launch) the photo stands in for the
+# camera frame: ask "What is this?" and Tandrix answers aloud and outlines what it means. One model
+# call (Spark, then SAM). Needs its photo in .media; see run.sh.
+appId: app.tandrix.mobile
+---
+- addMedia:
+    - .media/board-with-cooler.jpg
+- launchApp:
+    permissions:
+      all: allow
+      camera: deny
+- runFlow: subflows/open-app.yaml
+- tapOn:
+    id: open-look
+- extendedWaitUntil:
+    visible:
+      id: look-photo
+    timeout: 15000
+- assertVisible:
+    id: look-no-camera
+- takeScreenshot: look-no-camera
+- tapOn:
+    id: look-photo
+- runFlow:
+    file: subflows/pick-photo.yaml
+    env:
+      INDEX: 0
+- extendedWaitUntil:
+    visible: Ask about this photo.
+    timeout: 15000
+- tapOn:
+    id: look-what
+- extendedWaitUntil:
+    visible:
+      id: look-answer
+    timeout: 60000
+- assertVisible:
+    id: look-frame
+- takeScreenshot: look-answer
+- tapOn:
+    id: look-again
+- assertVisible: Ask about this photo.

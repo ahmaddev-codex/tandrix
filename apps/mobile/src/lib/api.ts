@@ -3,6 +3,7 @@ import type {
   CorrectDetectionRequest,
   CreateEvidenceRequest,
   GenerateProcedureRequest,
+  LookRequest,
   SaveAssetRequest,
   StepActionRequest,
   UpdateProfileRequest,
@@ -19,6 +20,7 @@ import {
   PartsCheckResponse,
   CorrectPartResponse,
   AskStepResponse,
+  LookResponse,
   TranscribeResponse,
   Detection,
   ManualResponse,
@@ -268,6 +270,13 @@ export const api = {
     request(`/jobs/${jobId}/steps/${jobStepId}/actions`, StepActionResponse, {
       method: "POST",
       body: JSON.stringify(body),
+    }),
+  /** Point the camera: a frame and a question; the answer, and what to outline on the frame. */
+  look: (body: z.input<typeof LookRequest>) =>
+    request("/look", LookResponse, {
+      method: "POST",
+      body: JSON.stringify(body),
+      timeoutMs: MODEL_TIMEOUT_MS,
     }),
   transcribe: (wavUri: string, keywords: string[]) => {
     const form = new FormData();

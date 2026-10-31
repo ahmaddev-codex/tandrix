@@ -61,3 +61,4 @@ flow voice-step.yaml pi
 flow check-step.yaml pi "$PHOTOS/board-with-cooler.jpg" "$PHOTOS/board-top.jpg"
 flow step-visuals.yaml pi "$PHOTOS/board-with-cooler.jpg"
 flow parts-check.yaml pi "$PHOTOS/parts-laid-out.jpg"
+flow look.yaml - "$PHOTOS/board-with-cooler.jpg"

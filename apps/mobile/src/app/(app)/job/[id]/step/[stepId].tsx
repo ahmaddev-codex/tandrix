@@ -25,6 +25,7 @@ import {
   CheckResult,
   HandoffBanner,
   HighlightCorrection,
+  Icon,
   Notice,
   PartHighlight,
   StepCard,
@@ -38,7 +39,7 @@ import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ScrollView, View, type ScrollViewInstance } from "react-native";
+import { Pressable, ScrollView, View, type ScrollViewInstance } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "@/lib/api";
 import { speak } from "@/voice/tts";
@@ -540,6 +541,18 @@ export default function StepScreen() {
           title: `Step ${data.index}`,
           animation: "slide_from_right",
           animationTypeForReplace: "push",
+          // Point the camera at a part and ask about it, with this step as the context.
+          headerRight: () => (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Point the camera"
+              testID="step-look"
+              hitSlop={10}
+              onPress={() => router.push({ pathname: "/look", params: { jobId: id, stepId } })}
+            >
+              <Icon name="camera" size={24} color="text" />
+            </Pressable>
+          ),
         }}
       />
       <ScrollView

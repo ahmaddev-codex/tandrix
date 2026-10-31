@@ -31,6 +31,9 @@ export interface LookOutcome {
 
 type Box = { x: number; y: number; w: number; h: number };
 
+/** A target this much of the frame is the whole view, not one thing in it. */
+const MOST_OF_FRAME = 0.5;
+
 const area = (b: Box) => b.w * b.h;
 function overlap(a: Box, b: Box): number {
   const w = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x);
@@ -83,6 +86,9 @@ export async function lookAt(
   if (!target) return { reply, highlight: null, segmented: false };
 
   const { width, height } = req.size;
+  // About the whole view ("that's a Raspberry Pi"): an outline round everything says nothing.
+  if ((target.box.w * target.box.h) / 1_000_000 > MOST_OF_FRAME)
+    return { reply, highlight: null, segmented: false };
   const rough = pixelBox(
     {
       x: (target.box.x / 1000) * width,
