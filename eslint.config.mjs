@@ -19,8 +19,6 @@ export default tseslint.config(
       "**/node_modules/**",
       "**/dist/**",
       "**/.next/**",
-      "**/.open-next/**",
-      "**/.wrangler/**",
       "apps/web/next-env.d.ts",
       "**/.expo/**",
       "docs/**",

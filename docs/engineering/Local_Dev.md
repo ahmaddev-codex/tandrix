@@ -174,30 +174,31 @@ App icons, on every surface, come from the mark in `scripts/build-app-icons.ts` 
 
 ## Deploying the website
 
-The website runs on Cloudflare Workers through [OpenNext](https://opennext.js.org/cloudflare). It stays well inside a free Worker (about 1.2 MB gzipped), and pages are prerendered except shared reports (`/r/[token]`).
+The website runs on [Vercel](https://vercel.com). Pages are prerendered except shared reports (`/r/[token]`).
 
-**Try it first in Cloudflare's runtime:**
+**Project settings.** Import the repo, then:
 
-```bash
-pnpm --filter @tandrix/web build:worker
-pnpm --filter @tandrix/web exec opennextjs-cloudflare preview --port 8788   # 8787 is the API
-```
+| Setting | Value |
+|---|---|
+| Root Directory | `apps/web` |
+| Framework Preset | Next.js |
+| Include files outside the Root Directory | On (the site uses `packages/ui` and `packages/contracts`) |
+| Production Branch | `main` |
 
-**Settings.** `NEXT_PUBLIC_*` values are compiled in at build time, so a change needs a new build. `API_PUBLIC_URL` is read when a report opens, so it's set on the Worker.
+Vercel finds pnpm and Node from the repo, so install and build commands stay on their defaults.
 
-| Setting | When | Value |
-|---|---|---|
-| `NEXT_PUBLIC_SITE_URL` | Build | The site's address, such as `https://tandrix.com`: social cards and the sitemap |
-| `NEXT_PUBLIC_API_URL` | Build | The API, for the early-access form |
-| `NEXT_PUBLIC_MAC_DOWNLOAD_URL`, `NEXT_PUBLIC_IPHONE_DOWNLOAD_URL` | Build | Optional. Until set, Get Tandrix leads to the early-access form |
-| `NEXT_PUBLIC_SOURCE_URL` | Build | Optional. Adds Source to the footer |
-| `API_PUBLIC_URL` | Runtime | The API, for shared reports |
+**Environment variables.** `NEXT_PUBLIC_*` values are compiled in at build time, so a change needs a new build. `API_PUBLIC_URL` is read when a report opens.
+
+| Variable | What it does |
+|---|---|
+| `NEXT_PUBLIC_API_URL` | The API, for the early-access form |
+| `API_PUBLIC_URL` | The API, for shared reports |
+| `NEXT_PUBLIC_SITE_URL` | Optional. The site's name for social cards and the sitemap, such as `https://tandrix.com`. Without it, Vercel's own production or preview address is used |
+| `NEXT_PUBLIC_MAC_DOWNLOAD_URL`, `NEXT_PUBLIC_IPHONE_DOWNLOAD_URL` | Optional. Until set, Get Tandrix leads to the early-access form |
+| `NEXT_PUBLIC_SOURCE_URL` | Optional. Adds Source to the footer |
 
 On the API, add the site's address to `CORS_ORIGINS`, or the early-access form is refused.
 
-**Deploy one of two ways:**
+Each push to a branch gets a preview, and a merge to `main` deploys to production. Security headers and media caching are in `apps/web/next.config.ts`.
 
-- **From this machine:** `pnpm --filter @tandrix/web exec wrangler login` once, then, with the build settings in the environment, `pnpm --filter @tandrix/web deploy`. Set `API_PUBLIC_URL` with `pnpm --filter @tandrix/web exec wrangler secret put API_PUBLIC_URL`, or as a variable in the dashboard; deploys keep it (`keep_vars`).
-- **From GitHub (Workers Builds):** connect the repo in the Cloudflare dashboard with the root directory `apps/web`, the build command `pnpm run build` the deploy command `npx wrangler deploy`, and for other branches `npx wrangler preview`. Wrangler builds the Worker itself for both, through the `build` block in `apps/web/wrangler.jsonc`, so don't remove it; previews also need its `previews` block. Put the build settings under Build variables and `API_PUBLIC_URL` under the Worker's variables.
-
-Add the custom domain under the Worker's Settings > Domains & Routes. Security headers are in `apps/web/next.config.ts`, and static file caching in `apps/web/public/_headers`. CI checks the Worker builds and fits on every push.
+To try the production build locally: `pnpm --filter @tandrix/web build && pnpm --filter @tandrix/web start`.

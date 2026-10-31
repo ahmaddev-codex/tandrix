@@ -24,6 +24,11 @@ const config: NextConfig = {
       { source: "/:path*", headers: security },
       // A shared report's address is its key: never send it to another site.
       { source: "/r/:token", headers: [{ key: "Referrer-Policy", value: "no-referrer" }] },
+      // Next's hashed files are cached for good by the host; the media can change, so a day.
+      {
+        source: "/:dir(photos|videos|audio)/:path*",
+        headers: [{ key: "Cache-Control", value: "public, max-age=86400" }],
+      },
     ];
   },
 };
