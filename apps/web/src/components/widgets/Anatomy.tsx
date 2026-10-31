@@ -80,7 +80,7 @@ const layers: Layer[] = [
   },
   {
     name: "Tandrix is active",
-    says: "The pill at the top of your screen: listening, thinking or in control. Esc stops it.",
+    says: "The pill at the top of your screen: listening, looking or in control. Esc stops it.",
     plate: (
       <span className="inline-flex items-center gap-2.5 rounded-full bg-[#0b0b0c] py-2 pr-3.5 pl-2 text-sm font-medium text-white shadow-[0_0_0_2px_var(--highlight),0_0_26px_-2px_color-mix(in_srgb,var(--highlight)_75%,transparent)]">
         <BrandMark size={22} />

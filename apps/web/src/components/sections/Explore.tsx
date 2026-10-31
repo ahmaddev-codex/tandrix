@@ -9,7 +9,7 @@ export function Explore() {
       id="explore"
       band
       labelledBy="explore-title"
-      presence={{ state: "thinking", label: "Thinking" }}
+      presence={{ state: "looking", label: "Looking at your screen" }}
     >
       <SectionHead id="explore-title" title="See what it can do for you" />
       <Explorer places={places} />
