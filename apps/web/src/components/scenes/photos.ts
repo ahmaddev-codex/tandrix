@@ -2,13 +2,13 @@
 // Outlines on the parts photo are what Tandrix's segmenter found on it.
 import type { PhotoSpec } from "./Photo";
 
-/** A spreadsheet on a laptop: Tandrix rings the Insert tab. */
+/** A spreadsheet, straight on: Tandrix rings the Insert tab. */
 export const excelPhoto: PhotoSpec = {
   src: "/photos/budget-laptop.jpeg",
-  w: 736,
-  h: 1308,
-  crop: { x: 44, y: 378, w: 530, h: 440 },
-  ring: { x: 76, y: 447, w: 30, h: 16, caption: "Click Insert, then PivotTable", place: "right" },
+  w: 2752,
+  h: 1536,
+  crop: { x: 0, y: 0, w: 1300, h: 1080 },
+  ring: { x: 150, y: 72, w: 74, h: 30, caption: "Click Insert, then PivotTable", place: "right" },
 };
 
 /** System Settings on Wi-Fi. Private names are replaced with neutral ones. */
@@ -27,18 +27,18 @@ export const wifiPhoto: PhotoSpec = {
   ring: { x: 500, y: 838, w: 900, h: 82, caption: "Click Home-5G to join it" },
 };
 
-/** A calendar on a laptop: Tandrix has found the free slot. */
+/** A calendar, straight on: Tandrix has found the free slot and is booking it. */
 export const calendarPhoto: PhotoSpec = {
   src: "/photos/calendar-laptop.jpeg",
   w: 736,
-  h: 1104,
-  crop: { x: 0, y: 110, w: 620, h: 640 },
+  h: 552,
+  crop: { x: 37, y: 57, w: 663, h: 439 },
   ring: {
-    x: 368,
-    y: 466,
-    w: 68,
-    h: 78,
-    caption: "Thursday at 10 is free. Booking it.",
+    x: 424,
+    y: 275,
+    w: 67,
+    h: 32,
+    caption: "Wednesday at 9:30 is free. Booking it.",
     place: "belowEnd",
   },
 };
@@ -82,8 +82,8 @@ export const bookletPhoto: PhotoSpec = {
 export const analyticsPhoto: PhotoSpec = {
   src: "/photos/analytics-laptop.jpeg",
   w: 736,
-  h: 1308,
-  crop: { x: 0, y: 160, w: 736, h: 760 },
+  h: 920,
+  crop: { x: 0, y: 60, w: 736, h: 780 },
 };
 
 /** The same diagram, cropped to the robot, with the sensor ringed: the picture on a step card. */
