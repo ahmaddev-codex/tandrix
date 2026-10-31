@@ -33,7 +33,14 @@ export const calendarPhoto: PhotoSpec = {
   w: 736,
   h: 1104,
   crop: { x: 0, y: 110, w: 620, h: 640 },
-  ring: { x: 368, y: 466, w: 68, h: 78, caption: "Thursday at 10 is free. Booking it." },
+  ring: {
+    x: 368,
+    y: 466,
+    w: 68,
+    h: 78,
+    caption: "Thursday at 10 is free. Booking it.",
+    place: "belowEnd",
+  },
 };
 
 /** An exploded diagram from a robot kit's manual: Tandrix names the part. */

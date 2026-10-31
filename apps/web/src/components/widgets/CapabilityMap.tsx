@@ -58,10 +58,8 @@ function Card({ g, side, order }: { g: Group; side: "l" | "r"; order: number }) 
       style={{ animationDelay: `${order * 120}ms` }}
       className="grid gap-3.5 rounded-[20px] bg-paper px-[22px] py-5 shadow-[0_0_0_1px_var(--line),0_1px_2px_rgba(9,40,90,0.06),0_10px_24px_-18px_rgba(9,40,90,0.22)] transition-[transform,box-shadow] duration-300 ease-out-soft hover:-translate-y-[3px] hover:shadow-[0_0_0_1px_color-mix(in_srgb,var(--highlight)_50%,var(--line)),0_1px_2px_rgba(9,40,90,0.06),0_10px_24px_-18px_rgba(9,40,90,0.22)] motion-safe:translate-y-3.5 motion-safe:opacity-0 motion-safe:group-data-shown:animate-card-in"
     >
-      <header className="flex items-center gap-3">
-        <span className="grid size-[38px] flex-none place-items-center rounded-[11px] bg-highlight text-white">
-          <Icon name={g.icon} size={20} />
-        </span>
+      <header className="flex items-center gap-2.5">
+        <Icon name={g.icon} size={20} weight="fill" className="flex-none text-highlight" />
         <h3 className="text-[19px] font-medium tracking-[-0.02em]">{g.name}</h3>
       </header>
       <ul className="m-0 flex list-none flex-wrap gap-1.5 p-0">

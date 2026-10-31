@@ -18,13 +18,6 @@ import {
 } from "@/components/widgets/Tiles";
 import { EARLY_ACCESS, IPHONE_DOWNLOAD_URL, MAC_DOWNLOAD_URL, isExternal } from "@/lib/downloads";
 
-export const nav = [
-  { href: "#what", label: "What it does" },
-  { href: "#day", label: "A day with it" },
-  { href: "#explore", label: "Uses" },
-  { href: "#faq", label: "Questions" },
-] as const;
-
 /** The hero carousel: real photos and footage between the moments Tandrix shows on screen. */
 export const ring: ReactNode[] = [
   <MarkTile key="mark" />,

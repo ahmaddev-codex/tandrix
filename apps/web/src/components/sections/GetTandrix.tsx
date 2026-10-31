@@ -4,7 +4,7 @@ import { Cta } from "@/components/ui/Cta";
 import { EarlyAccess } from "@/components/widgets/EarlyAccess";
 import { platforms } from "@/content/home";
 import { EARLY_ACCESS } from "@/lib/downloads";
-import { CardIcon, Section, SectionHead, Soft, Tray } from "./Section";
+import { Section, SectionHead, Soft, Tray } from "./Section";
 
 export function GetTandrix() {
   return (
@@ -30,23 +30,24 @@ export function GetTandrix() {
             key={p.name}
             className="grid content-start gap-[18px] rounded-[20px] bg-paper p-6"
           >
-            <p className="flex items-center gap-3.5 text-lg font-medium">
-              <CardIcon>
-                <Icon name={p.icon} size={20} />
-              </CardIcon>
-              {p.name}
-            </p>
+            <h3 className="flex items-center gap-2.5 text-lg font-medium">
+              <Icon name={p.icon} size={20} weight="fill" className="flex-none text-highlight" />
+              <span>{p.name}</span>
+            </h3>
             <p className="max-w-[34ch] text-base leading-normal text-text-2">{p.lead}</p>
             <p className="text-[clamp(36px,3.6vw,48px)] leading-none font-normal tracking-[-0.04em]">
               {p.big}
             </p>
-            <ul className="mt-1 mb-2 grid list-none gap-3.5 p-0 text-[15px]">
+            <ul className="mt-1 mb-2 grid list-none gap-3 p-0 text-[15px]">
               {p.items.map((it) => (
-                <li key={it} className="flex items-center gap-3">
-                  <span className="inline-grid size-[22px] flex-none place-items-center rounded-full bg-highlight text-white">
-                    <Icon name="check" size={16} />
-                  </span>
-                  {it}
+                <li key={it} className="flex items-center gap-2.5">
+                  <Icon
+                    name="sealCheck"
+                    size={20}
+                    weight="fill"
+                    className="flex-none text-highlight"
+                  />
+                  <span>{it}</span>
                 </li>
               ))}
             </ul>

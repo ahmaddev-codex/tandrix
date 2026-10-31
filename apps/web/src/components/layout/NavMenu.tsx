@@ -1,13 +1,11 @@
 "use client";
-// Section navigation on small screens, where the inline links don't fit.
+// The site's pages on small screens, where the header's links don't fit.
 import { useState } from "react";
+import { primary, product } from "@/content/site";
 
 const links: Array<[string, string]> = [
-  ["#what", "What it does"],
-  ["#day", "A day with it"],
-  ["#explore", "Uses"],
-  ["#faq", "Questions"],
-  ["#get", "Download"],
+  ...[...product, ...primary].map((l): [string, string] => [l.href, l.label]),
+  ["/#get", "Download"],
 ];
 
 export function NavMenu() {

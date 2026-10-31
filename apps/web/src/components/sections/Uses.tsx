@@ -4,10 +4,10 @@ import { Clip } from "@/components/ui/Clip";
 import { Cta } from "@/components/ui/Cta";
 import { uses } from "@/content/home";
 import { cn } from "@/lib/cn";
-import { CardIcon, Section, SectionHead, Tray } from "./Section";
+import { Section, SectionHead, Tray } from "./Section";
 
 const card =
-  "flex min-h-[250px] flex-col items-start gap-2.5 rounded-[20px] bg-paper p-[22px] text-ink no-underline transition-[transform,box-shadow] duration-300 ease-out-soft hover:-translate-y-[3px] hover:shadow-soft [&_h3]:mt-auto [&_h3]:text-2xl [&_h3]:font-medium [&_h3]:tracking-[-0.03em] [&_p]:max-w-[34ch] [&_p]:text-[15.5px] [&_p]:leading-normal [&_p]:text-text-2";
+  "flex min-h-[220px] flex-col items-start gap-3 rounded-[20px] bg-paper p-[22px] text-ink no-underline transition-[transform,box-shadow] duration-300 ease-out-soft hover:-translate-y-[3px] hover:shadow-soft [&_h3]:text-2xl [&_h3]:font-medium [&_h3]:tracking-[-0.03em] [&_p]:max-w-[34ch] [&_p]:text-[15.5px] [&_p]:leading-normal [&_p]:text-text-2";
 const wide =
   "sm:col-span-2 grid min-h-[300px] items-stretch gap-5 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]";
 
@@ -24,11 +24,11 @@ function WideCard({
 }) {
   return (
     <article className={cn(card, wide)}>
-      <div className="flex flex-col items-start gap-2.5">
-        <CardIcon>
-          <Icon name={icon} size={20} />
-        </CardIcon>
-        <h3>{title}</h3>
+      <div className="flex flex-col justify-center items-start gap-3">
+        <h3 className="flex items-center gap-2.5 text-2xl font-medium tracking-[-0.03em]">
+          <Icon name={icon} size={20} weight="fill" className="flex-none text-highlight" />
+          <span>{title}</span>
+        </h3>
         <p>{body}</p>
       </div>
       <div className="relative aspect-[16/10] overflow-hidden rounded-[14px] bg-mist sm:aspect-auto">
@@ -67,10 +67,10 @@ export function Uses() {
         />
         {uses.map((u) => (
           <article key={u.title} className={card}>
-            <CardIcon>
-              <Icon name={u.icon} size={20} />
-            </CardIcon>
-            <h3>{u.title}</h3>
+            <h3 className="flex items-center gap-2.5 text-2xl font-medium tracking-[-0.03em]">
+              <Icon name={u.icon} size={20} weight="fill" className="flex-none text-highlight" />
+              <span>{u.title}</span>
+            </h3>
             <p>{u.body}</p>
           </article>
         ))}
@@ -81,12 +81,12 @@ export function Uses() {
             "bg-[#0b0b0c] text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus [&_p]:text-white/[0.72]",
           )}
         >
-          <CardIcon>
-            <Icon name="gear" size={20} />
-          </CardIcon>
-          <h3>How Tandrix works</h3>
+          <h3 className="flex items-center gap-2.5 text-2xl font-medium tracking-[-0.03em]">
+            <Icon name="gear" size={20} weight="fill" className="flex-none text-[#8fbcff]" />
+            <span>How Tandrix works</span>
+          </h3>
           <p>The layers it adds over your work, and how you stay in control.</p>
-          <span className="inline-flex items-center gap-1.5 text-sm font-medium text-[#8fbcff]">
+          <span className="mt-auto inline-flex items-center gap-1.5 text-sm font-medium text-[#8fbcff]">
             See inside <Icon name="arrowRight" size={16} />
           </span>
         </a>
