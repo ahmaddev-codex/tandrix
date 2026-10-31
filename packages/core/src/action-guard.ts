@@ -34,7 +34,8 @@ export type DenyCode =
 export const guardLimits = {
   /** One task: three calendar events from a chat take about 30 actions. Esc stops any task. */
   maxActionsPerRequest: 150,
-  minGapMs: 300,
+  /** A floor against a runaway loop; the pointer's own pause sets the pace. */
+  minGapMs: 30,
   /** Above the pace the pointer's announce allows (about two a second), so it never throttles. */
   maxPerMinute: 120,
 } as const;

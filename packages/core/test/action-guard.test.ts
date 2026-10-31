@@ -182,7 +182,7 @@ describe("limits", () => {
     expect(r).toMatchObject({ decision: "deny", code: "action_limit" });
   });
   it("enforces a gap between actions", () => {
-    expect(guardAction(click, ctx({ recentActionTimes: [NOW - 100] }))).toMatchObject({
+    expect(guardAction(click, ctx({ recentActionTimes: [NOW - 10] }))).toMatchObject({
       code: "rate_limit",
     });
     expect(

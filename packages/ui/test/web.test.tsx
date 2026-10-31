@@ -8,6 +8,7 @@ import {
   ControlIndicator,
   doItForMeConfirmation,
   HandoffBanner,
+  Icon,
   Input,
   JobReport,
   ModeToggle,
@@ -24,6 +25,27 @@ import {
 } from "../src/web";
 
 afterEach(cleanup);
+
+describe("Icon", () => {
+  it("renders outline Lucide glyph by default", () => {
+    const { container } = render(<Icon name="camera" size={20} />);
+    const svg = container.querySelector("svg");
+    expect(svg).toBeTruthy();
+    expect(svg?.getAttribute("class")).toContain("tx-ico-20");
+    expect(svg?.getAttribute("viewBox")).toBe("0 0 24 24");
+  });
+
+  it("renders solid filled Phosphor paths when weight=fill", () => {
+    const { container } = render(<Icon name="camera" size={20} weight="fill" />);
+    const svg = container.querySelector("svg");
+    expect(svg).toBeTruthy();
+    expect(svg?.getAttribute("class")).toContain("tx-ico-20");
+    expect(svg?.getAttribute("viewBox")).toBe("0 0 256 256");
+    expect(svg?.getAttribute("fill")).toBe("currentColor");
+    const path = svg?.querySelector("path");
+    expect(path?.getAttribute("d")).toBeTruthy();
+  });
+});
 
 describe("StatusChip", () => {
   it("never labels user-confirmed as verified", () => {

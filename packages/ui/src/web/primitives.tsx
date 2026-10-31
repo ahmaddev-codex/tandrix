@@ -1,41 +1,5 @@
 "use client";
 import {
-  ArrowRight,
-  ChevronLeft,
-  ChevronRight,
-  Ban,
-  BookOpen,
-  Camera,
-  Check,
-  CircleDashed,
-  Clock3,
-  Expand,
-  EyeOff,
-  FileText,
-  FolderKanban,
-  Gauge,
-  Glasses,
-  House,
-  Hand,
-  Image,
-  Info,
-  Laptop,
-  ListChecks,
-  Mic,
-  Monitor,
-  Menu,
-  MousePointer2,
-  Power,
-  Plus,
-  RotateCcw,
-  Settings,
-  Smartphone,
-  TriangleAlert,
-  UserRound,
-  Video,
-  X,
-} from "lucide-react";
-import {
   useId,
   useState,
   type ButtonHTMLAttributes,
@@ -44,6 +8,7 @@ import {
 } from "react";
 import {
   genericSourceLabel,
+  iconPathsFor,
   sourceIcon,
   statusMeta,
   type IconName,
@@ -56,61 +21,30 @@ import { cx } from "./cx";
 export interface IconProps {
   name: IconName;
   size?: 16 | 20 | 24;
-  /** Kept for API compatibility; Lucide uses a consistent outline style. */
+  /** Defaults to the design system's rule: solid (fill) below 20 px, outline at 20 px and up. */
   weight?: IconWeight;
   /** Accessible name; omit for decorative icons. */
   label?: string;
   className?: string;
 }
 
-const iconGlyphs = {
-  check: Check,
-  user: UserRound,
-  alert: TriangleAlert,
-  eyeOff: EyeOff,
-  stop: Ban,
-  clock: Clock3,
-  progress: CircleDashed,
-  info: Info,
-  book: BookOpen,
-  video: Video,
-  camera: Camera,
-  monitor: Monitor,
-  file: FileText,
-  mic: Mic,
-  power: Power,
-  gauge: Gauge,
-  arrowRight: ArrowRight,
-  chevronLeft: ChevronLeft,
-  chevronRight: ChevronRight,
-  actions: ListChecks,
-  projects: FolderKanban,
-  home: House,
-  plus: Plus,
-  menu: Menu,
-  gear: Settings,
-  retake: RotateCcw,
-  glasses: Glasses,
-  laptop: Laptop,
-  phone: Smartphone,
-  x: X,
-  pointer: MousePointer2,
-  hand: Hand,
-  image: Image,
-  expand: Expand,
-} as const;
-
-export function Icon({ name, size = 16, label, className }: IconProps) {
-  const Glyph = iconGlyphs[name];
+export function Icon({ name, size = 16, weight, label, className }: IconProps) {
+  const paths = iconPathsFor(name, size, weight);
   return (
-    <Glyph
+    <svg
       className={cx("tx-ico", size === 20 && "tx-ico-20", size === 24 && "tx-ico-24", className)}
-      size={size}
-      strokeWidth={size === 16 ? 2 : 1.8}
+      viewBox="0 0 256 256"
+      fill="currentColor"
+      width={size}
+      height={size}
       aria-hidden={label ? undefined : true}
       role={label ? "img" : undefined}
       aria-label={label}
-    />
+    >
+      {paths.map((p, i) => (
+        <path key={i} d={p.d} opacity={p.o} />
+      ))}
+    </svg>
   );
 }
 

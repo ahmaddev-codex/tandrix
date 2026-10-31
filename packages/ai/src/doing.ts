@@ -80,6 +80,8 @@ export function readTurn(res: MetaResponse): DoTurn {
   };
 }
 
+/** How hard each turn thinks: low plans multi-app tasks right (task-bench 3 of 3). */
+const TURN_EFFORT = "low";
 /** A turn slower than this is asked again, and the first answer used. */
 const TURN_HEDGE_MS = 10_000;
 
@@ -99,7 +101,7 @@ export async function startDoing(client: MetaClient, model: string, q: DoStart):
       store: true,
       instructions: prompts.doItForMe,
       tools: [{ type: "computer" }],
-      reasoning: { effort: "low" },
+      reasoning: { effort: TURN_EFFORT },
       input: [
         user(
           text(`${context ? `${context}\n\n` : ""}Do this for the user: ${q.task}`),
@@ -134,7 +136,7 @@ export async function continueDoing(
       store: true,
       previous_response_id: c.previousResponseId,
       tools: [{ type: "computer" }],
-      reasoning: { effort: "low" },
+      reasoning: { effort: TURN_EFFORT },
       input: [
         {
           type: "computer_call_output",

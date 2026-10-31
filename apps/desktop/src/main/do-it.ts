@@ -1,7 +1,7 @@
 // Running one batch of model-proposed actions for Do it for me, in the main process. Each action:
 // mapped from screenshot pixels to the display, checked by the action guard (@tandrix/core),
-// confirmed by the user in a native alert when the guard or the model asks, announced with the
-// pointer for about a second, then run. Any input from the user, Esc or the hotkey stops it.
+// confirmed by the user in a native alert when the guard or the model asks, shown with the
+// pointer, then run. Esc or the hotkey stops it.
 import { guardAction, type GuardDecision } from "@tandrix/core";
 import { ROUTINE_ACTION_CHECK } from "@tandrix/contracts";
 import type { ControlMode, DesktopAction, SafetyCheck, ScreenGeometry } from "@tandrix/contracts";
@@ -9,8 +9,10 @@ import type { ControlMode, DesktopAction, SafetyCheck, ScreenGeometry } from "@t
 type Point = { x: number; y: number };
 import type { DriverCommand, DriverReply } from "./input-driver";
 
-/** How long the pointer shows what's next before it happens: the user's window to stop it. */
-export const ANNOUNCE_MS = 450;
+/** How long the pointer shows where it's going before acting there, so the user can follow it. */
+export const ANNOUNCE_MS = 280;
+/** Typing or keys where the pointer already is: just enough for the ripple to show. */
+export const ANNOUNCE_HERE_MS = 40;
 
 export type BatchResult =
   | { status: "ran"; ran: number; acknowledged: SafetyCheck[] }
@@ -176,9 +178,11 @@ export async function runBatch(b: Batch, d: BatchDeps): Promise<BatchResult> {
 
     const cmd = command(action, b.geometry);
     if (!cmd) continue;
-    // Show what's next, and give the user a moment to stop it.
-    d.announce(where(action, b.geometry) ?? "here", caption(action), actOf(action));
-    if (await d.waitOrStop(ANNOUNCE_MS)) return stop("Stopped. You have control back.");
+    // Show where it's going, so the user can follow it (Esc stops it any time).
+    const at = where(action, b.geometry);
+    d.announce(at ?? "here", caption(action), actOf(action));
+    if (await d.waitOrStop(at ? ANNOUNCE_MS : ANNOUNCE_HERE_MS))
+      return stop("Stopped. You have control back.");
     const r = await d.drive(cmd);
     d.history.push(d.now());
     if (!r.ok) {
