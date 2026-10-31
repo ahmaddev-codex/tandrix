@@ -11,22 +11,6 @@ export const excelPhoto: PhotoSpec = {
   ring: { x: 150, y: 72, w: 74, h: 30, caption: "Click Insert, then PivotTable", place: "right" },
 };
 
-/** System Settings on Wi-Fi. Private names are replaced with neutral ones. */
-export const wifiPhoto: PhotoSpec = {
-  src: "/photos/wifi-settings.jpeg",
-  w: 1460,
-  h: 1666,
-  crop: { x: 480, y: 20, w: 960, h: 1070 },
-  patches: [
-    { x: 512, y: 258, w: 330, h: 42, text: "Sam’s iPhone", size: 26 },
-    { x: 572, y: 482, w: 330, h: 42, text: "Sam’s iPhone", size: 26 },
-    { x: 572, y: 676, w: 230, h: 46, text: "Neighbour", size: 26 },
-    { x: 572, y: 768, w: 300, h: 42, text: "Cafe-Guest", size: 26 },
-    { x: 572, y: 858, w: 260, h: 42, text: "Home-5G", size: 26 },
-  ],
-  ring: { x: 500, y: 838, w: 900, h: 82, caption: "Click Home-5G to join it" },
-};
-
 /** A calendar, straight on: Tandrix has found the free slot and is booking it. */
 export const calendarPhoto: PhotoSpec = {
   src: "/photos/calendar-laptop.jpeg",

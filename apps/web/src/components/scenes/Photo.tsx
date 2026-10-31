@@ -16,8 +16,6 @@ export interface PhotoSpec {
   ring?: Rect & { caption: string; place?: "below" | "right" | "belowEnd" };
   /** Parts Tandrix outlined, with their names. */
   boxes?: Array<Rect & { label?: string }>;
-  /** Patches over private details in a macOS screenshot (its #f7f7f7 grey), with neutral text. */
-  patches?: Array<Rect & { text?: string; size?: number }>;
 }
 
 const pct = (v: number, of: number) => `${(v / of) * 100}%`;
@@ -52,18 +50,6 @@ export function Photo({ spec, className }: { spec: PhotoSpec; className?: string
           top: pct(-c.y, c.h),
         }}
       />
-      {spec.patches?.map((pa, i) => (
-        <span
-          key={i}
-          className="absolute flex items-center overflow-hidden bg-[#f7f7f7] font-[-apple-system,'SF_Pro_Text',var(--font-sans)] whitespace-nowrap text-[#1d1d1f]"
-          style={{
-            ...at(pa),
-            fontSize: pa.size ? `${(pa.size / c.w) * 100}cqw` : undefined,
-          }}
-        >
-          {pa.text}
-        </span>
-      ))}
       {spec.boxes?.map((b, i) => (
         <span
           key={i}

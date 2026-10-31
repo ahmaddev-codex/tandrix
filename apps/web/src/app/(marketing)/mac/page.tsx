@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { CardTray, Closer, Feature, PageShell, cardShadow } from "@/components/page/Page";
 import { Photo } from "@/components/scenes/Photo";
-import { analyticsPhoto, calendarPhoto, excelPhoto, wifiPhoto } from "@/components/scenes/photos";
+import { analyticsPhoto, calendarPhoto, excelPhoto } from "@/components/scenes/photos";
+import { TalkScene } from "@/components/scenes/Scenes";
 
 export const metadata: Metadata = {
   title: "Tandrix for Mac",
@@ -99,7 +100,7 @@ export default function MacPage() {
             body: "Teach it your voice and it answers you, not the TV or someone across the room.",
           },
         ]}
-        media={<Photo spec={wifiPhoto} className={cardShadow} />}
+        media={<TalkScene className={cardShadow} />}
       />
 
       <CardTray
