@@ -744,3 +744,14 @@ export const RecordedProcedureRequest = z.strictObject({
   task: text(300).optional(),
 });
 export type RecordedProcedureRequest = z.infer<typeof RecordedProcedureRequest>;
+
+/**
+ * Writing the steps in the background (POST /jobs/:id/procedure/start, GET …/run). The final
+ * answers are GenerateProcedureResponse's; until then "writing", or "idle" when nothing has started.
+ */
+export const ProcedureRunResponse = z.union([
+  z.strictObject({ status: z.literal("idle") }),
+  z.strictObject({ status: z.literal("writing") }),
+  GenerateProcedureResponse,
+]);
+export type ProcedureRunResponse = z.infer<typeof ProcedureRunResponse>;

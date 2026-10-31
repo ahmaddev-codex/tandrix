@@ -22,6 +22,7 @@ import {
   CorrectPartResponse,
   AskStepResponse,
   LookResponse,
+  ProcedureRunResponse,
   TranscribeResponse,
   Detection,
   ManualResponse,
@@ -40,6 +41,7 @@ import {
   PairingLookupResponse,
   type Surface,
 } from "@tandrix/contracts";
+import { waitForProcedure } from "@tandrix/core";
 import { z } from "zod";
 import { File } from "expo-file-system";
 import { env } from "./env";
@@ -257,11 +259,16 @@ export const api = {
       method: "POST",
       body: JSON.stringify(body),
     }),
+  /** Writes the steps in the background and waits; a dropped connection doesn't lose them. */
   generateProcedure: (jobId: string, body: z.input<typeof GenerateProcedureRequest> = {}) =>
-    request(`/jobs/${jobId}/procedure`, GenerateProcedureResponse, {
-      timeoutMs: MODEL_TIMEOUT_MS,
-      method: "POST",
-      body: JSON.stringify(body),
+    waitForProcedure({
+      start: () =>
+        request(`/jobs/${jobId}/procedure/start`, ProcedureRunResponse, {
+          method: "POST",
+          body: JSON.stringify(body),
+        }),
+      check: () => request(`/jobs/${jobId}/procedure/run`, ProcedureRunResponse),
+      isOffline: (e) => e instanceof ApiError && e.status === 0,
     }),
   highlight: (jobId: string, jobStepId: string, evidenceId: string) =>
     request(`/jobs/${jobId}/steps/${jobStepId}/highlight`, HighlightResponse, {

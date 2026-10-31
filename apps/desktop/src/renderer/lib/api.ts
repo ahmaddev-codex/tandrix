@@ -10,7 +10,7 @@ import {
   CheckStepResponse,
   DoNotesResponse,
   DoTurnResponse,
-  GenerateProcedureResponse,
+  ProcedureRunResponse,
   StepVisualsResponse,
   CreateEvidenceResponse,
   Evidence,
@@ -28,6 +28,7 @@ import {
   type StepActionRequest,
   type UpdateProfileRequest,
 } from "@tandrix/contracts";
+import { waitForProcedure } from "@tandrix/core";
 import { z } from "zod";
 import { env } from "./env";
 import { supabase } from "./supabase";
@@ -127,10 +128,16 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ title, surface: "desktop" }),
     }).then((r) => r.job),
+  /** Writes the steps in the background and waits; a dropped connection doesn't lose them. */
   generateProcedure: (jobId: string, body: z.input<typeof GenerateProcedureRequest>) =>
-    request(`/jobs/${jobId}/procedure`, GenerateProcedureResponse, {
-      method: "POST",
-      body: JSON.stringify(body),
+    waitForProcedure({
+      start: () =>
+        request(`/jobs/${jobId}/procedure/start`, ProcedureRunResponse, {
+          method: "POST",
+          body: JSON.stringify(body),
+        }),
+      check: () => request(`/jobs/${jobId}/procedure/run`, ProcedureRunResponse),
+      isOffline: (e) => e instanceof ApiError && e.status === 0,
     }),
   getJob: (id: string) => request(`/jobs/${id}`, JobDetailResponse),
   createEvidence: (jobId: string, body: z.input<typeof CreateEvidenceRequest>) =>

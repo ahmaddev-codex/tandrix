@@ -145,7 +145,7 @@ All routes authenticated (Supabase JWT), Zod-validated, and scoped to the owner.
 
 Errors: every database error is converted to an `Error` before it leaves a repo (Supabase returns plain objects, which Hono would not route to the error handler), and a safety net converts anything else thrown. A token whose account no longer exists gets 401 on writes; the phone signs out on any 401.
 
-Long calls (procedure generation, recording) should return a job ID and stream progress over Supabase Realtime. **Current state:** procedure generation is one synchronous request (up to ~3 min per model attempt) and the phone shows time-based progress. Moving it to the async pattern is tracked as H10; until then a dropped connection means the user retries.
+Writing a job's steps runs in the background. `POST /jobs/:id/procedure/start` claims the job's one run (`procedure_runs`, `claim_procedure_run`) and answers at once; the work carries on in the API process, and `GET /jobs/:id/procedure/run` reports `writing`, `created` or `unavailable`. Both apps poll every 2 s through `waitForProcedure` (`@tandrix/core`), riding out a dropped connection. Starting again finds the same run, so reopening the app or retrying never writes or pays twice. A run still marked running after 8 minutes was lost to a restart or deploy, and can be claimed again. Polling rather than Realtime: the table has no client policies, and it survives a Realtime disconnect. Record mode (about 10 s) is still one waiting request.
 
 ## 6. AI pipelines
 

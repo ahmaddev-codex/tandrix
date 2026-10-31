@@ -16,6 +16,7 @@ import { metaManualFinder, noModelFinder } from "./manual-finder";
 import { supabaseManualsRepo } from "./repos/manuals";
 import { metaScreenGuide, noModelScreenGuide } from "./screen-guide";
 import { metaLooker, noModelLooker } from "./looker";
+import { supabaseProcedureRunsRepo } from "./repos/procedure-runs";
 import { metaPartsChecker, noModelPartsChecker } from "./parts-checker";
 import { supabasePartsChecksRepo } from "./repos/parts-checks";
 import { metaStepChecker, noModelChecker } from "./step-checker";
@@ -87,6 +88,7 @@ const app = createApp({
   manualStorage: supabaseEvidenceStorage(admin, "manuals"),
   manualFinder,
   procedures: supabaseProceduresRepo(admin),
+  procedureRuns: supabaseProcedureRunsRepo(admin),
   procedureGenerator,
   detections: supabaseDetectionsRepo(admin),
   highlighter,

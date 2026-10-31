@@ -22,9 +22,9 @@ manual needs a human run; everything else runs in `pnpm test`.
 
 ## Notes
 
-- Async procedure generation (long manuals) is H10, not here: a dropped connection during
-  a 1–3 min generate currently loses the result. The API returns 502/504 and the client
-  shows "try again"; nothing is half-saved (single-transaction save).
+- A dropped connection while steps are written loses nothing: the run carries on in the API,
+  and the app finds it again (H10, `test/procedure-run.test.ts`). A restart mid-run marks it lost
+  after 8 minutes and it can be started again; nothing is half-saved (single-transaction save).
 - Prompt-injection cases are rule-pinned, not behaviourally tested: the model side needs
   recorded adversarial responses, which don't exist yet. Red-team manually before release.
 - Manual-device rows (permissions, airplane mode, second-language run) are the product

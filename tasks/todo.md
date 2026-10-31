@@ -107,7 +107,7 @@ Tracks: **D** design, **A** mobile & glasses, **B** API & AI, **C** desktop (mac
 - [x] H7 Desktop gallery.html build entry
 - [x] H8 Demo clips from owner → wired into slot + credits: 4 clips cycle as the fullscreen hero reel with chapter progress; all 5 credited on /credits
 - [ ] H9 Integration suites on local stack (blocked: Docker in sandbox)
-- [ ] H10 Async procedure pipeline (spec + build)
+- [x] H10 Async procedure pipeline: steps are written in the background; start answers in 84 ms, starting again re-attaches instead of paying twice, and a dropped connection or reopened app carries on. Live: 9–12 steps in 24–27 s; `sign-in-create-job` e2e passes on it
 - [ ] H11 Deploy pipeline (Fly + Supabase + Vercel + EAS + signed Mac + Sentry; needs accounts)
 - [x] H12 control_mode mirror endpoint + event emission: PATCH /jobs/:id/control-mode records the mode + control_mode_changed event; desktop mirrors on every switch (fire-and-forget)
 - [x] H13 expert_recording reservation doc (`docs/engineering/expert-recording.md`); producer stays T28
