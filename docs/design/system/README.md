@@ -67,11 +67,14 @@ These sit on photos and over other apps, not on Tandrix surfaces, so they are th
 
 ## Iconography
 
-- Icons are [Phosphor](https://phosphoricons.com) (MIT), in two styles only, both in `currentColor`: **solid** (Phosphor Fill) and **outline** (Phosphor Regular). Never mix in another set or another weight.
-- **The rule:** solid for small inline icons (16px: in chips, buttons and inputs, next to a word); outline for standalone icons at 20px and up (in cards, banners, notices, gates and field buttons). `Icon` applies it from `size`; set `weight` only to break it on purpose (for example a selected state in solid). Two exceptions: `check` and `progress` are always outline; their solid forms read too heavy next to text.
-- The bundle's `Icon` covers status, source, capture, safety and notice glyphs (`info` for an info `Notice`; never `progress`, which reads as loading). For anything else take the same Phosphor icon in the same style: `@phosphor-icons/react` on the Mac and web, `phosphor-react-native` on the phone, with `weight="fill"` or `weight="regular"`.
+- Icons are [Phosphor](https://phosphoricons.com) (MIT) and nothing else, on every surface: phone, Mac, website and reports. No other set, no hand-drawn icons, no text glyphs standing in for icons. Two styles only, both in `currentColor`: **solid** (Phosphor Fill) and **outline** (Phosphor Regular).
+- **The rule:** solid for small inline icons (16px: in chips, buttons and inputs, next to a word); outline for standalone icons at 20px and up (in cards, banners, notices, gates and field buttons). `Icon` applies it from `size`.
+- **Always outline, at every size:** block (`stop`), caution (`alert`), and the line-shaped icons (`check`, `progress`, `retake`, `x`, `plus`, `menu`, `expand`, `actions`, `chevronLeft`, `chevronRight`, `chevronDown`, `arrowRight`, `arrowUpRight`). Their solid forms shout or read too heavy next to text.
+- **Solid on purpose:** set `weight="fill"` only for a selected state, a verified or done mark (`sealCheck`), play, and the feature icons on marketing cards, which sit alone in Tandrix blue with no container behind them.
+- Use icons judiciously: one where it helps someone scan or recognise a thing, none as decoration.
+- The set is generated: to add an icon, add its Phosphor name to `packages/ui/scripts/build-icons.ts` and run `pnpm --filter @tandrix/ui build:icons`, which writes the app icon data and this bundle. Use `info` for an info `Notice`; never `progress`, which reads as loading.
 - Icons always sit next to a word, except icon-only buttons, which need an `aria-label`.
-- The safety discs in `SafetyGate` follow ISO 7010 shapes: a blue disc for mandatory, a red slashed disc for stop.
+- The safety discs in `SafetyGate` follow ISO 7010 shapes and colours, with a Phosphor glyph inside: a blue disc with `power` for mandatory, a red disc with `stop` for stop. They are the one place an icon keeps a container, because the disc is the safety sign.
 
 ## Logo
 

@@ -1,4 +1,5 @@
 // Questions: the answers people look for, the first one open.
+import { Icon } from "@tandrix/ui/web";
 import { faqs } from "@/content/home";
 import { Section, SectionHead } from "./Section";
 
@@ -27,11 +28,17 @@ export function Faq() {
           >
             <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-[22px] py-5 text-lg font-medium tracking-[-0.01em] focus-visible:rounded-[18px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus [&::-webkit-details-marker]:hidden">
               <span>{f.q}</span>
-              {/* A plus that turns into a minus. */}
+              {/* A plus that turns into a close. */}
               <span
                 aria-hidden="true"
-                className="relative size-8 flex-none rounded-full bg-paper group-open:bg-highlight group-open:text-white before:absolute before:top-1/2 before:left-1/2 before:h-[1.6px] before:w-3 before:-translate-1/2 before:bg-current before:content-[''] after:absolute after:top-1/2 after:left-1/2 after:h-[1.6px] after:w-3 after:-translate-1/2 after:rotate-90 after:bg-current after:transition-transform after:duration-200 after:content-[''] group-open:after:rotate-0"
-              />
+                className="grid size-8 flex-none place-items-center rounded-full bg-paper group-open:bg-highlight group-open:text-white"
+              >
+                <Icon
+                  name="plus"
+                  size={16}
+                  className="transition-transform duration-200 group-open:rotate-45"
+                />
+              </span>
             </summary>
             <p className="max-w-[62ch] px-[22px] pb-[22px] text-base leading-[1.6] text-text-2">
               {f.a}

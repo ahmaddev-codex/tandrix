@@ -1,6 +1,7 @@
 "use client";
 // Plays a line in Tandrix's real voice (recorded from the product's own speech). One line at a time
 // across the page: starting one stops any other.
+import { Icon } from "@tandrix/ui/web";
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/cn";
 
@@ -70,9 +71,7 @@ export function HearIt({
             ))}
           </span>
         ) : (
-          <svg viewBox="0 0 16 16" width="14" height="14">
-            <path d="M5 3.5v9l7.5-4.5z" fill="currentColor" />
-          </svg>
+          <Icon name="play" size={16} weight="fill" />
         )}
       </span>
       {playing ? "Playing" : label}
