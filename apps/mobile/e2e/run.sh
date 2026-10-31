@@ -2,7 +2,9 @@
 # Runs the end-to-end flows on the booted iOS simulator against the local stack, on the real
 # models (each full run spends well under a dollar; the API's spend cap applies).
 # Needs: the dev build installed (pnpm ios), Metro on :8081, and the API on :8787 started with
-# `pnpm --filter @tandrix/api dev`. Run one flow with `sh run.sh <flow.yaml>`.
+# `pnpm --filter @tandrix/api dev`. By default only the crucial flows run (sign-in and a new project,
+# safety, highlighting, the photo check, pointing the camera); `sh run.sh --all` runs every flow,
+# `sh run.sh <flow.yaml>` one.
 # Each flow gets a fresh project from `pnpm --filter @tandrix/api e2e:seed` (known steps, no
 # model call to write them) and its photos added newest-last, so the picker's order is known.
 set -eu
@@ -19,6 +21,8 @@ RUN_ID=$(date +%s)
 # relative to the flow and doesn't expand variables in them, so the folder is fixed.
 MEDIA=.media
 ONLY=${1:-}
+ALL=false
+if [ "$ONLY" = "--all" ]; then ALL=true; ONLY=""; fi
 
 seed() { (cd ../../api && pnpm -s e2e:seed "$@"); }
 
@@ -50,15 +54,20 @@ flow() {
 # Earlier runs' projects go first, so the lists the flows scroll stay short.
 (cd ../../api && pnpm -s e2e:clean)
 
+# Crucial: the paths a user can't do without. Several deny the camera at launch (launchApp
+# permissions) to drive the photo picker.
 flow sign-in-create-job.yaml -
-# These deny the camera at launch (launchApp permissions) to drive the photo picker.
-flow photo-evidence.yaml empty "$PHOTOS/board-top.jpg"
-flow identify-equipment.yaml empty "$PHOTOS/box-label.jpg"
-flow manual-from-pages.yaml asset "$KIT/page-2.jpg" "$KIT/page-1.jpg"
-flow highlight-step.yaml pi "$PHOTOS/board-top.jpg"
 flow safety-steps.yaml pi
-flow voice-step.yaml pi
+flow highlight-step.yaml pi "$PHOTOS/board-top.jpg"
 flow check-step.yaml pi "$PHOTOS/board-with-cooler.jpg" "$PHOTOS/board-top.jpg"
-flow step-visuals.yaml pi "$PHOTOS/board-with-cooler.jpg"
-flow parts-check.yaml pi "$PHOTOS/parts-laid-out.jpg"
 flow look.yaml - "$PHOTOS/board-with-cooler.jpg"
+
+# The rest, with --all or by name.
+if $ALL || [ -n "$ONLY" ]; then
+  flow photo-evidence.yaml empty "$PHOTOS/board-top.jpg"
+  flow identify-equipment.yaml empty "$PHOTOS/box-label.jpg"
+  flow manual-from-pages.yaml asset "$KIT/page-2.jpg" "$KIT/page-1.jpg"
+  flow voice-step.yaml pi
+  flow step-visuals.yaml pi "$PHOTOS/board-with-cooler.jpg"
+  flow parts-check.yaml pi "$PHOTOS/parts-laid-out.jpg"
+fi
