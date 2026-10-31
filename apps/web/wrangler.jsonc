@@ -1,5 +1,6 @@
-// For deploying from this folder (`pnpm --filter @tandrix/web deploy`, which builds first).
-// ../../wrangler.jsonc is the same Worker, for Cloudflare building from the repo root.
+// The website, for Cloudflare Workers Builds with its root directory set to apps/web, and for
+// `pnpm --filter @tandrix/web deploy`. ../../wrangler.jsonc is the same Worker, for a build from
+// the repo root: keep the two in step.
 {
   "$schema": "../../node_modules/wrangler/config-schema.json",
   "name": "tandrix",
@@ -11,6 +12,10 @@
   "assets": {
     "binding": "ASSETS",
     "directory": ".open-next/assets",
+  },
+  // Wrangler builds the Worker before it deploys. Cloudflare's build step only runs `next build`.
+  "build": {
+    "command": "pnpm run build:worker",
   },
   "observability": {
     "enabled": true,

@@ -198,6 +198,6 @@ On the API, add the site's address to `CORS_ORIGINS`, or the early-access form i
 **Deploy one of two ways:**
 
 - **From this machine:** `pnpm --filter @tandrix/web exec wrangler login` once, then, with the build settings in the environment, `pnpm --filter @tandrix/web deploy`. Set `API_PUBLIC_URL` with `pnpm --filter @tandrix/web exec wrangler secret put API_PUBLIC_URL`, or as a variable in the dashboard; deploys keep it (`keep_vars`).
-- **From GitHub (Workers Builds):** connect the repo in the Cloudflare dashboard with the root directory as `/`, which uses the root `wrangler.jsonc` and its build command, and `npx wrangler deploy` as the deploy command. Put the build settings under Build variables and `API_PUBLIC_URL` under the Worker's variables.
+- **From GitHub (Workers Builds):** connect the repo in the Cloudflare dashboard with the root directory `apps/web`, the build command `pnpm run build` and the deploy command `npx wrangler deploy`. Wrangler builds the Worker itself, through the `build` block in `apps/web/wrangler.jsonc`, so don't remove it. Put the build settings under Build variables and `API_PUBLIC_URL` under the Worker's variables.
 
 Add the custom domain under the Worker's Settings > Domains & Routes. Security headers are in `apps/web/next.config.ts`, and static file caching in `apps/web/public/_headers`. CI checks the Worker builds and fits on every push.
