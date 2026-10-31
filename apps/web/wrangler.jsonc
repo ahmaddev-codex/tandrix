@@ -17,6 +17,8 @@
   "build": {
     "command": "pnpm run build:worker",
   },
+  // Branch previews (npx wrangler preview) need this block, even empty.
+  "previews": {},
   "observability": {
     "enabled": true,
   },
