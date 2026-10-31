@@ -16,7 +16,13 @@ import {
   VerifiedTile,
   VideoTile,
 } from "@/components/widgets/Tiles";
-import { EARLY_ACCESS, IPHONE_DOWNLOAD_URL, MAC_DOWNLOAD_URL, isExternal } from "@/lib/downloads";
+import {
+  EARLY_ACCESS,
+  GET_MAC_LABEL,
+  IPHONE_DOWNLOAD_URL,
+  MAC_DOWNLOAD_URL,
+  isExternal,
+} from "@/lib/downloads";
 
 /** The hero carousel: real photos and footage between the moments Tandrix shows on screen. */
 export const ring: ReactNode[] = [
@@ -85,7 +91,7 @@ export const moments: Moment[] = [
     time: "7 PM",
     tag: "Do it for me",
     title: "Book the dentist",
-    body: "Hand over the task. Tandrix opens Calendar, does the steps, and asks before it sends anything. Move the mouse and you're back in control.",
+    body: "Hand over the task. Tandrix opens Calendar, does the steps, and asks before it sends anything. Press Esc and you're back in control.",
     ask: "Book my dentist for Thursday at ten",
     scene: <DeskFigure focus="calendar" label="The laptop calendar, with Thursday at ten ringed" />,
   },
@@ -309,7 +315,7 @@ export const platforms: Array<{
       "Optional wake word, heard on the Mac only",
     ],
     cta: {
-      label: EARLY_ACCESS ? "Get early access" : "Download for Mac",
+      label: GET_MAC_LABEL,
       href: MAC_DOWNLOAD_URL,
       external: isExternal(MAC_DOWNLOAD_URL),
     },
@@ -353,7 +359,7 @@ export const faqs: Array<{ id?: string; q: string; a: string }> = [
   },
   {
     q: "What's the difference between Show me and Do it for me?",
-    a: "Show me points at the control to use and says what to do; your hands stay on the mouse. Do it for me takes the steps itself, across the apps it needs. It asks before anything that sends, pays, deletes or changes security settings, and moving your mouse or pressing Esc stops it at once.",
+    a: "Show me points at the control to use and says what to do; your hands stay on the mouse. Do it for me takes the steps itself, across the apps it needs. It asks before anything that sends, pays, deletes or changes security settings, and pressing Esc stops it at once.",
   },
   {
     q: "How do I talk to it?",

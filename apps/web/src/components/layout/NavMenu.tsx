@@ -3,10 +3,11 @@
 import { Icon } from "@tandrix/ui/web";
 import { useState } from "react";
 import { primary, product } from "@/content/site";
+import { GET_LABEL } from "@/lib/downloads";
 
 const links: Array<[string, string]> = [
   ...[...product, ...primary].map((l): [string, string] => [l.href, l.label]),
-  ["/#get", "Download"],
+  ["/#get", GET_LABEL],
 ];
 
 export function NavMenu() {

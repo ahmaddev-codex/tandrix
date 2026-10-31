@@ -13,18 +13,18 @@ export function modelLimiter(now = Date.now): RateLimiter {
 }
 
 /**
- * Who's calling, for signed-out limits behind the Fly proxy. Fly-Client-IP is set by the proxy,
- * so it's the one to trust; X-Forwarded-For is client-supplied except for the entry the proxy
- * appends last, so only the last entry counts (the first is whatever the caller wrote, and
- * rotating it would dodge every limit). Else the TCP peer. Never blank.
+ * Who's calling, for signed-out limits behind a proxy. The host's client-IP header (CLIENT_IP_HEADER)
+ * is set by the proxy, so it's the one to trust; X-Forwarded-For is client-supplied except for the
+ * entry the proxy appends last, so only the last entry counts (the first is whatever the caller
+ * wrote, and rotating it would dodge every limit). Else the TCP peer. Never blank.
  */
 export function clientKeyFromHeaders(
   forwardedFor: string | undefined,
   remoteAddress: string | undefined,
-  flyClientIp?: string,
+  proxyClientIp?: string,
 ): string {
-  const fly = flyClientIp?.trim();
-  if (fly) return fly;
+  const proxied = proxyClientIp?.trim();
+  if (proxied) return proxied;
   const last = forwardedFor
     ?.split(",")
     .map((s) => s.trim())

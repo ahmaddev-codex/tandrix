@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { clientKeyFromHeaders, MODEL_CALLS_PER_MINUTE, modelLimiter } from "../src/rate-limit";
 
 describe("clientKeyFromHeaders", () => {
-  it("trusts the proxy's Fly-Client-IP first", () => {
+  it("trusts the proxy's client-IP header first", () => {
     expect(clientKeyFromHeaders("1.1.1.1", "10.0.0.2", "203.0.113.7")).toBe("203.0.113.7");
   });
 

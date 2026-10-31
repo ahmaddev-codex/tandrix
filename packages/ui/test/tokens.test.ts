@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { compile } from "../scripts/build-tokens";
@@ -6,6 +6,8 @@ import { colors, contrastRatio, resolveTheme, themeNames, type ColorToken } from
 
 const root = join(__dirname, "..");
 const tokensJson = readFileSync(join(root, "tokens/tokens.json"), "utf8");
+// docs/ stays on the machine it was written on, so a clean checkout has no mirror to compare.
+const mirrorPath = join(root, "../../docs/design/system/tokens.json");
 
 describe("generated tokens", () => {
   it("are up to date with tokens.json", () => {
@@ -14,8 +16,8 @@ describe("generated tokens", () => {
     expect(readFileSync(join(root, "src/generated/tokens.css"), "utf8")).toBe(css);
   });
 
-  it("match the design system mirror in docs/design/system", () => {
-    const mirror = readFileSync(join(root, "../../docs/design/system/tokens.json"), "utf8");
+  it.skipIf(!existsSync(mirrorPath))("match the design system mirror in docs/design/system", () => {
+    const mirror = readFileSync(mirrorPath, "utf8");
     expect(JSON.parse(tokensJson)).toEqual(JSON.parse(mirror));
   });
 });

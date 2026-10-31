@@ -1,4 +1,5 @@
 // The site's pages, as the header, its menu on small screens and the footer list them.
+import { GET_LABEL } from "@/lib/downloads";
 
 export interface NavLink {
   href: string;
@@ -36,7 +37,7 @@ export const footer: Array<{ title: string; links: NavLink[] }> = [
       { href: "/mac", label: "Mac" },
       { href: "/iphone", label: "iPhone" },
       { href: "/whats-new", label: "What's new" },
-      { href: "/#get", label: "Download" },
+      { href: "/#get", label: GET_LABEL },
     ],
   },
   {

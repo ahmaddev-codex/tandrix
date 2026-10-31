@@ -1,5 +1,7 @@
 # Tandrix
 
+![The Tandrix website: tell it what you want done. It shows you the way.](apps/web/public/tandrix-web.png)
+
 Tandrix is an assistant that sees your screen and what's in front of your camera, points at the answer, and checks every step with you.
 
 - **On the Mac**, it rings the exact control and says the next step (**Show me**), does the task itself when you ask (**Do it for me**), and runs work that needs no screen in the background, several tasks at once.
@@ -21,7 +23,6 @@ Built on Meta's models: Muse Spark for reasoning, vision and computer use; SAM 3
 | `packages/ai`        | Meta API client, prompts and pipelines, background agents                 |
 | `packages/ui`        | `@tandrix/ui`: design tokens and components for web and native            |
 | `supabase/`          | Database migrations and row-level security                                |
-| `docs/`              | Product, design and engineering documentation                             |
 
 ## Getting started
 
@@ -43,8 +44,6 @@ pnpm --filter @tandrix/desktop dev     # Mac app
 pnpm --filter @tandrix/mobile ios      # iPhone app in the simulator
 ```
 
-[Local development](docs/engineering/Local_Dev.md) covers environments, signing in, the end-to-end tests and each app in detail.
-
 ## Checks
 
 ```bash
@@ -57,10 +56,6 @@ pnpm --filter @tandrix/mobile e2e      # iPhone flows on the simulator, real mod
 
 Every model call is metered against a local spend cap (`META_SPEND_LIMIT_USD`). There is no canned-answer mode: without a Meta key, model features say they're unavailable and the apps fall back.
 
-## Documentation
-
-Start with the [documentation index](docs/README.md): the product requirements, user flows, design system, architecture and the current task list.
-
 ## Status
 
-The Mac, iPhone, API and website are built and verified locally. Deploying (hosted Supabase, Fly.io, Vercel, EAS and a signed Mac build), the glasses, record mode and multilingual support are still to do. The live list is [tasks/todo.md](tasks/todo.md).
+The Mac, iPhone, API and website are built and verified locally. Deploying (hosted Supabase, Fly.io, Vercel, EAS and a signed Mac build), the glasses, record mode and multilingual support are still to do.
