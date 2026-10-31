@@ -26,7 +26,7 @@ import { startRecording, type Recording } from "./recorder";
 import { uploadScreenshot } from "./screenshot";
 import { recentExchanges } from "./exchanges";
 import { markTried } from "./setup";
-import { present, presentAnswer, presenceState } from "./presence";
+import { noteWork, present, presentAnswer, presenceState, workingOn } from "./presence";
 import { localNow, runBackgroundTask } from "./background-agent";
 import { base64 } from "./bytes";
 import { browseCall } from "./browse";
@@ -178,14 +178,10 @@ export function useShowMe(jobId: string | undefined) {
             return r.status === "done" ? r.note : null;
           },
           run: (batch) => window.tandrix.doing.run(batch),
+          // Spoken, and it steers the bar's phrases; the bar never shows the words.
           say: (line) => {
             speak(line);
-            present({
-              state: "doing",
-              label: line.slice(0, 120),
-              keys: "Esc",
-              keysHint: "to stop",
-            });
+            noteWork(line);
           },
           steer: io.steer,
           stopped: io.stopped,
@@ -230,7 +226,8 @@ export function useShowMe(jobId: string | undefined) {
 
   const startScreenTask = useCallback((task: string) => {
     reply(acknowledge(task));
-    present({ state: "doing", label: "Starting", keys: "Esc", keysHint: "to stop" });
+    workingOn(task);
+    present({ state: "doing", label: "Getting started", keys: "Esc", keysHint: "to stop" });
     board.addScreen(task);
   }, []);
 
@@ -396,6 +393,7 @@ export function useShowMe(jobId: string | undefined) {
         return;
       }
       stopSpeaking();
+      workingOn(effective);
       void run(() => answer(jobId, effective, shoot(jobId)), {
         state: "looking",
         label: "Looking at your screen",
@@ -440,6 +438,7 @@ export function useShowMe(jobId: string | undefined) {
           }
           const effective = wake.woke ? wake.remainder : heard.transcript;
           add({ speaker: "you", text: effective });
+          workingOn(effective);
           present({ state: "thinking", label: "Thinking" });
           await answer(jobId, effective, shot, true);
         },

@@ -8,8 +8,11 @@ import { captureSize, type DisplayInfo } from "./displays";
 export const CAPTURE_MAX_WIDTH = 1280;
 const JPEG_QUALITY = 80;
 
-export async function captureDisplayUnderCursor(): Promise<ScreenCapture> {
-  const d = screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
+export const captureDisplayUnderCursor = () => captureDisplayAt(screen.getCursorScreenPoint());
+
+/** The display showing a global point (in points): during a task, wherever the user's mouse is. */
+export async function captureDisplayAt(at: { x: number; y: number }): Promise<ScreenCapture> {
+  const d = screen.getDisplayNearestPoint(at);
   const display: DisplayInfo = { id: d.id, bounds: d.bounds, scaleFactor: d.scaleFactor };
   const capturedAt = new Date().toISOString();
   const sources = await desktopCapturer.getSources({

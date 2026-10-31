@@ -165,6 +165,16 @@ export function showPointer(
 }
 
 let workAt: Point | null = null;
+
+/** The pointer never leaves the screen: a point past an edge sits just inside the nearest display. */
+export function onScreen(p: Point): Point {
+  const b = screen.getDisplayNearestPoint(p).bounds;
+  const inset = 2;
+  return {
+    x: Math.min(Math.max(p.x, b.x + inset), b.x + b.width - inset),
+    y: Math.min(Math.max(p.y, b.y + inset), b.y + b.height - inset),
+  };
+}
 let workSeq = 0;
 /**
  * Tandrix's pointer doing the work: it stays on screen for the whole task (no timer), glides to each
@@ -176,7 +186,7 @@ export function showWorkPointer(
   act: NonNullable<OverlayPointer["working"]>["act"],
 ) {
   clearTimeout(clearTimer);
-  if (at !== "here") workAt = at;
+  if (at !== "here") workAt = onScreen(at);
   if (!workAt) return;
   const target = toOverlay(workAt, displayInfo());
   workSeq++;
@@ -188,6 +198,9 @@ export function showWorkPointer(
         : null,
     );
 }
+
+/** Where Tandrix's pointer is working, if it is. */
+export const workPointerAt = () => workAt;
 
 export function clearWorkPointer() {
   workAt = null;

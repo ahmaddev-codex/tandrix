@@ -1,5 +1,5 @@
-// Tandrix's pointer doing the work: it glides from step to step, ripples where it clicks, and
-// says what it's doing beside it, so you can watch the task happen.
+// Tandrix's pointer doing the work: it glides from step to step and ripples where it clicks, so
+// you can watch the task happen. What it's doing shows in the bar at the top, not by the pointer.
 import type { OverlayPointer } from "../shared/bridge";
 
 const ARROW =
@@ -13,12 +13,6 @@ export function WorkPointer({ p }: { p: OverlayPointer }) {
       <svg className="work-arrow" viewBox="0 0 24 24" width={30} height={30} aria-hidden="true">
         <path d={ARROW} />
       </svg>
-      {p.caption ? (
-        <span key={`c${w.seq}`} className={`work-caption work-${w.act}`}>
-          {w.act === "type" || w.act === "keys" ? <span className="work-keys" /> : null}
-          {p.caption}
-        </span>
-      ) : null}
     </div>
   );
 }

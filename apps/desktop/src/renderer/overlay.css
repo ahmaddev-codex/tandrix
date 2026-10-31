@@ -47,51 +47,11 @@ body,
     opacity: 0;
   }
 }
-.work-caption {
-  position: absolute;
-  left: 26px;
-  top: 22px;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  max-width: 320px;
-  padding: 7px 12px;
-  border-radius: 12px;
-  background: #0b0b0c;
-  color: #fff;
-  font: 500 13px/1.3 var(--font-sans);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  box-shadow:
-    0 0 0 1.5px var(--highlight),
-    0 6px 16px -8px rgba(0, 0, 0, 0.4);
-  animation: work-caption-in 220ms ease-out both;
-}
-@keyframes work-caption-in {
-  from {
-    opacity: 0;
-    transform: translateY(4px);
-  }
-}
-/* Typing: a blinking caret before the words. */
-.work-keys {
-  width: 2px;
-  height: 14px;
-  background: var(--highlight);
-  animation: work-caret 900ms steps(1) infinite;
-}
-@keyframes work-caret {
-  50% {
-    opacity: 0;
-  }
-}
 @media (prefers-reduced-motion: reduce) {
   .work-ptr {
     transition: none;
   }
-  .work-ripple,
-  .work-keys {
+  .work-ripple {
     animation: none;
   }
 }

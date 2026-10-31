@@ -3,11 +3,11 @@
 // without showing itself: the presence bar at the top of the screen says what's happening.
 import { Point, ScreenGeometry } from "@tandrix/contracts";
 import { channels, type ScreenCapture } from "../shared/bridge";
-import { captureDisplayUnderCursor } from "./capture";
+import { captureDisplayAt, captureDisplayUnderCursor } from "./capture";
 import { captureToGlobal } from "./displays";
 import { registerAskHotkey, setCancelKey } from "./hotkey";
 import { setupPushToTalk } from "./push-to-talk";
-import { doingTask, stopDoing } from "./do-session";
+import { doingTask, stopDoing, taskPoint } from "./do-session";
 import { clearPointer, hidePanelForCapture, sendToPanel, showPointer } from "./windows";
 
 /** A hotkey screenshot older than this is stale; the question gets a fresh one. */
@@ -41,6 +41,12 @@ export function setListening(on: boolean) {
 }
 
 export async function captureForQuestion(): Promise<ScreenCapture> {
+  // A task's own screenshots: its display, whatever the user's mouse is doing, and its pointer
+  // stays up (the overlay never shows in screenshots).
+  if (doingTask()) {
+    await hidePanelForCapture();
+    return captureDisplayAt(taskPoint());
+  }
   const ready = pending && Date.now() - pending.at < PENDING_MAX_AGE_MS ? pending.capture : null;
   pending = undefined;
   if (ready) return ready;

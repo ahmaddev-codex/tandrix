@@ -7,3 +7,4 @@ export * from "./voice";
 export * from "./voice-turn";
 export * from "./voices";
 export * from "./assistant";
+export * from "./thinking";
