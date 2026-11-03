@@ -1,5 +1,7 @@
 // Small cards Tandrix shows, drawn in code so they stay sharp at any size. Decorative: each is
 // aria-hidden and the copy beside it says what it shows.
+import { ActivePill } from "@/components/ui/ActivePill";
+import { Clip } from "@/components/ui/Clip";
 import { cn } from "@/lib/cn";
 import { Tick } from "./parts";
 
@@ -49,6 +51,27 @@ export function VoiceCard({ ask, reply }: { ask: string; reply: string }) {
           ))}
         </span>
         {reply}
+      </p>
+    </div>
+  );
+}
+
+/** Someone at their Mac, holding ⌥⌘ and saying what they want, with the real listening pill. */
+export function TalkScene({ className }: { className?: string }) {
+  return (
+    <div
+      className={cn("relative aspect-[6/5] w-full overflow-hidden bg-[#0b0b0c]", className)}
+      aria-hidden="true"
+    >
+      <Clip
+        name="typing-on-laptop"
+        className="absolute inset-0 size-full object-cover object-[58%_50%]"
+      />
+      <div className="absolute top-4 left-4 flex">
+        <ActivePill state="listening" label="Listening" keys="⌥⌘" hint="Let go to ask" />
+      </div>
+      <p className="absolute inset-x-4 bottom-4 m-0 text-center text-[clamp(15px,2.4vw,19px)] leading-[1.3] font-medium text-white">
+        “Book my dentist for Thursday at ten”
       </p>
     </div>
   );

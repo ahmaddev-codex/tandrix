@@ -213,7 +213,7 @@
       rgba(46, 125, 255, 0.35) 55%,
       rgba(46, 125, 255, 0) 100%
     ),
-    url("/photos/sky-fluffy.jpg") center / cover no-repeat,
+    url("/photos/hero.png") center 70% / cover no-repeat,
     #3f9bf0;
 }
 @utility bg-blue-glow {

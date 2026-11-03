@@ -8,9 +8,10 @@ import { runBatch, type Batch, type BatchResult } from "./do-it";
 import { drive, stopDriver } from "./input-driver";
 import { talkKeysAccess } from "./push-to-talk";
 import { setPresence } from "./presence";
-import { setCancelKey } from "./hotkey";
-import { clearWorkPointer, showWorkPointer, workPointerAt } from "./windows";
+import { setCancelKey, withEscFree } from "./hotkey";
+import { clearWorkPointer, sendToPanel, showWorkPointer, workPointerAt } from "./windows";
 import { openApp } from "./apps";
+import { channels } from "../shared/bridge";
 
 const IN_CONTROL = {
   state: "doing",
@@ -53,10 +54,12 @@ export function setControlMode(next: ControlMode): ControlMode {
   return mode;
 }
 
-/** Stops whatever Tandrix is doing; the next batch won't start. */
+/** Stops whatever Tandrix is doing, and tells the panel at once so the task ends now. */
 export function stopDoing() {
+  const running = active && !stopRequested;
   stopRequested = true;
   clearWorkPointer();
+  if (running) sendToPanel(channels.doStopped);
 }
 
 /** A task starts: the in-control pill, and Esc to stop. */
@@ -65,13 +68,13 @@ export function beginTask() {
   stopRequested = false;
   history = [];
   startedAt = screen.getCursorScreenPoint();
-  setCancelKey(stopDoing);
+  setCancelKey("task", stopDoing);
   setPresence(IN_CONTROL);
 }
 
 export function endTask() {
   active = false;
-  setCancelKey(null);
+  setCancelKey("task", null);
   clearWorkPointer();
 }
 
@@ -111,7 +114,10 @@ export async function runDoBatch(batch: Batch): Promise<BatchResult> {
     return { status: "refused", ran: 0, message: "Do it for me is off. Switch it on in Tandrix." };
   const result = await runBatch(batch, {
     mode: controlMode,
-    drive,
+    drive: (cmd) =>
+      cmd.op === "keys" && cmd.keys.some((k) => /^esc/i.test(k))
+        ? withEscFree(() => drive(cmd))
+        : drive(cmd),
     confirm,
     announce: (at, caption, act) =>
       at ? showWorkPointer(at, caption ?? "", act ?? "move") : clearWorkPointer(),

@@ -53,6 +53,8 @@ export type ScreenTaskResult =
   | { status: "stuck"; reply: string }
   | { status: "failed"; reply: string };
 
+export const STOPPED_REPLY = "Stopped. You have control back.";
+
 /** How long the screen gets to settle after a batch before the next screenshot. */
 const SETTLE_MS = 300;
 /** In a row, steps that changed nothing, before Tandrix stops and asks. */
@@ -263,7 +265,7 @@ export async function runScreenTask(task: string, d: ScreenTaskDeps): Promise<Sc
   let notedInApp = false;
 
   for (let turn = 1; turn <= DO_MAX_TURNS; turn++) {
-    if (d.stopped()) return { status: "stopped", reply: "Stopped. You have control back." };
+    if (d.stopped()) return { status: "stopped", reply: STOPPED_REPLY };
     // Left an app without writing down what it read there: the next turn would only see the new
     // app, and go back for it. Write it down from the last look at that app, once, before going on.
     if (d.front) {
@@ -285,6 +287,7 @@ export async function runScreenTask(task: string, d: ScreenTaskDeps): Promise<Sc
         shotInApp = null;
       }
     }
+    if (d.stopped()) return { status: "stopped", reply: STOPPED_REPLY };
     for (const said of d.steer()) {
       memory.push(`The user just said: "${said}". Change what you're doing to match.`);
       checked = false;
@@ -314,7 +317,7 @@ export async function runScreenTask(task: string, d: ScreenTaskDeps): Promise<Sc
         });
     const left: number = chain ? chain.left - 1 : CHAIN;
     chain = null;
-    if (d.stopped()) return { status: "stopped", reply: "Stopped. You have control back." };
+    if (d.stopped()) return { status: "stopped", reply: STOPPED_REPLY };
 
     if (r.status === "open_app") {
       d.doing?.(`Opening ${r.app}`);

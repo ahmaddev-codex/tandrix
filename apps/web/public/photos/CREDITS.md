@@ -5,11 +5,9 @@ Photos and video on the Tandrix website, their makers and licences. The site's c
 
 ## Photos
 
-| File              | Maker            | Licence                                                        | Source                                                                                                                                  |
-| ----------------- | ---------------- | -------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| sky-bright.jpg    | W.carter         | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) | [Summer clouds over Tuntorp 3](https://commons.wikimedia.org/wiki/File:Summer_clouds_over_Tuntorp_3.jpg)                                |
-| sky-fluffy.jpg    | Lee Ann Ratledge | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0)       | [Cumulus Humilis Clouds, Tennessee](https://commons.wikimedia.org/wiki/File:Cumulus_Humilis_Clouds_-_Tennessee,_USA_-_July_7,_2014.jpg) |
-| tools-flatlay.jpg | Wilfredor        | [CC0](https://creativecommons.org/publicdomain/zero/1.0)       | [Tools 66](https://commons.wikimedia.org/wiki/File:Tools_66.jpg)                                                                        |
+| File              | Maker     | Licence                                                  | Source                                                           |
+| ----------------- | --------- | -------------------------------------------------------- | ---------------------------------------------------------------- |
+| tools-flatlay.jpg | Wilfredor | [CC0](https://creativecommons.org/publicdomain/zero/1.0) | [Tools 66](https://commons.wikimedia.org/wiki/File:Tools_66.jpg) |
 
 ## Video (public/videos)
 

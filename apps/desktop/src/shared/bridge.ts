@@ -54,6 +54,7 @@ export const channels = {
   doRun: "do:run",
   doEnd: "do:end",
   doStop: "do:stop",
+  doStopped: "do:stopped",
   doApps: "do:apps",
   doFront: "do:front",
   doOpenApp: "do:open-app",
@@ -126,6 +127,8 @@ export interface TandrixBridge {
     run(batch: DoBatch): Promise<DoBatchResult>;
     end(): Promise<void>;
     stop(): Promise<void>;
+    /** The user stopped the task (Esc or the hotkey). */
+    onStopped(listener: () => void): () => void;
     /** Installed apps, and the one in front (not Tandrix), for the task's plan. */
     apps(): Promise<{ apps: string[]; front?: string }>;
     /** The app in front now (not Tandrix), to tell when a task moves between apps. */

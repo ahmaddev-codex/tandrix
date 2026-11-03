@@ -37,7 +37,7 @@ export function setupShowMe(): boolean {
 
 export function setListening(on: boolean) {
   listening = on;
-  setCancelKey(on ? () => sendToPanel(channels.askCancel) : null);
+  setCancelKey("listening", on ? () => sendToPanel(channels.askCancel) : null);
 }
 
 export async function captureForQuestion(): Promise<ScreenCapture> {

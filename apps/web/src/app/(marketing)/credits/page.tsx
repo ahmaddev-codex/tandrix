@@ -11,23 +11,6 @@ const credits: Array<{
   sourceUrl: string;
 }> = [
   {
-    file: "sky-bright.jpg",
-    maker: "W.carter",
-    licence: "CC BY-SA 4.0",
-    licenceUrl: "https://creativecommons.org/licenses/by-sa/4.0",
-    source: "Summer clouds over Tuntorp 3",
-    sourceUrl: "https://commons.wikimedia.org/wiki/File:Summer_clouds_over_Tuntorp_3.jpg",
-  },
-  {
-    file: "sky-fluffy.jpg",
-    maker: "Lee Ann Ratledge",
-    licence: "CC BY 4.0",
-    licenceUrl: "https://creativecommons.org/licenses/by/4.0",
-    source: "Cumulus Humilis Clouds, Tennessee, USA",
-    sourceUrl:
-      "https://commons.wikimedia.org/wiki/File:Cumulus_Humilis_Clouds_-_Tennessee,_USA_-_July_7,_2014.jpg",
-  },
-  {
     file: "tools-flatlay.jpg",
     maker: "Wilfredor",
     licence: "CC0",

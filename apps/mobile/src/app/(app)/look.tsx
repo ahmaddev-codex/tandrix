@@ -2,7 +2,6 @@
 // go?", by tapping or by voice. Tandrix freezes the frame, outlines what its answer is about and
 // says the answer. Inside a project (job and step params), the step in hand is the context.
 import type { LookResponse } from "@tandrix/contracts";
-import { nextPhrase } from "@tandrix/core";
 import { space } from "@tandrix/ui";
 import { Icon, Notice, PartHighlight, ProgressState, Text, useTheme } from "@tandrix/ui/native";
 import { CameraView, useCameraPermissions } from "expo-camera";
@@ -23,8 +22,6 @@ type Phase = "live" | "asking" | "answered";
 type Answered = Extract<LookResponse, { status: "answered" }>;
 
 const QUESTIONS = ["What is this?", "Where does this go?"] as const;
-/** A thinking phrase this often while the answer comes. */
-const PHRASE_MS = 1800;
 
 export default function Look() {
   const { jobId, stepId } = useLocalSearchParams<{ jobId?: string; stepId?: string }>();
@@ -38,22 +35,8 @@ export default function Look() {
   const [frame, setFrame] = useState<Frame | null>(null);
   const [answer, setAnswer] = useState<Answered | null>(null);
   const [problem, setProblem] = useState<string>();
-  const [phrase, setPhrase] = useState("Looking");
-  const asking = useRef<string>("");
 
   const usable = permission?.granted && !cameraFailed;
-
-  // Thinking phrases in turn while the answer comes, about what was asked.
-  useEffect(() => {
-    if (phase !== "asking") return;
-    const recent: string[] = [];
-    const timer = setInterval(() => {
-      const p = nextPhrase(`${asking.current} photo look`, recent);
-      recent.push(p);
-      setPhrase(p);
-    }, PHRASE_MS);
-    return () => clearInterval(timer);
-  }, [phase]);
 
   useEffect(() => () => stopSpeaking(), []);
 
@@ -67,8 +50,6 @@ export default function Look() {
     setProblem(undefined);
     setAnswer(null);
     stopSpeaking();
-    asking.current = question;
-    setPhrase("Looking");
     setPhase("asking");
     try {
       let f = picked;
@@ -206,7 +187,7 @@ export default function Look() {
           ) : null}
 
           {phase === "asking" ? (
-            <ProgressState label={phrase} testID="look-asking" />
+            <ProgressState label="Looking at your photo" testID="look-asking" />
           ) : phase === "answered" && answer ? (
             <>
               <View testID="look-answer">
