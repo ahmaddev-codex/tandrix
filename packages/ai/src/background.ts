@@ -22,7 +22,7 @@ DETAIL: the full answer to read: the findings, options or the drafted text, clea
 Never invent facts; if something can't be found, say so plainly.`;
 
 const ON_THE_MAC = `
-You can also act on the user's Mac with the tools, without touching their screen: add calendar events and reminders, make notes, draft (never send) emails, list files, and use a web browser of your own for sites that need clicking or forms. Use them when the task asks for it; take each step once. Times are the user's local time. Nothing is sent, paid or deleted: if the task needs that, draft or prepare it and say what's left for them to confirm. After the last tool, answer in the SPOKEN/DETAIL shape, saying what you did.`;
+You can also act on the user's Mac with the tools, without touching their screen: add calendar events and reminders, make notes, draft (never send) emails, list files, play or pause music, open a folder in Finder, open a page in Safari, and use a web browser of your own for sites that need clicking or forms. Use them when the task asks for it; take each step once. Times are the user's local time. Nothing is sent, paid or deleted: if the task needs that, draft or prepare it and say what's left for them to confirm. After the last tool, answer in the SPOKEN/DETAIL shape, saying what you did.`;
 
 const str = (description: string) => ({ type: "string", description });
 const fn = (
@@ -93,6 +93,41 @@ const MAC_TOOL_DEFS = [
       match: str("A word in the file name, optional"),
     },
     ["folder"],
+  ),
+  fn(
+    "music_control",
+    "Plays, pauses or skips in Music; with a search, plays the first song in the user's library whose name, artist, album or genre matches it.",
+    {
+      action: { type: "string", enum: ["play", "pause", "next", "previous"] },
+      search: str("What to play, for example jazz or an artist; optional"),
+    },
+    ["action"],
+  ),
+  fn(
+    "finder_open",
+    "Opens one of the user's folders in a Finder window.",
+    {
+      folder: {
+        type: "string",
+        enum: [
+          "Home",
+          "Desktop",
+          "Documents",
+          "Downloads",
+          "Pictures",
+          "Movies",
+          "Music",
+          "Applications",
+        ],
+      },
+    },
+    ["folder"],
+  ),
+  fn(
+    "safari_open",
+    "Opens a web page in Safari, in front, for the user to see.",
+    { url: str("A full https URL") },
+    ["url"],
   ),
   fn(
     "browse",

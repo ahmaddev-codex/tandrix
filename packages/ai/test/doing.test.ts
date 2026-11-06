@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { continueDoing, imageUrl, MetaClient, prompts, startDoing } from "../src";
+import { continueDoing, controlsLine, imageUrl, MetaClient, prompts, startDoing } from "../src";
 import { json, noSleep, scriptedFetch } from "./helpers";
 
 const response = (id: string, output: unknown[]) =>
@@ -82,5 +82,26 @@ describe("continueDoing", () => {
       ],
     });
     expect(t.safetyChecks).toEqual([check]);
+  });
+});
+
+describe("controlsLine", () => {
+  it("names the front window's controls with their centres, once each", () => {
+    const box = { x: 100, y: 40, w: 60, h: 24 };
+    expect(
+      controlsLine([
+        { role: "Button", name: "Save", enabled: true, box },
+        { role: "Button", name: "Save", enabled: true, box },
+        { role: "Button", name: "", enabled: true, box: { x: 1, y: 1, w: 9, h: 9 } },
+        { role: "TextField", name: "", enabled: true, box: { x: 10, y: 80, w: 200, h: 22 } },
+        { role: "CheckBox", name: 'Say "hi"', enabled: false, box: { x: 0, y: 0, w: 10, h: 10 } },
+      ]),
+    ).toBe(
+      'Controls in the front window, from the app itself (screenshot pixels). Aim at a control\'s centre:\n- Button "Save" centre 130,52, 60x24\n- TextField centre 110,91, 200x22\n- CheckBox "Say hi" centre 5,5, 10x10 (dimmed)',
+    );
+  });
+
+  it("is nothing when there's nothing named", () => {
+    expect(controlsLine([])).toBeNull();
   });
 });

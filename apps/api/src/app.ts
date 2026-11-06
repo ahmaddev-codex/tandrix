@@ -114,12 +114,15 @@ export function createApp(deps: AppDeps) {
   app.use(async (c, next) => {
     const start = performance.now();
     await next();
+    const ms = Math.round(performance.now() - start);
+    // Time spent on the server, so clients and benches can tell it apart from the network.
+    c.res.headers.set("Server-Timing", `app;dur=${ms}`);
     log({
       id: c.get("requestId"),
       method: c.req.method,
       path: c.req.path,
       status: c.res.status,
-      ms: Math.round(performance.now() - start),
+      ms,
     });
   });
   // Safety net (inside the request log, so the resulting 500 is logged): Hono only routes Error instances to onError. Anything else thrown (e.g. a plain

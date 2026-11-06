@@ -14,7 +14,8 @@
     "demo-check": "tsx --env-file=../../.env.local scripts/demo-check.ts",
     "pointing-bench": "tsx --env-file=../../.env.local scripts/pointing-bench.ts",
     "e2e:clean": "tsx --env-file=../../.env.local scripts/e2e-clean.ts",
-    "e2e:seed": "tsx --env-file=../../.env.local scripts/e2e-seed.ts"
+    "e2e:seed": "tsx --env-file=../../.env.local scripts/e2e-seed.ts",
+    "latency-bench": "tsx --env-file=../../.env.local scripts/latency-bench.ts"
   },
   "dependencies": {
     "@hono/node-server": "2.1.5",

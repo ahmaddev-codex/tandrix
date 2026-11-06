@@ -341,6 +341,7 @@ export function inlineScreenRoutes(d: {
         },
         task: parsed.data.task,
         memory: parsed.data.memory,
+        controls: parsed.data.controls,
       });
       return c.json(turnResponse(user.id, outcome, parsed.data.turn));
     })

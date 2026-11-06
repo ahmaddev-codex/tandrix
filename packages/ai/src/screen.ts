@@ -57,8 +57,11 @@ export const REPLY_RULE =
 export const TEACH_REPLY_RULE =
   'Your text reply is read aloud as the lesson. Give only the single next step: one short explaining sentence at most, then the instruction in the imperative, naming controls as labelled on screen, for example "Docs saves as you type, so there is nothing to do there. Click File, then New. Say next when that is done." End every step with the check-in. You may open with two warm words at most ("Got it.", "Let\'s learn it."). Never describe pointing: no "I\'ll point" or "let me highlight". Plain words only: no code, markup or JSON.';
 
-/** Show me usually answers in 3 s; one still waiting at 7 is asked again. */
-const SHOW_HEDGE_MS = 7000;
+/**
+ * Show me's answer usually starts within 2–4 s of asking and is complete about a second later; one
+ * that hasn't started by 4.5 s is asked again, and whichever starts first is used.
+ */
+export const SHOW_FIRST_BYTE_MS = 4500;
 
 export async function askScreen(
   client: MetaClient,
@@ -67,7 +70,7 @@ export async function askScreen(
 ): Promise<ScreenAnswer> {
   const context = q.context?.filter(Boolean).join("\n");
   const rule = q.lesson ? TEACH_REPLY_RULE : REPLY_RULE;
-  const res = await client.respondHedged(
+  const res = await client.respondStreamed(
     {
       model,
       instructions: q.lesson ? prompts.teachMe : prompts.showMe,
@@ -82,7 +85,7 @@ export async function askScreen(
       ],
     },
     q.signal,
-    SHOW_HEDGE_MS,
+    SHOW_FIRST_BYTE_MS,
   );
   const actions: DesktopAction[] = [];
   let dropped = 0;
@@ -116,7 +119,7 @@ export const narrates = (reply: string) =>
   );
 
 const NARRATION =
-  /^(?:I['’]ll|I will|let me|I['’]m going to|I am going to)\s+(?:point (?:you )?(?:to|at)|highlight|show you|indicate|move (?:the|my) pointer (?:to|over)|click(?: on)?|select|press)\s+(.+?)(?:\s+(?:so (?:that )?you can|so you could|for you to)\s+(.+?))?[.!]?$/i;
+  /^(?:I['’]ll|I will|let me|I['’]m going to|I am going to|I['’]m|I am)\s+(?:point(?:ing)? (?:you )?(?:to|at|out|toward|towards)|point(?:ing)? out|highlight(?:ing)?|show(?:ing)? you(?: where)?|direct(?:ing)? you to|guid(?:e|ing) you to|tak(?:e|ing) you to|indicat(?:e|ing)|mov(?:e|ing) (?:the|my) pointer (?:to|over)|click(?:ing)?(?: on)?|select(?:ing)?|press(?:ing)?)\s+(.+?)(?:\s+(?:is|are))?(?:\s+for you)?(?:\s+(?:so (?:that )?you can|so you could|for you to|to help you)\s+(.+?))?[.!]?$/i;
 
 const VERB: Partial<Record<DesktopAction["type"], string>> = {
   double_click: "Double-click",
@@ -130,12 +133,15 @@ const VERB: Partial<Record<DesktopAction["type"], string>> = {
  */
 export function unnarrate(reply: string, action?: DesktopAction): string | null {
   const said = reply.trim().replace(/^(?:got it|sure thing|sure|okay|ok)[.!,]?\s+/i, "");
-  const m = NARRATION.exec(said);
-  if (!m || /[.!?]\s+\S/.test(said)) return null;
+  // The narrating sentence comes first; what follows it is kept when it's plain instruction.
+  const [first, ...rest] = said.split(/(?<=[.!?])\s+(?=\S)/);
+  const m = NARRATION.exec(first ?? "");
+  const after = rest.join(" ");
+  if (!m || narrates(after)) return null;
   const verb = (action && VERB[action.type]) ?? "Click";
-  const control = m[1]!.replace(/[,;]$/, "");
+  const control = m[1]!.replace(/[,;]$/, "").replace(/^(?:where\s+)/i, "");
   const why = m[2]?.replace(/[.!]$/, "");
-  return `${verb} ${control}${why ? ` to ${why}` : ""}.`;
+  return `${verb} ${control}${why ? ` to ${why}` : ""}.${after ? ` ${after}` : ""}`;
 }
 
 /**
