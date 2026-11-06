@@ -223,6 +223,82 @@ func focusedIsSecure() -> Bool {
   return false
 }
 
+/// Apps whose windows are never read: password managers and the keychain.
+let NEVER_READ: [String] = [
+  "com.1password", "com.agilebits", "com.bitwarden", "com.dashlane", "com.lastpass",
+  "com.apple.keychainaccess", "com.apple.Passwords", "in.sinew.Enpass", "com.nordpass",
+]
+
+/// Roles worth naming to the model: things a person clicks or types into.
+let CONTROL_ROLES: Set<String> = [
+  "AXButton", "AXTextField", "AXTextArea", "AXCheckBox", "AXRadioButton", "AXPopUpButton",
+  "AXMenuButton", "AXComboBox", "AXLink", "AXSlider", "AXIncrementor", "AXDisclosureTriangle",
+  "AXMenuBarItem", "AXTab", "AXSearchField", "AXColorWell", "AXSegment",
+]
+
+func attr(_ e: AXUIElement, _ name: String) -> CFTypeRef? {
+  var v: CFTypeRef?
+  return AXUIElementCopyAttributeValue(e, name as CFString, &v) == .success ? v : nil
+}
+
+func frame(_ e: AXUIElement) -> CGRect? {
+  guard let p = attr(e, kAXPositionAttribute), let z = attr(e, kAXSizeAttribute) else { return nil }
+  var pt = CGPoint.zero
+  var sz = CGSize.zero
+  guard AXValueGetValue(p as! AXValue, .cgPoint, &pt), AXValueGetValue(z as! AXValue, .cgSize, &sz)
+  else { return nil }
+  return CGRect(origin: pt, size: sz)
+}
+
+/// The front window's controls (and the menu bar's top items): each one's role, name and frame in
+/// global points. Names only: a field's contents are never read, password fields are left out
+/// entirely, and so are password managers' windows.
+func controls() -> [[String: Any]] {
+  guard let front = NSWorkspace.shared.frontmostApplication else { return [] }
+  let id = front.bundleIdentifier ?? ""
+  if NEVER_READ.contains(where: { id.hasPrefix($0) }) { return [] }
+  let app = AXUIElementCreateApplication(front.processIdentifier)
+  AXUIElementSetMessagingTimeout(app, 0.4)
+  // Chromium and Electron apps build their tree only when an assistive app asks for it.
+  AXUIElementSetAttributeValue(app, "AXManualAccessibility" as CFString, kCFBooleanTrue)
+  var roots: [AXUIElement] = []
+  if let w = attr(app, kAXFocusedWindowAttribute) { roots.append(w as! AXUIElement) }
+  if let m = attr(app, kAXMenuBarAttribute) { roots.append(m as! AXUIElement) }
+  var out: [[String: Any]] = []
+  var queue: [(AXUIElement, Int)] = roots.map { ($0, 0) }
+  var seen = 0
+  let started = Date()
+  while !queue.isEmpty, out.count < 150, seen < 4000, Date().timeIntervalSince(started) < 0.8 {
+    let (e, depth) = queue.removeFirst()
+    seen += 1
+    let role = attr(e, kAXRoleAttribute) as? String ?? ""
+    let sub = attr(e, kAXSubroleAttribute) as? String ?? ""
+    if role == "AXSecureTextField" || sub == "AXSecureTextField" { continue }
+    // Menus aren't opened to be read: only the bar's own items.
+    if role == "AXMenu" { continue }
+    if CONTROL_ROLES.contains(role) || CONTROL_ROLES.contains(sub), let f = frame(e), f.width >= 4, f.height >= 4 {
+      var name = ""
+      for a in [kAXTitleAttribute, kAXDescriptionAttribute, "AXPlaceholderValue", kAXHelpAttribute] {
+        if let v = attr(e, a) as? String, !v.trimmingCharacters(in: .whitespaces).isEmpty {
+          name = String(v.prefix(80))
+          break
+        }
+      }
+      let enabled = attr(e, kAXEnabledAttribute) as? Bool ?? true
+      if !name.isEmpty || role == "AXTextField" || role == "AXTextArea" {
+        out.append([
+          "role": String((sub.isEmpty ? role : sub).dropFirst(2)), "name": name, "enabled": enabled,
+          "x": Int(f.minX), "y": Int(f.minY), "w": Int(f.width), "h": Int(f.height),
+        ])
+      }
+    }
+    if depth < 30, let kids = attr(e, kAXChildrenAttribute) as? [AXUIElement] {
+      queue.append(contentsOf: kids.prefix(200).map { ($0, depth + 1) })
+    }
+  }
+  return out
+}
+
 func reply(_ ok: Bool, _ error: String? = nil, secure: Bool? = nil, app: String? = nil) {
   var out = ok ? "{\"ok\":true" : "{\"ok\":false,\"error\":\(String(reflecting: error ?? "failed"))"
   if let secure { out += ",\"secure\":\(secure)" }
@@ -236,6 +312,11 @@ while let line = readLine() {
   do {
     let c = try JSONDecoder().decode(Command.self, from: data)
     if c.op == "focus" { reply(true, secure: focusedIsSecure()); continue }
+    if c.op == "tree" {
+      let body = (try? JSONSerialization.data(withJSONObject: ["ok": true, "controls": controls()])) ?? Data("{\"ok\":true,\"controls\":[]}".utf8)
+      FileHandle.standardOutput.write(body + Data("\n".utf8))
+      continue
+    }
     if c.op == "front" {
       RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.02))
       reply(true, app: NSWorkspace.shared.frontmostApplication?.localizedName ?? "")

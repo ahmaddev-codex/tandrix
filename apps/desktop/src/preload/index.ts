@@ -25,6 +25,7 @@ const bridge: TandrixBridge = {
     onStopped: (listener) => subscribe(channels.doStopped, listener),
     apps: () => ipcRenderer.invoke(channels.doApps),
     front: () => ipcRenderer.invoke(channels.doFront),
+    controls: () => ipcRenderer.invoke(channels.doControls),
     openApp: (name) => ipcRenderer.invoke(channels.doOpenApp, name),
   },
   storage: {
@@ -43,6 +44,9 @@ const bridge: TandrixBridge = {
   panel: {
     show: () => ipcRenderer.invoke(channels.panelShow),
     notify: (title, body) => ipcRenderer.invoke(channels.notify, title, body),
+  },
+  diagnostics: {
+    timing: (t) => ipcRenderer.invoke(channels.replyTiming, t),
   },
   overlay: {
     testPointer: () => ipcRenderer.invoke(channels.testPointer),
@@ -101,6 +105,12 @@ const bridge: TandrixBridge = {
     onTalkEnd: (listener) => subscribe(channels.talkEnd, listener),
     talkKeysAccess: (ask) => ipcRenderer.invoke(channels.talkKeysAccess, ask),
     micAccess: () => ipcRenderer.invoke(channels.micAccess),
+    hear: {
+      begin: () => ipcRenderer.invoke(channels.hearBegin),
+      audio: (id, pcm) => ipcRenderer.send(channels.hearAudio, id, pcm),
+      end: (id) => ipcRenderer.invoke(channels.hearEnd, id),
+      cancel: (id) => ipcRenderer.invoke(channels.hearCancel, id),
+    },
     micStatus: () => ipcRenderer.invoke(channels.micStatus),
     setListening: (listening) => ipcRenderer.invoke(channels.listening, listening),
     onHotkey: (listener) => subscribe(channels.askHotkey, listener),

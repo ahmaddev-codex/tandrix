@@ -35,6 +35,7 @@ import {
 
 import { speak, stopSpeaking } from "./speech";
 import { setPresence } from "./presence";
+import { logTiming } from "./diagnostics";
 import { stopPushToTalk, talkKeysAccess } from "./push-to-talk";
 import {
   beginTask,
@@ -47,7 +48,16 @@ import {
   stopDoing,
 } from "./do-session";
 import { frontApp, installedApps } from "./apps";
+import { frontControls } from "./controls";
 import { finishSample, setWakeWord, startSample, stopWakeWord } from "./wake";
+import {
+  beginHearing,
+  cancelHearing,
+  endHearing,
+  hearAudio,
+  stopHearing,
+  warmHearing,
+} from "./hear";
 import { fromSetup, SETUP_PHRASES, shouldAnswer, voiceprintStore } from "./voiceprint";
 import {
   AgentCall,
@@ -80,6 +90,8 @@ const keyValue = (a: unknown[]): a is [string, string] =>
   a.length === 2 && typeof a[0] === "string" && typeof a[1] === "string";
 /** Checked in detail by the handler itself. */
 const one = (a: unknown[]): a is [unknown] => a.length === 1;
+const hearId = (a: unknown[]): a is [number] =>
+  a.length === 1 && Number.isInteger(a[0]) && (a[0] as number) >= 0;
 const modeArg = (a: unknown[]): a is [ControlMode] =>
   a.length === 1 && ControlMode.safeParse(a[0]).success;
 /** A batch from the panel, checked before anything runs. */
@@ -192,6 +204,16 @@ function registerIpc() {
   handle(channels.listening, setListening, flag);
   handle(channels.speak, speak, key);
   handle(channels.setPresence, setPresence, one);
+  handle(channels.replyTiming, logTiming, one);
+  handle(channels.hearBegin, beginHearing, none);
+  handle(channels.hearEnd, endHearing, hearId);
+  handle(channels.hearCancel, cancelHearing, hearId);
+  // Audio arrives many times a second, so it's sent rather than invoked; checked the same way.
+  ipcMain.on(channels.hearAudio, (e, id: unknown, pcm: unknown) => {
+    if (!isOwnWindow(BrowserWindow.fromWebContents(e.sender))) return;
+    if (typeof id === "number" && pcm instanceof Uint8Array && pcm.byteLength <= 64_000)
+      hearAudio(id, pcm);
+  });
   handle(channels.controlMode, controlMode, none);
   handle(channels.setControlMode, setControlMode, modeArg);
   handle(channels.doBegin, beginTask, none);
@@ -300,6 +322,7 @@ function registerIpc() {
     none,
   );
   handle(channels.doFront, frontApp, none);
+  handle(channels.doControls, frontControls, none);
   handle(channels.doOpenApp, openTaskApp, key);
   handle(channels.talkKeysAccess, talkKeysAccess, flag);
   handle(channels.stopSpeaking, stopSpeaking, none);
@@ -337,6 +360,8 @@ void app.whenReady().then(() => {
   createTray();
   if (!setupShowMe()) console.warn("The Show me hotkey is taken by another app.");
   syncOverlays();
+  // Warm, so the first question is heard on this Mac as quickly as the rest.
+  warmHearing();
   screen.on("display-added", syncOverlays);
   screen.on("display-removed", syncOverlays);
   screen.on("display-metrics-changed", syncOverlays);
@@ -347,6 +372,7 @@ app.on("will-quit", () => {
   void stopPushToTalk();
   shutdownDoing();
   stopWakeWord();
+  stopHearing();
 });
 app.on("second-instance", () => tray && togglePanel(tray.getBounds()));
 // A menu-bar app keeps running with its windows hidden.

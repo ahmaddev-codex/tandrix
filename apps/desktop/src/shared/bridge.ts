@@ -7,6 +7,7 @@ import type {
   SafetyCheck,
   ScreenGeometry,
 } from "@tandrix/contracts";
+import type { ReplyTiming, TaskTiming } from "@tandrix/core";
 
 export const channels = {
   storageGet: "storage:get",
@@ -33,6 +34,10 @@ export const channels = {
   talkEnd: "voice:talk-end",
   talkKeysAccess: "voice:talk-keys-access",
   wakeSet: "voice:wake-set",
+  hearBegin: "voice:hear-begin",
+  hearAudio: "voice:hear-audio",
+  hearEnd: "voice:hear-end",
+  hearCancel: "voice:hear-cancel",
   wakeStatus: "voice:wake-status",
   wake: "voice:wake",
   wakeIgnored: "voice:wake-ignored",
@@ -48,6 +53,7 @@ export const channels = {
   browserClose: "browser:close",
   browserSignIn: "browser:sign-in",
   setPresence: "presence:set",
+  replyTiming: "diagnostics:reply-timing",
   controlMode: "do:mode",
   setControlMode: "do:set-mode",
   doBegin: "do:begin",
@@ -57,6 +63,7 @@ export const channels = {
   doStopped: "do:stopped",
   doApps: "do:apps",
   doFront: "do:front",
+  doControls: "do:controls",
   doOpenApp: "do:open-app",
   presence: "overlay:presence",
 } as const;
@@ -82,6 +89,18 @@ export interface OverlayPointer {
 }
 
 /** What Tandrix is doing, for the presence bar at the top of the screen. Null: idle, nothing shown. */
+/** A control in the front window (SP5), from its accessibility tree: names and frames only. */
+export interface ScreenControl {
+  role: string;
+  name: string;
+  enabled: boolean;
+  /** Global display points, origin at the top left of the main display. */
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
 export interface Presence {
   state: "listening" | "thinking" | "looking" | "answering" | "doing";
   label: string;
@@ -133,6 +152,8 @@ export interface TandrixBridge {
     apps(): Promise<{ apps: string[]; front?: string }>;
     /** The app in front now (not Tandrix), to tell when a task moves between apps. */
     front(): Promise<string | undefined>;
+    /** The front window's controls (not Tandrix's), names and frames only. */
+    controls(): Promise<ScreenControl[]>;
     /** Opens an installed app during a task; false if it isn't installed or no task runs. */
     openApp(name: string): Promise<boolean>;
   };
@@ -160,6 +181,10 @@ export interface TandrixBridge {
     show(): Promise<void>;
     /** A macOS notification; clicking it opens the panel. */
     notify(title: string, body: string): Promise<void>;
+  };
+  diagnostics: {
+    /** How long a reply's stages, or a task's turns, took: numbers only, written to the log. */
+    timing(t: ReplyTiming | TaskTiming): Promise<void>;
   };
   overlay: {
     /** Shows the pointer at the centre of every display for a few seconds. */
@@ -210,6 +235,17 @@ export interface TandrixBridge {
     /** Speaks a reply in the best macOS voice installed; false if it can't. */
     speak(text: string): Promise<boolean>;
     stopSpeaking(): Promise<void>;
+    /**
+     * The question being asked, heard on this Mac as it's said (no upload): `begin` when listening
+     * starts (0 when this Mac can't hear it), `audio` for each piece of 16 kHz 16-bit PCM, `end`
+     * for its text when the user lets go (null: upload the recording instead).
+     */
+    hear: {
+      begin(): Promise<number>;
+      audio(id: number, pcm: Uint8Array): void;
+      end(id: number): Promise<{ text: string; ms: number; engine: string } | null>;
+      cancel(id: number): Promise<void>;
+    };
     /** Switches the on-device wake word ("Hey Tandrix") on or off. */
     setWakeWord(on: boolean): Promise<void>;
     /** The wake word's state, and why it can't listen when it can't. */

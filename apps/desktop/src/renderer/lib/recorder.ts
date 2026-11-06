@@ -35,6 +35,8 @@ const LEVEL_EVERY_MS = 66;
 export async function startRecording(
   onEnd: (step: Exclude<TurnStep, "listen">) => void,
   onLevel?: (level: number) => void,
+  /** Each piece of audio as it's recorded, for hearing it on this Mac while the user talks. */
+  onSamples?: (samples: Float32Array) => void,
 ): Promise<Recording> {
   const stream = await navigator.mediaDevices.getUserMedia({
     audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true },
@@ -64,6 +66,7 @@ export async function startRecording(
   node.port.onmessage = (e: MessageEvent<Float32Array>) => {
     chunks.push(e.data);
     samples += e.data.length;
+    onSamples?.(e.data);
     const db = chunkDb(e.data);
     const ms = (e.data.length / SAMPLE_RATE) * 1000;
     levels = addLevel(levels, db, ms);

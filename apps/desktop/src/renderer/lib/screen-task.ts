@@ -5,7 +5,8 @@
 // it's finished, takes corrections said mid-task, and keeps going until the job is done, the user
 // stops it, or it's truly stuck and says so.
 import { DO_MAX_TURNS, type DesktopAction, type DoTurnResponse } from "@tandrix/contracts";
-import type { DoBatch, DoBatchResult, ScreenCapture } from "../../shared/bridge";
+import type { DoBatch, DoBatchResult, ScreenCapture, ScreenControl } from "../../shared/bridge";
+import { onShot, snapClicks, type ShotControl } from "./controls";
 
 export interface ScreenTaskDeps {
   capture: () => Promise<ScreenCapture>;
@@ -20,6 +21,7 @@ export interface ScreenTaskDeps {
     planned: boolean;
     memory: string[];
     turn: number;
+    controls?: ShotControl[];
   }) => Promise<DoTurnResponse>;
   /** Continues the same model conversation (it remembers its own last few steps). */
   next: (req: {
@@ -40,6 +42,8 @@ export interface ScreenTaskDeps {
   base64: (bytes: Uint8Array) => string;
   /** The app in front now, when the Mac can tell. */
   front?: () => Promise<string | undefined>;
+  /** The front window's controls (SP5), read from the app; empty when it can't be read. */
+  controls?: () => Promise<ScreenControl[]>;
   /** What a screen holds that the task needs, written down; null when nothing. */
   note?: (req: {
     screenshot: { mimeType: ScreenCapture["mimeType"]; data: string };
@@ -294,6 +298,10 @@ export async function runScreenTask(task: string, d: ScreenTaskDeps): Promise<Sc
       chain = null;
     }
     const screenshot = { mimeType: capture.mimeType, data: d.base64(capture.image) };
+    // What the app says is on screen, placed on this screenshot, to land a click that just misses
+    // its control. Not named to the model: on the task bench a list of controls in the prompt made
+    // it fill forms worse (1 of 3 tasks against 3 of 3; docs/engineering/latency.md).
+    const controls = d.controls ? onShot(await d.controls().catch(() => []), capture.geometry) : [];
     const r: DoTurnResponse = chain
       ? await d.next({
           session: chain.session,
@@ -360,7 +368,7 @@ export async function runScreenTask(task: string, d: ScreenTaskDeps): Promise<Sc
     d.doing?.(actionLabel(r.reply, r.actions));
     if (r.reply) say(r.reply);
     const ran = await d.run({
-      actions: r.actions,
+      actions: snapClicks(r.actions, controls),
       geometry: capture.geometry,
       intent: r.reply,
       safetyChecks: r.safetyChecks,

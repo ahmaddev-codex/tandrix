@@ -10,6 +10,7 @@ import {
   whileBusy,
   isNo,
   isYes,
+  LOOK_ACKS,
   offerToDo,
   parseWakePhrase,
   TAP_MS,
@@ -23,6 +24,7 @@ import { createBoard, type AgentTask, type Board } from "./agents";
 import { api } from "./api";
 import { runScreenTask, STOPPED_REPLY, type ScreenTaskResult } from "./screen-task";
 import { startRecording, type Recording } from "./recorder";
+import { startHearing, type Hearing } from "./hear";
 import { uploadScreenshot } from "./screenshot";
 import { recentExchanges } from "./exchanges";
 import { markTried } from "./setup";
@@ -30,12 +32,16 @@ import { present, presentAction, presentAnswer, presenceState } from "./presence
 import { localNow, runBackgroundTask } from "./background-agent";
 import { base64 } from "./bytes";
 import { browseCall } from "./browse";
-import { isSpeaking, speak, stopSpeaking } from "./speech";
+import { acknowledgeNow, isSpeaking, preloadVoice, speak, stopSpeaking } from "./speech";
+import { endReply, markReply, reportTask, startReply, taskMeter } from "./timings";
 import { TALK_KEYS, type Presence } from "../../shared/bridge";
 
 export type ShowMePhase = "idle" | "listening" | "working";
 
 const WAKE_KEY = "tandrix.wakeWord";
+
+/** Said as an app command starts; already in Tandrix's voice on this Mac. */
+const APP_ACK = "On it.";
 
 export const NOTHING_HEARD = "Didn't hear anything. Hold ⌥⌘ while you talk, or type your question.";
 
@@ -97,9 +103,13 @@ export function useShowMe(jobId: string | undefined) {
       .then((p) => {
         userNameRef.current = p.displayName ?? undefined;
       })
-      .catch(() => undefined);
+      .catch(() => undefined)
+      // Signed in: the acknowledgements in Tandrix's voice, ready to play at once.
+      .finally(() => void preloadVoice([...LOOK_ACKS, APP_ACK]).catch(() => undefined));
   }, []);
   const recording = useRef<Recording | undefined>(undefined);
+  /** The same question, heard on this Mac as it's said. */
+  const hearing = useRef<Hearing | undefined>(undefined);
   const held = useRef(false);
   const phaseRef = useRef(phase);
   phaseRef.current = phase;
@@ -152,6 +162,8 @@ export function useShowMe(jobId: string | undefined) {
 
   // Every task handed over: screen tasks one at a time, background ones alongside.
   const [agents, setAgents] = useState<AgentTask[]>([]);
+  /** App commands (SP6): done in a moment, so their result is said, not also notified. */
+  const quickRef = useRef(new Set<number>());
   const boardRef = useRef<Board | null>(null);
   const board = (boardRef.current ??= createBoard({
     runScreen: async (task, io) => {
@@ -171,19 +183,23 @@ export function useShowMe(jobId: string | undefined) {
         status: "stopped",
         reply: STOPPED_REPLY,
       }));
+      // Where the task's time goes, for the log: the model, acting, and looking at the screen.
+      const meter = taskMeter();
+      let outcome: ScreenTaskResult["status"] = "failed";
       try {
         const working = runScreenTask(task, {
-          capture: () => window.tandrix.screen.capture(),
+          capture: () => meter.time("looking", () => window.tandrix.screen.capture()),
           apps: () => window.tandrix.doing.apps(),
-          openApp: (name) => window.tandrix.doing.openApp(name),
-          turn: (req) => api.doStart(req),
-          next: (req) => api.doContinue(req),
+          openApp: (name) => meter.time("acting", () => window.tandrix.doing.openApp(name)),
+          turn: (req) => meter.time("model", () => api.doStart(req)),
+          next: (req) => meter.time("model", () => api.doContinue(req)),
           front: () => window.tandrix.doing.front(),
+          controls: () => meter.time("looking", () => window.tandrix.doing.controls()),
           note: async (req) => {
-            const r = await api.doNotes(req);
+            const r = await meter.time("model", () => api.doNotes(req), false);
             return r.status === "done" ? r.note : null;
           },
-          run: (batch) => window.tandrix.doing.run(batch),
+          run: (batch) => meter.time("acting", () => window.tandrix.doing.run(batch)),
           say: (line) => speak(line),
           // The bar carries the user along: what it's doing now.
           doing: presentAction,
@@ -192,8 +208,11 @@ export function useShowMe(jobId: string | undefined) {
           settle: (ms) => new Promise((r) => setTimeout(r, ms)),
           base64,
         });
-        return await Promise.race([working, stopped]);
+        const result = await Promise.race([working, stopped]);
+        outcome = result.status;
+        return result;
       } finally {
+        reportTask(meter.end(outcome));
         await window.tandrix.doing.end();
         if (modeRef.current !== "do") await window.tandrix.doing.setMode("show");
       }
@@ -211,7 +230,8 @@ export function useShowMe(jobId: string | undefined) {
       if (!t.result) return;
       if (t.kind === "background") {
         add({ speaker: "tandrix", text: t.detail ? `${t.result}\n\n${t.detail}` : t.result });
-        void window.tandrix.panel.notify("Tandrix finished a task", t.result);
+        if (!quickRef.current.delete(t.id))
+          void window.tandrix.panel.notify("Tandrix finished a task", t.result);
         // Not over the user while they're talking.
         if (phaseRef.current !== "listening") speak(t.result);
         return;
@@ -238,7 +258,10 @@ export function useShowMe(jobId: string | undefined) {
   /** Show me: look at the screen, point at the answer, say it. */
   const showAnswer = useCallback(
     async (job: string | undefined, question: string, shot: Promise<Shot>, point = true) => {
+      // Something heard straight away while the answer is worked out (SP7).
+      if (acknowledgeNow()) markReply("acknowledged");
       const { capture, evidence } = await shot;
+      markReply("captured");
       const lesson = wantsLesson(question);
       const named = userNameRef.current ? { userName: userNameRef.current } : {};
       const r =
@@ -261,6 +284,7 @@ export function useShowMe(jobId: string | undefined) {
               lesson,
               ...named,
             });
+      markReply("answered");
       if (r.status === "unavailable") return reply(r.message);
       // While a task has the pointer, answer in words and leave the pointer to it.
       if (!point) return reply(r.reply);
@@ -275,6 +299,7 @@ export function useShowMe(jobId: string | undefined) {
       } else if (r.target?.geometry.kind === "point") {
         await window.tandrix.overlay.pointAt(capture.geometry, r.target.geometry.point, "");
       }
+      markReply("pointed");
       reply(r.reply);
       markTried();
     },
@@ -318,6 +343,12 @@ export function useShowMe(jobId: string | undefined) {
       if (kind === "background") {
         board.addBackground(said);
         return reply(acknowledgeBackground());
+      }
+      // Calendar, Reminders, Notes, Music, Finder, Safari: done through the app, without the
+      // pointer, and said when it's done.
+      if (kind === "app") {
+        quickRef.current.add(board.addBackground(said).id);
+        return reply(APP_ACK);
       }
       if (kind === "do" || (kind === "offer" && modeRef.current === "do"))
         return startScreenTask(said);
@@ -363,6 +394,7 @@ export function useShowMe(jobId: string | undefined) {
     } catch (e) {
       fail((e as Error).message);
     } finally {
+      endReply();
       workingRef.current = false;
       busyRef.current = null;
       setPhase("idle");
@@ -387,7 +419,8 @@ export function useShowMe(jobId: string | undefined) {
       setProblem(undefined);
       add({ speaker: "you", text: effective });
       // Remarks while a task runs, and answers to an offer, are handled straight away.
-      if (board.screenBusy() || offerRef.current || helpKind(effective) === "background") {
+      const kindNow = helpKind(effective);
+      if (board.screenBusy() || offerRef.current || kindNow === "background" || kindNow === "app") {
         void answer(jobId, effective, shoot(jobId));
         return;
       }
@@ -397,6 +430,7 @@ export function useShowMe(jobId: string | undefined) {
         return;
       }
       stopSpeaking();
+      startReply("typed");
       void run(() => answer(jobId, effective, shoot(jobId)), {
         state: "looking",
         label: "Looking at your screen",
@@ -416,23 +450,34 @@ export function useShowMe(jobId: string | undefined) {
     async (step?: "send" | "nothing_heard") => {
       const rec = recording.current;
       recording.current = undefined;
-      if (!rec) return;
+      const local = hearing.current;
+      hearing.current = undefined;
+      if (!rec) return local?.cancel();
       void window.tandrix.voice.setListening(false);
       if ((step ?? rec.ended()) === "nothing_heard") {
         rec.cancel();
+        local?.cancel();
         restorePhase();
         add({ speaker: "tandrix", text: NOTHING_HEARD });
         speak(NOTHING_HEARD);
         if (!workingRef.current) return presentAnswer(NOTHING_HEARD);
         return;
       }
+      // Timed from letting go to the first sound of the answer.
+      startReply("voice");
       await run(
         async () => {
           const wav = await rec.stop();
+          markReply("recorded");
           // Upload the screenshot while the question is transcribed.
           const shot = shoot(jobId);
           shot.catch(() => undefined);
-          const heard = await api.transcribe(wav);
+          // Heard on this Mac as it was said; the server only when the Mac couldn't hear it.
+          const said = await local?.end();
+          const heard = said
+            ? { status: "heard" as const, transcript: said }
+            : await api.transcribe(wav);
+          markReply("transcribed");
           if (heard.status !== "heard") return reply(heard.message);
           const wake = parseWakePhrase(heard.transcript);
           if (wake.woke && !wake.remainder) {
@@ -468,14 +513,20 @@ export function useShowMe(jobId: string | undefined) {
             : {}),
       };
       try {
+        hearing.current?.cancel();
+        const heard = startHearing();
+        hearing.current = heard;
         recording.current = await startRecording(
           (step) => void finish(step),
           (level) => {
             if (recording.current) present({ ...shown, level });
           },
+          (samples) => heard.push(samples),
         );
         if (how === "tap") recording.current.tap();
       } catch {
+        hearing.current?.cancel();
+        hearing.current = undefined;
         return fail("Tandrix couldn't start the microphone. Type your question instead.");
       }
       void window.tandrix.voice.setListening(true);
@@ -490,6 +541,8 @@ export function useShowMe(jobId: string | undefined) {
   const cancel = useCallback(() => {
     recording.current?.cancel();
     recording.current = undefined;
+    hearing.current?.cancel();
+    hearing.current = undefined;
     held.current = false;
     void window.tandrix.voice.setListening(false);
     setPhase("idle");

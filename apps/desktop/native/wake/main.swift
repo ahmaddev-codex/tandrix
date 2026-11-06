@@ -184,7 +184,8 @@ if ProcessInfo.processInfo.environment["TANDRIX_WAKE_SELF"] == nil,
   _ = disclaim(&attr, 1)
   setenv("TANDRIX_WAKE_SELF", "1", 1)
   let path = CommandLine.arguments[0]
-  var argv: [UnsafeMutablePointer<CChar>?] = [strdup(path), nil]
+  // The same arguments (--hear), so the child does what this one was asked to.
+  var argv: [UnsafeMutablePointer<CChar>?] = CommandLine.arguments.map { strdup($0) } + [nil]
   var pid: pid_t = 0
   if posix_spawn(&pid, path, nil, &attr, &argv, environ) == 0 {
     // Pass a stop on to the child, then exit as it does.
@@ -205,6 +206,23 @@ if ProcessInfo.processInfo.environment["TANDRIX_WAKE_SELF"] == nil,
 }
 
 setvbuf(stdout, nil, _IOLBF, 0)
+let args = CommandLine.arguments
+// Hearing a question (hear.swift): the same permission, no microphone of its own.
+if args.count >= 2, args[1] == "--hear" || args[1] == "--hear-file" {
+  SFSpeechRecognizer.requestAuthorization { status in
+    DispatchQueue.main.async {
+      guard status == .authorized else { fail("speech_not_allowed") }
+      if args[1] == "--hear" {
+        runHearing()
+      } else if args.count >= 3 {
+        runHearFile(args[2], engine: args.count >= 4 ? args[3] : nil)
+      } else {
+        fail("no_file")
+      }
+    }
+  }
+  dispatchMain()
+}
 var listener: Listener?
 SFSpeechRecognizer.requestAuthorization { status in
   DispatchQueue.main.async {

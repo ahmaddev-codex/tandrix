@@ -1,5 +1,5 @@
 // What background agents can do on this Mac without its screen, mouse or keyboard: add calendar
-// events and reminders, make notes, draft emails, list files. Each tool is a fixed AppleScript;
+// events and reminders, make notes, draft emails, list files, play music, open a folder or a page. Each tool is a fixed AppleScript;
 // what the model wrote reaches it only as separate arguments (`on run argv`), never as script
 // text, so it can't run anything else. Nothing here sends, pays or deletes. The first use of each
 // app asks the user (macOS Automation permission).
@@ -110,6 +110,49 @@ on run argv
   end tell
   return "Saved to Drafts"
 end run`,
+  music_control: `
+on run argv
+  set act to item 1 of argv
+  set q to item 2 of argv
+  tell application "Music"
+    if act is "pause" then
+      pause
+      return "Paused"
+    else if act is "next" then
+      next track
+    else if act is "previous" then
+      previous track
+    else if q is "" then
+      play
+    else
+      set found to (every track of library playlist 1 whose name contains q or artist contains q or album contains q or genre contains q)
+      if (count of found) is 0 then return "Nothing in the library matches " & q
+      play item 1 of found
+    end if
+    delay 0.3
+    try
+      return "Playing " & (name of current track) & " by " & (artist of current track)
+    on error
+      return "Done"
+    end try
+  end tell
+end run`,
+  finder_open: `
+on run argv
+  tell application "Finder"
+    open (POSIX file (item 1 of argv) as alias)
+    activate
+  end tell
+  return "Opened"
+end run`,
+  safari_open: `
+on run argv
+  tell application "Safari"
+    activate
+    open location (item 1 of argv)
+  end tell
+  return "Opened"
+end run`,
 } as const;
 
 const escapeHtml = (s: string) =>
@@ -163,8 +206,43 @@ export function scriptArgs(
         return "Needs at least one email address and a subject.";
       return [to.join(","), field(a, "subject", 300), field(a, "body", 8000)];
     }
+    case "music_control": {
+      const action = ["play", "pause", "next", "previous"].includes(a.action as string)
+        ? (a.action as string)
+        : null;
+      if (!action) return "The action must be play, pause, next or previous.";
+      return [action, action === "play" ? field(a, "search", 100) : ""];
+    }
+    case "finder_open": {
+      const folder = OPENABLE[a.folder as keyof typeof OPENABLE];
+      if (folder === undefined)
+        return `The folder must be one of ${Object.keys(OPENABLE).join(", ")}.`;
+      return [folder.startsWith("/") ? folder : join(homedir(), folder)];
+    }
+    case "safari_open": {
+      const url = field(a, "url", 2000).trim();
+      try {
+        const u = new URL(url);
+        if (u.protocol !== "https:" || u.username || u.password) throw new Error();
+        return [u.href];
+      } catch {
+        return "Needs a full https URL.";
+      }
+    }
   }
 }
+
+/** The folders finder_open may open: the user's own, by name, never a path the model wrote. */
+const OPENABLE = {
+  Home: "",
+  Desktop: "Desktop",
+  Documents: "Documents",
+  Downloads: "Downloads",
+  Pictures: "Pictures",
+  Movies: "Movies",
+  Music: "Music",
+  Applications: "/Applications",
+} as const;
 
 function osascript(script: string, args: string[]): Promise<string> {
   return new Promise((resolve, reject) => {
