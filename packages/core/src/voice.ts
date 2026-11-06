@@ -139,3 +139,30 @@ export function parseWakePhrase(text: string): { woke: boolean; remainder: strin
   const remainder = /^[.!?,;:\s—-]+$/.test(rawRemainder) ? "" : rawRemainder;
   return { woke: true, remainder };
 }
+
+/** The longest piece voiced after the first: long enough to sound natural, short to make. */
+const LATER_PIECE = 160;
+
+/**
+ * A reply in the pieces it's voiced in (SP4): the first sentence alone, so the first sound comes
+ * as soon as it's made ("Got it." is ready at once), then the rest a sentence or two at a time,
+ * each made while the one before plays.
+ */
+export function speechPieces(text: string): string[] {
+  const clean = text.replace(/\s+/g, " ").trim();
+  if (!clean) return [];
+  // Sentence ends, not the dots in "e.g." or "3.5" (a full stop followed by a space and a capital,
+  // a digit or a quote).
+  const sentences = clean.split(/(?<=[.!?])\s+(?=["'“‘(]?[A-Z0-9])/);
+  const [first, ...rest] = sentences;
+  const pieces = [first!];
+  let piece = "";
+  for (const s of rest) {
+    if (piece && piece.length + s.length + 1 > LATER_PIECE) {
+      pieces.push(piece);
+      piece = s;
+    } else piece = piece ? `${piece} ${s}` : s;
+  }
+  if (piece) pieces.push(piece);
+  return pieces;
+}

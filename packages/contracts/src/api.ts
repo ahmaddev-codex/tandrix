@@ -407,6 +407,9 @@ export const MAC_TOOLS = [
   "mail_draft",
   "files_list",
   "browse",
+  "music_control",
+  "finder_open",
+  "safari_open",
 ] as const;
 export const MacToolName = z.enum(MAC_TOOLS);
 export type MacToolName = z.infer<typeof MacToolName>;
@@ -456,6 +459,23 @@ export const BackgroundResponse = z.discriminatedUnion("status", [
 export type BackgroundResponse = z.infer<typeof BackgroundResponse>;
 
 /** POST /screen/do: start doing a task on the screen shown. The screenshot isn't stored here. */
+/**
+ * A control on the screen, from the front app's accessibility tree (SP5): its role, its name and
+ * where it is in the screenshot's pixels. Never a field's contents, never a password field.
+ */
+export const ScreenControl = z.strictObject({
+  role: z.string().regex(/^[A-Za-z]{2,40}$/),
+  name: z.string().max(80),
+  enabled: z.boolean(),
+  box: z.strictObject({
+    x: z.number().int().min(0),
+    y: z.number().int().min(0),
+    w: z.number().int().min(1),
+    h: z.number().int().min(1),
+  }),
+});
+export type ScreenControl = z.infer<typeof ScreenControl>;
+
 export const DoStartRequest = z.strictObject({
   screenshot: InlineScreenshot,
   task: text(2000),
@@ -473,6 +493,8 @@ export const DoStartRequest = z.strictObject({
   memory: z.array(text(300)).max(40).default([]),
   /** Which turn of the task this is (1 for the first). */
   turn: z.number().int().min(1).max(DO_MAX_TURNS).default(1),
+  /** The front window's controls, so the model can name and find its target. */
+  controls: z.array(ScreenControl).max(150).default([]),
 });
 
 /**

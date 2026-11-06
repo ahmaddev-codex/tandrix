@@ -4,7 +4,7 @@
 import { asImperative, wantsDesktopExecution, wantsLesson } from "./voice";
 
 /** Shows, offers to do, does straight away, or works in the background without the screen. */
-export type HelpKind = "show" | "offer" | "do" | "background";
+export type HelpKind = "show" | "offer" | "do" | "background" | "app";
 
 const QUESTION =
   /^(where|what|which|how|why|when|who|is|are|can|could|should|does|do|will|would)\b|\?\s*$/i;
@@ -17,11 +17,44 @@ const ACTION =
 const BACKGROUND =
   /^(please\s+)?(research|look up|look into|find out|find me|search (for|the web)|compare|summari[sz]e|explain|draft|write me|come up with|plan|brainstorm|give me|list|recommend|check (the )?(price|weather|news))\b/i;
 
+const WHEN =
+  /\b(today|tonight|tomorrow|this (morning|afternoon|evening|week(end)?)|next (week|month|\w+day)|on (mon|tues|wednes|thurs|fri|satur|sun)day|(mon|tues|wednes|thurs|fri|satur|sun)day|at \d{1,2}([:.]\d{2})?|\d{1,2}([:.]\d{2})?\s?(am|pm)|noon|midnight)\b/i;
+
+/**
+ * Requests an app command does outright (SP6), with no screen, pointer or keyboard: a calendar
+ * event, a reminder, a note, music, a folder, a web page. One step, so they're done straight away.
+ */
+const APP: RegExp[] = [
+  // "Add lunch with Sam tomorrow at 1", "Put the dentist in my calendar on Friday".
+  /^(add|put|book|schedule|pencil in|block( out)?|set up)\b.*\b(calendar|diary)\b/i,
+  /^(remind me|(add|set|create|make) (a |me a )?reminder)\b/i,
+  /^((make|take|create|write|add) (a |me a )?(quick )?note|note (that|down))\b/i,
+  /^(play|pause|resume|skip( this)?( song| track)?|next (song|track)|previous (song|track)|stop the music)\b/i,
+  /^(open|show)( me)? (my )?(home|desktop|documents|downloads|pictures|movies|music|applications) folder\b/i,
+  /^(open|go to|visit|pull up) (https:\/\/)?[a-z0-9-]+(\.[a-z0-9-]+)+(\/\S*)?( in safari)?[.!]?$/i,
+];
+const TIMED_ADD = /^(add|put|schedule|pencil in|block( out)?)\b/i;
+
+/** Said about what's on the screen ("play this video", "open the second link"): not an app command. */
+const ABOUT_THE_SCREEN =
+  /\b(on (my|this|the) screen|this (page|app|window|video|song here|one)|here|that (one|button|link)|click|tap|type|scroll)\b/i;
+
+export function isAppCommand(text: string): boolean {
+  const core = asImperative(text.trim());
+  if (!core || ABOUT_THE_SCREEN.test(text)) return false;
+  if (APP.some((r) => r.test(core))) return true;
+  // "Add lunch with Sam tomorrow at 1": something put in a day, with a time to put it at.
+  return (
+    TIMED_ADD.test(core) && WHEN.test(core) && !/\b(to (the )?(cart|basket|list))\b/i.test(core)
+  );
+}
+
 /** What a request needs. Screen questions are shown; plain requests are offered; "for me" is done. */
 export function helpKind(text: string): HelpKind {
   const q = text.trim();
   if (!q) return "show";
   if (wantsLesson(q)) return "show";
+  if (isAppCommand(q)) return "app";
   if (wantsDesktopExecution(q)) return "do";
   if (/\b(in the background|while i work|meanwhile|when you can)\b/i.test(q)) return "background";
   // A polite wrapper ("can you …?", "I want you to …") must not turn a request into a question
@@ -86,6 +119,9 @@ export function whileBusy(text: string): "stop" | "redirect" | "background" | "l
   if (how !== "queue") return how;
   const kind = helpKind(text);
   if (kind === "background") return "background";
+  // App commands run alongside, out of sight; opening a folder or a page takes the front, so waits.
+  if (kind === "app")
+    return /^(open|show|go to|visit|pull up)\b/i.test(asImperative(text)) ? "queue" : "background";
   if (kind === "show") return ON_SCREEN.test(text) ? "look" : "background";
   return "queue";
 }
@@ -174,7 +210,30 @@ export function offerToDo(task: string, seed = Math.random()): string {
 }
 
 /** Every fixed line Tandrix says, so its voice can have them ready before they're needed. */
+/**
+ * Said the moment a question is understood, before Show me's answer is ready (SP7): short, so it's
+ * over before the answer comes, and played from audio the Mac already holds.
+ */
+export const LOOK_ACKS = [
+  "One moment.",
+  "Let me look.",
+  "Just a sec.",
+  "Let me see.",
+  "Looking now.",
+];
+
+/** An acknowledgement that isn't the one said last time; from `ready` when only some are loaded. */
+export function lookAck(
+  last: string | undefined,
+  ready: readonly string[] = LOOK_ACKS,
+  seed = Math.random(),
+): string | undefined {
+  const choices = ready.filter((l) => l !== last);
+  return choices.length ? choices[Math.floor(seed * choices.length) % choices.length] : undefined;
+}
+
 export const ASSISTANT_LINES = [
+  ...LOOK_ACKS,
   ...ACKS,
   ...BIG_ACKS,
   ...QUEUED,

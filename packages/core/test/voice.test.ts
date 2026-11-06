@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseVoiceCommand, parseWakePhrase, wantsLesson } from "../src";
+import { parseVoiceCommand, parseWakePhrase, speechPieces, wantsLesson } from "../src";
 
 describe("parseVoiceCommand", () => {
   it.each([
@@ -97,5 +97,38 @@ describe("wantsLesson", () => {
     "show me again",
   ])("treats %j as not a lesson", (text) => {
     expect(wantsLesson(text)).toBe(false);
+  });
+});
+
+describe("speechPieces", () => {
+  it("voices the first sentence alone, then the rest a sentence or two at a time", () => {
+    expect(
+      speechPieces("Got it. Click the Archive button to move this out of your inbox."),
+    ).toEqual(["Got it.", "Click the Archive button to move this out of your inbox."]);
+    expect(speechPieces("Click File. Then Export. Then choose PDF.")).toEqual([
+      "Click File.",
+      "Then Export. Then choose PDF.",
+    ]);
+  });
+
+  it("keeps abbreviations and numbers in their sentence", () => {
+    expect(speechPieces("Set it to 3.5 mm, e.g. with the dial. Then save.")).toEqual([
+      "Set it to 3.5 mm, e.g. with the dial.",
+      "Then save.",
+    ]);
+  });
+
+  it("splits a long rest into pieces no longer than needed", () => {
+    const s = "This sentence is about forty characters.";
+    const pieces = speechPieces(`Okay. ${Array(8).fill(s).join(" ")}`);
+    expect(pieces[0]).toBe("Okay.");
+    expect(pieces.length).toBeGreaterThan(2);
+    for (const p of pieces.slice(1)) expect(p.length).toBeLessThanOrEqual(160);
+    expect(pieces.join(" ")).toBe(`Okay. ${Array(8).fill(s).join(" ")}`);
+  });
+
+  it("has nothing to say for nothing", () => {
+    expect(speechPieces("  ")).toEqual([]);
+    expect(speechPieces("Done")).toEqual(["Done"]);
   });
 });

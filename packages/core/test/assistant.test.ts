@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  LOOK_ACKS,
+  isAppCommand,
+  lookAck,
   whileBusy,
   acknowledge,
   helpKind,
@@ -130,5 +133,59 @@ describe("whileBusy", () => {
     expect(whileBusy("Book my dentist for Thursday")).toBe("queue");
     expect(whileBusy("Stop")).toBe("stop");
     expect(whileBusy("Actually make it Friday")).toBe("redirect");
+  });
+});
+
+describe("lookAck", () => {
+  it("never says the same acknowledgement twice in a row", () => {
+    let last: string | undefined;
+    for (let i = 0; i < 50; i++) {
+      const a = lookAck(last, LOOK_ACKS, (i * 0.37) % 1)!;
+      expect(LOOK_ACKS).toContain(a);
+      expect(a).not.toBe(last);
+      last = a;
+    }
+  });
+
+  it("chooses only from what's loaded, and says nothing rather than repeat", () => {
+    expect(lookAck(undefined, ["Let me look."])).toBe("Let me look.");
+    expect(lookAck("Let me look.", ["Let me look."])).toBeUndefined();
+    expect(lookAck(undefined, [])).toBeUndefined();
+  });
+});
+
+describe("app commands (SP6)", () => {
+  it.each([
+    "Add lunch with Sam tomorrow at 1",
+    "Can you add the dentist on Friday at 9:30?",
+    "Put the school play in my calendar",
+    "Remind me to call mum at 6",
+    "Make a note that the boiler code is 4417",
+    "Play some jazz",
+    "Pause",
+    "Next track",
+    "Open my Downloads folder",
+    "Open apple.com",
+    "Go to https://example.com/docs in Safari",
+  ])("does %s outright", (s) => expect(helpKind(s)).toBe("app"));
+
+  it.each([
+    ["Book a table for two at 7", "offer"],
+    ["Play this video", "show"],
+    ["Add this to my cart", "offer"],
+    ["Add milk to the list tomorrow", "offer"],
+    ["How do I add an event?", "show"],
+    ["Open Calendar and add lunch with Sam tomorrow at 1 for me", "do"],
+  ])("leaves %s to the screen", (s, kind) => {
+    expect(isAppCommand(s)).toBe(false);
+    expect(helpKind(s)).toBe(kind);
+  });
+});
+
+describe("app commands while a screen task runs", () => {
+  it("runs out of sight alongside it, but waits to open a window", () => {
+    expect(whileBusy("Remind me to call mum at 6")).toBe("background");
+    expect(whileBusy("Pause")).toBe("background");
+    expect(whileBusy("Open my Downloads folder")).toBe("queue");
   });
 });
