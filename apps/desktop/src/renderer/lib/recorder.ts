@@ -21,8 +21,11 @@ export interface Recording {
   stop(): Promise<Uint8Array>;
   /** Stops and throws the audio away. */
   cancel(): void;
-  /** From now on the turn ends itself: after a pause once the user has spoken. */
-  tap(): void;
+  /**
+   * From now on the turn ends itself: after a pause once the user has spoken, or with nothing
+   * heard once `noSpeechMs` passes without speech (a follow-up waits less than a question).
+   */
+  tap(noSpeechMs?: number): void;
   /** How the turn stands if the user ends it now: worth sending, or nothing was said. */
   ended(): Exclude<TurnStep, "listen">;
 }
@@ -35,6 +38,8 @@ const LEVEL_EVERY_MS = 66;
 export async function startRecording(
   onEnd: (step: Exclude<TurnStep, "listen">) => void,
   onLevel?: (level: number) => void,
+  /** Each piece of audio as it's recorded, for hearing it on this Mac while the user talks. */
+  onSamples?: (samples: Float32Array) => void,
 ): Promise<Recording> {
   const stream = await navigator.mediaDevices.getUserMedia({
     audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true },
@@ -53,6 +58,7 @@ export async function startRecording(
   let samples = 0;
   let levels: TurnLevels = startLevels();
   let tapped = false;
+  let noSpeech: number | undefined;
   let done = false;
   const endBy = (step: Exclude<TurnStep, "listen">) => {
     if (done) return;
@@ -64,6 +70,7 @@ export async function startRecording(
   node.port.onmessage = (e: MessageEvent<Float32Array>) => {
     chunks.push(e.data);
     samples += e.data.length;
+    onSamples?.(e.data);
     const db = chunkDb(e.data);
     const ms = (e.data.length / SAMPLE_RATE) * 1000;
     levels = addLevel(levels, db, ms);
@@ -75,7 +82,7 @@ export async function startRecording(
       loudest = -160;
     }
     if (tapped) {
-      const step = tappedTurn(levels);
+      const step = tappedTurn(levels, noSpeech);
       if (step !== "listen") endBy(step);
     } else if (samples >= SAMPLE_RATE * MAX_SECONDS) endBy(endedTurn(levels));
   };
@@ -95,8 +102,9 @@ export async function startRecording(
       return encodeWav(joinChunks(chunks), SAMPLE_RATE);
     },
     cancel: close,
-    tap() {
+    tap(noSpeechMs) {
       tapped = true;
+      noSpeech = noSpeechMs;
     },
     ended: () => endedTurn(levels),
   };

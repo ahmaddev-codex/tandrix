@@ -24,7 +24,8 @@ function contentSecurityPolicy(env: Record<string, string>, dev: boolean): Plugi
     `img-src 'self' data: blob:${storage}`,
     // Spoken replies are fetched as audio and played from a blob URL.
     "media-src blob:",
-    `connect-src ${[...origins, ...sockets, ...(dev ? ["ws://localhost:5173"] : [])].join(" ")}`,
+    // 'self': the app's own bundled files (the "Mhm" said on hearing its name), nothing else.
+    `connect-src 'self' ${[...origins, ...sockets, ...(dev ? ["ws://localhost:5173"] : [])].join(" ")}`,
     "base-uri 'none'",
     "form-action 'none'",
   ].join("; ");

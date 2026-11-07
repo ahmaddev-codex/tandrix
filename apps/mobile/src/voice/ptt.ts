@@ -12,6 +12,7 @@ import {
 } from "expo-audio";
 import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
+import { endReply, markReply, startReply } from "@/lib/timings";
 import { stopSpeaking } from "./tts";
 import {
   addLevel,
@@ -84,18 +85,26 @@ export function usePushToTalk(opts: {
     tapping.current = false;
     stopMeter();
     setState(step === "send" ? "working" : "idle");
+    // Timed from letting go to the first sound of the answer.
+    if (step === "send") startReply("voice");
+    let heard = false;
     try {
       await recorder.stop();
+      markReply("recorded");
       // Back to playback so the reply comes out of the speaker, not the earpiece.
       await setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true });
       if (step === "nothing_heard") return latest.current.onProblem(NOTHING_HEARD);
       if (!recorder.uri) throw new Error("The recording didn't save. Try again.");
       const r = await api.transcribe(recorder.uri, latest.current.keywords);
+      markReply("transcribed");
+      heard = r.status === "heard";
       if (r.status === "heard") latest.current.onHeard(r.transcript);
       else latest.current.onProblem(r.message);
     } catch (e) {
       latest.current.onProblem((e as Error).message);
     } finally {
+      // Nothing was asked: the timing ends here (a problem said aloud is not an answer).
+      if (!heard) endReply();
       setState("idle");
     }
   };

@@ -355,16 +355,85 @@ describe("PresenceBar and PointerBuddy", () => {
     expect(screen.queryByText("Click Export in the top right.")).toBeNull();
   });
 
-  it("renders only pointer arrow by default (Mode A), ring when box is given (Mode B), step badge when step is given (Mode C)", () => {
-    const { container: defaultContainer } = render(<PointerBuddy x={100} y={120} />);
-    expect(defaultContainer.querySelector(".tx-ptr-ring")).toBeNull();
-    expect(defaultContainer.querySelector(".tx-ptr-arrow")).toBeTruthy();
-
-    const { container: boxContainer } = render(
-      <PointerBuddy x={100} y={120} box={{ width: 120, height: 60 }} step={2} />,
+  it("annotates parts as a teacher would: touch, a pen line out, the words written at its end", () => {
+    const { container } = render(
+      <PointerBuddy
+        x={500}
+        y={200}
+        hold={30000}
+        regions={[
+          {
+            dx: 0,
+            dy: 0,
+            width: 80,
+            height: 100,
+            label: "Skull",
+            detail: "Protects the brain",
+            ax: -10,
+            ay: -12,
+            mark: { kind: "point", strokes: [] },
+          },
+          {
+            dx: -100,
+            dy: 200,
+            width: 40,
+            height: 280,
+            label: "Arm",
+            detail: "Moves the arm",
+            mark: { kind: "trace", strokes: [[0, -100, 2, 0, 0, 100]] },
+          },
+        ]}
+      />,
     );
-    expect(boxContainer.querySelector(".tx-ptr-ring")).toBeTruthy();
-    expect(boxContainer.querySelector(".tx-ptr-arrow")).toBeTruthy();
+    // A dot only where the mark is a point; a line for each part, a pen on it, the words.
+    expect(container.querySelectorAll(".tx-touch")).toHaveLength(1);
+    expect(container.querySelectorAll(".tx-marker")).toHaveLength(2);
+    expect(container.querySelectorAll(".tx-pen-line")).toHaveLength(2);
+    expect(container.querySelectorAll(".tx-writing")).toHaveLength(2);
+    expect(screen.getByText("Skull")).toBeTruthy();
+    expect(screen.getByText("Protects the brain")).toBeTruthy();
+    // The pen touches where it was told: 10 left and 12 up from the skull's centre.
+    const touch = container.querySelector(".tx-touch")!;
+    expect(touch.getAttribute("cx")).toBe("490");
+    expect(touch.getAttribute("cy")).toBe("188");
+    // And the line it draws starts there, the pen riding the same path.
+    const line = container.querySelector(".tx-marker")!.getAttribute("d")!;
+    expect(line.startsWith("M 490.0 188.0")).toBe(true);
+    const pen = container.querySelector<HTMLElement>(".tx-pen-line")!;
+    expect(pen.style.getPropertyValue("offset-path") || pen.getAttribute("style")).toContain(
+      "M 490.0 188.0",
+    );
+    // The traced part is drawn along its own strokes, from where the stroke starts.
+    const arm = container.querySelector('[data-kind="trace"] .tx-marker')!.getAttribute("d")!;
+    expect(arm.startsWith("M 400")).toBe(true);
+  });
+
+  it("points with the arrow, adds a step badge, and frames a region with its name and note", () => {
+    const { container: plain } = render(<PointerBuddy x={100} y={120} />);
+    expect(plain.querySelector(".tx-ptr-arrow")).toBeTruthy();
+    expect(plain.querySelector(".tx-annot-edges")).toBeNull();
+
+    render(<PointerBuddy x={100} y={120} step={2} />);
     expect(screen.getByText("2")).toBeTruthy();
+
+    const { container: framed } = render(
+      <PointerBuddy
+        x={300}
+        y={200}
+        box={{ width: 240, height: 60 }}
+        label="Equation"
+        note={"3x − 2 = 2x + 9\nx = 11"}
+        hold={20000}
+      />,
+    );
+    // A clean dashed frame, revealed as the pen draws round it.
+    const edges = framed.querySelector(".tx-annot-edges")!;
+    expect(edges.querySelector(".tx-marker")).toBeTruthy();
+    expect(edges.querySelector("mask .tx-reveal")).toBeTruthy();
+    expect(screen.getByText("Equation")).toBeTruthy();
+    expect(screen.getByText("x = 11")).toBeTruthy();
+    const annot = framed.querySelector<HTMLElement>(".tx-annot")!;
+    expect(annot.style.getPropertyValue("--tx-hold")).toBe("20000ms");
+    expect(annot.style.getPropertyValue("--tx-w")).toBe("240px");
   });
 });

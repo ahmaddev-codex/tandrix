@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { parseVoiceCommand, parseWakePhrase, wantsLesson } from "../src";
+import {
+  parseVoiceCommand,
+  parseWakePhrase,
+  speechPieces,
+  wantsExplanation,
+  wantsLesson,
+} from "../src";
 
 describe("parseVoiceCommand", () => {
   it.each([
@@ -98,4 +104,99 @@ describe("wantsLesson", () => {
   ])("treats %j as not a lesson", (text) => {
     expect(wantsLesson(text)).toBe(false);
   });
+});
+
+describe("speechPieces", () => {
+  it("voices the first sentence alone, then the rest a sentence or two at a time", () => {
+    expect(
+      speechPieces("Got it. Click the Archive button to move this out of your inbox."),
+    ).toEqual(["Got it.", "Click the Archive button to move this out of your inbox."]);
+    expect(speechPieces("Click File. Then Export. Then choose PDF.")).toEqual([
+      "Click File.",
+      "Then Export. Then choose PDF.",
+    ]);
+  });
+
+  it("keeps abbreviations and numbers in their sentence", () => {
+    expect(speechPieces("Set it to 3.5 mm, e.g. with the dial. Then save.")).toEqual([
+      "Set it to 3.5 mm, e.g. with the dial.",
+      "Then save.",
+    ]);
+  });
+
+  it("splits a long rest into pieces no longer than needed", () => {
+    const s = "This sentence is about forty characters.";
+    const pieces = speechPieces(`Okay. ${Array(8).fill(s).join(" ")}`);
+    expect(pieces[0]).toBe("Okay.");
+    expect(pieces.length).toBeGreaterThan(2);
+    for (const p of pieces.slice(1)) expect(p.length).toBeLessThanOrEqual(160);
+    expect(pieces.join(" ")).toBe(`Okay. ${Array(8).fill(s).join(" ")}`);
+  });
+
+  it("has nothing to say for nothing", () => {
+    expect(speechPieces("  ")).toEqual([]);
+    expect(speechPieces("Done")).toEqual(["Done"]);
+  });
+});
+
+describe("lessons and explanations", () => {
+  it.each([
+    "Teach mw how to use Google Docs",
+    "Teach me Google Sheets",
+    "I want to learn Figma",
+    "Show me around Notion",
+    "How do I use pivot tables?",
+    "Get me started with Excel",
+  ])("treats %s as a lesson", (s) => expect(wantsLesson(s)).toBe(true));
+
+  it.each([
+    "I have this equation on my screen and I don't understand it",
+    "What does this error mean?",
+    "Explain this chart",
+    "Help me understand this paragraph",
+    "Solve this for me",
+    "What's this formula?",
+  ])("treats %s as wanting an explanation", (s) => expect(wantsExplanation(s)).toBe(true));
+
+  it("leaves plain questions alone", () => {
+    expect(wantsExplanation("How do I export this as a PDF?")).toBe(false);
+    expect(wantsLesson("Where is the export button?")).toBe(false);
+  });
+});
+
+describe("going through what's on screen", () => {
+  it.each([
+    "Walk me through these functional groups",
+    "Can you go through the functional groups on my screen?",
+    "Show me the functional groups",
+    "Point out the bonds in this molecule",
+    "Take me through this proof",
+    "Highlight the sine and cosine waves",
+    "What are the parts here?",
+    "Teach me the bones of the hand",
+  ])("explains %s on the screen", (s) => expect(wantsExplanation(s)).toBe(true));
+
+  it.each([
+    "Walk me through setting up Gmail",
+    "Show me the export settings",
+    "Show me the share button",
+    "Walk me through the menus",
+  ])("leaves %s to the app", (s) => expect(wantsExplanation(s)).toBe(false));
+});
+
+describe("explaining any subject, programming included", () => {
+  it.each([
+    "What does this function do?",
+    "Why does this code fail?",
+    "Review my code",
+    "Find the bug",
+    "How does this query work?",
+    "Translate this",
+  ])("explains %s", (s) => expect(wantsExplanation(s)).toBe(true));
+
+  it.each([
+    "Teach me about photosynthesis",
+    "Help me learn about recursion",
+    "I want to understand compound interest",
+  ])("teaches %s as a lesson", (s) => expect(wantsLesson(s)).toBe(true));
 });

@@ -12,11 +12,12 @@ import {
   planTask,
   searchOnlineSolution,
   startDoing,
+  controlsLine,
   type DoTurn,
   type MetaConfig,
   onlineNotes,
 } from "@tandrix/ai";
-import type { AgentCall, AgentStep, SafetyCheck } from "@tandrix/contracts";
+import type { ScreenControl, AgentCall, AgentStep, SafetyCheck } from "@tandrix/contracts";
 
 export interface Shot {
   bytes: Uint8Array;
@@ -42,7 +43,12 @@ export interface ScreenDoer {
   ): Promise<BackgroundOutcome>;
   /** Which installed app the task needs, if not the one in front; null on any failure. */
   plan(input: { task: string; frontApp?: string; apps: string[] }): Promise<string | null>;
-  start(input: { screenshot: Shot; task: string; memory?: string[] }): Promise<DoOutcome>;
+  start(input: {
+    screenshot: Shot;
+    task: string;
+    memory?: string[];
+    controls?: ScreenControl[];
+  }): Promise<DoOutcome>;
   /** What a screen holds that the task needs (before leaving it); null when nothing. */
   notes?(input: { screenshot: Shot; task: string }): Promise<{ note: string | null } | null>;
   continue(input: {
@@ -128,7 +134,7 @@ export function metaScreenDoer(
         throw e;
       }
     },
-    start: ({ screenshot, task, memory = [] }) =>
+    start: ({ screenshot, task, memory = [], controls = [] }) =>
       run(async () => {
         let context: string[] | undefined = memory.length
           ? [`Done so far, in order:\n${memory.map((m) => `- ${m}`).join("\n")}`]
@@ -140,6 +146,8 @@ export function metaScreenDoer(
           );
           if (online?.notes) context = [onlineNotes(online.notes)];
         }
+        const named = controlsLine(controls);
+        if (named) context = [...(context ?? []), named];
         return startDoing(client, config.models.computerUse, {
           screenshot: imageData(screenshot.bytes, screenshot.mimeType),
           task,

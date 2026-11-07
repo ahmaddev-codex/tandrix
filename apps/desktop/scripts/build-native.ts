@@ -35,12 +35,22 @@ try {
     stdio: "inherit",
   });
   execSync(
-    "swiftc -O -o dist/native/tandrix-wake native/wake/main.swift native/wake/voiceprint.swift -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __info_plist -Xlinker native/wake/Info.plist",
+    "swiftc -O -o dist/native/tandrix-wake native/wake/main.swift native/wake/voiceprint.swift native/wake/hear.swift native/wake/continuous.swift native/wake/mic.swift native/wake/model.swift native/wake/spike.swift -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __info_plist -Xlinker native/wake/Info.plist",
     {
       cwd: root,
       stdio: "inherit",
     },
   );
+  // Reading the text on a screenshot (native/text), to mark exact words.
+  execSync("swiftc -O -o dist/native/tandrix-text native/text/main.swift", {
+    cwd: root,
+    stdio: "inherit",
+  });
+  // The wake-word model (scripts/wake/model), compiled for Core ML beside the helper.
+  execSync("xcrun coremlcompiler compile native/wake/TandrixWake.mlpackage dist/native/", {
+    cwd: root,
+    stdio: "inherit",
+  });
   console.log("[build:native] Swift compilation completed successfully.");
 } catch (err) {
   console.error("[build:native] Error compiling Swift native binaries:", err);

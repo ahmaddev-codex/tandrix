@@ -1,0 +1,45 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Molecule viewer</title>
+    <link rel="stylesheet" href="teach.css" />
+  </head>
+  <body>
+    <div class="menubar"><b>Molecules</b><span>File</span><span>Edit</span><span>View</span></div>
+    <div class="win">
+      <div class="titlebar"><span class="title">aspirin.mol</span></div>
+      <div class="content">
+        <div class="caption">Aspirin (acetylsalicylic acid)</div>
+        <div class="sub">C₉H₈O₄ · molar mass 180.16 g/mol</div>
+        <svg width="1320" height="758" style="position: absolute; left: 0; top: 0">
+          <g stroke="#111" stroke-width="3" fill="none" stroke-linecap="round">
+            <g data-part="ring" data-names="benzene|ring|aromatic|phenyl|arene">
+              <path d="M380 250 L449 290 L449 370 L380 410 L311 370 L311 290 Z" />
+              <path d="M392 272 L436 297 M436 362 L392 388 M323 362 L323 298" />
+            </g>
+            <g data-part="acid" data-names="carboxylic|acid|cooh|carboxyl">
+              <path d="M380 250 L380 170" />
+              <path d="M380 170 L320 136 M372 184 L314 150" />
+              <path d="M380 170 L436 138" />
+              <text x="296" y="132" fill="#c0262d" stroke="none" font-size="26">O</text>
+              <text x="438" y="136" fill="#c0262d" stroke="none" font-size="26">OH</text>
+            </g>
+            <g data-part="ester" data-names="ester|acetyl|acetoxy|acetate">
+              <path d="M449 290 L505 258" />
+              <path d="M536 258 L587 290" />
+              <path d="M587 290 L587 352 M601 290 L601 352" />
+              <path d="M587 290 L650 254" />
+              <text x="508" y="266" fill="#c0262d" stroke="none" font-size="26">O</text>
+              <text x="582" y="384" fill="#c0262d" stroke="none" font-size="26">O</text>
+              <text x="652" y="258" fill="#111" stroke="none" font-size="24">CH₃</text>
+            </g>
+          </g>
+        </svg>
+      </div>
+    </div>
+    <script>
+      window.__ask = "Walk me through the functional groups in this molecule";
+    </script>
+  </body>
+</html>

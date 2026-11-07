@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { continueDoing, imageUrl, MetaClient, prompts, startDoing } from "../src";
+import {
+  continueDoing,
+  controlsLine,
+  finishedTurn,
+  imageUrl,
+  MetaClient,
+  prompts,
+  startDoing,
+} from "../src";
 import { json, noSleep, scriptedFetch } from "./helpers";
 
 const response = (id: string, output: unknown[]) =>
@@ -82,5 +90,66 @@ describe("continueDoing", () => {
       ],
     });
     expect(t.safetyChecks).toEqual([check]);
+  });
+});
+
+describe("controlsLine", () => {
+  it("names the front window's controls with their centres, once each", () => {
+    const box = { x: 100, y: 40, w: 60, h: 24 };
+    expect(
+      controlsLine([
+        { role: "Button", name: "Save", enabled: true, box },
+        { role: "Button", name: "Save", enabled: true, box },
+        { role: "Button", name: "", enabled: true, box: { x: 1, y: 1, w: 9, h: 9 } },
+        { role: "TextField", name: "", enabled: true, box: { x: 10, y: 80, w: 200, h: 22 } },
+        { role: "CheckBox", name: 'Say "hi"', enabled: false, box: { x: 0, y: 0, w: 10, h: 10 } },
+      ]),
+    ).toBe(
+      'Controls in the front window, from the app itself (screenshot pixels). Aim at a control\'s centre:\n- Button "Save" centre 130,52, 60x24\n- TextField centre 110,91, 200x22\n- CheckBox "Say hi" centre 5,5, 10x10 (dimmed)',
+    );
+  });
+
+  it("is nothing when there's nothing named", () => {
+    expect(controlsLine([])).toBeNull();
+  });
+});
+
+describe("finishedTurn", () => {
+  const click = { type: "click" as const, x: 1, y: 1, button: "left" as const };
+  it("is finished when the model says DONE, whatever came with it, without the marker", () => {
+    expect(
+      finishedTurn({ callId: "c", actions: [click], reply: "DONE: Sent Sam your reply." }),
+    ).toEqual({
+      done: true,
+      reply: "Sent Sam your reply.",
+    });
+  });
+  it("is finished with no actions", () => {
+    expect(finishedTurn({ callId: null, actions: [], reply: "Added it." }).done).toBe(true);
+  });
+  it("is finished when only idle actions come with a reply saying what it did", () => {
+    expect(
+      finishedTurn({ callId: "c", actions: [{ type: "wait" }], reply: "Sent your message to Sam." })
+        .done,
+    ).toBe(true);
+    expect(
+      finishedTurn({
+        callId: "c",
+        actions: [{ type: "move", x: 1, y: 1 }],
+        reply: "I've added the event.",
+      }).done,
+    ).toBe(true);
+  });
+  it("keeps going while there's real work, or an idle action without a finished reply", () => {
+    expect(finishedTurn({ callId: "c", actions: [click], reply: "Sent the first one." }).done).toBe(
+      false,
+    );
+    expect(
+      finishedTurn({
+        callId: "c",
+        actions: [{ type: "wait" }],
+        reply: "Waiting for Calendar to open.",
+      }).done,
+    ).toBe(false);
   });
 });

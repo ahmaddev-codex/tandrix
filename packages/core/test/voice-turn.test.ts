@@ -3,6 +3,7 @@ import {
   addLevel,
   END_PAUSE_MS,
   endedTurn,
+  FOLLOW_UP_MS,
   MAX_TURN_MS,
   NO_SPEECH_MS,
   startLevels,
@@ -56,5 +57,22 @@ describe("a turn the user ends", () => {
   it("sends when they spoke, and not when they didn't", () => {
     expect(endedTurn(levels(1500, [[200, 1200]]))).toBe("send");
     expect(endedTurn(levels(200))).toBe("nothing_heard");
+  });
+});
+
+describe("follow-up listening", () => {
+  it("gives up sooner when waiting for a follow-up", () => {
+    let t = startLevels();
+    for (let i = 0; i < 50; i++) t = addLevel(t, -70, 100);
+    expect(tappedTurn(t)).toBe("listen");
+    expect(tappedTurn(t, FOLLOW_UP_MS)).toBe("nothing_heard");
+  });
+
+  it("still takes a follow-up that starts in time", () => {
+    let t = startLevels();
+    for (let i = 0; i < 30; i++) t = addLevel(t, -70, 100);
+    for (let i = 0; i < 10; i++) t = addLevel(t, -20, 100);
+    for (let i = 0; i < 15; i++) t = addLevel(t, -70, 100);
+    expect(tappedTurn(t, FOLLOW_UP_MS)).toBe("send");
   });
 });

@@ -26,6 +26,7 @@ import {
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { View } from "react-native";
 import { api } from "@/lib/api";
+import { markReply } from "@/lib/timings";
 import { isOffline, offlineQueue } from "@/offline";
 import { usePushToTalk } from "@/voice/ptt";
 import { speak, stopSpeaking } from "@/voice/tts";
@@ -271,6 +272,7 @@ export function useStepWork(input: StepWorkInput | null): StepWork {
         text,
         ...(userName.current ? { userName: userName.current } : {}),
       });
+      markReply("answered");
       if (r.status === "command") await runCommand(r.command);
       else if (r.status === "answer") say(r.answer, r.fromStep ? undefined : "general");
       else if (r.status === "refused") say(r.message, "refusal");

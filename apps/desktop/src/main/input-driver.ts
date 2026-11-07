@@ -12,7 +12,8 @@ export type DriverCommand =
   | { op: "type"; text: string }
   | { op: "keys"; keys: string[] }
   | { op: "focus" }
-  | { op: "front" };
+  | { op: "front" }
+  | { op: "tree" };
 
 export interface DriverReply {
   ok: boolean;
@@ -20,6 +21,8 @@ export interface DriverReply {
   secure?: boolean;
   /** For "front": the app in front. */
   app?: string;
+  /** For "tree": the front window's controls, as the helper read them. */
+  controls?: unknown;
 }
 
 let helper: ChildProcessWithoutNullStreams | undefined;

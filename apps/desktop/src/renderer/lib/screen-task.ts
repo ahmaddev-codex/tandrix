@@ -5,7 +5,8 @@
 // it's finished, takes corrections said mid-task, and keeps going until the job is done, the user
 // stops it, or it's truly stuck and says so.
 import { DO_MAX_TURNS, type DesktopAction, type DoTurnResponse } from "@tandrix/contracts";
-import type { DoBatch, DoBatchResult, ScreenCapture } from "../../shared/bridge";
+import type { DoBatch, DoBatchResult, ScreenCapture, ScreenControl } from "../../shared/bridge";
+import { onShot, snapClicks, type ShotControl } from "./controls";
 
 export interface ScreenTaskDeps {
   capture: () => Promise<ScreenCapture>;
@@ -20,6 +21,7 @@ export interface ScreenTaskDeps {
     planned: boolean;
     memory: string[];
     turn: number;
+    controls?: ShotControl[];
   }) => Promise<DoTurnResponse>;
   /** Continues the same model conversation (it remembers its own last few steps). */
   next: (req: {
@@ -30,7 +32,8 @@ export interface ScreenTaskDeps {
   }) => Promise<DoTurnResponse>;
   run: (batch: DoBatch) => Promise<DoBatchResult>;
   /** Says a progress line aloud. */
-  say: (line: string) => void;
+  /** Says a progress line aloud; `current` is false once the task has moved past it. */
+  say: (line: string, current: () => boolean) => Promise<void> | void;
   /** What it's doing right now, for the bar at the top ("Opening Calendar"). */
   doing?: (label: string) => void;
   /** Corrections the user said since the last turn ("no, Thursday the 13th"). */
@@ -40,6 +43,8 @@ export interface ScreenTaskDeps {
   base64: (bytes: Uint8Array) => string;
   /** The app in front now, when the Mac can tell. */
   front?: () => Promise<string | undefined>;
+  /** The front window's controls (SP5), read from the app; empty when it can't be read. */
+  controls?: () => Promise<ScreenControl[]>;
   /** What a screen holds that the task needs, written down; null when nothing. */
   note?: (req: {
     screenshot: { mimeType: ScreenCapture["mimeType"]; data: string };
@@ -61,6 +66,8 @@ const SETTLE_MS = 300;
 const STUCK_AFTER = 3;
 /** The model sees this much recent memory each turn. */
 const MEMORY_LINES = 30;
+/** The longest a step waits for its line to be heard before it acts anyway. */
+const SAY_FIRST_MS = 1500;
 /** At most one progress line spoken this often while working. */
 const SPEAK_EVERY_MS = 3500;
 /**
@@ -164,6 +171,18 @@ export function screenChanged(a: number[] | undefined, b: number[] | undefined):
   return moved > 3;
 }
 
+/**
+ * Whether the screen now is a different view from the screenshot's: a good share of its sketch
+ * (48×30 brightness) changed, as when a page scrolls or zooms. A cursor, a caret or a menu-bar
+ * clock is a few cells, not a moved page.
+ */
+export function pageMoved(before: number[] | undefined, now: number[] | null): boolean {
+  if (!before || !now || before.length !== now.length) return false;
+  let changed = 0;
+  for (let i = 0; i < before.length; i++) if (Math.abs(before[i]! - now[i]!) > 14) changed++;
+  return changed > before.length * 0.12;
+}
+
 /** A batch as a pattern: positions to about 16 px, so the same step aimed a pixel away still counts. */
 export function batchPattern(actions: DesktopAction[]): string {
   return JSON.stringify(
@@ -224,6 +243,13 @@ export function fingerprint(bytes: Uint8Array): string {
   return `${bytes.length}:${(h >>> 0).toString(36)}`;
 }
 
+/**
+ * A request in more than one part ("grab the lineups and add them to my calendar"): the kind a
+ * model calls finished too early, so it's checked once more against the screen. A single request
+ * ends the moment the model says it's done.
+ */
+export const multiPart = (task: string) => /\b(and|then|also|after that|plus)\b|[,;]/i.test(task);
+
 const ONLY_OPEN = (app: string) =>
   new RegExp(
     `^(?:please\\s+)?(?:open|launch|start|switch to)\\s+${app.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?:\\s+for\\s+me)?[.!]*$`,
@@ -237,13 +263,17 @@ export async function runScreenTask(task: string, d: ScreenTaskDeps): Promise<Sc
   let lastSpoken = "";
   let lastSpokenAt = 0;
   /** Progress is spoken when it's new, and not more often than this. */
-  const say = (reply: string) => {
+  /** Says what a step is about to do; settles when it's heard (or won't be). */
+  const say = (reply: string): Promise<void> | void => {
     const line = spokenPart(reply);
     const now = Date.now();
     if (!line || likeness(line, lastSpoken) > 0.6 || now - lastSpokenAt < SPEAK_EVERY_MS) return;
     lastSpoken = line;
     lastSpokenAt = now;
-    d.say(line);
+    // Only while it's still what's happening: a line ready after the next turn has begun would
+    // describe work already done.
+    const at = turnNow;
+    return d.say(line, () => turnNow === at);
   };
   const { apps, front } = await d.apps();
   let frontApp = front;
@@ -251,6 +281,22 @@ export async function runScreenTask(task: string, d: ScreenTaskDeps): Promise<Sc
   let planned = false;
   let opened = 0;
   let checked = false;
+  /** The user said something while it worked ("also make it bold", "no, the 11th"): it's part of
+   * this task now. Taken in, it's checked against before the task is called done. */
+  let steered = false;
+  /** Kept apart from the running notes, so a long task never forgets what the user asked for. */
+  const updates: string[] = [];
+  const heed = (said: string[]): boolean => {
+    for (const s of said)
+      updates.push(
+        `The user just said: "${s}". It's about this task: if it corrects or adds to it, change what you're doing to match; if it's another job, do it once this one is done. Don't say you're done until it's done too.`,
+      );
+    if (said.length) {
+      steered = true;
+      checked = false;
+    }
+    return said.length > 0;
+  };
   let noEffect = 0;
   let lastSig = "";
   let lastPrint = fingerprint(capture.image);
@@ -264,7 +310,9 @@ export async function runScreenTask(task: string, d: ScreenTaskDeps): Promise<Sc
   let shotInApp: ScreenCapture | null = null;
   let notedInApp = false;
 
+  let turnNow = 0;
   for (let turn = 1; turn <= DO_MAX_TURNS; turn++) {
+    turnNow = turn;
     if (d.stopped()) return { status: "stopped", reply: STOPPED_REPLY };
     // Left an app without writing down what it read there: the next turn would only see the new
     // app, and go back for it. Write it down from the last look at that app, once, before going on.
@@ -288,12 +336,12 @@ export async function runScreenTask(task: string, d: ScreenTaskDeps): Promise<Sc
       }
     }
     if (d.stopped()) return { status: "stopped", reply: STOPPED_REPLY };
-    for (const said of d.steer()) {
-      memory.push(`The user just said: "${said}". Change what you're doing to match.`);
-      checked = false;
-      chain = null;
-    }
+    if (heed(d.steer())) chain = null;
     const screenshot = { mimeType: capture.mimeType, data: d.base64(capture.image) };
+    // What the app says is on screen, placed on this screenshot, to land a click that just misses
+    // its control. Not named to the model: on the task bench a list of controls in the prompt made
+    // it fill forms worse (1 of 3 tasks against 3 of 3; docs/engineering/latency.md).
+    const controls = d.controls ? onShot(await d.controls().catch(() => []), capture.geometry) : [];
     const r: DoTurnResponse = chain
       ? await d.next({
           session: chain.session,
@@ -311,7 +359,10 @@ export async function runScreenTask(task: string, d: ScreenTaskDeps): Promise<Sc
           // Each line within the API's limit, whatever the model said.
           memory: [
             ...notes.slice(-10),
-            ...memory.slice(-(MEMORY_LINES - Math.min(notes.length, 10))),
+            ...updates.slice(-6),
+            ...memory.slice(
+              -(MEMORY_LINES - Math.min(notes.length, 10) - Math.min(updates.length, 6)),
+            ),
           ].map((m) => (m.length > 290 ? `${m.slice(0, 289)}…` : m)),
           turn,
         });
@@ -339,10 +390,13 @@ export async function runScreenTask(task: string, d: ScreenTaskDeps): Promise<Sc
     if (r.status === "unavailable") return { status: "failed", reply: r.message };
 
     if (r.status === "done") {
+      // Something said as it finished: an update to this task, so not finished yet.
+      if (heed(d.steer())) continue;
       // Before calling it finished, one look at the screen with that claim in hand: models stop
       // early. If something's left, the next turn does it.
-      if (!checked && turn > 1) {
+      if (!checked && turn > 1 && (multiPart(task) || steered)) {
         checked = true;
+        d.doing?.("Checking it's all done");
         memory.push(
           `You said: "${r.reply.slice(0, 120)}". Check this screen against the whole request: if any part isn't done yet, do it now; if it's all done, just say what you did.`,
         );
@@ -358,9 +412,12 @@ export async function runScreenTask(task: string, d: ScreenTaskDeps): Promise<Sc
     }
     shotInApp = capture;
     d.doing?.(actionLabel(r.reply, r.actions));
-    if (r.reply) say(r.reply);
+    // Say what it's about to do, then do it: never the click first and the words after.
+    const heard = r.reply ? say(r.reply) : undefined;
+    if (heard) await Promise.race([heard, d.settle(SAY_FIRST_MS)]);
+    if (d.stopped()) return { status: "stopped", reply: STOPPED_REPLY };
     const ran = await d.run({
-      actions: r.actions,
+      actions: snapClicks(r.actions, controls),
       geometry: capture.geometry,
       intent: r.reply,
       safetyChecks: r.safetyChecks,

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { ScreenCapture } from "../src/shared/bridge";
 import {
   notesIn,
+  pageMoved,
   spokenPart,
   circling,
   fingerprint,
@@ -59,7 +60,9 @@ function setup(script: DoTurnResponse[], screens?: number[]) {
       return script.shift() ?? done("Done.");
     },
     run: async () => ({ status: "ran", ran: 1, acknowledged: [] }),
-    say: (l) => said.push(l),
+    say: (l, current) => {
+      if (current()) said.push(l);
+    },
     steer: () => steering.splice(0),
     stopped: () => stop,
     settle: async () => undefined,
@@ -75,6 +78,40 @@ function setup(script: DoTurnResponse[], screens?: number[]) {
 }
 
 describe("runScreenTask", () => {
+  it("ends a single request the moment the model says it's done, without another look", async () => {
+    const s = setup([act("Opening the chat."), act("Sending it."), done("Sent."), act("Again?")]);
+    const r = await runScreenTask("Text Sam that I'm free for lunch", s.d);
+    expect(r).toEqual({ status: "done", reply: "Sent." });
+    expect(s.sent).toHaveLength(3);
+  });
+
+  it("says what a step is about to do before doing it", async () => {
+    const order: string[] = [];
+    const s = setup([act("Opening the chat."), done("Sent.")]);
+    s.d.say = async (line) => {
+      await new Promise((r) => setTimeout(r, 20));
+      order.push(`said ${line}`);
+    };
+    s.d.settle = (ms) => new Promise((r) => setTimeout(r, Math.min(ms, 200)));
+    s.d.run = async () => {
+      order.push("clicked");
+      return { status: "ran", ran: 1, acknowledged: [] };
+    };
+    await runScreenTask("Text Sam", s.d);
+    expect(order).toEqual(["said Opening the chat.", "clicked"]);
+  });
+
+  it("drops a progress line once the task has moved past it", async () => {
+    const lines: Array<{ line: string; current: () => boolean }> = [];
+    const s = setup([act("Opening the chat."), done("Sent.")]);
+    s.d.say = (line, current) => {
+      lines.push({ line, current });
+    };
+    await runScreenTask("Text Sam", s.d);
+    expect(lines.map((l) => l.line)).toEqual(["Opening the chat."]);
+    expect(lines[0]!.current()).toBe(false);
+  });
+
   it("carries what's been done into every turn instead of resending history", async () => {
     const s = setup([
       act("Opening the note."),
@@ -82,7 +119,7 @@ describe("runScreenTask", () => {
       done("Added bread."),
       done("Added bread."),
     ]);
-    const r = await runScreenTask("Add bread to my shopping note", s.d);
+    const r = await runScreenTask("Open my shopping note and add bread", s.d);
     expect(r).toEqual({ status: "done", reply: "Added bread." });
     // Every turn is fresh (fast) and carries what's been done so far.
     expect(s.sent[0]!.memory).toEqual([]);
@@ -105,7 +142,7 @@ describe("runScreenTask", () => {
       done("Now done."),
       done("Now done."),
     ]);
-    const r = await runScreenTask("Two things", s.d);
+    const r = await runScreenTask("Do one thing and then another", s.d);
     expect(r.reply).toBe("Now done.");
     expect(s.sent[2]!.memory.at(-1)).toMatch(/^You said: "All done."\. Check this screen/);
   });
@@ -128,6 +165,39 @@ describe("runScreenTask", () => {
         t.memory.some((m) => m.includes('The user just said: "No, the other Thursday"')),
       ),
     ).toBe(true);
+  });
+
+  it("doesn't finish over an update said as it finished: it does that too, then checks", async () => {
+    const s = setup([
+      act("Writing the note."),
+      done("Written."),
+      act("Bolding it."),
+      done("Bolded."),
+    ]);
+    let turns = 0;
+    const turn = s.d.turn;
+    s.d.turn = async (req) => {
+      const r = await turn(req);
+      // "Tandrix, also make the title bold", heard just as the model says it's done.
+      if (++turns === 2) s.steer("Also make the title bold");
+      return r;
+    };
+    const r = await runScreenTask("Write a note about lunch", s.d);
+    expect(r.status).toBe("done");
+    // The update went to the model on the turn after the claimed finish, and stays in its memory.
+    expect(s.sent[2]!.memory.some((m) => m.includes('"Also make the title bold"'))).toBe(true);
+    expect(s.sent.at(-1)!.memory.some((m) => m.includes('"Also make the title bold"'))).toBe(true);
+    // And before calling it done, a look to check the whole of it is.
+    expect(s.sent.some((t) => t.memory.some((m) => /Check this screen/.test(m)))).toBe(true);
+  });
+
+  it("keeps an update in mind through a long task", async () => {
+    const steps = Array.from({ length: 40 }, (_, i) => act(`Step ${i}.`, i));
+    const s = setup([...steps, done("All done.")]);
+    const run = runScreenTask("A long job", s.d);
+    s.steer("Use the blue theme");
+    await run;
+    expect(s.sent.at(-1)!.memory.some((m) => m.includes('"Use the blue theme"'))).toBe(true);
   });
 
   it("keeps every memory line within the API's limit", async () => {
@@ -309,5 +379,25 @@ describe("actionLabel", () => {
   });
   it("falls back to the action", () => {
     expect(actionLabel("", [{ type: "type", text: "Acme" }])).toBe("Typing");
+  });
+});
+
+describe("pageMoved", () => {
+  const page: number[] = Array.from({ length: 48 * 30 }, (_, i) => (i % 48 < 24 ? 240 : 60));
+  it("sees a scrolled page", () => {
+    // Everything shifted down by three rows.
+    const scrolled = page.map(
+      (_, i) => page[(i + 48 * 30 - 48 * 3) % page.length]! + ((i / 48) % 2 ? 40 : 0),
+    );
+    expect(pageMoved(page, scrolled)).toBe(true);
+  });
+  it("ignores a cursor, a caret or a clock", () => {
+    const nudged = [...page];
+    for (const i of [5, 6, 300, 1439]) nudged[i] = nudged[i]! + 80;
+    expect(pageMoved(page, nudged)).toBe(false);
+  });
+  it("can't tell without both sketches, so it doesn't stop", () => {
+    expect(pageMoved(undefined, page)).toBe(false);
+    expect(pageMoved(page, null)).toBe(false);
   });
 });

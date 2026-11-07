@@ -99,7 +99,8 @@ export const noModelVoice: Transcriber & StepAnswerer = {
 const Keywords = z.array(z.string().trim().min(1).max(40)).max(20);
 
 /** Spoken replies: twenty a minute per user covers a conversation. */
-const SPEAK_PER_MINUTE = 20;
+// A reply is voiced a sentence or two at a time (SP4), so several requests make one reply.
+const SPEAK_PER_MINUTE = 60;
 
 /** Refuse oversized recordings before buffering them (chunked uploads carry no length). */
 const transcribeLimit = bodyLimit({

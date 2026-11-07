@@ -154,6 +154,90 @@ export class MetaClient {
     }
   }
 
+  /**
+   * respond, streamed, for calls someone is waiting on. Most of a reply's time is the API's wait
+   * before the first byte (2–4 s, now and then far longer); the answer itself follows in about a
+   * second. So if nothing has started after `firstByteMs`, the same request goes again, the first
+   * to start is kept and the other cancelled. Resolves with the whole response, as respond does.
+   */
+  async respondStreamed(
+    body: Record<string, unknown>,
+    signal?: AbortSignal,
+    firstByteMs = 4500,
+    /** The longest gap between events once the answer has started. */
+    idleMs = 20_000,
+  ): Promise<MetaResponse> {
+    type Try = { ctl: AbortController; events: AsyncGenerator<StreamEvent> };
+    const start = (): Try => {
+      const ctl = new AbortController();
+      const both = signal ? AbortSignal.any([signal, ctl.signal]) : ctl.signal;
+      return { ctl, events: this.stream(body, both) };
+    };
+    const firstOf = (t: Try) => t.events.next().then((first) => ({ t, first }));
+    const a = start();
+    const aFirst = firstOf(a);
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const late = new Promise<null>((r) => {
+      timer = setTimeout(() => r(null), firstByteMs);
+    });
+    let b: Try | undefined;
+    let won: Awaited<ReturnType<typeof firstOf>>;
+    try {
+      const early = await Promise.race([aFirst, late]);
+      if (early) won = early;
+      else {
+        b = start();
+        won = await Promise.any([aFirst, firstOf(b)]).catch((e: unknown) => {
+          throw e instanceof AggregateError ? e.errors[0] : e;
+        });
+      }
+    } finally {
+      clearTimeout(timer);
+    }
+    for (const t of [a, b]) if (t && t !== won.t) t.ctl.abort();
+    const items: ResponseOutputItem[] = [];
+    let done: MetaResponse | undefined;
+    const take = (e: StreamEvent) => {
+      if (e.type === "response.output_item.done" && e.item)
+        items.push(e.item as ResponseOutputItem);
+      if (e.type === "response.completed" || e.type === "response.failed")
+        done = e.response as MetaResponse;
+    };
+    if (!won.first.done) take(won.first.value);
+    // A stream that goes quiet is given up on, not waited on for ever.
+    let idle: ReturnType<typeof setTimeout> | undefined;
+    let quiet = false;
+    const watch = () => {
+      clearTimeout(idle);
+      idle = setTimeout(() => {
+        quiet = true;
+        won.t.ctl.abort();
+      }, idleMs);
+    };
+    try {
+      watch();
+      for await (const e of won.t.events) {
+        watch();
+        take(e);
+      }
+    } catch (e) {
+      if (quiet) throw new MetaApiError("The answer stopped coming", null, null, "timeout", true);
+      throw e;
+    } finally {
+      clearTimeout(idle);
+    }
+    if (!done) throw new MetaApiError("The stream ended early", null, "server_error", null, true);
+    if (done.status === "failed")
+      throw new MetaApiError(
+        done.error?.message ?? "Response failed",
+        null,
+        "server_error",
+        done.error?.code ?? null,
+        true,
+      );
+    return { ...done, output: done.output?.length ? done.output : items };
+  }
+
   /** POST /responses with stream: true. Retries only happen before the first event arrives. */
   async *stream(body: Record<string, unknown>, signal?: AbortSignal): AsyncGenerator<StreamEvent> {
     const model = String(body.model ?? "");

@@ -35,13 +35,15 @@ function setup() {
 }
 
 describe("POST /early-access", () => {
-  it("adds an address once, without saying whether it was already there", async () => {
+  it("adds an address once, and says so when it's signed up again", async () => {
     const { earlyAccess, post } = setup();
     const first = await post({ email: " Sam@Example.com ", platform: "mac" });
-    const again = await post({ email: "sam@example.com" });
+    // The same address, however it's typed.
+    const again = await post({ email: "SAM@example.com " });
     expect(first.status).toBe(200);
-    expect(await first.json()).toEqual({ ok: true });
-    expect(await again.json()).toEqual({ ok: true });
+    expect(await first.json()).toEqual({ ok: true, already: false });
+    expect(again.status).toBe(200);
+    expect(await again.json()).toEqual({ ok: true, already: true });
     expect([...earlyAccess.rows.keys()]).toEqual(["sam@example.com"]);
     expect(earlyAccess.rows.get("sam@example.com")?.platform).toBe("mac");
   });

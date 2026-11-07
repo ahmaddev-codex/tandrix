@@ -38,8 +38,10 @@ export function stopSpeaking() {
 }
 
 /** Speaks the reply on macOS using `say` with a natural Premium/Enhanced voice only. */
-export async function speak(text: string): Promise<boolean> {
-  const trimmed = text.trim();
+export async function speak(text: string, volume = 1): Promise<boolean> {
+  // `say` takes commands written into the text ([[rate 500]]): a reply's own are dropped, and only
+  // the volume is ever set, by Tandrix.
+  const trimmed = text.replace(/\[\[[^\]]*\]\]/g, "").trim();
   if (!trimmed) return false;
   stopSpeaking();
   if (process.platform !== "darwin") return false;
@@ -51,7 +53,10 @@ export async function speak(text: string): Promise<boolean> {
   child.on("exit", () => {
     if (current === child) current = undefined;
   });
-  child.stdin.end(trimmed.slice(0, MAX_CHARS));
+  const level = Math.max(0.1, Math.min(1, Number.isFinite(volume) ? volume : 1));
+  child.stdin.end(
+    `${level < 1 ? `[[volm ${level.toFixed(2)}]] ` : ""}${trimmed.slice(0, MAX_CHARS)}`,
+  );
   return true;
 }
 

@@ -481,7 +481,6 @@ button.tx-visual-frame:focus-visible {
   /* The arrow's tip is 4px into its box: pull it back so the tip is the point. */
   margin: -4px 0 0 -4px;
   overflow: visible;
-  filter: drop-shadow(0 1px 2px var(--highlight-keyline));
 }
 .tx-ptr .tx-ptr-arrow path {
   fill: var(--highlight);
@@ -491,27 +490,351 @@ button.tx-visual-frame:focus-visible {
   stroke-linecap: round;
   paint-order: stroke fill;
 }
-.tx-ptr-ring {
+/* Annotation: a frame round what the answer is about, drawn out from its top-left corner like a
+   frame in a design tool, with a name tag, corner handles and a written note; it fades on its own
+   (--tx-hold). The point is its centre. */
+.tx-annot {
   position: absolute;
-  left: -34px;
-  top: -22px;
-  overflow: visible;
+  pointer-events: none;
+  font-family: var(--font-sans);
+}
+.tx-annot-tag {
+  position: absolute;
+  left: calc(var(--tx-w) / -2 - 1px);
+  top: calc(var(--tx-h) / -2 - 22px);
+  padding: 2px 6px;
+  border-radius: 3px 3px 3px 0;
+  background: var(--tx-mark);
+  color: #fff;
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+/* What it wrote: beside the frame, on the side with room. */
+.tx-annot-note {
+  position: absolute;
+  top: calc(var(--tx-h, 0px) / -2);
+  display: grid;
+  gap: 2px;
+  width: max-content;
+  max-width: 300px;
+  padding: 0;
+  /* Handwriting on the screen, beside the cursor: no card behind it. */
+  font-family: "Balsamiq Sans", var(--font-sans);
+  font-size: 16px;
+  line-height: 22px;
+}
+.tx-annot-note[data-side="right"] {
+  left: calc(var(--tx-w, 0px) / 2 + 16px);
+}
+.tx-annot-note[data-side="left"] {
+  right: calc(var(--tx-w, 0px) / 2 + 16px);
+}
+.tx-ptr .tx-annot-note {
+  top: 18px;
+}
+.tx-ptr .tx-annot-note[data-side="right"] {
+  left: 22px;
+}
+.tx-ptr .tx-annot-note[data-side="left"] {
+  right: 8px;
+}
+/* What each part is or does, in handwriting under its frame. */
+.tx-annot-detail {
+  position: absolute;
+  left: calc(var(--tx-w) / -2);
+  top: calc(var(--tx-h) / 2 + 6px);
+  max-width: max(160px, var(--tx-w));
+  width: max-content;
+  padding: 3px 7px;
+  border-radius: 4px;
+  background: #fff;
+  color: #000;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.16);
+  font-family: "Balsamiq Sans", var(--font-sans);
+  font-size: 13px;
+  line-height: 17px;
+}
+.tx-annots {
+  position: absolute;
   pointer-events: none;
 }
-.tx-ptr-ring-halo {
-  fill: var(--highlight-tint);
-  stroke: var(--highlight-halo);
-  stroke-width: 4px;
-  stroke-dasharray: 1;
-  stroke-dashoffset: 0;
+/* A labelled diagram: a dot on each part, a leader line out to its label beside the figure. */
+.tx-diagram {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  font-family: var(--font-sans);
 }
-.tx-ptr-ring-stroke {
+.tx-diagram-lines {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+}
+/* The marks: clean green lines on the part itself. A dashed box or outline round a part, a solid
+   line along a curve or under words. */
+.tx-diagram,
+.tx-annot {
+  --tx-mark: #1a9c4a;
+}
+.tx-marker {
   fill: none;
-  stroke: var(--highlight);
-  stroke-width: 2px;
-  stroke-dasharray: 1;
-  stroke-dashoffset: 0;
+  stroke: var(--tx-mark);
+  stroke-width: 2.75;
+  stroke-linecap: butt;
+  stroke-linejoin: round;
 }
+[data-kind="outline"] .tx-marker,
+[data-kind="outline"] .tx-marker-halo,
+[data-kind="box"] .tx-marker,
+[data-kind="box"] .tx-marker-halo,
+.tx-annot-edges .tx-marker,
+.tx-annot-edges .tx-marker-halo {
+  stroke-dasharray: 9 5;
+}
+/* Inside a box or outline, a soft green, so the part itself stands out. */
+.tx-marker-fill {
+  fill: color-mix(in srgb, var(--tx-mark) 11%, transparent);
+  stroke: none;
+}
+/* Everything but the marked part, a little dimmer. */
+.tx-spotlight {
+  fill: rgb(0 0 0 / 0.14);
+}
+/* What reveals a mark as the pen draws it: the mark's own path, wide, in the mask. */
+.tx-reveal {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 28;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+/* A white edge under each mark, so it reads on dark and busy screens. (No CSS filters anywhere in
+   the overlay: in a transparent window on macOS they can draw as black boxes.) */
+.tx-marker-halo {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 5.5;
+  stroke-linecap: butt;
+  stroke-linejoin: round;
+  opacity: 0.9;
+}
+/* And what it writes beside each one, by hand: no card, just words on the screen, haloed so they
+   read on anything. */
+.tx-writing {
+  position: absolute;
+  display: grid;
+  gap: 1px;
+  width: max-content;
+  font-family: "Balsamiq Sans", var(--font-sans);
+  text-shadow:
+    0 0 2px #fff,
+    0 0 3px #fff,
+    0 0 6px #fff;
+}
+.tx-writing[data-side="left"] {
+  text-align: right;
+}
+.tx-writing-name {
+  font-size: 17px;
+  line-height: 21px;
+  font-weight: 700;
+  color: var(--tx-mark);
+}
+.tx-writing-detail {
+  font-size: 15px;
+  line-height: 19px;
+  color: #000;
+}
+/* The pen: the cursor writing, riding along the line. */
+.tx-writing-pen {
+  position: absolute;
+  top: 6px;
+  left: 100%;
+  margin-left: 2px;
+  overflow: visible;
+}
+.tx-writing-pen path {
+  fill: var(--highlight);
+  stroke: var(--highlight-halo);
+  stroke-width: 2px;
+  stroke-linejoin: round;
+  paint-order: stroke fill;
+}
+.tx-annots-note {
+  position: absolute;
+}
+/* The pen: the cursor, its tip on the end of the line it's drawing (offset-path follows the
+   stroke's own path). */
+.tx-pen {
+  position: absolute;
+  left: 0;
+  top: 0;
+  overflow: visible;
+  offset-rotate: 0deg;
+  /* The arrow's tip, inside its 22px box. */
+  offset-anchor: 3px 3px;
+  offset-distance: 100%;
+  pointer-events: none;
+}
+.tx-pen path,
+.tx-writing-pen path {
+  fill: var(--tx-mark, var(--highlight));
+  stroke: var(--highlight-halo);
+  stroke-width: 2px;
+  stroke-linejoin: round;
+  paint-order: stroke fill;
+}
+/* Along a curve: a wide translucent band with a fine line on it, so it shows over a curve of any
+   colour (even one Tandrix's own blue). */
+[data-kind="trace"] .tx-marker-halo {
+  stroke: var(--tx-mark);
+  stroke-width: 10;
+  stroke-linecap: round;
+  opacity: 0.2;
+}
+[data-kind="trace"] .tx-marker {
+  stroke-width: 2.5;
+  stroke-linecap: round;
+}
+/* A highlighter swipe: wide, translucent, flat-ended. */
+[data-kind="highlight"] .tx-marker {
+  stroke-width: 16;
+  opacity: 0.3;
+}
+/* A dot, only for something tiny. */
+.tx-touch {
+  fill: var(--tx-mark);
+  stroke: #fff;
+  stroke-width: 2;
+}
+/* The single frame's edges, drawn by the pen. */
+.tx-annot-edges {
+  position: absolute;
+  left: 0;
+  top: 0;
+  overflow: visible;
+}
+@media (prefers-reduced-motion: no-preference) {
+  /* Every stroke and the pen that draws it share one duration and easing, so the cursor's tip
+     stays on the end of the line as it grows. */
+  .tx-touch {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: tx-touch 180ms ease-out var(--tx-delay, 0ms) both;
+  }
+  /* The dim and the tint come in as the pen draws round the part, and go with it. */
+  .tx-spotlight,
+  .tx-marker-fill {
+    animation: tx-appear-soft 420ms ease-out calc(var(--tx-delay, 0ms) + 120ms) both;
+  }
+  .tx-reveal {
+    stroke-dasharray: 1;
+    animation: tx-diagram-line var(--tx-draw, 620ms) cubic-bezier(0.45, 0.05, 0.4, 1)
+      var(--tx-delay, 0ms) both;
+  }
+  .tx-pen {
+    animation:
+      tx-follow var(--tx-draw, 620ms) cubic-bezier(0.45, 0.05, 0.4, 1) var(--tx-delay, 0ms) both,
+      tx-annot-out 120ms ease-in calc(var(--tx-delay, 0ms) + var(--tx-draw, 620ms)) forwards;
+  }
+  /* The frame's own pen stays at the corner it finished on. */
+  .tx-pen-frame {
+    animation: tx-follow 900ms cubic-bezier(0.45, 0.05, 0.4, 1) var(--tx-delay, 0ms) both;
+  }
+  .tx-annot-edges .tx-reveal {
+    animation-duration: 900ms;
+  }
+  .tx-annot-tag {
+    animation: tx-annot-show 220ms ease-out 860ms both;
+  }
+  .tx-annot-note {
+    animation: tx-annot-show 260ms ease-out 900ms both;
+  }
+  /* Then it writes, from the end of the line, left to right, the pen riding along the words. */
+  .tx-writing {
+    animation: tx-write 760ms linear calc(var(--tx-delay, 0ms) + var(--tx-draw, 620ms)) both;
+  }
+  /* Hidden until it starts writing, then riding along the words. */
+  .tx-writing-pen {
+    animation:
+      tx-appear 1ms step-end calc(var(--tx-delay, 0ms) + var(--tx-draw, 620ms)) both,
+      tx-pen 760ms linear calc(var(--tx-delay, 0ms) + var(--tx-draw, 620ms)) both;
+  }
+  .tx-writing:not([data-last]) .tx-writing-pen {
+    animation:
+      tx-appear 1ms step-end calc(var(--tx-delay, 0ms) + var(--tx-draw, 620ms)) both,
+      tx-pen 760ms linear calc(var(--tx-delay, 0ms) + var(--tx-draw, 620ms)) both,
+      tx-annot-out 160ms ease-in calc(var(--tx-delay, 0ms) + var(--tx-draw, 620ms) + 780ms) forwards;
+  }
+}
+@keyframes tx-follow {
+  from {
+    offset-distance: 0%;
+  }
+  to {
+    offset-distance: 100%;
+  }
+}
+@keyframes tx-appear {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes tx-touch {
+  from {
+    transform: scale(0);
+  }
+}
+@keyframes tx-write {
+  from {
+    clip-path: inset(-8px 100% -8px -8px);
+  }
+  to {
+    clip-path: inset(-8px -40px -8px -8px);
+  }
+}
+@keyframes tx-pen {
+  from {
+    left: 0;
+  }
+}
+@keyframes tx-appear-soft {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes tx-diagram-line {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+/* Gone when its time is up, drawn or not. */
+.tx-annot:not(.tx-annots .tx-annot),
+.tx-annots,
+.tx-diagram,
+.tx-ptr {
+  animation: tx-annot-out 450ms ease-in calc(var(--tx-hold, 15000ms) - 450ms) both;
+}
+@keyframes tx-annot-show {
+  from {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+}
+@keyframes tx-annot-out {
+  to {
+    opacity: 0;
+  }
+}
+
 .tx-ptr-step {
   position: absolute;
   left: 20px;
@@ -528,20 +851,6 @@ button.tx-visual-frame:focus-visible {
   align-items: center;
   justify-content: center;
   box-shadow: 0 0 0 2px var(--highlight-halo);
-}
-@media (prefers-reduced-motion: no-preference) {
-  .tx-ptr-ring-halo,
-  .tx-ptr-ring-stroke {
-    animation: tx-ring-draw 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  }
-}
-@keyframes tx-ring-draw {
-  from {
-    stroke-dashoffset: 1;
-  }
-  to {
-    stroke-dashoffset: 0;
-  }
 }
 .tx-ptr-cap {
   position: absolute;
@@ -616,68 +925,104 @@ button.tx-visual-frame:focus-visible {
   }
 }
 
-/* Presence bar: Tandrix is active. A pill under the menu bar ringed with a glow, and what was
-   asked or the reply under it; click-through (the overlay ignores the mouse) and gone when idle. */
-@property --tx-ring {
-  syntax: "<angle>";
-  initial-value: 0deg;
-  inherits: false;
-}
+/* Presence: Tandrix is active. An island hanging from the top edge of the screen (out of the notch
+   on Macs that have one): black like the notch, its top corners curving out into the edge, its
+   bottom corners round. It drops in, stretches smoothly as its words change, and retracts when
+   Tandrix is idle. Click-through (the overlay ignores the mouse). */
 .tx-presence {
+  --tx-island: #000;
+  --tx-fillet: 8px;
   position: fixed;
   inset: 0 0 auto;
+  display: flex;
+  justify-content: center;
   pointer-events: none;
   font-family: var(--font-sans);
 }
-.tx-presence-stack {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  display: grid;
-  justify-items: center;
-  gap: var(--space-2);
-  width: max-content;
-  max-width: min(600px, 90vw);
-}
-.tx-presence-pill {
+.tx-island {
   position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  height: 34px;
-  padding: 0 14px 0 12px;
-  border-radius: var(--radius-full);
-  background: var(--overlay-ground);
+  box-sizing: border-box;
+  min-width: 96px;
+  max-width: min(520px, 80vw);
+  padding: 0 6px;
+  border-radius: 0 0 11px 11px;
+  background: var(--tx-island);
   color: var(--overlay-ink);
-  font-size: 13px;
-  font-weight: 500;
-  white-space: nowrap;
-  /* The glow: brighter while the user speaks. */
-  box-shadow:
-    var(--shadow-overlay),
-    0 0 calc(10px + 18px * var(--tx-level, 0)) calc(1px + 3px * var(--tx-level, 0))
-      color-mix(in srgb, var(--highlight) 55%, transparent);
+  /* A soft glow, brighter while the user speaks. */
+  box-shadow: 0 0 calc(6px + 10px * var(--tx-level, 0)) calc(0px + 2px * var(--tx-level, 0))
+    color-mix(in srgb, var(--highlight) 35%, transparent);
+  transform-origin: top center;
 }
-/* The bordered ring: a gradient border drawn outside the pill. */
-.tx-presence-pill::before {
+/* The outward curves where the island meets the top edge. */
+.tx-island::before,
+.tx-island::after {
   content: "";
   position: absolute;
-  inset: -2px;
-  border-radius: inherit;
-  padding: 2px;
-  background: conic-gradient(
-    from var(--tx-ring),
-    var(--highlight),
-    var(--highlight-halo) 18%,
-    var(--highlight) 36%,
-    color-mix(in srgb, var(--highlight) 25%, transparent) 60%,
-    var(--highlight)
+  top: 0;
+  width: var(--tx-fillet);
+  height: var(--tx-fillet);
+}
+.tx-island::before {
+  left: calc(-1 * var(--tx-fillet));
+  background: radial-gradient(
+    circle at 0 100%,
+    transparent calc(var(--tx-fillet) - 0.5px),
+    var(--tx-island) var(--tx-fillet)
   );
-  -webkit-mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
+}
+.tx-island::after {
+  right: calc(-1 * var(--tx-fillet));
+  background: radial-gradient(
+    circle at 100% 100%,
+    transparent calc(var(--tx-fillet) - 0.5px),
+    var(--tx-island) var(--tx-fillet)
+  );
+}
+/* Clips the words while the island stretches; its own padding leaves room for the dot's halo. */
+.tx-island-row {
+  display: flex;
+  justify-content: center;
+  box-sizing: border-box;
+  height: 22px;
+  padding: 0 6px;
+  overflow: hidden;
+}
+.tx-island-content {
+  /* Lifted a little: centred in the menu bar, clear of the island's lower edge. */
+  position: relative;
+  top: -3px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: max-content;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.tx-island-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--highlight);
+}
+/* The ring round the island's outline (the earlier pill's colours), and its glow. */
+.tx-island-edge {
+  position: absolute;
+  top: 0;
+  left: calc(-1 * var(--tx-fillet));
+  overflow: visible;
+  pointer-events: none;
+}
+.tx-island-edge path {
+  fill: none;
+  stroke-linecap: round;
+}
+.tx-island-edge-line {
+  stroke-width: 2;
+}
+.tx-island-edge-glow {
+  stroke-width: 5;
+  opacity: 0.25;
 }
 .tx-presence-keys {
   display: inline-flex;
@@ -717,35 +1062,67 @@ button.tx-visual-frame:focus-visible {
   border-radius: 50%;
   background: var(--highlight);
 }
-.tx-presence-text {
+/* The pill: the Mac's earlier presence bar, still the website's section labels (ActivePill). */
+@property --tx-ring {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+.tx-presence-pill {
   position: relative;
-  margin: 0;
-  padding: 10px 14px;
-  border-radius: var(--radius-lg);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 34px;
+  padding: 0 14px 0 12px;
+  border-radius: var(--radius-full);
   background: var(--overlay-ground);
   color: var(--overlay-ink);
-  box-shadow: var(--shadow-overlay);
-  font-size: 14px;
-  line-height: 20px;
-  text-align: center;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-/* What the user asked, while Tandrix works on it: quieter than the reply. */
-.tx-presence-text[data-kind="asked"] {
-  color: color-mix(in srgb, var(--overlay-ink) 72%, transparent);
   font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  box-shadow:
+    var(--shadow-overlay),
+    0 0 calc(10px + 18px * var(--tx-level, 0)) calc(1px + 3px * var(--tx-level, 0))
+      color-mix(in srgb, var(--highlight) 55%, transparent);
 }
-@media (prefers-reduced-motion: no-preference) {
-  .tx-presence-stack {
-    animation: tx-presence-in 220ms ease-out;
+.tx-presence-pill::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  padding: 2px;
+  background: conic-gradient(
+    from var(--tx-ring),
+    var(--highlight),
+    var(--highlight-halo) 18%,
+    var(--highlight) 36%,
+    color-mix(in srgb, var(--highlight) 25%, transparent) 60%,
+    var(--highlight)
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+@keyframes tx-presence-turn {
+  to {
+    --tx-ring: 360deg;
   }
-  /* Working: the ring turns and the dots wave. */
-  .tx-presence[data-state="thinking"] .tx-presence-pill::before,
-  .tx-presence[data-state="looking"] .tx-presence-pill::before {
-    animation: tx-presence-turn 1.4s linear infinite;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* In: dropped from the edge with a little give. Out: drawn back up into it. */
+  .tx-island {
+    animation: tx-island-in 420ms cubic-bezier(0.2, 1.1, 0.3, 1) both;
+    transition: width 380ms cubic-bezier(0.25, 1.15, 0.35, 1);
+  }
+  .tx-presence[data-leaving] .tx-island {
+    animation: tx-island-out 260ms cubic-bezier(0.5, 0, 0.75, 0) both;
+  }
+  .tx-island-content {
+    animation: tx-island-words 220ms ease-out both;
   }
   .tx-presence-dots span {
     animation: tx-presence-wave 1s ease-in-out infinite;
@@ -756,26 +1133,25 @@ button.tx-visual-frame:focus-visible {
   .tx-presence-dots span:nth-child(3) {
     animation-delay: 0.3s;
   }
-  .tx-presence[data-state="answering"] .tx-ctl-dot {
-    animation: tx-pulse 1.6s ease-in-out infinite;
-  }
-  /* In control: a slower turn, and the dot keeps pulsing for as long as it lasts. */
-  .tx-presence[data-state="doing"] .tx-presence-pill::before {
-    animation: tx-presence-turn 3.2s linear infinite;
-  }
-  .tx-presence[data-state="doing"] .tx-ctl-dot {
+  .tx-presence[data-state="answering"] .tx-island-dot,
+  .tx-presence[data-state="doing"] .tx-island-dot {
     animation: tx-pulse 1.6s ease-in-out infinite;
   }
 }
-@keyframes tx-presence-in {
+@keyframes tx-island-in {
+  from {
+    transform: translateY(-100%) scaleX(0.7);
+  }
+}
+@keyframes tx-island-out {
+  to {
+    transform: translateY(-100%) scaleX(0.7);
+  }
+}
+@keyframes tx-island-words {
   from {
     opacity: 0;
-    transform: translate(-50%, -6px);
-  }
-}
-@keyframes tx-presence-turn {
-  to {
-    --tx-ring: 360deg;
+    transform: translateY(3px);
   }
 }
 @keyframes tx-presence-wave {

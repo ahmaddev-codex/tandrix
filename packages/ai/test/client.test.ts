@@ -253,3 +253,94 @@ describe("respondHedged", () => {
     expect(calls).toHaveLength(1);
   });
 });
+
+describe("MetaClient.respondStreamed", () => {
+  const events = (id: string, text: string) => [
+    { type: "response.created", response: { id, status: "in_progress" } },
+    {
+      type: "response.output_item.done",
+      item: { type: "message", content: [{ type: "output_text", text }] },
+    },
+    { type: "response.completed", response: { id, status: "completed", model: "m", output: [] } },
+  ];
+
+  it("gives the whole response, its items gathered from the stream", async () => {
+    const { fetch, calls } = scriptedFetch([sse(events("resp_a", "Click Save."))]);
+    const client = new MetaClient({ apiKey: "k", fetch, sleep: noSleep });
+    const r = await client.respondStreamed({ model: "m", input: "x" });
+    expect(r.id).toBe("resp_a");
+    expect(outputText(r)).toBe("Click Save.");
+    expect(calls).toHaveLength(1);
+    expect(calls[0]!.body).toMatchObject({ stream: true, store: false });
+  });
+
+  it("asks again when the answer hasn't started in time, and keeps the first to start", async () => {
+    const enc = new TextEncoder();
+    const slowAborted: boolean[] = [];
+    let n = 0;
+    const fetch = (async (_url: string, init?: RequestInit) => {
+      const signal = init?.signal;
+      if (n++ === 0) {
+        // Headers at once, the first event much later.
+        const body = new ReadableStream<Uint8Array>({
+          start(c) {
+            const t = setTimeout(() => {
+              for (const e of events("resp_slow", "slow"))
+                c.enqueue(enc.encode(`data: ${JSON.stringify(e)}\n\n`));
+              c.close();
+            }, 500);
+            signal?.addEventListener("abort", () => {
+              clearTimeout(t);
+              slowAborted.push(true);
+              c.error(new Error("aborted"));
+            });
+          },
+        });
+        return new Response(body, { headers: { "content-type": "text/event-stream" } });
+      }
+      return sse(events("resp_fast", "fast"));
+    }) as typeof globalThis.fetch;
+    const client = new MetaClient({ apiKey: "k", fetch, sleep: noSleep });
+    const r = await client.respondStreamed({ model: "m", input: "x" }, undefined, 20);
+    expect(r.id).toBe("resp_fast");
+    expect(n).toBe(2);
+    expect(slowAborted).toEqual([true]);
+  });
+
+  it("fails when the response fails", async () => {
+    const { fetch } = scriptedFetch([
+      sse([
+        { type: "response.created", response: { id: "r", status: "in_progress" } },
+        {
+          type: "response.failed",
+          response: { id: "r", status: "failed", error: { message: "no" } },
+        },
+      ]),
+    ]);
+    const client = new MetaClient({ apiKey: "k", fetch, sleep: noSleep });
+    await expect(client.respondStreamed({ model: "m", input: "x" })).rejects.toThrow("no");
+  });
+});
+
+describe("MetaClient.respondStreamed watchdog", () => {
+  it("gives up on an answer that stops coming", async () => {
+    const enc = new TextEncoder();
+    const fetch = (async (_u: string, init?: RequestInit) => {
+      const body = new ReadableStream<Uint8Array>({
+        start(c) {
+          c.enqueue(
+            enc.encode(
+              `data: ${JSON.stringify({ type: "response.created", response: { id: "r" } })}\n\n`,
+            ),
+          );
+          init?.signal?.addEventListener("abort", () => c.error(new Error("aborted")));
+        },
+      });
+      return new Response(body, { headers: { "content-type": "text/event-stream" } });
+    }) as typeof globalThis.fetch;
+    const client = new MetaClient({ apiKey: "k", fetch, sleep: noSleep, maxAttempts: 1 });
+    await expect(
+      client.respondStreamed({ model: "m", input: "x" }, undefined, 1000, 30),
+    ).rejects.toThrow("The answer stopped coming");
+  });
+});

@@ -3,7 +3,7 @@
 // this keeps it on one display for the whole question and clears it when Tandrix is idle.
 import { screen } from "electron";
 import { channels, type OverlayPresence, type Presence } from "../shared/bridge";
-import { overlayDisplayIds, sendToOverlay } from "./windows";
+import { overlayDisplayIds, overlayTop, sendToOverlay } from "./windows";
 
 let displayId: number | undefined;
 
@@ -43,8 +43,10 @@ export function setPresence(raw: unknown) {
     (displayId !== undefined && screen.getAllDisplays().find((x) => x.id === displayId)) ||
     screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
   displayId = d.id;
-  // Below the menu bar, and the notch on Macs that have one.
-  const shown: OverlayPresence = { ...p, top: Math.max(0, d.workArea.y - d.bounds.y) };
+  // The island hangs from the window's top edge; its words sit below the menu bar (and the notch,
+  // on Macs that have one), measured from wherever the window starts.
+  const windowTop = overlayTop(d.id) ?? d.bounds.y;
+  const shown: OverlayPresence = { ...p, top: Math.max(0, d.workArea.y - windowTop) };
   for (const id of overlayDisplayIds())
     sendToOverlay(id, channels.presence, id === d.id ? shown : null);
 }

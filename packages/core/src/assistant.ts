@@ -1,10 +1,10 @@
 // How Tandrix talks while it helps: what kind of help a request needs, natural acknowledgements
 // (never the same line twice in a row, and a light joke now and then when the ask is a big one),
 // offering to do the work itself, and what to make of something said while it's already busy.
-import { asImperative, wantsDesktopExecution, wantsLesson } from "./voice";
+import { asImperative, wantsDesktopExecution, wantsExplanation, wantsLesson } from "./voice";
 
 /** Shows, offers to do, does straight away, or works in the background without the screen. */
-export type HelpKind = "show" | "offer" | "do" | "background";
+export type HelpKind = "show" | "offer" | "do" | "background" | "app";
 
 const QUESTION =
   /^(where|what|which|how|why|when|who|is|are|can|could|should|does|do|will|would)\b|\?\s*$/i;
@@ -17,11 +17,45 @@ const ACTION =
 const BACKGROUND =
   /^(please\s+)?(research|look up|look into|find out|find me|search (for|the web)|compare|summari[sz]e|explain|draft|write me|come up with|plan|brainstorm|give me|list|recommend|check (the )?(price|weather|news))\b/i;
 
+const WHEN =
+  /\b(today|tonight|tomorrow|this (morning|afternoon|evening|week(end)?)|next (week|month|\w+day)|on (mon|tues|wednes|thurs|fri|satur|sun)day|(mon|tues|wednes|thurs|fri|satur|sun)day|at \d{1,2}([:.]\d{2})?|\d{1,2}([:.]\d{2})?\s?(am|pm)|noon|midnight)\b/i;
+
+/**
+ * Requests an app command does outright (SP6), with no screen, pointer or keyboard: a calendar
+ * event, a reminder, a note, music, a folder, a web page. One step, so they're done straight away.
+ */
+const APP: RegExp[] = [
+  // "Add lunch with Sam tomorrow at 1", "Put the dentist in my calendar on Friday".
+  /^(add|put|book|schedule|pencil in|block( out)?|set up)\b.*\b(calendar|diary)\b/i,
+  /^(remind me|(add|set|create|make) (a |me a )?reminder)\b/i,
+  /^((make|take|create|write|add) (a |me a )?(quick )?note|note (that|down))\b/i,
+  /^(play|pause|resume|skip( this)?( song| track)?|next (song|track)|previous (song|track)|stop the music)\b/i,
+  /^(open|show)( me)? (my )?(home|desktop|documents|downloads|pictures|movies|music|applications) folder\b/i,
+  /^(open|go to|visit|pull up) (https:\/\/)?[a-z0-9-]+(\.[a-z0-9-]+)+(\/\S*)?( in safari)?[.!]?$/i,
+];
+const TIMED_ADD = /^(add|put|schedule|pencil in|block( out)?)\b/i;
+
+/** Said about what's on the screen ("play this video", "open the second link"): not an app command. */
+const ABOUT_THE_SCREEN =
+  /\b(on (my|this|the) screen|this (page|app|window|video|song here|one)|here|that (one|button|link)|click|tap|type|scroll)\b/i;
+
+export function isAppCommand(text: string): boolean {
+  const core = asImperative(text.trim());
+  if (!core || ABOUT_THE_SCREEN.test(text)) return false;
+  if (APP.some((r) => r.test(core))) return true;
+  // "Add lunch with Sam tomorrow at 1": something put in a day, with a time to put it at.
+  return (
+    TIMED_ADD.test(core) && WHEN.test(core) && !/\b(to (the )?(cart|basket|list))\b/i.test(core)
+  );
+}
+
 /** What a request needs. Screen questions are shown; plain requests are offered; "for me" is done. */
 export function helpKind(text: string): HelpKind {
   const q = text.trim();
   if (!q) return "show";
-  if (wantsLesson(q)) return "show";
+  // Understanding what's on screen, or learning an app, is shown and explained, even said "for me".
+  if (wantsExplanation(q) || wantsLesson(q)) return "show";
+  if (isAppCommand(q)) return "app";
   if (wantsDesktopExecution(q)) return "do";
   if (/\b(in the background|while i work|meanwhile|when you can)\b/i.test(q)) return "background";
   // A polite wrapper ("can you …?", "I want you to …") must not turn a request into a question
@@ -69,25 +103,36 @@ export function interjection(text: string): "stop" | "redirect" | "queue" {
   return "queue";
 }
 
+/** An addition to the task under way, by how it's worded. */
+const UPDATE =
+  /^(and|also|plus|then|oh,? and|add|include|mention|put|insert|attach|cc|make sure|remember|don'?t|do not|skip|leave out|before (you|that)|when you'?re done|once you'?re done|after (that|this))\b|\b(too|as well|also)[.!]?$/i;
+
 /** Words that point at what's on the screen ("this button", "here", "that menu"). */
 const ON_SCREEN =
   /\b(on (my|the|this) screen|screen|here|this|that|these|those|it|button|menu|window|tab|field|icon|page|app|click|cursor|toolbar|sidebar|setting|settings|option)\b/i;
 
 /**
- * Something said while a screen task is running. Only work that needs the mouse and keyboard
- * waits its turn; the rest starts now, alongside it:
- * - stop / redirect: about the running task
+ * Something said while a screen task is running. Mostly it's an update to that task, so anything
+ * for the screen goes to the running task; the rest starts now, alongside it:
+ * - stop: end the running task
+ * - redirect: a correction to it ("no, the other Thursday")
+ * - add: more for it ("also make the title bold"), or a job after it ("then email Sam"): the task
+ *   takes it on, as part of its work or once its own work is done, since there's one mouse
  * - background: needs no screen (a look-up, a question of fact, a draft): a background agent
  * - look: a question about what's on screen: answered by looking, without taking the mouse
- * - queue: another job on the screen: next, since there's one mouse
  */
-export function whileBusy(text: string): "stop" | "redirect" | "background" | "look" | "queue" {
+export function whileBusy(text: string): "stop" | "redirect" | "add" | "background" | "look" {
   const how = interjection(text);
   if (how !== "queue") return how;
+  // Worded as more for this task ("mention Friday too", "also…", "make sure…", "don't…").
+  if (UPDATE.test(text.trim())) return "add";
   const kind = helpKind(text);
   if (kind === "background") return "background";
+  // App commands run alongside, out of sight; opening a folder or a page takes the front.
+  if (kind === "app")
+    return /^(open|show|go to|visit|pull up)\b/i.test(asImperative(text)) ? "add" : "background";
   if (kind === "show") return ON_SCREEN.test(text) ? "look" : "background";
-  return "queue";
+  return "add";
 }
 
 /** Long, many-part or multi-app asks: the kind that earns a light joke. */
@@ -126,6 +171,9 @@ const QUEUED = [
 
 const REDIRECTED = ["Okay, changing course.", "Got it, adjusting.", "Sure, switching to that."];
 
+// An update to the running task: taken on as part of it.
+const ADDED = ["Got it, I'll add that.", "Sure, I'll do that too.", "Okay, adding that in."];
+
 const BACKGROUND_ACKS = [
   "I'll look into that in the background and let you know.",
   "On it in the background. Keep going, I'll tell you when it's ready.",
@@ -150,6 +198,7 @@ export function acknowledge(task: string, seed?: number): string {
 
 export const acknowledgeQueued = (seed?: number) => pick(QUEUED, seed);
 export const acknowledgeRedirect = (seed?: number) => pick(REDIRECTED, seed);
+export const acknowledgeAdded = (seed?: number) => pick(ADDED, seed);
 export const acknowledgeBackground = (seed?: number) => pick(BACKGROUND_ACKS, seed);
 
 /** Offers to do the work, the way a good assistant would. */
@@ -174,7 +223,30 @@ export function offerToDo(task: string, seed = Math.random()): string {
 }
 
 /** Every fixed line Tandrix says, so its voice can have them ready before they're needed. */
+/**
+ * Said the moment a question is understood, before Show me's answer is ready (SP7): short, so it's
+ * over before the answer comes, and played from audio the Mac already holds.
+ */
+export const LOOK_ACKS = [
+  "One moment.",
+  "Let me look.",
+  "Just a sec.",
+  "Let me see.",
+  "Looking now.",
+];
+
+/** An acknowledgement that isn't the one said last time; from `ready` when only some are loaded. */
+export function lookAck(
+  last: string | undefined,
+  ready: readonly string[] = LOOK_ACKS,
+  seed = Math.random(),
+): string | undefined {
+  const choices = ready.filter((l) => l !== last);
+  return choices.length ? choices[Math.floor(seed * choices.length) % choices.length] : undefined;
+}
+
 export const ASSISTANT_LINES = [
+  ...LOOK_ACKS,
   ...ACKS,
   ...BIG_ACKS,
   ...QUEUED,

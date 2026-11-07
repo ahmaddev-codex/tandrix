@@ -15,6 +15,7 @@ import { BackPill } from "@/components/back-pill";
 import { Pill } from "@/components/kit";
 import { api } from "@/lib/api";
 import { prepareFrame, type Frame } from "@/lib/look";
+import { markReply } from "@/lib/timings";
 import { usePushToTalk } from "@/voice/ptt";
 import { speak, stopSpeaking } from "@/voice/tts";
 
@@ -59,6 +60,7 @@ export default function Look() {
         f = await prepareFrame(shot.uri, shot);
       }
       setFrame(f);
+      markReply("captured");
       const r = await api.look({
         photo: { mimeType: "image/jpeg", data: f.base64 },
         width: f.width,
@@ -67,6 +69,7 @@ export default function Look() {
         ...(jobId ? { jobId } : {}),
         ...(stepId ? { stepId } : {}),
       });
+      markReply("answered");
       if (r.status !== "answered") {
         setPhase("live");
         setFrame(null);

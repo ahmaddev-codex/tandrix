@@ -94,6 +94,12 @@ export function kokoroSpeaker(log: (l: Record<string, unknown>) => void): Speake
           "I'm here. What would you like to do?",
           "I'm here. Tell me what you want to do or ask about this step.",
           "Done.",
+          // The openers Show me's replies start with: voiced first and alone (SP4), so instant.
+          "Got it.",
+          "Sure thing.",
+          "Sure.",
+          "Okay.",
+          "Let's learn it.",
           ...ASSISTANT_LINES,
         ]) {
           try {

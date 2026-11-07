@@ -1,6 +1,6 @@
 // POST /early-access: the website's sign-up while the apps aren't public yet. No account needed,
-// so it's rate-limited per client, and it answers the same for new and known addresses (it never
-// tells anyone whether an address is already on the list).
+// so it's rate-limited per client. Each address is on the list once: signing up again says it's
+// already there rather than adding it twice.
 import { EarlyAccessRequest, EarlyAccessResponse } from "@tandrix/contracts";
 import { Hono, type Context } from "hono";
 import { invalid, tooMany } from "../errors";
@@ -20,11 +20,11 @@ export function earlyAccessRoutes(d: {
     if (!limiter.allow(clientKey(c))) throw tooMany();
     const parsed = EarlyAccessRequest.safeParse(await c.req.json().catch(() => undefined));
     if (!parsed.success) throw invalid(["email: Enter an email address, like you@example.com."]);
-    await d.earlyAccess.add(
+    const { added } = await d.earlyAccess.add(
       parsed.data.email,
       parsed.data.platform ?? null,
       new Date(now()).toISOString(),
     );
-    return c.json(EarlyAccessResponse.parse({ ok: true }));
+    return c.json(EarlyAccessResponse.parse({ ok: true, already: !added }));
   });
 }

@@ -1,0 +1,87 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Biology</title>
+    <link rel="stylesheet" href="teach.css" />
+  </head>
+  <body>
+    <div class="menubar"><b>Preview</b><span>File</span><span>Edit</span><span>View</span></div>
+    <div class="win">
+      <div class="titlebar"><span class="title">animal-cell.png</span></div>
+      <div class="content">
+        <div class="caption">An animal cell</div>
+        <svg width="1320" height="758" style="position: absolute; left: 0; top: 0">
+          <ellipse
+            data-part="membrane"
+            data-names="membrane|cell membrane|plasma membrane"
+            cx="660"
+            cy="410"
+            rx="420"
+            ry="270"
+            fill="#fdf1e3"
+            stroke="#c9822b"
+            stroke-width="6"
+          />
+          <g data-part="er" data-names="endoplasmic|reticulum|er">
+            <path
+              d="M560 330 q20 -30 40 0 t40 0 t40 0"
+              stroke="#7a5ab8"
+              stroke-width="5"
+              fill="none"
+            />
+            <path
+              d="M560 470 q20 30 40 0 t40 0 t40 0"
+              stroke="#7a5ab8"
+              stroke-width="5"
+              fill="none"
+            />
+          </g>
+          <g data-part="nucleus" data-names="nucleus">
+            <circle cx="660" cy="400" r="90" fill="#cfd8f5" stroke="#3a56b0" stroke-width="5" />
+            <circle
+              data-part="nucleolus"
+              data-names="nucleolus"
+              cx="680"
+              cy="390"
+              r="28"
+              fill="#3a56b0"
+            />
+          </g>
+          <g data-part="mito" data-names="mitochondri">
+            <g transform="translate(410 300) rotate(-20)">
+              <ellipse rx="70" ry="30" fill="#f6c9c0" stroke="#c4473a" stroke-width="4" />
+              <path
+                d="M-50 0 q10 -20 20 0 t20 0 t20 0 t20 0 t20 0"
+                stroke="#c4473a"
+                stroke-width="3"
+                fill="none"
+              />
+            </g>
+            <g transform="translate(900 520) rotate(25)">
+              <ellipse rx="70" ry="30" fill="#f6c9c0" stroke="#c4473a" stroke-width="4" />
+              <path
+                d="M-50 0 q10 -20 20 0 t20 0 t20 0 t20 0 t20 0"
+                stroke="#c4473a"
+                stroke-width="3"
+                fill="none"
+              />
+            </g>
+          </g>
+          <g data-part="golgi" data-names="golgi">
+            <path
+              d="M880 280 q40 -20 80 0 M885 298 q35 -18 70 0 M890 316 q30 -16 60 0"
+              stroke="#2f8f5b"
+              stroke-width="6"
+              fill="none"
+              stroke-linecap="round"
+            />
+          </g>
+        </svg>
+      </div>
+    </div>
+    <script>
+      window.__ask = "Label the parts of this cell";
+    </script>
+  </body>
+</html>

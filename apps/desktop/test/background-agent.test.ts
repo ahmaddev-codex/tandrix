@@ -101,3 +101,35 @@ describe("mac tools", () => {
     expect(body).toBe("<h1>List</h1>&lt;b&gt;milk&lt;/b&gt;<br>eggs");
   });
 });
+
+describe("app command tools (SP6)", () => {
+  it("plays, pauses and skips music, searching only when playing", () => {
+    expect(scriptArgs("music_control", { action: "play", search: "jazz" })).toEqual([
+      "play",
+      "jazz",
+    ]);
+    expect(scriptArgs("music_control", { action: "pause", search: "jazz" })).toEqual(["pause", ""]);
+    expect(scriptArgs("music_control", { action: "shuffle the drive" })).toMatch(/must be/);
+  });
+
+  it("opens only the user's own folders, by name", () => {
+    expect(scriptArgs("finder_open", { folder: "Downloads" })).toEqual([
+      expect.stringMatching(/\/Downloads$/),
+    ]);
+    expect(scriptArgs("finder_open", { folder: "Applications" })).toEqual(["/Applications"]);
+    expect(scriptArgs("finder_open", { folder: "/etc" })).toMatch(/must be one of/);
+    expect(scriptArgs("finder_open", { folder: "../../etc" })).toMatch(/must be one of/);
+  });
+
+  it("opens only https pages", () => {
+    expect(scriptArgs("safari_open", { url: "https://apple.com" })).toEqual(["https://apple.com/"]);
+    for (const url of [
+      "http://apple.com",
+      "file:///etc/passwd",
+      "javascript:alert(1)",
+      "https://u:p@x.com",
+      "apple.com",
+    ])
+      expect(scriptArgs("safari_open", { url })).toBe("Needs a full https URL.");
+  });
+});

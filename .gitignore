@@ -34,3 +34,17 @@ apps/film
 *.p12
 *.mobileprovision
 *.pem
+
+# Wake-word test sets: rebuilt by apps/api/scripts/wake-sets.ts
+fixtures/wake/
+
+# Wake-word model tooling (Python): its environment
+apps/desktop/scripts/wake/model/.venv/
+__pycache__/
+
+# Marking bench: sample pages (textbook plates; not ours to publish), and what render.mjs and
+# marking-bench.ts make from the screens
+fixtures/screens/teach/samples/
+fixtures/screens/teach/*.jpg
+fixtures/screens/teach/parts*.json
+fixtures/screens/teach/out/

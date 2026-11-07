@@ -21,6 +21,20 @@ const reasons: Record<string, string> = {
 };
 
 let helper: ChildProcessWithoutNullStreams | undefined;
+/** The name it listens for (VO6); sent to the helper whenever it starts. */
+let wakeName = "Tandrix";
+
+/** One word of letters, 3 to 20 long; anything else keeps Tandrix. */
+export function cleanWakeName(raw: unknown): string {
+  const w = typeof raw === "string" ? raw.trim() : "";
+  return /^\p{L}{3,20}$/u.test(w) ? w : "Tandrix";
+}
+
+/** Listens for another name ("Hey Jarvis"), from now and after every restart. */
+export function setWakeName(raw: unknown) {
+  wakeName = cleanWakeName(raw);
+  helper?.stdin.write(`${JSON.stringify({ name: wakeName })}\n`);
+}
 let wanted = false;
 let retry: ReturnType<typeof setTimeout> | undefined;
 /** Waiting for the print of a voice setup phrase. */
@@ -40,6 +54,8 @@ export interface WakeEvents {
    * voiceprint of the phrase when there was enough voice to tell.
    */
   wake(rest: string, voice?: number[]): void;
+  /** The name was just heard (the continuous listener says so before the user pauses). */
+  heard?(): void;
 }
 
 export function setWakeWord(on: boolean, events: WakeEvents) {
@@ -67,6 +83,7 @@ export function setWakeWord(on: boolean, events: WakeEvents) {
       buffer = buffer.slice(nl + 1);
       let msg: {
         ready?: boolean;
+        heard?: boolean;
         wake?: boolean;
         rest?: unknown;
         voice?: unknown;
@@ -80,7 +97,11 @@ export function setWakeWord(on: boolean, events: WakeEvents) {
       } catch {
         continue;
       }
-      if (msg.ready) events.status("listening");
+      if (msg.ready) {
+        child.stdin.write(`${JSON.stringify({ name: wakeName })}\n`);
+        events.status("listening");
+      }
+      if (msg.heard === true) events.heard?.();
       if (msg.wake)
         events.wake(
           typeof msg.rest === "string" ? msg.rest.slice(0, 2000) : "",
@@ -101,6 +122,10 @@ export function setWakeWord(on: boolean, events: WakeEvents) {
       }
     }
   });
+  // TANDRIX_WAKE_DEBUG=1 (development): what the recogniser heard, in this terminal only.
+  if (process.env.TANDRIX_WAKE_DEBUG)
+    child.stderr.on("data", (d: Buffer) => process.stderr.write(d));
+  else child.stderr.resume();
   child.on("error", () => {
     failed = true;
     events.status("unavailable", "The wake word can't start on this Mac.");

@@ -40,3 +40,34 @@ h2 {
   background: var(--background-100);
   box-shadow: var(--shadow-sm);
 }
+
+/* A screen's top for the presence island: wallpaper with a menu bar (and a notch). */
+.gallery-screen {
+  position: relative;
+  height: 96px;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.72)) top / 100% 24px no-repeat,
+    linear-gradient(135deg, #9ab8e8, #e7d6f2);
+}
+.gallery-screen .tx-presence {
+  position: absolute;
+}
+.gallery-notch {
+  background:
+    radial-gradient(circle at 50% 0, #000 0, #000 0) top / 0 0 no-repeat,
+    linear-gradient(rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.72)) top / 100% 37px no-repeat,
+    linear-gradient(135deg, #9ab8e8, #e7d6f2);
+}
+.gallery-notch::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 190px;
+  height: 32px;
+  transform: translateX(-50%);
+  border-radius: 0 0 10px 10px;
+  background: #000;
+}

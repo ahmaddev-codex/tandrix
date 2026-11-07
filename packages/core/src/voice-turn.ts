@@ -9,6 +9,8 @@ export const SPEECH_DB = -42;
 export const END_PAUSE_MS = 1400;
 /** A tapped turn with no speech by now gives up. */
 export const NO_SPEECH_MS = 7000;
+/** After an answer, how long Tandrix keeps listening for a follow-up said without the wake word. */
+export const FOLLOW_UP_MS = 5000;
 /** No turn runs longer than this. */
 export const MAX_TURN_MS = 30_000;
 /** Less speech than this isn't worth transcribing (a cough, a tap on the case). */
@@ -40,11 +42,11 @@ export function addLevel(t: TurnLevels, db: number | undefined, dtMs: number): T
 export const startLevels = (): TurnLevels => ({ elapsedMs: 0, speechMs: 0, quietMs: 0 });
 
 /** For a tapped turn: keep listening, send, or stop because nothing was said. */
-export function tappedTurn(t: TurnLevels): TurnStep {
+export function tappedTurn(t: TurnLevels, noSpeechMs = NO_SPEECH_MS): TurnStep {
   const spoke = t.speechMs >= MIN_SPEECH_MS;
   if (t.elapsedMs >= MAX_TURN_MS) return spoke ? "send" : "nothing_heard";
   if (spoke && t.quietMs >= END_PAUSE_MS) return "send";
-  if (!spoke && t.elapsedMs >= NO_SPEECH_MS) return "nothing_heard";
+  if (!spoke && t.elapsedMs >= noSpeechMs) return "nothing_heard";
   return "listen";
 }
 

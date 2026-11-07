@@ -669,7 +669,9 @@ export function memoryEarlyAccess() {
   const repo: EarlyAccessRepo & { rows: typeof rows } = {
     rows,
     async add(email, platform, now) {
-      if (!rows.has(email)) rows.set(email, { platform, at: now });
+      if (rows.has(email)) return { added: false };
+      rows.set(email, { platform, at: now });
+      return { added: true };
     },
   };
   return repo;

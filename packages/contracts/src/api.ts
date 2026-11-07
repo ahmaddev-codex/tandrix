@@ -292,8 +292,8 @@ export const EarlyAccessRequest = z.strictObject({
   platform: z.enum(["mac", "iphone"]).optional(),
 });
 export type EarlyAccessRequest = z.infer<typeof EarlyAccessRequest>;
-/** The same answer whether or not the address was already on the list. */
-export const EarlyAccessResponse = z.strictObject({ ok: z.literal(true) });
+/** Signed up, or already on the list (each address only once). */
+export const EarlyAccessResponse = z.strictObject({ ok: z.literal(true), already: z.boolean() });
 export type EarlyAccessResponse = z.infer<typeof EarlyAccessResponse>;
 
 /** GET /profile: what Tandrix calls this user, if they have said. */
@@ -306,6 +306,9 @@ export const UpdateProfileRequest = z.strictObject({
 });
 export type UpdateProfileRequest = z.infer<typeof UpdateProfileRequest>;
 
+/** One earlier exchange, so a follow-up ("and then?") makes sense. Text only. */
+export const ScreenTurn = z.strictObject({ question: text(2000), reply: text(1200) });
+
 /**
  * POST /jobs/:id/screen/ask: a question about an uploaded screenshot (evidence kind
  * "screenshot"). The job's current step, if any, is the context.
@@ -317,15 +320,16 @@ export const ScreenAskRequest = z.strictObject({
   mode: ControlMode,
   /** "Teach me…": one step at a time with check-ins, instead of a single answer. */
   lesson: z.boolean().default(false),
+  /** Explain what's on screen (an equation, an error, a chart) rather than point at a control. */
+  explain: z.boolean().default(false),
   /** What Tandrix calls the user; used rarely, never in every reply. */
   userName: z.string().trim().min(1).max(40).optional(),
+  /** Oldest first; the last four at most. */
+  history: z.array(ScreenTurn).max(4).default([]),
 });
 
 /** The largest inline screenshot a question outside a job may carry (base64 of a 1280 px JPEG is far smaller). */
 export const INLINE_SCREENSHOT_MAX_BYTES = 4 * 1024 * 1024;
-
-/** One earlier exchange, so a follow-up ("and then?") makes sense. Text only. */
-export const ScreenTurn = z.strictObject({ question: text(2000), reply: text(600) });
 
 /**
  * POST /screen/ask: a question about the screen outside any job ("teach me Photoshop"). The
@@ -342,6 +346,47 @@ export const InlineScreenshot = z.strictObject({
     .regex(/^[A-Za-z0-9+/]+=*$/),
 });
 
+/**
+ * POST /screen/locate: each part of an answer clicked on the screenshot, so its mark lands on it.
+ * Asked once the answer has arrived (Tandrix is already speaking); the response is NDJSON, one
+ * ScreenLocated line per part as soon as it's found, in any order.
+ */
+export const ScreenLocateRequest = z.strictObject({
+  screenshot: InlineScreenshot,
+  geometry: ScreenGeometry,
+  parts: z
+    .array(
+      z.strictObject({
+        label: z.string().trim().min(1).max(60),
+        detail: z.string().max(160).nullable().default(null),
+        box: z.strictObject({
+          x: z.number().int().min(0),
+          y: z.number().int().min(0),
+          w: z.number().int().min(1),
+          h: z.number().int().min(1),
+        }),
+      }),
+    )
+    .min(1)
+    .max(8),
+});
+export type ScreenLocateRequest = z.infer<typeof ScreenLocateRequest>;
+
+export const ScreenLocated = z.strictObject({
+  /** Which part, by its place in the request. */
+  i: z.number().int().min(0),
+  /** Where it was clicked, in screenshot pixels; null when it couldn't be. */
+  point: z.strictObject({ x: z.number().int(), y: z.number().int() }).nullable(),
+  /** Its box, moved to the click when the first one missed it. */
+  box: z.strictObject({
+    x: z.number().int(),
+    y: z.number().int(),
+    w: z.number().int(),
+    h: z.number().int(),
+  }),
+});
+export type ScreenLocated = z.infer<typeof ScreenLocated>;
+
 export const ScreenAskInlineRequest = z.strictObject({
   screenshot: InlineScreenshot,
   transcript: text(2000),
@@ -351,14 +396,41 @@ export const ScreenAskInlineRequest = z.strictObject({
   history: z.array(ScreenTurn).max(4).default([]),
   /** "Teach me…": one step at a time with check-ins, instead of a single answer. */
   lesson: z.boolean().default(false),
+  /** Explain what's on screen (an equation, an error, a chart) rather than point at a control. */
+  explain: z.boolean().default(false),
   /** What Tandrix calls the user; used rarely, never in every reply. */
   userName: z.string().trim().min(1).max(40).optional(),
 });
 
+/**
+ * How Tandrix marks a part on screen, as a teacher would on a whiteboard: traced along (a curve),
+ * looped round (a group), boxed, underlined or highlighted (words), bracketed (lines that belong
+ * together), struck through (what's wrong), ticked or crossed, pointed at with an arrow, measured
+ * across or up (a span), or dotted when it's tiny.
+ */
+export const MARK_KINDS = [
+  "trace",
+  "outline",
+  "box",
+  "underline",
+  "highlight",
+  "bracket",
+  "strike",
+  "tick",
+  "cross",
+  "arrow",
+  "span_x",
+  "span_y",
+  "point",
+] as const;
+export const MarkKind = z.enum(MARK_KINDS);
+export type MarkKind = z.infer<typeof MarkKind>;
+
 export const ScreenAskResponse = z.discriminatedUnion("status", [
   z.strictObject({
     status: z.literal("answered"),
-    reply: text(600),
+    /** Spoken: an instruction is a sentence or two, an explanation a short paragraph. */
+    reply: text(1200),
     /** Where to look, in screenshot pixels (point geometry); null when Tandrix can't point. */
     target: PointerTarget.nullable(),
     /**
@@ -366,6 +438,37 @@ export const ScreenAskResponse = z.discriminatedUnion("status", [
      * only after the action guard in @tandrix/core.
      */
     proposed: z.array(DesktopAction).max(16),
+    /** Written beside the annotation when words on screen help (an equation's working). */
+    note: z.string().max(600).nullable().default(null),
+    /** Each part marked up, in screenshot pixels: "Skull — protects the brain". */
+    regions: z
+      .array(
+        z.strictObject({
+          label: z.string().min(1).max(60),
+          detail: z.string().max(160).nullable().default(null),
+          /** Said while this part is marked, in a tour of the parts. */
+          say: z.string().max(400).nullable().default(null),
+          /** How to mark it. */
+          mark: MarkKind.default("outline"),
+          /** For words, code or a formula: the exact text on screen, so the Mac can find it. */
+          quote: z.string().max(400).nullable().default(null),
+          /** A spot clearly on the part, in screenshot pixels: where the pen touches it. */
+          point: z
+            .strictObject({ x: z.number().int().min(0), y: z.number().int().min(0) })
+            .nullable()
+            .default(null),
+          box: z.strictObject({
+            x: z.number().int().min(0),
+            y: z.number().int().min(0),
+            w: z.number().int().min(1),
+            h: z.number().int().min(1),
+          }),
+        }),
+      )
+      .max(8)
+      .default([]),
+    /** Said before a tour of the parts. */
+    intro: z.string().max(300).nullable().default(null),
   }),
   z.strictObject({ status: z.literal("unavailable"), message: text(300) }),
 ]);
@@ -407,6 +510,9 @@ export const MAC_TOOLS = [
   "mail_draft",
   "files_list",
   "browse",
+  "music_control",
+  "finder_open",
+  "safari_open",
 ] as const;
 export const MacToolName = z.enum(MAC_TOOLS);
 export type MacToolName = z.infer<typeof MacToolName>;
@@ -456,6 +562,23 @@ export const BackgroundResponse = z.discriminatedUnion("status", [
 export type BackgroundResponse = z.infer<typeof BackgroundResponse>;
 
 /** POST /screen/do: start doing a task on the screen shown. The screenshot isn't stored here. */
+/**
+ * A control on the screen, from the front app's accessibility tree (SP5): its role, its name and
+ * where it is in the screenshot's pixels. Never a field's contents, never a password field.
+ */
+export const ScreenControl = z.strictObject({
+  role: z.string().regex(/^[A-Za-z]{2,40}$/),
+  name: z.string().max(80),
+  enabled: z.boolean(),
+  box: z.strictObject({
+    x: z.number().int().min(0),
+    y: z.number().int().min(0),
+    w: z.number().int().min(1),
+    h: z.number().int().min(1),
+  }),
+});
+export type ScreenControl = z.infer<typeof ScreenControl>;
+
 export const DoStartRequest = z.strictObject({
   screenshot: InlineScreenshot,
   task: text(2000),
@@ -473,6 +596,8 @@ export const DoStartRequest = z.strictObject({
   memory: z.array(text(300)).max(40).default([]),
   /** Which turn of the task this is (1 for the first). */
   turn: z.number().int().min(1).max(DO_MAX_TURNS).default(1),
+  /** The front window's controls, so the model can name and find its target. */
+  controls: z.array(ScreenControl).max(150).default([]),
 });
 
 /**

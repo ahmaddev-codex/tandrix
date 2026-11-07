@@ -20,6 +20,7 @@ import {
   ModeToggle,
   Notice,
   PointerBuddy,
+  PresenceBar,
   SourceChip,
   StatusChip,
   StepRow,
@@ -155,6 +156,27 @@ function Components() {
           result="not_verifiable"
           reason="A screenshot can't show the motor's actual speed."
         />
+      </Section>
+      <Section title="PresenceBar">
+        {/* The island on mock screen tops: a plain menu bar, and a notch. */}
+        <div className="gallery-screen">
+          <PresenceBar state="listening" label="Listening" level={0.6} top={24} />
+        </div>
+        <div className="gallery-screen gallery-notch">
+          <PresenceBar state="looking" label="Looking at your screen" top={37} />
+        </div>
+        <div className="gallery-screen">
+          <PresenceBar
+            state="doing"
+            label="Opening Calendar"
+            keys="Esc"
+            keysHint="to stop"
+            top={24}
+          />
+        </div>
+        <div className="gallery-screen gallery-notch">
+          <PresenceBar state="answering" label="Tandrix" top={37} />
+        </div>
       </Section>
       <Section title="PointerBuddy">
         <div className="gallery-pointer">

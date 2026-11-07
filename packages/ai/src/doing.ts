@@ -80,10 +80,70 @@ export function readTurn(res: MetaResponse): DoTurn {
   };
 }
 
+/** Actions that change nothing on screen: a turn of only these isn't more work. */
+const IDLE = new Set(["wait", "screenshot", "move"]);
+/** A reply saying what was done, in the past tense: "Sent your message.", "Added it." */
+const DID =
+  /^(?:i(?:'ve| have)\s+)?(?:added|sent|opened|created|saved|done|finished|replied|texted|messaged|booked|updated|moved|deleted|set|turned|changed|archived|scheduled|wrote|written|made|closed|filled|submitted|played|paused|renamed|copied|pasted|uploaded|downloaded|installed|removed|cleared|emptied|ordered|shared|invited|exported|printed|marked|started|stopped|connected|joined)\b/i;
+
+/**
+ * Whether a turn finishes the task, and what to say: the model says "DONE: …" when every part is
+ * done (whatever actions came with it); or it proposes no actions; or only idle ones (a wait, a
+ * look) with a reply saying what it did. Models often tack one idle action onto a finished task,
+ * which kept Tandrix "working" after the job was done.
+ */
+export function finishedTurn(t: Pick<DoTurn, "callId" | "actions" | "reply">): {
+  done: boolean;
+  reply: string;
+} {
+  const marked = /^\s*DONE\s*[:.\-–—]\s*/i.exec(t.reply);
+  if (marked) return { done: true, reply: t.reply.slice(marked[0].length).trim() };
+  if (!t.callId) return { done: true, reply: t.reply };
+  if (t.actions.every((a) => IDLE.has(a.type)) && DID.test(t.reply.trim()))
+    return { done: true, reply: t.reply };
+  return { done: false, reply: t.reply };
+}
+
 /** How hard each turn thinks: low plans multi-app tasks right (task-bench 3 of 3). */
 const TURN_EFFORT = "low";
-/** A turn slower than this is asked again, and the first answer used. */
+/**
+ * A turn slower than this is asked again, and the first answer used. (Turns are stored so the next
+ * can continue them, and the API won't stream a stored computer-use call, so the hedge is on the
+ * whole answer, not its first byte as Show me's is.)
+ */
 const TURN_HEDGE_MS = 10_000;
+
+/** A control the Mac read from the front app (SP5): role, name, where in the screenshot. */
+export interface NamedControl {
+  role: string;
+  name: string;
+  enabled: boolean;
+  box: { x: number; y: number; w: number; h: number };
+}
+
+/**
+ * The front window's controls as one context block for the model: so it can find its target by
+ * name and aim at the middle of it. Unnamed controls and duplicates are left out; at most 80.
+ */
+export function controlsLine(controls: NamedControl[]): string | null {
+  const seen = new Set<string>();
+  const lines: string[] = [];
+  for (const c of controls) {
+    const name = c.name.replace(/["\n]/g, " ").replace(/\s+/g, " ").trim();
+    if (!name && !/Text(Field|Area)|SearchField/.test(c.role)) continue;
+    const key = `${c.role}|${name}|${c.box.x}|${c.box.y}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const mid = `${c.box.x + Math.floor(c.box.w / 2)},${c.box.y + Math.floor(c.box.h / 2)}`;
+    lines.push(
+      `- ${c.role}${name ? ` "${name}"` : ""} centre ${mid}, ${c.box.w}x${c.box.h}${c.enabled ? "" : " (dimmed)"}`,
+    );
+    if (lines.length >= 80) break;
+  }
+  return lines.length
+    ? `Controls in the front window, from the app itself (screenshot pixels). Aim at a control's centre:\n${lines.join("\n")}`
+    : null;
+}
 
 export interface DoStart {
   screenshot: InputPart;

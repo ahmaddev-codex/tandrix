@@ -15,7 +15,7 @@ import { sketchOf } from "../src/main/capture";
 import { runBatch } from "../src/main/do-it";
 import type { DriverCommand, DriverReply } from "../src/main/input-driver";
 import { runScreenTask } from "../src/renderer/lib/screen-task";
-import type { ScreenCapture } from "../src/shared/bridge";
+import type { ScreenCapture, ScreenControl } from "../src/shared/bridge";
 
 // Bundled into dist/ and run from apps/desktop (see package.json).
 const root = join(process.cwd(), "../..");
@@ -96,6 +96,8 @@ const args = process.argv.slice(2);
 const runsAt = args.indexOf("--runs");
 const runs = runsAt >= 0 ? Number(args[runsAt + 1]) : 1;
 const verbose = args.includes("--verbose");
+/** --controls: give each turn the page's controls, as a real app's accessibility tree would (SP5). */
+const withControls = args.includes("--controls");
 const only = args.filter((a, i) => !a.startsWith("--") && (runsAt < 0 || i !== runsAt + 1));
 const tasks = TASKS.filter((t) => !only.length || only.includes(t.id));
 
@@ -236,13 +238,29 @@ async function bench(win: BrowserWindow, task: Task, bearer: string) {
   const history: number[] = [];
   let turns = 0;
   const started = Date.now();
+  /** The page's buttons and fields with their names and frames, like an app's accessibility tree. */
+  const controls = async (): Promise<ScreenControl[]> =>
+    wc.executeJavaScript(`[...document.querySelectorAll('button,a[href],input:not([type=password]),textarea,select,[role=button],[role=tab],[role=link],[role=checkbox],[contenteditable=true]')]
+      .map((e) => { const r = e.getBoundingClientRect(); const st = getComputedStyle(e);
+        if (r.width < 4 || r.height < 4 || st.visibility === 'hidden' || st.display === 'none') return null;
+        const tag = e.tagName.toLowerCase();
+        const role = e.getAttribute('role') ? e.getAttribute('role')[0].toUpperCase() + e.getAttribute('role').slice(1)
+          : tag === 'a' ? 'Link' : tag === 'textarea' || e.isContentEditable ? 'TextArea' : tag === 'input' ? (e.type === 'checkbox' ? 'CheckBox' : 'TextField') : tag === 'select' ? 'PopUpButton' : 'Button';
+        const name = (e.getAttribute('aria-label') || e.getAttribute('title') || e.getAttribute('placeholder') || (role === 'TextArea' || role === 'TextField' ? '' : e.innerText) || '').trim().replace(/\\s+/g, ' ').slice(0, 80);
+        return { role, name, enabled: !e.disabled, x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.width), h: Math.round(r.height) };
+      }).filter(Boolean).slice(0, 150)`);
   const result = await runScreenTask(task.ask, {
     capture,
+    ...(withControls ? { controls } : {}),
     apps: async () => ({ apps: ["WhatsApp", "Calendar", "Notes", "Finder"], front: "Finder" }),
     openApp: async (name) => wc.executeJavaScript(`__openApp(${JSON.stringify(name)})`),
     turn: async (req) => {
       turns++;
-      return call<DoTurnResponse>("/screen/do", req);
+      // --snap-only: controls land clicks, but aren't named to the model.
+      return call<DoTurnResponse>(
+        "/screen/do",
+        args.includes("--snap-only") ? { ...req, controls: undefined } : req,
+      );
     },
     next: async (req) => {
       turns++;

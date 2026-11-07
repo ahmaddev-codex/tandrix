@@ -200,6 +200,9 @@ async function driveTab(tab: Tab, cmd: DriverCommand): Promise<DriverReply> {
     }
     case "front":
       return { ok: true, app: "Tandrix browser" };
+    // A page has no accessibility tree to read here; its screenshot is enough.
+    case "tree":
+      return { ok: true, controls: [] };
   }
 }
 

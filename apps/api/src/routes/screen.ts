@@ -1,6 +1,6 @@
 // POST /jobs/:id/screen/ask: Show me on the Mac. The screenshot is the job's evidence; the answer
 // is words plus where to point. Proposed actions are returned for drawing, never executed here.
-import { calledLine } from "@tandrix/ai";
+import { calledLine, finishedTurn } from "@tandrix/ai";
 import {
   DO_MAX_TURNS,
   BackgroundRequest,
@@ -12,6 +12,8 @@ import {
   Id,
   INLINE_SCREENSHOT_MAX_BYTES,
   ScreenAskInlineRequest,
+  ScreenLocateRequest,
+  type ScreenLocated,
   type DoTurnResponse,
   ScreenAskRequest,
   type DesktopAction,
@@ -20,6 +22,7 @@ import {
 } from "@tandrix/contracts";
 import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
+import { stream } from "hono/streaming";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { z } from "zod";
 import type { AuthEnv } from "../auth";
@@ -29,7 +32,7 @@ import type { AssetsRepo } from "../repos/assets";
 import type { EvidenceRepo, EvidenceStorage } from "../repos/evidence";
 import type { JobsRepo } from "../repos/jobs";
 import type { ProceduresRepo } from "../repos/procedures";
-import type { ScreenGuide, ScreenGuideOutcome } from "../screen-guide";
+import { noModelScreenGuide, type ScreenGuide, type ScreenGuideOutcome } from "../screen-guide";
 import {
   BACKGROUND_UNAVAILABLE,
   DO_UNAVAILABLE,
@@ -114,6 +117,7 @@ export function screenRoutes(d: ScreenDeps) {
       asset ? `Equipment: ${asset.make} ${asset.model}` : "",
       step ? `Step: ${step.title}` : "",
       step ? `Instruction: ${step.instruction}` : "",
+      ...historyContext(req.history),
       req.userName ? calledLine(req.userName) : "",
     ].filter(Boolean);
 
@@ -127,6 +131,7 @@ export function screenRoutes(d: ScreenDeps) {
       question: req.transcript,
       context,
       ...(req.lesson ? { lesson: req.lesson } : {}),
+      ...(req.explain ? { explain: req.explain } : {}),
     });
     if (outcome.status === "unavailable") return reply(outcome);
 
@@ -141,16 +146,11 @@ function answered(
   size: { width: number; height: number },
   question = "",
 ): ScreenAskResponse {
-  const isRegion =
-    /\b(ribbon|toolbar|panel|sidebar|section|area|inspector|tabs|range|table|column|row)\b/i.test(
-      question,
-    ) ||
-    /\b(ribbon|toolbar|panel|sidebar|section|area|inspector|tabs|range|table)\b/i.test(
-      outcome.reply,
-    );
+  // A drag in Show me is an outline (the model's way to frame a region): it becomes a frame.
+  void question;
   const dragAction = outcome.actions.find((a) => a.type === "drag" && a.path.length >= 2);
   let target: PointerTarget | null = null;
-  if (isRegion && dragAction && dragAction.type === "drag") {
+  if (dragAction && dragAction.type === "drag") {
     const p0 = dragAction.path[0]!;
     const p1 = dragAction.path[dragAction.path.length - 1]!;
     const x = Math.min(p0.x, p1.x);
@@ -161,7 +161,7 @@ function answered(
       target = {
         surface: "screen",
         evidenceId,
-        label: "Section",
+        label: outcome.label ?? "Here",
         geometry: { kind: "box", box: { x, y, w, h } },
       };
     }
@@ -169,9 +169,31 @@ function answered(
   if (!target) target = pointerFor(outcome.actions, evidenceId, size);
   return {
     status: "answered",
-    reply: (outcome.reply || (target ? `${target.label}.` : CANT_POINT)).slice(0, 600),
+    reply: (outcome.reply || (target ? `${target.label}.` : CANT_POINT)).slice(0, 1200),
     target,
     proposed: outcome.actions.slice(0, 16),
+    note: outcome.note ?? null,
+    // Inside the screenshot, whole pixels: what the Mac draws.
+    regions: (outcome.regions ?? [])
+      .map((r) => ({
+        label: r.label,
+        detail: r.detail ?? null,
+        say: r.say ?? null,
+        mark: r.mark ?? "outline",
+        quote: r.quote ?? null,
+        point:
+          r.point && r.point.x < size.width && r.point.y < size.height
+            ? { x: Math.max(0, Math.round(r.point.x)), y: Math.max(0, Math.round(r.point.y)) }
+            : null,
+        box: {
+          x: Math.max(0, Math.round(r.box.x)),
+          y: Math.max(0, Math.round(r.box.y)),
+          w: Math.max(1, Math.round(Math.min(r.box.w, size.width - r.box.x))),
+          h: Math.max(1, Math.round(Math.min(r.box.h, size.height - r.box.y))),
+        },
+      }))
+      .filter((r) => r.box.x < size.width && r.box.y < size.height),
+    intro: outcome.intro ?? null,
   };
 }
 
@@ -245,6 +267,8 @@ export function inlineScreenRoutes(d: {
 }) {
   const limiter = d.limiter ?? rateLimiter(30, 60_000);
   const doLimiter = d.doLimiter ?? rateLimiter(120, 60_000);
+  // One locate follows each answer that marks parts.
+  const locateLimiter = rateLimiter(30, 60_000);
   // Each tool step of a background task is a request, and several tasks run at once.
   const backgroundLimiter = rateLimiter(60, 60_000);
   const doer = d.doer ?? noModelScreenDoer;
@@ -254,21 +278,20 @@ export function inlineScreenRoutes(d: {
   const turnResponse = (userId: string, outcome: DoOutcome, turn: number): DoTurnResponse => {
     if (outcome.status === "unavailable") return outcome;
     const t = outcome.turn;
+    const finish = finishedTurn(t);
     // What happened each turn (never the screen or the words): enough to see where tasks stall.
     d.log?.({
       event: "do_turn",
       turn,
       actions: t.actions.map((a) => a.type).join(","),
       checks: t.safetyChecks.map((c) => c.code).join(","),
-      finished: !t.callId,
+      finished: finish.done,
     });
-    if (!t.callId || turn > DO_MAX_TURNS)
+    if (finish.done || !t.callId) return { status: "done", reply: finish.reply || "Done." };
+    if (turn > DO_MAX_TURNS)
       return {
         status: "done",
-        reply:
-          (t.callId
-            ? "That took more steps than Tandrix takes at once. You have control back."
-            : t.reply) || "Done.",
+        reply: "That took more steps than Tandrix takes at once. You have control back.",
       };
     return {
       status: "act",
@@ -280,109 +303,156 @@ export function inlineScreenRoutes(d: {
     };
   };
 
-  return new Hono<AuthEnv>()
-    .post("/ask", screenshotLimit, async (c) => {
-      if (!limiter.allow(c.get("user").id)) throw tooMany();
-      const parsed = ScreenAskInlineRequest.safeParse(await c.req.json().catch(() => undefined));
-      if (!parsed.success) throw invalid(issues(parsed.error));
-      const req = parsed.data;
-      const bytes = shotBytes(req.screenshot);
-      const size = { width: req.geometry.imageWidth, height: req.geometry.imageHeight };
-      const context = historyContext(req.history);
-      if (req.userName) context.push(calledLine(req.userName));
-      const outcome = await d.guide.ask({
-        screenshot: { bytes, mimeType: req.screenshot.mimeType, ...size },
-        question: req.transcript,
-        context,
-        ...(req.lesson ? { lesson: req.lesson } : {}),
-      });
-      if (outcome.status === "unavailable") return c.json(outcome satisfies ScreenAskResponse);
-      return c.json(answered(outcome, null, size, req.transcript));
-    })
-    .post("/background", async (c) => {
-      const user = c.get("user");
-      if (!backgroundLimiter.allow(user.id)) throw tooMany();
-      const parsed = BackgroundRequest.safeParse(await c.req.json().catch(() => undefined));
-      if (!parsed.success) throw invalid(issues(parsed.error));
-      const { task, tools, steps, now } = parsed.data;
-      const out = doer.background
-        ? await doer.background(task, { tools, steps, ...(now ? { now } : {}) })
-        : ({ status: "unavailable", message: BACKGROUND_UNAVAILABLE } as const);
-      // What happened (never the task's words): enough to see where tasks stall.
-      d.log?.({
-        event: "background_task",
-        status: out.status,
-        steps: steps.length,
-        ...(out.status === "call" ? { calls: out.calls.map((c) => c.name).join(",") } : {}),
-      });
-      return c.json(BackgroundResponse.parse(out));
-    })
-    .post("/do", screenshotLimit, async (c) => {
-      const user = c.get("user");
-      if (!doLimiter.allow(user.id)) throw tooMany();
-      const parsed = DoStartRequest.safeParse(await c.req.json().catch(() => undefined));
-      if (!parsed.success) throw invalid(issues(parsed.error));
-      // First, the app the task needs, if it isn't the one in front: the Mac opens it and asks
-      // again. Only an app from the Mac's own list is ever named.
-      if (!parsed.data.planned) {
-        const wanted = await doer.plan({
-          task: parsed.data.task,
-          apps: parsed.data.apps,
-          ...(parsed.data.frontApp ? { frontApp: parsed.data.frontApp } : {}),
+  return (
+    new Hono<AuthEnv>()
+      .post("/ask", screenshotLimit, async (c) => {
+        if (!limiter.allow(c.get("user").id)) throw tooMany();
+        const parsed = ScreenAskInlineRequest.safeParse(await c.req.json().catch(() => undefined));
+        if (!parsed.success) throw invalid(issues(parsed.error));
+        const req = parsed.data;
+        const bytes = shotBytes(req.screenshot);
+        const size = { width: req.geometry.imageWidth, height: req.geometry.imageHeight };
+        const context = historyContext(req.history);
+        if (req.userName) context.push(calledLine(req.userName));
+        const outcome = await d.guide.ask({
+          screenshot: { bytes, mimeType: req.screenshot.mimeType, ...size },
+          question: req.transcript,
+          context,
+          ...(req.lesson ? { lesson: req.lesson } : {}),
+          ...(req.explain ? { explain: req.explain } : {}),
         });
-        const app = parsed.data.apps.find((a) => a.toLowerCase() === wanted?.toLowerCase());
-        if (app && app.toLowerCase() !== parsed.data.frontApp?.toLowerCase())
-          return c.json({ status: "open_app", app } satisfies DoTurnResponse);
-      }
-      const outcome = await doer.start({
-        screenshot: {
-          bytes: shotBytes(parsed.data.screenshot),
-          mimeType: parsed.data.screenshot.mimeType,
-        },
-        task: parsed.data.task,
-        memory: parsed.data.memory,
-      });
-      return c.json(turnResponse(user.id, outcome, parsed.data.turn));
-    })
-    .post("/do/notes", screenshotLimit, async (c) => {
-      const user = c.get("user");
-      if (!doLimiter.allow(user.id)) throw tooMany();
-      const parsed = DoNotesRequest.safeParse(await c.req.json().catch(() => undefined));
-      if (!parsed.success) throw invalid(issues(parsed.error));
-      const r = doer.notes
-        ? await doer.notes({
-            screenshot: {
-              bytes: shotBytes(parsed.data.screenshot),
-              mimeType: parsed.data.screenshot.mimeType,
-            },
+        if (outcome.status === "unavailable") return c.json(outcome satisfies ScreenAskResponse);
+        return c.json(answered(outcome, null, size, req.transcript));
+      })
+      // Each part of an answer clicked, a line of NDJSON per part as soon as it's found: the Mac
+      // is already speaking, and draws each part's mark as its line arrives.
+      .post("/locate", screenshotLimit, async (c) => {
+        if (!locateLimiter.allow(c.get("user").id)) throw tooMany();
+        const parsed = ScreenLocateRequest.safeParse(await c.req.json().catch(() => undefined));
+        if (!parsed.success) throw invalid(issues(parsed.error));
+        const req = parsed.data;
+        const size = { width: req.geometry.imageWidth, height: req.geometry.imageHeight };
+        const found = (d.guide.locate ?? noModelScreenGuide.locate!)({
+          screenshot: {
+            bytes: shotBytes(req.screenshot),
+            mimeType: req.screenshot.mimeType,
+            ...size,
+          },
+          parts: req.parts,
+        });
+        c.header("content-type", "application/x-ndjson");
+        c.header("cache-control", "no-store");
+        return stream(c, async (s) => {
+          await Promise.all(
+            found.map(async (f, i) => {
+              const r = await f;
+              const inside = (v: number, max: number) =>
+                Math.max(0, Math.min(max - 1, Math.round(v)));
+              const line: ScreenLocated = {
+                i,
+                point: r.point
+                  ? { x: inside(r.point.x, size.width), y: inside(r.point.y, size.height) }
+                  : null,
+                box: {
+                  x: inside(r.box.x, size.width),
+                  y: inside(r.box.y, size.height),
+                  w: Math.max(1, Math.round(r.box.w)),
+                  h: Math.max(1, Math.round(r.box.h)),
+                },
+              };
+              await s.write(`${JSON.stringify(line)}\n`);
+            }),
+          );
+        });
+      })
+      .post("/background", async (c) => {
+        const user = c.get("user");
+        if (!backgroundLimiter.allow(user.id)) throw tooMany();
+        const parsed = BackgroundRequest.safeParse(await c.req.json().catch(() => undefined));
+        if (!parsed.success) throw invalid(issues(parsed.error));
+        const { task, tools, steps, now } = parsed.data;
+        const out = doer.background
+          ? await doer.background(task, { tools, steps, ...(now ? { now } : {}) })
+          : ({ status: "unavailable", message: BACKGROUND_UNAVAILABLE } as const);
+        // What happened (never the task's words): enough to see where tasks stall.
+        d.log?.({
+          event: "background_task",
+          status: out.status,
+          steps: steps.length,
+          ...(out.status === "call" ? { calls: out.calls.map((c) => c.name).join(",") } : {}),
+        });
+        return c.json(BackgroundResponse.parse(out));
+      })
+      .post("/do", screenshotLimit, async (c) => {
+        const user = c.get("user");
+        if (!doLimiter.allow(user.id)) throw tooMany();
+        const parsed = DoStartRequest.safeParse(await c.req.json().catch(() => undefined));
+        if (!parsed.success) throw invalid(issues(parsed.error));
+        // First, the app the task needs, if it isn't the one in front: the Mac opens it and asks
+        // again. Only an app from the Mac's own list is ever named.
+        if (!parsed.data.planned) {
+          const wanted = await doer.plan({
             task: parsed.data.task,
-          })
-        : null;
-      return c.json(
-        DoNotesResponse.parse(
-          r ? { status: "done", note: r.note } : { status: "unavailable", message: DO_UNAVAILABLE },
-        ),
-      );
-    })
-    .post("/do/continue", screenshotLimit, async (c) => {
-      const user = c.get("user");
-      if (!doLimiter.allow(user.id)) throw tooMany();
-      const parsed = DoContinueRequest.safeParse(await c.req.json().catch(() => undefined));
-      if (!parsed.success) throw invalid(issues(parsed.error));
-      const session = readDoSession(d.tokenSecret, user.id, parsed.data.session, now());
-      if (!session)
-        throw invalid([
-          "session: this task has ended or isn't yours; ask again to start a new one",
-        ]);
-      const outcome = await doer.continue({
-        previousResponseId: session.responseId,
-        callId: session.callId,
-        screenshot: {
-          bytes: shotBytes(parsed.data.screenshot),
-          mimeType: parsed.data.screenshot.mimeType,
-        },
-        acknowledged: parsed.data.acknowledged,
-      });
-      return c.json(turnResponse(user.id, outcome, session.turn + 1));
-    });
+            apps: parsed.data.apps,
+            ...(parsed.data.frontApp ? { frontApp: parsed.data.frontApp } : {}),
+          });
+          const app = parsed.data.apps.find((a) => a.toLowerCase() === wanted?.toLowerCase());
+          if (app && app.toLowerCase() !== parsed.data.frontApp?.toLowerCase())
+            return c.json({ status: "open_app", app } satisfies DoTurnResponse);
+        }
+        const outcome = await doer.start({
+          screenshot: {
+            bytes: shotBytes(parsed.data.screenshot),
+            mimeType: parsed.data.screenshot.mimeType,
+          },
+          task: parsed.data.task,
+          memory: parsed.data.memory,
+          controls: parsed.data.controls,
+        });
+        return c.json(turnResponse(user.id, outcome, parsed.data.turn));
+      })
+      .post("/do/notes", screenshotLimit, async (c) => {
+        const user = c.get("user");
+        if (!doLimiter.allow(user.id)) throw tooMany();
+        const parsed = DoNotesRequest.safeParse(await c.req.json().catch(() => undefined));
+        if (!parsed.success) throw invalid(issues(parsed.error));
+        const r = doer.notes
+          ? await doer.notes({
+              screenshot: {
+                bytes: shotBytes(parsed.data.screenshot),
+                mimeType: parsed.data.screenshot.mimeType,
+              },
+              task: parsed.data.task,
+            })
+          : null;
+        return c.json(
+          DoNotesResponse.parse(
+            r
+              ? { status: "done", note: r.note }
+              : { status: "unavailable", message: DO_UNAVAILABLE },
+          ),
+        );
+      })
+      .post("/do/continue", screenshotLimit, async (c) => {
+        const user = c.get("user");
+        if (!doLimiter.allow(user.id)) throw tooMany();
+        const parsed = DoContinueRequest.safeParse(await c.req.json().catch(() => undefined));
+        if (!parsed.success) throw invalid(issues(parsed.error));
+        const session = readDoSession(d.tokenSecret, user.id, parsed.data.session, now());
+        if (!session)
+          throw invalid([
+            "session: this task has ended or isn't yours; ask again to start a new one",
+          ]);
+        const outcome = await doer.continue({
+          previousResponseId: session.responseId,
+          callId: session.callId,
+          screenshot: {
+            bytes: shotBytes(parsed.data.screenshot),
+            mimeType: parsed.data.screenshot.mimeType,
+          },
+          acknowledged: parsed.data.acknowledged,
+        });
+        return c.json(turnResponse(user.id, outcome, session.turn + 1));
+      })
+  );
 }
