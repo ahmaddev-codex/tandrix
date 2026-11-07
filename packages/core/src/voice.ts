@@ -108,14 +108,34 @@ export function wantsLesson(text: string): boolean {
   const q = text.trim();
   if (!q) return false;
   if (
-    /^(please\s+)?(teach me|show me how|walk me through|guide me through|help me learn|give me a (tour of|lesson in)|train me on|talk me through)\b/i.test(
+    /^(please\s+)?(teach m[ew]|tech me|teach us|show me how|walk me through|guide me through|help me learn|give me a (tour of|lesson (in|on))|train me on|talk me through|show me around|i want to learn|i'?d like to learn|get me started with)\b/i.test(
       q,
     )
   )
     return true;
   if (/\bhow (do|can) i use\b/i.test(q)) return true;
   if (/^how to use\b/i.test(q)) return true;
+  if (/\b(learn (to use|how to use)|get started with|tutorial)\b/i.test(q)) return true;
+  // A subject, not only an app: "teach me about photosynthesis", "help me learn recursion".
+  if (
+    /^(please\s+)?(teach me about|explain to me how|help me learn about|i want to understand)\b/i.test(
+      q,
+    )
+  )
+    return true;
   return false;
+}
+
+/**
+ * An ask to understand what's on screen (VO: "I have this equation on my screen and I don't
+ * understand it"): explained like a tutor, not answered with where to click.
+ */
+export function wantsExplanation(text: string): boolean {
+  const q = text.trim();
+  if (!q) return false;
+  return /\b(i (don'?t|do not|can'?t|cannot) (understand|get|follow|figure out|work out)|help me (understand|make sense of|solve|work out)|explain|what does (this|that|it) mean|what (does|do) (this|these) (equation|formula|error|message|chart|graph|code|line|symbol)s?|what('s| is) (this|that) (equation|formula|error|message|chart|graph|code|symbol|word|term)|what am i looking at|make sense of|(the )?(parts|bones|organs|components|sections|layers|elements) of|what (does|do) (this|these|that) (code|function|method|class|query|regex|script|loop|line|program|component|command)s? do|how does (this|that|it) (code |function |query )?work|why (is|does|did|do|won'?t|doesn'?t|isn'?t) (this|that|it|my|the)( code| function| query| script| test| build| program| app)? (fail|break|crash|error|not work|work|give|run|compile)|review (this|my) (code|function|query)|(find|spot) the bug|debug (this|it)|translate (this|it)|what('s| is) the (answer|solution|meaning)|label (the|this|these|each)|identify (the|this|these|each)|which (part|bone|organ|one) is|name (the|each) (part|bone)|what (are|is) (these|those|the) (parts|bones|labels)|break (this|it) down|solve (this|it)|how (do|did) (they|you|i) get|what('s| is) going on (here|with this))\b/i.test(
+    q,
+  );
 }
 
 const TANDRIX_WORD =

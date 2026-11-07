@@ -125,12 +125,19 @@ describe("whileBusy", () => {
     expect(whileBusy("What's the capital of Australia?")).toBe("background");
     expect(whileBusy("Draft a thank-you note to Sam")).toBe("background");
   });
+  it("takes anything else for the screen as an update to the running task", () => {
+    expect(whileBusy("Also make the title bold")).toBe("add");
+    expect(whileBusy("Mention the meeting on Friday too")).toBe("add");
+    expect(whileBusy("Then email Sam the notes")).toBe("add");
+    expect(whileBusy("Actually make it 11")).toBe("redirect");
+    expect(whileBusy("Stop")).toBe("stop");
+  });
   it("answers questions about the screen by looking, without the mouse", () => {
     expect(whileBusy("Where's the export button?")).toBe("look");
     expect(whileBusy("What is this app?")).toBe("look");
   });
   it("queues other screen jobs, and still stops or steers the running one", () => {
-    expect(whileBusy("Book my dentist for Thursday")).toBe("queue");
+    expect(whileBusy("Book my dentist for Thursday")).toBe("add");
     expect(whileBusy("Stop")).toBe("stop");
     expect(whileBusy("Actually make it Friday")).toBe("redirect");
   });
@@ -186,6 +193,14 @@ describe("app commands while a screen task runs", () => {
   it("runs out of sight alongside it, but waits to open a window", () => {
     expect(whileBusy("Remind me to call mum at 6")).toBe("background");
     expect(whileBusy("Pause")).toBe("background");
-    expect(whileBusy("Open my Downloads folder")).toBe("queue");
+    expect(whileBusy("Open my Downloads folder")).toBe("add");
+  });
+});
+
+describe("explanations and lessons are shown, even said as for me", () => {
+  it("never acts on an ask to understand or learn", () => {
+    expect(helpKind("Solve this equation for me")).toBe("show");
+    expect(helpKind("I have this equation on my screen and I don't understand it")).toBe("show");
+    expect(helpKind("Teach mw how to use Google Docs")).toBe("show");
   });
 });

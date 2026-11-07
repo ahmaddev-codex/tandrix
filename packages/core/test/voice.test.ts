@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { parseVoiceCommand, parseWakePhrase, speechPieces, wantsLesson } from "../src";
+import {
+  parseVoiceCommand,
+  parseWakePhrase,
+  speechPieces,
+  wantsExplanation,
+  wantsLesson,
+} from "../src";
 
 describe("parseVoiceCommand", () => {
   it.each([
@@ -131,4 +137,46 @@ describe("speechPieces", () => {
     expect(speechPieces("  ")).toEqual([]);
     expect(speechPieces("Done")).toEqual(["Done"]);
   });
+});
+
+describe("lessons and explanations", () => {
+  it.each([
+    "Teach mw how to use Google Docs",
+    "Teach me Google Sheets",
+    "I want to learn Figma",
+    "Show me around Notion",
+    "How do I use pivot tables?",
+    "Get me started with Excel",
+  ])("treats %s as a lesson", (s) => expect(wantsLesson(s)).toBe(true));
+
+  it.each([
+    "I have this equation on my screen and I don't understand it",
+    "What does this error mean?",
+    "Explain this chart",
+    "Help me understand this paragraph",
+    "Solve this for me",
+    "What's this formula?",
+  ])("treats %s as wanting an explanation", (s) => expect(wantsExplanation(s)).toBe(true));
+
+  it("leaves plain questions alone", () => {
+    expect(wantsExplanation("How do I export this as a PDF?")).toBe(false);
+    expect(wantsLesson("Where is the export button?")).toBe(false);
+  });
+});
+
+describe("explaining any subject, programming included", () => {
+  it.each([
+    "What does this function do?",
+    "Why does this code fail?",
+    "Review my code",
+    "Find the bug",
+    "How does this query work?",
+    "Translate this",
+  ])("explains %s", (s) => expect(wantsExplanation(s)).toBe(true));
+
+  it.each([
+    "Teach me about photosynthesis",
+    "Help me learn about recursion",
+    "I want to understand compound interest",
+  ])("teaches %s as a lesson", (s) => expect(wantsLesson(s)).toBe(true));
 });

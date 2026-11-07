@@ -1,7 +1,7 @@
 // How Tandrix talks while it helps: what kind of help a request needs, natural acknowledgements
 // (never the same line twice in a row, and a light joke now and then when the ask is a big one),
 // offering to do the work itself, and what to make of something said while it's already busy.
-import { asImperative, wantsDesktopExecution, wantsLesson } from "./voice";
+import { asImperative, wantsDesktopExecution, wantsExplanation, wantsLesson } from "./voice";
 
 /** Shows, offers to do, does straight away, or works in the background without the screen. */
 export type HelpKind = "show" | "offer" | "do" | "background" | "app";
@@ -53,7 +53,8 @@ export function isAppCommand(text: string): boolean {
 export function helpKind(text: string): HelpKind {
   const q = text.trim();
   if (!q) return "show";
-  if (wantsLesson(q)) return "show";
+  // Understanding what's on screen, or learning an app, is shown and explained, even said "for me".
+  if (wantsExplanation(q) || wantsLesson(q)) return "show";
   if (isAppCommand(q)) return "app";
   if (wantsDesktopExecution(q)) return "do";
   if (/\b(in the background|while i work|meanwhile|when you can)\b/i.test(q)) return "background";
@@ -102,28 +103,36 @@ export function interjection(text: string): "stop" | "redirect" | "queue" {
   return "queue";
 }
 
+/** An addition to the task under way, by how it's worded. */
+const UPDATE =
+  /^(and|also|plus|then|oh,? and|add|include|mention|put|insert|attach|cc|make sure|remember|don'?t|do not|skip|leave out|before (you|that)|when you'?re done|once you'?re done|after (that|this))\b|\b(too|as well|also)[.!]?$/i;
+
 /** Words that point at what's on the screen ("this button", "here", "that menu"). */
 const ON_SCREEN =
   /\b(on (my|the|this) screen|screen|here|this|that|these|those|it|button|menu|window|tab|field|icon|page|app|click|cursor|toolbar|sidebar|setting|settings|option)\b/i;
 
 /**
- * Something said while a screen task is running. Only work that needs the mouse and keyboard
- * waits its turn; the rest starts now, alongside it:
- * - stop / redirect: about the running task
+ * Something said while a screen task is running. Mostly it's an update to that task, so anything
+ * for the screen goes to the running task; the rest starts now, alongside it:
+ * - stop: end the running task
+ * - redirect: a correction to it ("no, the other Thursday")
+ * - add: more for it ("also make the title bold"), or a job after it ("then email Sam"): the task
+ *   takes it on, as part of its work or once its own work is done, since there's one mouse
  * - background: needs no screen (a look-up, a question of fact, a draft): a background agent
  * - look: a question about what's on screen: answered by looking, without taking the mouse
- * - queue: another job on the screen: next, since there's one mouse
  */
-export function whileBusy(text: string): "stop" | "redirect" | "background" | "look" | "queue" {
+export function whileBusy(text: string): "stop" | "redirect" | "add" | "background" | "look" {
   const how = interjection(text);
   if (how !== "queue") return how;
+  // Worded as more for this task ("mention Friday too", "also…", "make sure…", "don't…").
+  if (UPDATE.test(text.trim())) return "add";
   const kind = helpKind(text);
   if (kind === "background") return "background";
-  // App commands run alongside, out of sight; opening a folder or a page takes the front, so waits.
+  // App commands run alongside, out of sight; opening a folder or a page takes the front.
   if (kind === "app")
-    return /^(open|show|go to|visit|pull up)\b/i.test(asImperative(text)) ? "queue" : "background";
+    return /^(open|show|go to|visit|pull up)\b/i.test(asImperative(text)) ? "add" : "background";
   if (kind === "show") return ON_SCREEN.test(text) ? "look" : "background";
-  return "queue";
+  return "add";
 }
 
 /** Long, many-part or multi-app asks: the kind that earns a light joke. */
@@ -162,6 +171,9 @@ const QUEUED = [
 
 const REDIRECTED = ["Okay, changing course.", "Got it, adjusting.", "Sure, switching to that."];
 
+// An update to the running task: taken on as part of it.
+const ADDED = ["Got it, I'll add that.", "Sure, I'll do that too.", "Okay, adding that in."];
+
 const BACKGROUND_ACKS = [
   "I'll look into that in the background and let you know.",
   "On it in the background. Keep going, I'll tell you when it's ready.",
@@ -186,6 +198,7 @@ export function acknowledge(task: string, seed?: number): string {
 
 export const acknowledgeQueued = (seed?: number) => pick(QUEUED, seed);
 export const acknowledgeRedirect = (seed?: number) => pick(REDIRECTED, seed);
+export const acknowledgeAdded = (seed?: number) => pick(ADDED, seed);
 export const acknowledgeBackground = (seed?: number) => pick(BACKGROUND_ACKS, seed);
 
 /** Offers to do the work, the way a good assistant would. */
