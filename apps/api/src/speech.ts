@@ -1,9 +1,13 @@
 // Tandrix's voice: replies spoken by Kokoro (Apache-2.0, an open 82M-parameter speech model) on
 // this server, so the phone and the Mac sound the same and natural. Meta has no speech model. The
-// model loads once (warmed at start), syntheses run one at a time, and recent phrases are cached.
+// model runs in a worker thread (speech-worker.ts), so voicing a reply never holds up the server's
+// other requests; it loads once (warmed at start), speaks one phrase at a time, and recent phrases
+// are cached.
 // When this can't speak, the apps fall back to a Premium or Enhanced device voice, else text only;
 // never a robotic voice.
+import { Worker } from "node:worker_threads";
 import { ASSISTANT_LINES } from "@tandrix/core";
+import type { SpeechReply, SpeechRequest } from "./speech-worker";
 
 export interface Speaker {
   /** The reply as a WAV, or null when speech isn't available. */
@@ -13,15 +17,7 @@ export interface Speaker {
 export const MAX_SPEAK_CHARS = 600;
 /** Kokoro's warmest English voice. */
 export const VOICE = "af_heart";
-const MODEL = "onnx-community/Kokoro-82M-v1.0-ONNX";
 const CACHE_ENTRIES = 200;
-
-type Kokoro = {
-  generate(
-    text: string,
-    opts: { voice: string },
-  ): Promise<{ audio: Float32Array; sampling_rate: number }>;
-};
 
 /** 16-bit mono PCM WAV: half the size of the model's float output, and plays everywhere. */
 export function pcm16Wav(samples: Float32Array, sampleRate: number): Uint8Array {
@@ -49,47 +45,81 @@ export function pcm16Wav(samples: Float32Array, sampleRate: number): Uint8Array 
   return out;
 }
 
-export function kokoroSpeaker(log: (l: Record<string, unknown>) => void): Speaker & {
+export function kokoroSpeaker(
+  log: (l: Record<string, unknown>) => void,
+  /** The worker the voice runs in (tests pass a stand-in). */
+  spawn: () => Worker = defaultSpawn,
+): Speaker & {
   warm(): void;
 } {
-  let model: Promise<Kokoro | null> | undefined;
-  let readyModel: Kokoro | null = null;
+  let worker: Worker | null = null;
+  let nextId = 1;
+  const waiting = new Map<number, (r: SpeechReply) => void>();
+  const fail = (error: string) => {
+    for (const done of waiting.values()) done({ id: 0, ok: false, error });
+    waiting.clear();
+    worker = null;
+  };
+  const ask = (req: Omit<SpeechRequest, "id">): Promise<SpeechReply> => {
+    if (!worker) {
+      worker = spawn();
+      worker.on("message", (r: SpeechReply) => {
+        waiting.get(r.id)?.(r);
+        waiting.delete(r.id);
+      });
+      worker.on("error", (e) => fail(e.message));
+      worker.on("exit", (code) => code !== 0 && fail(`exited ${code}`));
+    }
+    const id = nextId++;
+    return new Promise((resolve) => {
+      waiting.set(id, resolve);
+      worker!.postMessage({ ...req, id } as SpeechRequest);
+    });
+  };
+
+  let ready = false;
   let attempts = 0;
   let retry: ReturnType<typeof setTimeout> | undefined;
-  const load = () =>
-    (model ??= import("kokoro-js")
-      .then(({ KokoroTTS }) => KokoroTTS.from_pretrained(MODEL, { dtype: "q8", device: "cpu" }))
-      .then((m) => {
-        readyModel = m as unknown as Kokoro;
-        return readyModel;
-      })
-      .catch((e: Error) => {
-        log({
-          level: "warn",
-          event: "speech_model_unavailable",
-          error: e.message,
-          attempt: ++attempts,
-        });
-        model = undefined;
-        // Keep trying in the background (the model downloads on first use and a download can
-        // fail), backing off to a minute, so the voice comes back without waiting for a reply.
-        clearTimeout(retry);
-        retry = setTimeout(() => void load(), Math.min(60_000, 2_000 * 2 ** Math.min(attempts, 5)));
-        retry.unref?.();
-        return null;
-      }));
+  /** Loads the model in the worker, retrying in the background (the first load downloads it). */
+  const load = async (): Promise<boolean> => {
+    if (ready) return true;
+    const r = await ask({ warm: true });
+    if (r.ok) return (ready = true);
+    log({ level: "warn", event: "speech_model_unavailable", error: r.error, attempt: ++attempts });
+    clearTimeout(retry);
+    retry = setTimeout(() => void load(), Math.min(60_000, 2_000 * 2 ** Math.min(attempts, 5)));
+    retry.unref?.();
+    return false;
+  };
 
   const cache = new Map<string, Uint8Array>();
-  // One synthesis at a time: it's CPU-bound, and replies are short.
-  let queue: Promise<unknown> = Promise.resolve();
+  /** A phrase already being spoken: asked for again, it's the same voice, made once. */
+  const making = new Map<string, Promise<Uint8Array | null>>();
+  const generate = async (text: string): Promise<Uint8Array | null> => {
+    const started = Date.now();
+    const r = await ask({ text, voice: VOICE });
+    if (!r.ok) {
+      log({ level: "warn", event: "speech_failed", error: r.error });
+      return null;
+    }
+    const wav = pcm16Wav(r.samples, r.rate);
+    log({ event: "speech_generated", chars: text.length, ms: Date.now() - started });
+    cache.set(text, wav);
+    if (cache.size > CACHE_ENTRIES) cache.delete(cache.keys().next().value!);
+    return wav;
+  };
 
   return {
     warm() {
       const started = Date.now();
-      void load().then(async (m) => {
-        if (!m) return;
+      void load().then(async (ok) => {
+        if (!ok) return;
         log({ event: "speech_model_ready", ms: Date.now() - started });
-        // Warm up and pre-cache common wake and completion phrases so they return instantly.
+        // Common wake and completion phrases, made now so they come back at once; never ahead of
+        // a reply someone is waiting to hear (each waits until no reply is being voiced).
+        const idle = async () => {
+          while (making.size) await Promise.allSettled([...making.values()]);
+        };
         for (const phrase of [
           "I'm here. What would you like to do?",
           "I'm here. Tell me what you want to do or ask about this step.",
@@ -102,12 +132,8 @@ export function kokoroSpeaker(log: (l: Record<string, unknown>) => void): Speake
           "Let's learn it.",
           ...ASSISTANT_LINES,
         ]) {
-          try {
-            const audio = await m.generate(phrase, { voice: VOICE });
-            cache.set(phrase, pcm16Wav(audio.audio, audio.sampling_rate));
-          } catch {
-            // Ignore pre-warming failure.
-          }
+          await idle();
+          if (!cache.has(phrase)) await generate(phrase);
         }
       });
     },
@@ -121,30 +147,29 @@ export function kokoroSpeaker(log: (l: Record<string, unknown>) => void): Speake
         cache.set(text, hit);
         return hit;
       }
-      const m = await load();
-      if (!m) return null;
-      const run = queue.then(async () => {
-        const started = Date.now();
-        const audio = await m.generate(text, { voice: VOICE });
-        const wav = pcm16Wav(audio.audio, audio.sampling_rate);
-        log({ event: "speech_generated", chars: text.length, ms: Date.now() - started });
-        return wav;
-      });
-      queue = run.catch(() => undefined);
+      const already = making.get(text);
+      if (already) return already;
+      const made = load().then((ok) => (ok ? generate(text) : null));
+      making.set(text, made);
       try {
-        const wav = await run;
-        if (wav) {
-          cache.set(text, wav);
-          if (cache.size > CACHE_ENTRIES) cache.delete(cache.keys().next().value!);
-        }
-        return wav;
-      } catch (e) {
-        log({ level: "warn", event: "speech_failed", error: (e as Error).message });
-        return null;
+        return await made;
+      } finally {
+        making.delete(text);
       }
     },
   };
 }
+
+const workerUrl = new URL(
+  import.meta.url.endsWith(".ts") ? "./speech-worker.ts" : "./speech-worker.js",
+  import.meta.url,
+);
+const defaultSpawn = () => {
+  const w = new Worker(workerUrl);
+  // The voice must not keep a CLI or test process alive on its own.
+  w.unref();
+  return w;
+};
 
 export const noSpeaker: Speaker = {
   async speak() {
