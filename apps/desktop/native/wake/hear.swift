@@ -2,7 +2,9 @@
 // recognised on the device, so letting go gives its text in a moment instead of an upload and a
 // server transcription. Nothing is sent anywhere. Run as `tandrix-wake --hear`, reading one JSON
 // command per line on stdin:
-//   {"begin":1,"words":["Tandrix"]}  a new question (words: names to favour)
+//   {"begin":1,"words":["Tandrix"],"own":2}  a new question (words: names to favour; own: how
+//                                    many are the user's own, which only the older recogniser
+//                                    honours, so it hears those questions)
 //   {"audio":"<base64>"}             16 kHz mono 16-bit little-endian PCM, as it's recorded
 //   {"end":1}                        the user let go: give the text
 //   {"cancel":1}                     throw the question away
@@ -210,8 +212,12 @@ final class Hearer {
 
   var usable: Bool { engine == .analyzer || (legacy?.supportsOnDeviceRecognition ?? false) }
 
-  func begin(words: [String], partial: @escaping (String) -> Void) -> Hearing? {
-    if engine == .analyzer, #available(macOS 26.0, *), let f = analyzerFormat {
+  func begin(words: [String], own: Bool = false, partial: @escaping (String) -> Void) -> Hearing? {
+    // SpeechTranscriber ignores contextual strings (VO5 bench: 5 of 27 names right with or
+    // without them; SFSpeechRecognizer 4 → 12), so the user's own words go to the older one.
+    if engine == .analyzer, !own || !(legacy?.supportsOnDeviceRecognition ?? false),
+      #available(macOS 26.0, *), let f = analyzerFormat
+    {
       let t = SpeechTranscriber(locale: Locale(identifier: "en-US"), preset: .progressiveTranscription)
       return AnalyzerHearing(transcriber: t, format: f, words: words, partial: partial)
     }
@@ -236,7 +242,8 @@ func runHearing() {
           if let id = obj["begin"] as? Int {
             current?.hearing.cancel()
             let words = (obj["words"] as? [String])?.prefix(100).map { String($0.prefix(60)) } ?? []
-            if let h = hearer.begin(words: words, partial: { text in emit(["partial": id, "text": text]) }) {
+            let own = (obj["own"] as? Int ?? 0) > 0
+            if let h = hearer.begin(words: words, own: own, partial: { text in emit(["partial": id, "text": text]) }) {
               current = (id, h)
             } else {
               current = nil
@@ -290,7 +297,10 @@ func runHearFile(_ path: String, engine: String?) {
         d[i] = Int16(max(-1, min(1, out.floatChannelData![0][i])) * 32767).littleEndian
       }
     }
-    guard let h = hearer.begin(words: ["Tandrix", "Hey Tandrix", "Wake up Tandrix"], partial: { _ in }) else {
+    // TANDRIX_HEAR_WORDS: the user's own words, comma-separated (VO5 bench).
+    let own = (ProcessInfo.processInfo.environment["TANDRIX_HEAR_WORDS"] ?? "")
+      .split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+    guard let h = hearer.begin(words: ["Tandrix", "Hey Tandrix", "Wake up Tandrix"] + own, own: !own.isEmpty, partial: { _ in }) else {
       fail("on_device_unavailable")
     }
     // In 100 ms pieces, at about the pace it was said, so it's heard as it would be live.

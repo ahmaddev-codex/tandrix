@@ -34,3 +34,6 @@ apps/film
 *.p12
 *.mobileprovision
 *.pem
+
+# Wake-word test sets: rebuilt by apps/api/scripts/wake-sets.ts
+fixtures/wake/

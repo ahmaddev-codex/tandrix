@@ -80,6 +80,10 @@ execFileSync(
     resolve(appDir, "native/wake/main.swift"),
     resolve(appDir, "native/wake/voiceprint.swift"),
     resolve(appDir, "native/wake/hear.swift"),
+    resolve(appDir, "native/wake/continuous.swift"),
+    resolve(appDir, "native/wake/mic.swift"),
+    // The VO1 spike's evaluator (--wake-eval), for scripts/wake/score.ts; inert without the flag.
+    resolve(appDir, "native/wake/spike.swift"),
     "-Xlinker",
     "-sectcreate",
     "-Xlinker",

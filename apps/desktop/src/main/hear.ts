@@ -105,12 +105,29 @@ const write = (obj: unknown) => {
 };
 
 /** A new question: returns its id, or 0 when this Mac can't hear it (it will be uploaded). */
-export function beginHearing(): number {
+/** The user's own words (VO5), checked: at most 40 short strings. */
+export function ownWords(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter((w): w is string => typeof w === "string")
+    .map((w) => w.replace(/\s+/g, " ").trim().slice(0, 40))
+    .filter(Boolean)
+    .slice(0, 40);
+}
+
+export function beginHearing(words: unknown = []): number {
   warmHearing();
   if (!helper || !ready) return 0;
   if (current) write({ cancel: current });
   current = ++next;
-  write({ begin: current, words: [...NAMES, ...installedApps().slice(0, 100 - NAMES.length)] });
+  // Tandrix's name and the user's own words first, then the apps on this Mac.
+  const own = ownWords(words);
+  const first = [...NAMES, ...own];
+  write({
+    begin: current,
+    words: [...first, ...installedApps().slice(0, Math.max(0, 100 - first.length))],
+    own: own.length,
+  });
   return current;
 }
 

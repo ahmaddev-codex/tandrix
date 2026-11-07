@@ -35,9 +35,15 @@ let wake = try! NSRegularExpression(
     "\\b(?:(?:hey|hi|ok|okay|wake\\s*up)[\\s,]+)?(?:tandrix|tandrics|tandrex|tandrik|tantrix|tendrix|ten\\s+tricks|tan\\s+tricks|tan\\s*drix|sandrix|hendrix|handrix|trendix|candrix|tandreks)\\b[\\s,.!?]*(.*)$",
   options: [.caseInsensitive])
 
-final class Listener {
+/// A wake-word listener that also records voice setup phrases.
+protocol WakeListening: AnyObject {
+  func command(_ line: String)
+}
+
+/// The older recogniser, renewed every 50 s: used where the continuous one (continuous.swift)
+/// can't run (before macOS 26, or without its English model).
+final class Listener: WakeListening {
   let recognizer: SFSpeechRecognizer
-  let engine = AVAudioEngine()
   var request: SFSpeechAudioBufferRecognitionRequest?
   var task: SFSpeechRecognitionTask?
   /// How much of the current transcript was already acted on, so one phrase wakes once.
@@ -49,7 +55,6 @@ final class Listener {
   var generation = 0
   /// The last few seconds heard, for the voiceprint.
   let recent = Recent(seconds: 8)
-  var resampler: Resampler?
   /// Where in `recent` the current recognition task's audio starts.
   var taskStart = 0
 
@@ -61,18 +66,17 @@ final class Listener {
     recognizer = r
   }
 
+  var mic: Mic?
+
   func start() {
-    let input = engine.inputNode
-    let format = input.outputFormat(forBus: 0)
-    resampler = Resampler(from: format)
-    input.installTap(onBus: 0, bufferSize: 2048, format: format) {
-      [weak self] buffer, _ in
-      guard let self else { return }
-      self.request?.append(buffer)
-      if let r = self.resampler { self.recent.append(r.convert(buffer)) }
+    let mic = Mic { [weak self] buffer, samples in
+      self?.request?.append(buffer)
+      self?.recent.append(samples)
     }
-    engine.prepare()
-    do { try engine.start() } catch { fail("microphone_unavailable") }
+    // A restarted mic may give another format: a fresh recognition task takes it.
+    mic.onRestart = { [weak self] in self?.begin() }
+    guard mic.start() else { fail("microphone_unavailable") }
+    self.mic = mic
     begin()
     emit(["ready": true])
   }
@@ -98,18 +102,16 @@ final class Listener {
         if debug { FileHandle.standardError.write("heard: \(text)\n".data(using: .utf8)!) }
         if text.count > self.handled {
           let fresh = String(text.dropFirst(self.handled))
-          let range = NSRange(fresh.startIndex..., in: fresh)
           // Act on the live (partial) result: on a continuous stream a result is only final
           // when the task ends, a minute later. Once the name is heard, wait for a short pause
           // so "Tandrix, open Calendar" arrives whole, then answer and start listening afresh.
-          if let m = wake.firstMatch(in: fresh, range: range) {
+          let heard = WakeRule.match(fresh)
+          if heard.woke {
             // Where this phrase started, from the recogniser's word timings, so the voiceprint
             // hears just the phrase and not the silence or speech before it.
             let firstWord = result.bestTranscription.segments.first { $0.substringRange.location >= self.handled }
             let phraseStart = self.taskStart + Int(((firstWord?.timestamp ?? 0) - 0.15) * PRINT_RATE)
-            let rest =
-              Range(m.range(at: 1), in: fresh).map { String(fresh[$0]) }?
-              .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            let rest = heard.rest
             self.pendingWake?.invalidate()
             self.pendingWake = Timer.scheduledTimer(withTimeInterval: 0.9, repeats: false) {
               [weak self] _ in
@@ -144,6 +146,7 @@ final class Listener {
     guard let data = line.data(using: .utf8),
       let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
     else { return }
+    if let name = obj["name"] as? String { WakeRule.setName(name) }
     switch obj["record"] as? String {
     case "start": recent.startRecording()
     case "stop":
@@ -208,6 +211,16 @@ if ProcessInfo.processInfo.environment["TANDRIX_WAKE_SELF"] == nil,
 setvbuf(stdout, nil, _IOLBF, 0)
 let args = CommandLine.arguments
 // Hearing a question (hear.swift): the same permission, no microphone of its own.
+// VO1 spike (spike.swift): a detector over a recorded stream.
+if args.count >= 4, args[1] == "--wake-eval" {
+  SFSpeechRecognizer.requestAuthorization { status in
+    DispatchQueue.main.async {
+      guard status == .authorized else { fail("speech_not_allowed") }
+      runWakeEval(args[2], engine: args[3], speed: args.count >= 5 ? Double(args[4]) ?? 1 : 1)
+    }
+  }
+  dispatchMain()
+}
 if args.count >= 2, args[1] == "--hear" || args[1] == "--hear-file" {
   SFSpeechRecognizer.requestAuthorization { status in
     DispatchQueue.main.async {
@@ -223,12 +236,28 @@ if args.count >= 2, args[1] == "--hear" || args[1] == "--hear-file" {
   }
   dispatchMain()
 }
-var listener: Listener?
+// Tests: whether a line of heard text is the wake phrase, and what followed it.
+if args.count >= 3, args[1] == "--match" {
+  if args.count == 4 { WakeRule.setName(args[3]) }
+  let m = WakeRule.match(args[2])
+  emit(["woke": m.woke, "rest": m.rest])
+  exit(0)
+}
+var listener: WakeListening?
 SFSpeechRecognizer.requestAuthorization { status in
   DispatchQueue.main.async {
     guard status == .authorized else { fail("speech_not_allowed") }
-    listener = Listener()
-    listener?.start()
+    Task { @MainActor in
+      if #available(macOS 26.0, *), await ContinuousListener.ready() {
+        let c = ContinuousListener()
+        listener = c
+        await c.start()
+      } else {
+        let l = Listener()
+        listener = l
+        l.start()
+      }
+    }
   }
 }
 // Commands from Tandrix; stop when it stops (stdin closes).

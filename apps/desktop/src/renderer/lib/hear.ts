@@ -32,8 +32,11 @@ export interface Hearing {
   cancel(): void;
 }
 
-export function startHearing(bridge: HearBridge = window.tandrix.voice.hear): Hearing {
-  const id = bridge.begin().catch(() => 0);
+export function startHearing(
+  bridge: HearBridge = window.tandrix.voice.hear,
+  words: string[] = [],
+): Hearing {
+  const id = bridge.begin(words).catch(() => 0);
   let pieces: Float32Array[] = [];
   let length = 0;
   let over = false;

@@ -35,7 +35,7 @@ try {
     stdio: "inherit",
   });
   execSync(
-    "swiftc -O -o dist/native/tandrix-wake native/wake/main.swift native/wake/voiceprint.swift native/wake/hear.swift -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __info_plist -Xlinker native/wake/Info.plist",
+    "swiftc -O -o dist/native/tandrix-wake native/wake/main.swift native/wake/voiceprint.swift native/wake/hear.swift native/wake/continuous.swift native/wake/mic.swift native/wake/spike.swift -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __info_plist -Xlinker native/wake/Info.plist",
     {
       cwd: root,
       stdio: "inherit",
