@@ -95,14 +95,19 @@ describe("a turn the user ends", () => {
 describe("follow-up listening", () => {
   it("gives up sooner when waiting for a follow-up", () => {
     let t = startLevels();
-    for (let i = 0; i < 50; i++) t = addLevel(t, -70, 100);
+    for (let i = 0; i < 11; i++) t = addLevel(t, -70, 100);
     expect(tappedTurn(t)).toBe("listen");
+    // Quiet for a second after the answer: no follow-up, so it stops listening.
     expect(tappedTurn(t, FOLLOW_UP_MS)).toBe("nothing_heard");
   });
 
   it("still takes a follow-up that starts in time", () => {
+    // Speaking within the second, then going quiet.
     let t = startLevels();
-    for (let i = 0; i < 30; i++) t = addLevel(t, -70, 100);
+    for (let i = 0; i < 5; i++) {
+      t = addLevel(t, -70, 100);
+      expect(tappedTurn(t, FOLLOW_UP_MS)).toBe("listen");
+    }
     for (let i = 0; i < 10; i++) t = addLevel(t, -20, 100);
     for (let i = 0; i < 15; i++) t = addLevel(t, -70, 100);
     expect(tappedTurn(t, FOLLOW_UP_MS)).toBe("send");
