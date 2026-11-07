@@ -23,6 +23,7 @@ import {
 import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { stream } from "hono/streaming";
+import { cacheKey, ttlCache, type TtlCache } from "../answer-cache";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { z } from "zod";
 import type { AuthEnv } from "../auth";
@@ -255,8 +256,17 @@ export function readDoSession(secret: string, userId: string, session: string, n
  * POST /screen/do and /screen/do/continue, Do it for me. Screenshots come inline, go to the model
  * and are never stored here.
  */
+/** Where a part was clicked, as kept for a screenshot. */
+type Located = {
+  point: { x: number; y: number } | null;
+  box: { x: number; y: number; w: number; h: number };
+};
+
 export function inlineScreenRoutes(d: {
   guide: ScreenGuide;
+  /** Answers and located parts kept for a while (tests pass their own). */
+  answers?: TtlCache<ScreenAskResponse>;
+  located?: TtlCache<Located>;
   doer?: ScreenDoer;
   tokenSecret: string;
   limiter?: RateLimiter;
@@ -269,6 +279,9 @@ export function inlineScreenRoutes(d: {
   const doLimiter = d.doLimiter ?? rateLimiter(120, 60_000);
   // One locate follows each answer that marks parts.
   const locateLimiter = rateLimiter(30, 60_000);
+  // A repeat is answered at once, and a part already clicked on a screenshot isn't clicked again.
+  const answers = d.answers ?? ttlCache<ScreenAskResponse>();
+  const located = d.located ?? ttlCache<Located>(2000);
   // Each tool step of a background task is a request, and several tasks run at once.
   const backgroundLimiter = rateLimiter(60, 60_000);
   const doer = d.doer ?? noModelScreenDoer;
@@ -312,6 +325,28 @@ export function inlineScreenRoutes(d: {
         const req = parsed.data;
         const bytes = shotBytes(req.screenshot);
         const size = { width: req.geometry.imageWidth, height: req.geometry.imageHeight };
+        // The same question, in the same conversation, on the same screenshot: answered at once.
+        const key = cacheKey(
+          c.get("user").id,
+          bytes,
+          JSON.stringify({
+            q: req.transcript.trim().toLowerCase(),
+            mode: req.mode,
+            lesson: req.lesson,
+            explain: req.explain,
+            // Asking the same thing again: its earlier ask isn't a difference.
+            history: req.history.filter(
+              (h) => h.question.trim().toLowerCase() !== req.transcript.trim().toLowerCase(),
+            ),
+            name: req.userName ?? null,
+            size,
+          }),
+        );
+        const known = answers.get(key);
+        if (known) {
+          c.header("x-tandrix-cache", "hit");
+          return c.json(known);
+        }
         const context = historyContext(req.history);
         if (req.userName) context.push(calledLine(req.userName));
         const outcome = await d.guide.ask({
@@ -322,7 +357,9 @@ export function inlineScreenRoutes(d: {
           ...(req.explain ? { explain: req.explain } : {}),
         });
         if (outcome.status === "unavailable") return c.json(outcome satisfies ScreenAskResponse);
-        return c.json(answered(outcome, null, size, req.transcript));
+        const out = answered(outcome, null, size, req.transcript);
+        answers.set(key, out);
+        return c.json(out);
       })
       // Each part of an answer clicked, a line of NDJSON per part as soon as it's found: the Mac
       // is already speaking, and draws each part's mark as its line arrives.
@@ -332,13 +369,24 @@ export function inlineScreenRoutes(d: {
         if (!parsed.success) throw invalid(issues(parsed.error));
         const req = parsed.data;
         const size = { width: req.geometry.imageWidth, height: req.geometry.imageHeight };
-        const found = (d.guide.locate ?? noModelScreenGuide.locate!)({
-          screenshot: {
-            bytes: shotBytes(req.screenshot),
-            mimeType: req.screenshot.mimeType,
-            ...size,
-          },
-          parts: req.parts,
+        const bytes = shotBytes(req.screenshot);
+        const user = c.get("user").id;
+        // Parts already clicked on this screenshot come back at once; only the rest are asked.
+        const keys = req.parts.map((p) => cacheKey(user, bytes, p.label.trim().toLowerCase()));
+        const fresh = req.parts.flatMap((_, i) => (located.get(keys[i]!) ? [] : [i]));
+        const asked = fresh.length
+          ? (d.guide.locate ?? noModelScreenGuide.locate!)({
+              screenshot: { bytes, mimeType: req.screenshot.mimeType, ...size },
+              parts: fresh.map((i) => req.parts[i]!),
+            })
+          : [];
+        const found = req.parts.map((_, i) => {
+          const known = located.get(keys[i]!);
+          if (known) return Promise.resolve(known);
+          return asked[fresh.indexOf(i)]!.then((r) => {
+            if (r.point) located.set(keys[i]!, r);
+            return r;
+          });
         });
         c.header("content-type", "application/x-ndjson");
         c.header("cache-control", "no-store");

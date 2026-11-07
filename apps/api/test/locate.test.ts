@@ -111,3 +111,62 @@ describe("POST /screen/locate", () => {
     }
   });
 });
+
+describe("what's already worked out about a screenshot", () => {
+  it("clicks a part once per screenshot, and only the new ones after", async () => {
+    const asked: string[] = [];
+    const guide: ScreenGuide = {
+      ...noModelScreenGuide,
+      locate: ({ parts }) =>
+        parts.map(async (p) => {
+          asked.push(p.label);
+          return { point: { x: 5, y: 5 }, box: p.box };
+        }),
+    };
+    const a = app(guide);
+    const ask = (labels: string[]) =>
+      a.request("/screen/locate", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: body(
+          labels.map((label) => ({ label, detail: null, box: { x: 1, y: 1, w: 9, h: 9 } })),
+        ),
+      });
+    await lines(await ask(["Atlas", "Axis"]));
+    const again = await lines(await ask(["atlas", "Sacrum"]));
+    expect(asked).toEqual(["Atlas", "Axis", "Sacrum"]);
+    expect(again.find((l) => l.i === 0)?.point).toEqual({ x: 5, y: 5 });
+  });
+
+  it("answers the same question on the same screenshot at once", async () => {
+    let asks = 0;
+    const guide: ScreenGuide = {
+      ...noModelScreenGuide,
+      ask: async () => {
+        asks++;
+        return { status: "answered", reply: "That's the atlas.", actions: [] } as never;
+      },
+    };
+    const a = app(guide);
+    const ask = (q: string, history: unknown[] = []) =>
+      a.request("/screen/ask", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          ...JSON.parse(body([])),
+          parts: undefined,
+          transcript: q,
+          mode: "show",
+          history,
+        }),
+      });
+    const first = await ask("What is this bone?");
+    const repeat = await ask("what is this bone?", [
+      { question: "What is this bone?", reply: "That's the atlas." },
+    ]);
+    expect(first.status).toBe(200);
+    expect(repeat.headers.get("x-tandrix-cache")).toBe("hit");
+    await ask("And this one?");
+    expect(asks).toBe(2);
+  });
+});
