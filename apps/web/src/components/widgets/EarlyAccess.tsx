@@ -12,7 +12,10 @@ const focus = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visi
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8787";
 
 type State =
-  { kind: "idle" } | { kind: "sending" } | { kind: "done" } | { kind: "error"; message: string };
+  | { kind: "idle" }
+  | { kind: "sending" }
+  | { kind: "done"; already: boolean }
+  | { kind: "error"; message: string };
 
 export function EarlyAccess() {
   const [email, setEmail] = useState("");
@@ -30,8 +33,11 @@ export function EarlyAccess() {
         body: JSON.stringify({ email, platform }),
       });
       if (res.ok) {
-        void celebrate(form.getBoundingClientRect());
-        return setState({ kind: "done" });
+        const body = (await res.json().catch(() => null)) as { already?: boolean } | null;
+        const already = body?.already === true;
+        // Each address is on the list once: a repeat is told so, without the celebration.
+        if (!already) void celebrate(form.getBoundingClientRect());
+        return setState({ kind: "done", already });
       }
       setState({
         kind: "error",
@@ -53,10 +59,13 @@ export function EarlyAccess() {
   if (state.kind === "done") {
     return (
       <div id="early" className={box} role="status">
-        <p className="text-[22px] font-medium tracking-[-0.02em]">You’re on the list.</p>
+        <p className="text-[22px] font-medium tracking-[-0.02em]">
+          {state.already ? "You’re already on the list." : "You’re on the list."}
+        </p>
         <p className="text-[13px] text-text-2">
-          We’ll email {email.trim()} when Tandrix for {platform === "mac" ? "Mac" : "iPhone"} is
-          ready for you.
+          {state.already
+            ? `${email.trim()} is signed up already. We’ll email it once, when Tandrix is ready.`
+            : `We’ll email ${email.trim()} when Tandrix for ${platform === "mac" ? "Mac" : "iPhone"} is ready for you.`}
         </p>
       </div>
     );

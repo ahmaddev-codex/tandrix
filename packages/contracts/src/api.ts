@@ -292,8 +292,8 @@ export const EarlyAccessRequest = z.strictObject({
   platform: z.enum(["mac", "iphone"]).optional(),
 });
 export type EarlyAccessRequest = z.infer<typeof EarlyAccessRequest>;
-/** The same answer whether or not the address was already on the list. */
-export const EarlyAccessResponse = z.strictObject({ ok: z.literal(true) });
+/** Signed up, or already on the list (each address only once). */
+export const EarlyAccessResponse = z.strictObject({ ok: z.literal(true), already: z.boolean() });
 export type EarlyAccessResponse = z.infer<typeof EarlyAccessResponse>;
 
 /** GET /profile: what Tandrix calls this user, if they have said. */
