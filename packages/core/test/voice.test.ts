@@ -164,6 +164,26 @@ describe("lessons and explanations", () => {
   });
 });
 
+describe("going through what's on screen", () => {
+  it.each([
+    "Walk me through these functional groups",
+    "Can you go through the functional groups on my screen?",
+    "Show me the functional groups",
+    "Point out the bonds in this molecule",
+    "Take me through this proof",
+    "Highlight the sine and cosine waves",
+    "What are the parts here?",
+    "Teach me the bones of the hand",
+  ])("explains %s on the screen", (s) => expect(wantsExplanation(s)).toBe(true));
+
+  it.each([
+    "Walk me through setting up Gmail",
+    "Show me the export settings",
+    "Show me the share button",
+    "Walk me through the menus",
+  ])("leaves %s to the app", (s) => expect(wantsExplanation(s)).toBe(false));
+});
+
 describe("explaining any subject, programming included", () => {
   it.each([
     "What does this function do?",

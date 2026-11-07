@@ -130,9 +130,41 @@ export function wantsLesson(text: string): boolean {
  * An ask to understand what's on screen (VO: "I have this equation on my screen and I don't
  * understand it"): explained like a tutor, not answered with where to click.
  */
+/** Parts of an app, which are clicked, not taught. */
+const CONTROLS =
+  /\b(buttons?|menus?|settings?|options?|tabs?|icons?|toolbars?|sidebars?|windows?|files?|folders?|fields?|links?|shortcuts?|preferences|features?|steps to|how to)\b/i;
+
+/**
+ * Going through what's on screen, not an app: "walk me through these functional groups", "show
+ * me the bones", "point out the bonds", "go through this", "what are the groups here".
+ */
+function aboutContent(q: string): boolean {
+  if (CONTROLS.test(q)) return false;
+  // "Walk me through setting up Gmail" is a lesson in an app; "…through this" is the content.
+  if (
+    /\b(walk|take|talk|go|run) (me |us )?(through|over) (this|these|those|that|it|what|the|each|all|every|my)\b/i.test(
+      q,
+    )
+  )
+    return !/\b(through|over) (\w+ing|how)\b/i.test(q);
+  if (
+    /\b(show|point out|point to|highlight|mark|circle|find|label|identify|outline|trace|draw|underline|teach) (me |us )?(all |each of |every )?(the|these|those|this|its|their|each|every|my|all)\b/i.test(
+      q,
+    ) &&
+    /\b\w{3,}s\b|\b(curve|wave|graph|equation|formula|structure|diagram|molecule|cell|skeleton|map|code|function|proof|sentence|chart|group|bond|atom|ring)\b/i.test(
+      q,
+    )
+  )
+    return true;
+  return /\bwhat (are|is) (the|these|those|this|that|each|all the) [\w\s-]{2,40}(here|on (my|the|this) screen|in (this|the) (picture|image|diagram|page|molecule|structure|graph|code))\b/i.test(
+    q,
+  );
+}
+
 export function wantsExplanation(text: string): boolean {
   const q = text.trim();
   if (!q) return false;
+  if (aboutContent(q)) return true;
   return /\b(i (don'?t|do not|can'?t|cannot) (understand|get|follow|figure out|work out)|help me (understand|make sense of|solve|work out)|explain|what does (this|that|it) mean|what (does|do) (this|these) (equation|formula|error|message|chart|graph|code|line|symbol)s?|what('s| is) (this|that) (equation|formula|error|message|chart|graph|code|symbol|word|term)|what am i looking at|make sense of|(the )?(parts|bones|organs|components|sections|layers|elements) of|what (does|do) (this|these|that) (code|function|method|class|query|regex|script|loop|line|program|component|command)s? do|how does (this|that|it) (code |function |query )?work|why (is|does|did|do|won'?t|doesn'?t|isn'?t) (this|that|it|my|the)( code| function| query| script| test| build| program| app)? (fail|break|crash|error|not work|work|give|run|compile)|review (this|my) (code|function|query)|(find|spot) the bug|debug (this|it)|translate (this|it)|what('s| is) the (answer|solution|meaning)|label (the|this|these|each)|identify (the|this|these|each)|which (part|bone|organ|one) is|name (the|each) (part|bone)|what (are|is) (these|those|the) (parts|bones|labels)|break (this|it) down|solve (this|it)|how (do|did) (they|you|i) get|what('s| is) going on (here|with this))\b/i.test(
     q,
   );
