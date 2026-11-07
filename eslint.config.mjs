@@ -17,6 +17,7 @@ export default tseslint.config(
   {
     ignores: [
       "**/node_modules/**",
+      "**/.venv/**",
       "**/dist/**",
       "**/.next/**",
       "apps/web/next-env.d.ts",
