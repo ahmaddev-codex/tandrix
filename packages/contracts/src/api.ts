@@ -306,6 +306,9 @@ export const UpdateProfileRequest = z.strictObject({
 });
 export type UpdateProfileRequest = z.infer<typeof UpdateProfileRequest>;
 
+/** One earlier exchange, so a follow-up ("and then?") makes sense. Text only. */
+export const ScreenTurn = z.strictObject({ question: text(2000), reply: text(1200) });
+
 /**
  * POST /jobs/:id/screen/ask: a question about an uploaded screenshot (evidence kind
  * "screenshot"). The job's current step, if any, is the context.
@@ -317,15 +320,16 @@ export const ScreenAskRequest = z.strictObject({
   mode: ControlMode,
   /** "Teach me…": one step at a time with check-ins, instead of a single answer. */
   lesson: z.boolean().default(false),
+  /** Explain what's on screen (an equation, an error, a chart) rather than point at a control. */
+  explain: z.boolean().default(false),
   /** What Tandrix calls the user; used rarely, never in every reply. */
   userName: z.string().trim().min(1).max(40).optional(),
+  /** Oldest first; the last four at most. */
+  history: z.array(ScreenTurn).max(4).default([]),
 });
 
 /** The largest inline screenshot a question outside a job may carry (base64 of a 1280 px JPEG is far smaller). */
 export const INLINE_SCREENSHOT_MAX_BYTES = 4 * 1024 * 1024;
-
-/** One earlier exchange, so a follow-up ("and then?") makes sense. Text only. */
-export const ScreenTurn = z.strictObject({ question: text(2000), reply: text(600) });
 
 /**
  * POST /screen/ask: a question about the screen outside any job ("teach me Photoshop"). The
@@ -351,14 +355,41 @@ export const ScreenAskInlineRequest = z.strictObject({
   history: z.array(ScreenTurn).max(4).default([]),
   /** "Teach me…": one step at a time with check-ins, instead of a single answer. */
   lesson: z.boolean().default(false),
+  /** Explain what's on screen (an equation, an error, a chart) rather than point at a control. */
+  explain: z.boolean().default(false),
   /** What Tandrix calls the user; used rarely, never in every reply. */
   userName: z.string().trim().min(1).max(40).optional(),
 });
 
+/**
+ * How Tandrix marks a part on screen, as a teacher would on a whiteboard: traced along (a curve),
+ * looped round (a group), boxed, underlined or highlighted (words), bracketed (lines that belong
+ * together), struck through (what's wrong), ticked or crossed, pointed at with an arrow, measured
+ * across or up (a span), or dotted when it's tiny.
+ */
+export const MARK_KINDS = [
+  "trace",
+  "outline",
+  "box",
+  "underline",
+  "highlight",
+  "bracket",
+  "strike",
+  "tick",
+  "cross",
+  "arrow",
+  "span_x",
+  "span_y",
+  "point",
+] as const;
+export const MarkKind = z.enum(MARK_KINDS);
+export type MarkKind = z.infer<typeof MarkKind>;
+
 export const ScreenAskResponse = z.discriminatedUnion("status", [
   z.strictObject({
     status: z.literal("answered"),
-    reply: text(600),
+    /** Spoken: an instruction is a sentence or two, an explanation a short paragraph. */
+    reply: text(1200),
     /** Where to look, in screenshot pixels (point geometry); null when Tandrix can't point. */
     target: PointerTarget.nullable(),
     /**
@@ -366,6 +397,35 @@ export const ScreenAskResponse = z.discriminatedUnion("status", [
      * only after the action guard in @tandrix/core.
      */
     proposed: z.array(DesktopAction).max(16),
+    /** Written beside the annotation when words on screen help (an equation's working). */
+    note: z.string().max(600).nullable().default(null),
+    /** Each part marked up, in screenshot pixels: "Skull — protects the brain". */
+    regions: z
+      .array(
+        z.strictObject({
+          label: z.string().min(1).max(60),
+          detail: z.string().max(160).nullable().default(null),
+          /** Said while this part is marked, in a tour of the parts. */
+          say: z.string().max(400).nullable().default(null),
+          /** How to mark it. */
+          mark: MarkKind.default("outline"),
+          /** A spot clearly on the part, in screenshot pixels: where the pen touches it. */
+          point: z
+            .strictObject({ x: z.number().int().min(0), y: z.number().int().min(0) })
+            .nullable()
+            .default(null),
+          box: z.strictObject({
+            x: z.number().int().min(0),
+            y: z.number().int().min(0),
+            w: z.number().int().min(1),
+            h: z.number().int().min(1),
+          }),
+        }),
+      )
+      .max(6)
+      .default([]),
+    /** Said before a tour of the parts. */
+    intro: z.string().max(300).nullable().default(null),
   }),
   z.strictObject({ status: z.literal("unavailable"), message: text(300) }),
 ]);

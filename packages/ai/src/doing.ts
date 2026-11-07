@@ -80,6 +80,30 @@ export function readTurn(res: MetaResponse): DoTurn {
   };
 }
 
+/** Actions that change nothing on screen: a turn of only these isn't more work. */
+const IDLE = new Set(["wait", "screenshot", "move"]);
+/** A reply saying what was done, in the past tense: "Sent your message.", "Added it." */
+const DID =
+  /^(?:i(?:'ve| have)\s+)?(?:added|sent|opened|created|saved|done|finished|replied|texted|messaged|booked|updated|moved|deleted|set|turned|changed|archived|scheduled|wrote|written|made|closed|filled|submitted|played|paused|renamed|copied|pasted|uploaded|downloaded|installed|removed|cleared|emptied|ordered|shared|invited|exported|printed|marked|started|stopped|connected|joined)\b/i;
+
+/**
+ * Whether a turn finishes the task, and what to say: the model says "DONE: …" when every part is
+ * done (whatever actions came with it); or it proposes no actions; or only idle ones (a wait, a
+ * look) with a reply saying what it did. Models often tack one idle action onto a finished task,
+ * which kept Tandrix "working" after the job was done.
+ */
+export function finishedTurn(t: Pick<DoTurn, "callId" | "actions" | "reply">): {
+  done: boolean;
+  reply: string;
+} {
+  const marked = /^\s*DONE\s*[:.\-–—]\s*/i.exec(t.reply);
+  if (marked) return { done: true, reply: t.reply.slice(marked[0].length).trim() };
+  if (!t.callId) return { done: true, reply: t.reply };
+  if (t.actions.every((a) => IDLE.has(a.type)) && DID.test(t.reply.trim()))
+    return { done: true, reply: t.reply };
+  return { done: false, reply: t.reply };
+}
+
 /** How hard each turn thinks: low plans multi-app tasks right (task-bench 3 of 3). */
 const TURN_EFFORT = "low";
 /**

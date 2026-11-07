@@ -168,6 +168,9 @@ describe("POST /jobs/:id/screen/ask", () => {
         geometry: { kind: "point", point: { x: 412, y: 315 } },
       },
       proposed: [click],
+      note: null,
+      regions: [],
+      intro: null,
     });
     expect(s.asked).toHaveLength(1);
     expect(s.asked[0]!.question).toBe("How do I set the ramp time?");
@@ -343,6 +346,9 @@ describe("POST /screen/ask (outside a job)", () => {
         geometry: { kind: "point", point: { x: 412, y: 315 } },
       },
       proposed: [click],
+      note: null,
+      regions: [],
+      intro: null,
     });
     expect(Buffer.from(s.asked[0]!.screenshot.bytes).equals(Buffer.from(PNG))).toBe(true);
     expect(s.asked[0]!.context).toEqual([

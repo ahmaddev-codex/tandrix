@@ -1,6 +1,6 @@
 // POST /jobs/:id/screen/ask: Show me on the Mac. The screenshot is the job's evidence; the answer
 // is words plus where to point. Proposed actions are returned for drawing, never executed here.
-import { calledLine } from "@tandrix/ai";
+import { calledLine, finishedTurn } from "@tandrix/ai";
 import {
   DO_MAX_TURNS,
   BackgroundRequest,
@@ -114,6 +114,7 @@ export function screenRoutes(d: ScreenDeps) {
       asset ? `Equipment: ${asset.make} ${asset.model}` : "",
       step ? `Step: ${step.title}` : "",
       step ? `Instruction: ${step.instruction}` : "",
+      ...historyContext(req.history),
       req.userName ? calledLine(req.userName) : "",
     ].filter(Boolean);
 
@@ -127,6 +128,7 @@ export function screenRoutes(d: ScreenDeps) {
       question: req.transcript,
       context,
       ...(req.lesson ? { lesson: req.lesson } : {}),
+      ...(req.explain ? { explain: req.explain } : {}),
     });
     if (outcome.status === "unavailable") return reply(outcome);
 
@@ -141,16 +143,11 @@ function answered(
   size: { width: number; height: number },
   question = "",
 ): ScreenAskResponse {
-  const isRegion =
-    /\b(ribbon|toolbar|panel|sidebar|section|area|inspector|tabs|range|table|column|row)\b/i.test(
-      question,
-    ) ||
-    /\b(ribbon|toolbar|panel|sidebar|section|area|inspector|tabs|range|table)\b/i.test(
-      outcome.reply,
-    );
+  // A drag in Show me is an outline (the model's way to frame a region): it becomes a frame.
+  void question;
   const dragAction = outcome.actions.find((a) => a.type === "drag" && a.path.length >= 2);
   let target: PointerTarget | null = null;
-  if (isRegion && dragAction && dragAction.type === "drag") {
+  if (dragAction && dragAction.type === "drag") {
     const p0 = dragAction.path[0]!;
     const p1 = dragAction.path[dragAction.path.length - 1]!;
     const x = Math.min(p0.x, p1.x);
@@ -161,7 +158,7 @@ function answered(
       target = {
         surface: "screen",
         evidenceId,
-        label: "Section",
+        label: outcome.label ?? "Here",
         geometry: { kind: "box", box: { x, y, w, h } },
       };
     }
@@ -169,9 +166,30 @@ function answered(
   if (!target) target = pointerFor(outcome.actions, evidenceId, size);
   return {
     status: "answered",
-    reply: (outcome.reply || (target ? `${target.label}.` : CANT_POINT)).slice(0, 600),
+    reply: (outcome.reply || (target ? `${target.label}.` : CANT_POINT)).slice(0, 1200),
     target,
     proposed: outcome.actions.slice(0, 16),
+    note: outcome.note ?? null,
+    // Inside the screenshot, whole pixels: what the Mac draws.
+    regions: (outcome.regions ?? [])
+      .map((r) => ({
+        label: r.label,
+        detail: r.detail ?? null,
+        say: r.say ?? null,
+        mark: r.mark ?? "outline",
+        point:
+          r.point && r.point.x < size.width && r.point.y < size.height
+            ? { x: Math.max(0, Math.round(r.point.x)), y: Math.max(0, Math.round(r.point.y)) }
+            : null,
+        box: {
+          x: Math.max(0, Math.round(r.box.x)),
+          y: Math.max(0, Math.round(r.box.y)),
+          w: Math.max(1, Math.round(Math.min(r.box.w, size.width - r.box.x))),
+          h: Math.max(1, Math.round(Math.min(r.box.h, size.height - r.box.y))),
+        },
+      }))
+      .filter((r) => r.box.x < size.width && r.box.y < size.height),
+    intro: outcome.intro ?? null,
   };
 }
 
@@ -254,21 +272,20 @@ export function inlineScreenRoutes(d: {
   const turnResponse = (userId: string, outcome: DoOutcome, turn: number): DoTurnResponse => {
     if (outcome.status === "unavailable") return outcome;
     const t = outcome.turn;
+    const finish = finishedTurn(t);
     // What happened each turn (never the screen or the words): enough to see where tasks stall.
     d.log?.({
       event: "do_turn",
       turn,
       actions: t.actions.map((a) => a.type).join(","),
       checks: t.safetyChecks.map((c) => c.code).join(","),
-      finished: !t.callId,
+      finished: finish.done,
     });
-    if (!t.callId || turn > DO_MAX_TURNS)
+    if (finish.done || !t.callId) return { status: "done", reply: finish.reply || "Done." };
+    if (turn > DO_MAX_TURNS)
       return {
         status: "done",
-        reply:
-          (t.callId
-            ? "That took more steps than Tandrix takes at once. You have control back."
-            : t.reply) || "Done.",
+        reply: "That took more steps than Tandrix takes at once. You have control back.",
       };
     return {
       status: "act",
@@ -295,6 +312,7 @@ export function inlineScreenRoutes(d: {
         question: req.transcript,
         context,
         ...(req.lesson ? { lesson: req.lesson } : {}),
+        ...(req.explain ? { explain: req.explain } : {}),
       });
       if (outcome.status === "unavailable") return c.json(outcome satisfies ScreenAskResponse);
       return c.json(answered(outcome, null, size, req.transcript));

@@ -165,18 +165,74 @@ describe("askScreen replies", () => {
     expect(r.calls).toHaveLength(1);
   });
 
-  it("sends the lesson rules when teaching", async () => {
-    const { client, calls } = clientWith(streamed([message("Click File.")]));
-    await askScreen(client, "muse-spark-1.3", {
+  it("explains in words, writes the working, and marks up each part it names", async () => {
+    const s = scriptedFetch([
+      streamed([
+        message(
+          "It asks what x is. Expand the bracket, then collect x.\nWRITE:\n- 3(x − 2) + 4 = 2x + 9\n- `x = 11`",
+        ),
+      ]),
+      response([
+        message(
+          JSON.stringify({
+            regions: [
+              { label: "Equation", detail: null, box: { x1: 400, y1: 300, x2: 650, y2: 400 } },
+              {
+                label: "Everything",
+                detail: "too big to frame",
+                box: { x1: 0, y1: 0, x2: 1000, y2: 1000 },
+              },
+            ],
+          }),
+        ),
+      ]),
+    ]);
+    const client = new MetaClient({ apiKey: "k", fetch: s.fetch, sleep: noSleep });
+    const r = await askScreen(client, "muse-spark-1.3", {
+      screenshot,
+      question: "I don't understand this equation",
+      explain: true,
+      size: { width: 1000, height: 500 },
+    });
+    expect(s.calls[0]!.body.instructions).toBe(prompts.explainScreen);
+    expect(s.calls[0]!.body.tools).toBeUndefined();
+    expect(s.calls[1]!.body.instructions).toBe(prompts.outlineScreen);
+    expect(r.reply).toBe("It asks what x is. Expand the bracket, then collect x.");
+    expect(r.note).toBe("3(x − 2) + 4 = 2x + 9\nx = 11");
+    expect(r.label).toBe("Equation");
+    expect(r.regions).toEqual([{ label: "Equation", box: { x: 400, y: 150, w: 250, h: 50 } }]);
+  });
+
+  it("teaches in words from a call without the tool, and points from one with it", async () => {
+    const s = scriptedFetch([
+      streamed([
+        message(
+          "Google Docs is for writing. Click Blank document. Say next when you've done that.",
+        ),
+      ]),
+      streamed([
+        message("I'll point to Blank document."),
+        { type: "computer_call", call_id: "c1", actions: [{ type: "move", x: 40, y: 50 }] },
+      ]),
+    ]);
+    const client = new MetaClient({ apiKey: "k", fetch: s.fetch, sleep: noSleep });
+    const r = await askScreen(client, "muse-spark-1.3", {
       screenshot,
       question: "Teach me Google Docs",
       lesson: true,
     });
-    expect(calls[0]!.body.instructions).toBe(prompts.teachMe);
-    const input = calls[0]!.body.input as Array<{ content: Array<Record<string, unknown>> }>;
+    expect(s.calls[0]!.body.instructions).toBe(prompts.teachMeWords);
+    expect(s.calls[0]!.body.tools).toBeUndefined();
+    expect(s.calls[1]!.body.instructions).toBe(prompts.teachMe);
+    expect(s.calls[1]!.body.tools).toEqual([{ type: "computer" }]);
+    const input = s.calls[0]!.body.input as Array<{ content: Array<Record<string, unknown>> }>;
     expect(input[0]!.content[0]!.text).toBe(
       `The user asks: Teach me Google Docs\n\n${TEACH_REPLY_RULE}`,
     );
+    expect(r.reply).toBe(
+      "Google Docs is for writing. Click Blank document. Say next when you've done that.",
+    );
+    expect(r.actions).toEqual([{ type: "move", x: 40, y: 50 }]);
   });
 
   it("keeps the first reply when the rewrite still narrates", async () => {
@@ -231,6 +287,11 @@ describe("unnarrate", () => {
       "Click the Display settings to change it.",
     );
     expect(unnarrate("I'm pointing at the Bold button.")).toBe("Click the Bold button.");
+  });
+
+  it("never makes 'Click that' out of narration that names no control", () => {
+    expect(unnarrate("Let me point to that to walk you through the step.")).toBeNull();
+    expect(unnarrate("I'll show you this so you can follow along.")).toBeNull();
   });
 
   it("keeps plain instruction after a narrated first sentence", () => {

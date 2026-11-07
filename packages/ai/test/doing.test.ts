@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { continueDoing, controlsLine, imageUrl, MetaClient, prompts, startDoing } from "../src";
+import {
+  continueDoing,
+  controlsLine,
+  finishedTurn,
+  imageUrl,
+  MetaClient,
+  prompts,
+  startDoing,
+} from "../src";
 import { json, noSleep, scriptedFetch } from "./helpers";
 
 const response = (id: string, output: unknown[]) =>
@@ -103,5 +111,45 @@ describe("controlsLine", () => {
 
   it("is nothing when there's nothing named", () => {
     expect(controlsLine([])).toBeNull();
+  });
+});
+
+describe("finishedTurn", () => {
+  const click = { type: "click" as const, x: 1, y: 1, button: "left" as const };
+  it("is finished when the model says DONE, whatever came with it, without the marker", () => {
+    expect(
+      finishedTurn({ callId: "c", actions: [click], reply: "DONE: Sent Sam your reply." }),
+    ).toEqual({
+      done: true,
+      reply: "Sent Sam your reply.",
+    });
+  });
+  it("is finished with no actions", () => {
+    expect(finishedTurn({ callId: null, actions: [], reply: "Added it." }).done).toBe(true);
+  });
+  it("is finished when only idle actions come with a reply saying what it did", () => {
+    expect(
+      finishedTurn({ callId: "c", actions: [{ type: "wait" }], reply: "Sent your message to Sam." })
+        .done,
+    ).toBe(true);
+    expect(
+      finishedTurn({
+        callId: "c",
+        actions: [{ type: "move", x: 1, y: 1 }],
+        reply: "I've added the event.",
+      }).done,
+    ).toBe(true);
+  });
+  it("keeps going while there's real work, or an idle action without a finished reply", () => {
+    expect(finishedTurn({ callId: "c", actions: [click], reply: "Sent the first one." }).done).toBe(
+      false,
+    );
+    expect(
+      finishedTurn({
+        callId: "c",
+        actions: [{ type: "wait" }],
+        reply: "Waiting for Calendar to open.",
+      }).done,
+    ).toBe(false);
   });
 });
