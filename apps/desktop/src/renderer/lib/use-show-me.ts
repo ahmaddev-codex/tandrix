@@ -37,6 +37,7 @@ import { startRecording, type Recording } from "./recorder";
 import { startHearing, type Hearing } from "./hear";
 import { markFor, nearestInk, readPixels } from "./ink";
 import { placeQuote } from "./text-place";
+import { smaller } from "./smaller";
 import type { ScreenAskResponse, ScreenLocated } from "@tandrix/contracts";
 import { loadWords } from "./words";
 import { uploadScreenshot } from "./screenshot";
@@ -235,7 +236,9 @@ export function useShowMe(jobId: string | undefined) {
   const teachingAt = useRef(0);
   const lastAnswerRef = useRef<{
     r: Extract<ScreenAskResponse, { status: "answered" }>;
-    image: Uint8Array;
+    /** The screenshot it was asked about, as taken, and as sent (smaller for where to click). */
+    from: Uint8Array;
+    capture: ScreenCapture;
     explain: boolean;
     lesson: boolean;
   } | null>(null);
@@ -414,7 +417,7 @@ export function useShowMe(jobId: string | undefined) {
       askingRef.current = { question, epoch };
       // Something heard straight away while the answer is worked out (SP7).
       if (acknowledgeNow()) markReply("acknowledged");
-      const { capture, evidence } = await shot;
+      const { capture: taken, evidence } = await shot;
       markReply("captured");
       // Understanding something on screen is explained; learning an app is a lesson; the rest is
       // where to click.
@@ -431,11 +434,18 @@ export function useShowMe(jobId: string | undefined) {
         lesson = true;
       // "Show me again" on the same screen: the last answer, again, at once.
       const last = lastAnswerRef.current;
-      const replay = !!last && last.image === capture.image && wantsReplay(question);
+      const replay = !!last && last.from === taken.image && wantsReplay(question);
       if (replay) {
         explain = last.explain;
         lesson = last.lesson;
       }
+      // Where to click is asked on a 1280 px screenshot (2–3 s sooner); teaching keeps the sharp
+      // one, for small parts of a diagram.
+      const capture = replay
+        ? last.capture
+        : explain || lesson || (job && evidence)
+          ? taken
+          : await smaller(taken);
       const named = userNameRef.current ? { userName: userNameRef.current } : {};
       const r = replay
         ? last.r
@@ -468,7 +478,7 @@ export function useShowMe(jobId: string | undefined) {
       if (r.status === "unavailable") return reply(r.message);
       answeredRef.current = true;
       teachingAt.current = lesson || explain ? Date.now() : 0;
-      lastAnswerRef.current = { r, image: capture.image, explain, lesson };
+      lastAnswerRef.current = { r, from: taken.image, capture, explain, lesson };
       // While a task has the pointer, answer in words and leave the pointer to it.
       const said = intro ? `${intro} ${r.reply}` : r.reply;
       if (!point) return reply(said);

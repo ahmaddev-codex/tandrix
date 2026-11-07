@@ -232,8 +232,9 @@ export async function askScreen(
           schema: Marked,
           instructions: prompts.outlineScreen,
           input: [user(text(`The user asks: ${q.question}`), q.screenshot)],
-          // Where each part is matters: a little thought places thin parts (an arm, a line) better.
-          effort: "low",
+          // Which parts, and roughly where: each is then clicked and drawn from the screenshot's own
+          // pixels, so no thinking time goes on placing them exactly.
+          effort: "minimal",
           // It usually answers in 10–14 s; one stuck call (76 s on the marking bench) is asked
           // again rather than waited out.
           hedgeMs: REGIONS_HEDGE_MS,
