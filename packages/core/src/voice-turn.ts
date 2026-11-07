@@ -21,9 +21,9 @@ export const END_PAUSE_MS = 1000;
 export const NO_SPEECH_MS = 7000;
 /**
  * After an answer, how long Tandrix keeps listening for a follow-up said without the wake word:
- * a second, so it isn't left listening once the user's done (a later one says the name).
+ * two seconds, so it isn't left listening once the user's done (a later one says the name).
  */
-export const FOLLOW_UP_MS = 1000;
+export const FOLLOW_UP_MS = 2000;
 /** No turn runs longer than this. */
 export const MAX_TURN_MS = 30_000;
 /** Less speech than this isn't worth transcribing (a cough, a tap on the case). */
