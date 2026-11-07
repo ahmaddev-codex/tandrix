@@ -127,6 +127,29 @@ export function wantsLesson(text: string): boolean {
 }
 
 /**
+ * Carrying on with a lesson or explanation just given ("next", "go on", "okay, what's next?"):
+ * on its own it says nothing about the screen, so it continues the teaching rather than being
+ * answered as where to click.
+ */
+export function continuesLesson(text: string): boolean {
+  const q = text
+    .trim()
+    .toLowerCase()
+    .replace(/[.!?,]+$/g, "");
+  if (!q || q.length > 60) return false;
+  return /^(?:(?:ok(?:ay)?|alright|right|yes|yeah|sure|got it|done|i'?m done|i did( that| it)?|cool|great|good)[\s,]*)*(?:next( one| step| part| bit)?|continue|carry on|go on|keep going|and then|then what|what'?s next|what now|move on|more|tell me more|go ahead)?$/.test(
+    q,
+  );
+}
+
+/** Asking to see the last answer again ("show me again", "go over that again"). */
+export function wantsReplay(text: string): boolean {
+  return /^(?:(?:can you|could you|please)\s+)?(?:show me (?:that |it )?again|go over (?:that|it) again|do (?:that|it) again|run through (?:that|it) again|replay (?:that|it)|again|one more time|show (?:that|it) again)\b/i.test(
+    text.trim(),
+  );
+}
+
+/**
  * An ask to understand what's on screen (VO: "I have this equation on my screen and I don't
  * understand it"): explained like a tutor, not answered with where to click.
  */

@@ -3,8 +3,10 @@ import {
   parseVoiceCommand,
   parseWakePhrase,
   speechPieces,
+  continuesLesson,
   wantsExplanation,
   wantsLesson,
+  wantsReplay,
 } from "../src";
 
 describe("parseVoiceCommand", () => {
@@ -199,4 +201,28 @@ describe("explaining any subject, programming included", () => {
     "Help me learn about recursion",
     "I want to understand compound interest",
   ])("teaches %s as a lesson", (s) => expect(wantsLesson(s)).toBe(true));
+});
+
+describe("carrying on a lesson, or seeing it again", () => {
+  it.each([
+    "next",
+    "Next.",
+    "okay what's next",
+    "Got it, next",
+    "go on",
+    "done",
+    "continue",
+    "Okay",
+  ])("carries on after %j", (s) => expect(continuesLesson(s)).toBe(true));
+  it.each(["Next to the sacrum, what's that?", "What is the atlas?", "Open Mail"])(
+    "leaves %j to be answered",
+    (s) => expect(continuesLesson(s)).toBe(false),
+  );
+  it.each(["Show me again", "Can you go over that again?", "One more time", "show it again"])(
+    "replays on %j",
+    (s) => expect(wantsReplay(s)).toBe(true),
+  );
+  it("doesn't replay a new question", () => {
+    expect(wantsReplay("Show me the axis")).toBe(false);
+  });
 });
