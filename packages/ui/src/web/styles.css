@@ -707,8 +707,7 @@ button.tx-visual-frame:focus-visible {
   top: 0;
   overflow: visible;
 }
-
-.tx-annot @media (prefers-reduced-motion: no-preference) {
+@media (prefers-reduced-motion: no-preference) {
   /* Every stroke and the pen that draws it share one duration and easing, so the cursor's tip
      stays on the end of the line as it grows. */
   .tx-touch {
