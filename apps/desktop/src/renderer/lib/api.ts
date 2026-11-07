@@ -18,6 +18,7 @@ import {
   JobDetailResponse,
   ProfileResponse,
   ScreenAskResponse,
+  ScreenLocated,
   StepActionResponse,
   TranscribeResponse,
   type ControlMode,
@@ -25,6 +26,7 @@ import {
   type GenerateProcedureRequest,
   type ScreenAskInlineRequest,
   type ScreenAskRequest,
+  type ScreenLocateRequest,
   type StepActionRequest,
   type UpdateProfileRequest,
 } from "@tandrix/contracts";
@@ -80,6 +82,48 @@ async function request<T>(
     );
   }
   return schema.parse(body);
+}
+
+/**
+ * Each part of an answer clicked on its screenshot (POST /screen/locate), handed over as soon as
+ * it's found: the tour draws each part the moment it has it. Never throws; parts that don't come
+ * keep the answer's own placement.
+ */
+export async function locateParts(
+  body: z.input<typeof ScreenLocateRequest>,
+  onPart: (located: ScreenLocated) => void,
+  signal?: AbortSignal,
+): Promise<void> {
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+  if (!token) return;
+  try {
+    const res = await fetch(`${env.apiUrl}/screen/locate`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      ...(signal ? { signal } : {}),
+    });
+    if (!res.ok || !res.body) return;
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let held = "";
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (value) held += decoder.decode(value, { stream: true });
+      let nl: number;
+      while ((nl = held.indexOf("\n")) >= 0) {
+        const line = held.slice(0, nl).trim();
+        held = held.slice(nl + 1);
+        if (!line) continue;
+        const parsed = ScreenLocated.safeParse(JSON.parse(line));
+        if (parsed.success) onPart(parsed.data);
+      }
+      if (done) return;
+    }
+  } catch {
+    // Offline, aborted or a bad line: the answer's own placement stands.
+  }
 }
 
 /**

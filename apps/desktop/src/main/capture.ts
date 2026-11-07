@@ -6,6 +6,12 @@ import { captureSize, type DisplayInfo } from "./displays";
 
 /** Wide enough to read UI text; small enough to upload and send to the model quickly. */
 export const CAPTURE_MAX_WIDTH = 1280;
+/**
+ * A question's screenshot is sharper: on the marking bench (apps/api/scripts/marking-bench.ts)
+ * small parts of a diagram (a single vertebra) were found at 1920 and missed at 1280. A task's
+ * many screenshots stay at 1280.
+ */
+export const QUESTION_MAX_WIDTH = 1920;
 const JPEG_QUALITY = 80;
 
 export const SKETCH = { width: 48, height: 30 } as const;
@@ -19,16 +25,20 @@ export function sketchOf(image: NativeImage): number[] {
   return out;
 }
 
-export const captureDisplayUnderCursor = () => captureDisplayAt(screen.getCursorScreenPoint());
+export const captureDisplayUnderCursor = (maxWidth = CAPTURE_MAX_WIDTH) =>
+  captureDisplayAt(screen.getCursorScreenPoint(), maxWidth);
 
 /** The display showing a global point (in points): during a task, wherever the user's mouse is. */
-export async function captureDisplayAt(at: { x: number; y: number }): Promise<ScreenCapture> {
+export async function captureDisplayAt(
+  at: { x: number; y: number },
+  maxWidth = CAPTURE_MAX_WIDTH,
+): Promise<ScreenCapture> {
   const d = screen.getDisplayNearestPoint(at);
   const display: DisplayInfo = { id: d.id, bounds: d.bounds, scaleFactor: d.scaleFactor };
   const capturedAt = new Date().toISOString();
   const sources = await desktopCapturer.getSources({
     types: ["screen"],
-    thumbnailSize: captureSize(display, CAPTURE_MAX_WIDTH),
+    thumbnailSize: captureSize(display, maxWidth),
   });
   const source = sources.find((s) => s.display_id === String(d.id)) ?? sources[0];
   if (!source || source.thumbnail.isEmpty())

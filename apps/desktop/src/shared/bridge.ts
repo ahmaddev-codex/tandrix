@@ -16,6 +16,7 @@ export const channels = {
   screenAccess: "screen:access",
   screenSettings: "screen:settings",
   screenCapture: "screen:capture",
+  screenText: "screen:text",
   panelShow: "panel:show",
   deviceName: "device:name",
   notify: "panel:notify",
@@ -214,6 +215,13 @@ export interface TandrixBridge {
      * fresh capture (with the panel put away first).
      */
     capture(): Promise<ScreenCapture>;
+    /** The text on a capture and where each line (and character) is, read on this Mac. */
+    text(
+      image: Uint8Array,
+      mimeType: string,
+    ): Promise<
+      Array<{ text: string; box: [number, number, number, number]; chars: Array<[number, number]> }>
+    >;
   };
   device: {
     /** This Mac's name as people know it ("Ahmad's MacBook Pro"), shown when pairing. */

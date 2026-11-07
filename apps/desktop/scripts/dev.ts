@@ -82,6 +82,7 @@ execFileSync(
     resolve(appDir, "native/wake/hear.swift"),
     resolve(appDir, "native/wake/continuous.swift"),
     resolve(appDir, "native/wake/mic.swift"),
+    resolve(appDir, "native/wake/model.swift"),
     // The VO1 spike's evaluator (--wake-eval), for scripts/wake/score.ts; inert without the flag.
     resolve(appDir, "native/wake/spike.swift"),
     "-Xlinker",
@@ -92,6 +93,30 @@ execFileSync(
     "__info_plist",
     "-Xlinker",
     resolve(appDir, "native/wake/Info.plist"),
+  ],
+  { stdio: "inherit" },
+);
+
+// Reading the text on a screenshot (native/text), to mark exact words.
+execFileSync(
+  "swiftc",
+  [
+    "-O",
+    "-o",
+    resolve(appDir, "dist/native/tandrix-text"),
+    resolve(appDir, "native/text/main.swift"),
+  ],
+  { stdio: "inherit" },
+);
+
+// The wake-word model (scripts/wake/model), compiled for Core ML beside the helper.
+execFileSync(
+  "xcrun",
+  [
+    "coremlcompiler",
+    "compile",
+    resolve(appDir, "native/wake/TandrixWake.mlpackage"),
+    resolve(appDir, "dist/native/"),
   ],
   { stdio: "inherit" },
 );

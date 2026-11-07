@@ -23,11 +23,13 @@ import type { VoiceTurn } from "@tandrix/ui/web";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ScreenCapture } from "../../shared/bridge";
 import { createBoard, type AgentTask, type Board } from "./agents";
-import { api } from "./api";
+import { api, locateParts } from "./api";
 import { runScreenTask, STOPPED_REPLY, type ScreenTaskResult } from "./screen-task";
 import { startRecording, type Recording } from "./recorder";
 import { startHearing, type Hearing } from "./hear";
 import { markFor, nearestInk, readPixels } from "./ink";
+import { placeQuote } from "./text-place";
+import type { ScreenLocated } from "@tandrix/contracts";
 import { loadWords } from "./words";
 import { uploadScreenshot } from "./screenshot";
 import { recentExchanges } from "./exchanges";
@@ -71,6 +73,11 @@ const APP_ACK = "On it.";
 /** How long an annotation stays: long enough to look, longer to follow a lesson or working. */
 const ANSWER_HOLD_MS = 8000;
 const TEACHING_HOLD_MS = 20_000;
+/**
+ * How long a part waits for its click before it's drawn where it was first placed. Clicks land
+ * about six to nine seconds after the answer, while the intro is said; later parts are ready.
+ */
+const LOCATE_WAIT_MS = 6000;
 
 /** Asked to do something while in Show me: said before showing the way. */
 export const DO_IT_FOR_ME_OFF =
@@ -411,12 +418,62 @@ export function useShowMe(jobId: string | undefined) {
         const about = r.intro ?? r.reply.split(/(?<=[.!?])\s/)[0] ?? "";
         const opening = [intro, about].filter(Boolean).join(" ");
         // The screenshot's pixels, so each touch lands on what's actually drawn there.
+        // And its text, read on this Mac, so quoted words, code or a formula are marked exactly.
+        const read = r.regions.some((p) => p.quote)
+          ? window.tandrix.screen.text(capture.image, capture.mimeType).catch(() => [])
+          : Promise.resolve([]);
+        // Each drawn part clicked while Tandrix speaks (POST /screen/locate), so its mark lands on
+        // it: drawn the moment its click is in, else after a short wait where it was first placed.
+        const clicked = r.regions.map(() => {
+          let done!: (v: ScreenLocated | null) => void;
+          const wait = new Promise<ScreenLocated | null>((res) => (done = res));
+          return { wait, done };
+        });
+        const toClick = r.regions.flatMap((p, i) => (p.quote ? [] : [i]));
+        if (toClick.length)
+          void locateParts(
+            {
+              screenshot: { mimeType: capture.mimeType, data: base64(capture.image) },
+              geometry: capture.geometry,
+              parts: toClick.map((i) => {
+                const p = r.regions[i]!;
+                return { label: p.label, detail: p.detail ?? null, box: p.box };
+              }),
+            },
+            (l) => clicked[toClick[l.i]!]?.done(l),
+          ).finally(() => clicked.forEach((c) => c.done(null)));
+        else clicked.forEach((c) => c.done(null));
         const pixels = await readPixels(capture.image, capture.mimeType);
         touringRef.current = true;
         try {
           // Stopped (Esc, a new question, the wake word): the tour ends and its mark goes.
           if (opening && !(await speakAndWait(opening))) return void window.tandrix.overlay.clear();
-          for (const part of r.regions) {
+          for (const [k, first] of r.regions.entries()) {
+            const found = first.quote
+              ? null
+              : await Promise.race([
+                  clicked[k]!.wait,
+                  new Promise<null>((res) => setTimeout(() => res(null), LOCATE_WAIT_MS)),
+                ]);
+            const given = found
+              ? { ...first, box: found.box, ...(found.point ? { point: found.point } : {}) }
+              : first;
+            const placed = given.quote ? placeQuote(await read, given.quote) : null;
+            const part = placed
+              ? {
+                  ...given,
+                  box: {
+                    x: Math.round(placed.x),
+                    y: Math.round(placed.y),
+                    w: Math.max(1, Math.round(placed.w)),
+                    h: Math.max(1, Math.round(placed.h)),
+                  },
+                  point: {
+                    x: Math.round(placed.x + placed.w / 2),
+                    y: Math.round(placed.y + placed.h / 2),
+                  },
+                }
+              : given;
             const c = { x: part.box.x + part.box.w / 2, y: part.box.y + part.box.h / 2 };
             await window.tandrix.overlay.pointAt(
               g,
@@ -471,7 +528,22 @@ export function useShowMe(jobId: string | undefined) {
         return;
       }
       if (r.target?.geometry.kind === "box") {
-        const b = r.target.geometry.box;
+        // One quoted thing (a formula, an error message): exactly where its text is.
+        const quote = r.regions[0]?.quote;
+        const placed = quote
+          ? placeQuote(
+              await window.tandrix.screen.text(capture.image, capture.mimeType).catch(() => []),
+              quote,
+            )
+          : null;
+        const b = placed
+          ? {
+              x: Math.round(placed.x) - 4,
+              y: Math.round(placed.y) - 4,
+              w: Math.round(placed.w) + 8,
+              h: Math.round(placed.h) + 8,
+            }
+          : r.target.geometry.box;
         const center = { x: b.x + Math.round(b.w / 2), y: b.y + Math.round(b.h / 2) };
         const box = {
           width: Math.round((b.w * capture.geometry.displayWidth) / capture.geometry.imageWidth),

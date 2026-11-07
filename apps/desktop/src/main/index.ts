@@ -28,6 +28,7 @@ import {
   setListening,
   setupShowMe,
 } from "./show-me";
+import { readScreenText } from "./screen-text";
 import {
   clearPointer,
   createPanel,
@@ -193,6 +194,12 @@ function registerIpc() {
   );
   handle(channels.testPointer, testPointer, none);
   handle(channels.screenCapture, captureForQuestion, none);
+  handle(
+    channels.screenText,
+    readScreenText,
+    (a): a is [Uint8Array, string] =>
+      a.length === 2 && a[0] instanceof Uint8Array && typeof a[1] === "string",
+  );
   handle(channels.pointAt, pointAtCapture, pointArgs);
   handle(channels.clearPointer, clearPointer, none);
   handle(channels.deviceName, deviceName, none);

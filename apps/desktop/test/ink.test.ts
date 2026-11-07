@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  markFor,
   nearestInk,
   outlineAround,
   traceAlong,
@@ -84,5 +85,52 @@ describe("marking a part exactly", () => {
     const p = page();
     const line = underlineBelow(p, { x: 40, y: 20, w: 20, h: 30 });
     expect(line[0]![1]).toBeGreaterThan(50);
+  });
+});
+
+/** A white page with filled ellipses, a thin label line beside one, and a grey axis. */
+function shapes(): Pixels {
+  const W = 500;
+  const H = 300;
+  const data = new Uint8ClampedArray(W * H * 4).fill(255);
+  const set = (x: number, y: number, c: [number, number, number]) => {
+    const i = (y * W + x) * 4;
+    data[i] = c[0];
+    data[i + 1] = c[1];
+    data[i + 2] = c[2];
+  };
+  for (let y = 0; y < H; y++)
+    for (let x = 0; x < W; x++) {
+      if (((x - 150) / 60) ** 2 + ((y - 150) / 30) ** 2 <= 1) set(x, y, [200, 60, 50]);
+      // A leader line from a label, running in from the right.
+      if (y === 150 && x > 215 && x < 320) set(x, y, [40, 40, 40]);
+    }
+  return { data, width: W, height: H };
+}
+
+describe("outlines follow the part, and leave out what's beside it", () => {
+  it("goes round an ellipse just outside its edge, not round its label's line", () => {
+    const [loop] = markFor(
+      shapes(),
+      "outline",
+      { x: 80, y: 110, w: 170, h: 80 },
+      { x: 150, y: 150 },
+    );
+    const xs = loop!.map((p) => p[0]);
+    const ys = loop!.map((p) => p[1]);
+    // The ellipse spans 90..210 by 120..180; a margin of about 7 px round it.
+    expect(Math.min(...xs)).toBeGreaterThan(78);
+    expect(Math.max(...xs)).toBeLessThan(222);
+    expect(Math.min(...ys)).toBeGreaterThan(108);
+    expect(Math.max(...ys)).toBeLessThan(192);
+    // Closed, and clean: a single loop back to where it began.
+    expect(loop![0]).toEqual(loop!.at(-1));
+  });
+
+  it("draws a box as a clean rectangle", () => {
+    const [b] = markFor(shapes(), "box", { x: 80, y: 110, w: 170, h: 80 }, { x: 150, y: 150 });
+    expect(b).toHaveLength(5);
+    expect(b![0]).toEqual(b![4]);
+    expect(b![0]![1]).toBe(b![1]![1]);
   });
 });

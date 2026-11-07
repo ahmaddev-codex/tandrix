@@ -8,7 +8,7 @@ import {
   type PointAnnotation,
   type ScreenCapture,
 } from "../shared/bridge";
-import { captureDisplayAt, captureDisplayUnderCursor } from "./capture";
+import { QUESTION_MAX_WIDTH, captureDisplayAt, captureDisplayUnderCursor } from "./capture";
 import { captureToGlobal } from "./displays";
 import { registerAskHotkey, setCancelKey } from "./hotkey";
 import { setupPushToTalk } from "./push-to-talk";
@@ -24,7 +24,7 @@ let pending: { capture: ScreenCapture; at: number } | undefined;
 /** Captures what the user is looking at now, then tells the panel to start listening. */
 function beginQuestion(channel: string) {
   clearPointer();
-  void captureDisplayUnderCursor()
+  void captureDisplayUnderCursor(QUESTION_MAX_WIDTH)
     .then((capture) => (pending = { capture, at: Date.now() }))
     .catch(() => (pending = undefined))
     .finally(() => sendToPanel(channel));
@@ -62,7 +62,7 @@ export async function captureForQuestion(): Promise<ScreenCapture> {
   if (ready) return ready;
   clearPointer();
   await hidePanelForCapture();
-  return captureDisplayUnderCursor();
+  return captureDisplayUnderCursor(QUESTION_MAX_WIDTH);
 }
 
 /** Points at a pixel of a capture, on the display the capture came from. */
