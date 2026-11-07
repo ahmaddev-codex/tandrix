@@ -187,28 +187,6 @@ function Diagram({
       aria-live="polite"
     >
       <svg className="tx-diagram-lines" width={vw} height={vh} aria-hidden>
-        {/* The rest of the screen dims a little, so it's plain which part is marked. */}
-        <mask id={`${uid}-spot`} maskUnits="userSpaceOnUse" x={0} y={0} width={vw} height={vh}>
-          <rect width={vw} height={vh} fill="#fff" />
-          {marks.map((m) =>
-            m.drawn && (m.kind === "outline" || m.kind === "box") ? (
-              <path key={m.i} d={m.drawn} fill="#000" stroke="#000" strokeWidth={10} />
-            ) : m.drawn ? (
-              <path
-                key={m.i}
-                d={m.drawn}
-                fill="none"
-                stroke="#000"
-                strokeWidth={m.kind === "highlight" ? 34 : 40}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            ) : (
-              <circle key={m.i} cx={m.ax} cy={m.ay} r={36} fill="#000" />
-            ),
-          )}
-        </mask>
-        <rect className="tx-spotlight" width={vw} height={vh} mask={`url(#${uid}-spot)`} />
         {marks.map((m) => {
           // The mark itself; without one, a line from the part out to the words.
           const d =

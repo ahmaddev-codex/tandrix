@@ -598,10 +598,6 @@ button.tx-visual-frame:focus-visible {
   fill: color-mix(in srgb, var(--tx-mark) 11%, transparent);
   stroke: none;
 }
-/* Everything but the marked part, a little dimmer. */
-.tx-spotlight {
-  fill: rgb(0 0 0 / 0.14);
-}
 /* What reveals a mark as the pen draws it: the mark's own path, wide, in the mask. */
 .tx-reveal {
   fill: none;
@@ -724,8 +720,7 @@ button.tx-visual-frame:focus-visible {
     transform-origin: center;
     animation: tx-touch 180ms ease-out var(--tx-delay, 0ms) both;
   }
-  /* The dim and the tint come in as the pen draws round the part, and go with it. */
-  .tx-spotlight,
+  /* The tint comes in as the pen draws round the part, and goes with it. */
   .tx-marker-fill {
     animation: tx-appear-soft 420ms ease-out calc(var(--tx-delay, 0ms) + 120ms) both;
   }
