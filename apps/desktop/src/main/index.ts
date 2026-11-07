@@ -21,7 +21,13 @@ import { channels } from "../shared/bridge";
 import { registerAppScheme, serveAppScheme } from "./app-protocol";
 import { openScreenSettings, requestScreenAccess, screenAccess } from "./screen-access";
 import { sessionStore } from "./session-store";
-import { captureForQuestion, pointAtCapture, setListening, setupShowMe } from "./show-me";
+import {
+  captureForQuestion,
+  pointAtCapture,
+  setAnswering,
+  setListening,
+  setupShowMe,
+} from "./show-me";
 import {
   clearPointer,
   createPanel,
@@ -49,7 +55,7 @@ import {
 } from "./do-session";
 import { frontApp, installedApps } from "./apps";
 import { frontControls } from "./controls";
-import { finishSample, setWakeWord, startSample, stopWakeWord } from "./wake";
+import { finishSample, setWakeName, setWakeWord, startSample, stopWakeWord } from "./wake";
 import {
   beginHearing,
   cancelHearing,
@@ -90,6 +96,8 @@ const keyValue = (a: unknown[]): a is [string, string] =>
   a.length === 2 && typeof a[0] === "string" && typeof a[1] === "string";
 /** Checked in detail by the handler itself. */
 const one = (a: unknown[]): a is [unknown] => a.length === 1;
+const textVolume = (a: unknown[]): a is [string, number] =>
+  a.length === 2 && typeof a[0] === "string" && typeof a[1] === "number";
 const hearId = (a: unknown[]): a is [number] =>
   a.length === 1 && Number.isInteger(a[0]) && (a[0] as number) >= 0;
 const modeArg = (a: unknown[]): a is [ControlMode] =>
@@ -121,10 +129,8 @@ let quietUntil = 0;
 /** Checked in detail by the handler itself. */
 const pointArgs = (
   a: unknown[],
-): a is
-  | [unknown, unknown, unknown]
-  | [unknown, unknown, unknown, unknown]
-  | [unknown, unknown, unknown, unknown, unknown] => a.length >= 3 && a.length <= 5;
+): a is [unknown, unknown, unknown] | [unknown, unknown, unknown, unknown] =>
+  a.length >= 3 && a.length <= 4;
 
 /** The name set in System Settings > General > About, else the host name tidied up. */
 function deviceName(): string {
@@ -202,10 +208,12 @@ function registerIpc() {
     none,
   );
   handle(channels.listening, setListening, flag);
-  handle(channels.speak, speak, key);
+  handle(channels.answering, setAnswering, flag);
+  handle(channels.speak, speak, textVolume);
   handle(channels.setPresence, setPresence, one);
   handle(channels.replyTiming, logTiming, one);
-  handle(channels.hearBegin, beginHearing, none);
+  handle(channels.hearBegin, beginHearing, one);
+  handle(channels.wakeName, setWakeName, key);
   handle(channels.hearEnd, endHearing, hearId);
   handle(channels.hearCancel, cancelHearing, hearId);
   // Audio arrives many times a second, so it's sent rather than invoked; checked the same way.
@@ -231,6 +239,11 @@ function registerIpc() {
           if (Date.now() < quietUntil) return;
           if (shouldAnswer(voices().load(), voice)) sendToPanel(channels.wake, rest);
           else sendToPanel(channels.wakeIgnored);
+        },
+        // The chime at once, unless only the user's voice may wake it: then it waits for the check.
+        heard: () => {
+          if (Date.now() < quietUntil || voices().load()?.onlyMine) return;
+          sendToPanel(channels.wakeHeard);
         },
       }),
     flag,

@@ -149,10 +149,13 @@ export const api = {
     request(`/jobs/${jobId}/evidence/${evidenceId}/complete`, z.object({ evidence: Evidence }), {
       method: "POST",
     }).then((r) => r.evidence),
-  transcribe: (wav: Uint8Array) => {
+  transcribe: (wav: Uint8Array, words: string[] = []) => {
     const form = new FormData();
     form.append("audio", new Blob([wav as BlobPart], { type: "audio/wav" }), "question.wav");
-    form.append("keywords", JSON.stringify(["Tandrix", "Hey Tandrix", "Wake up Tandrix"]));
+    form.append(
+      "keywords",
+      JSON.stringify(["Tandrix", "Hey Tandrix", "Wake up Tandrix", ...words].slice(0, 20)),
+    );
     return request("/voice/transcribe", TranscribeResponse, { method: "POST", body: form }, false);
   },
   /** Recorded as the Mac's doing in the job's history. */

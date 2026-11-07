@@ -1,7 +1,7 @@
 // The menu-bar panel and one transparent, click-through overlay per display.
 import { join } from "node:path";
 import { BrowserWindow, screen, type Rectangle } from "electron";
-import { channels, type OverlayPointer } from "../shared/bridge";
+import { channels, type OverlayPointer, type PointAnnotation } from "../shared/bridge";
 import { APP_ORIGIN } from "./app-protocol";
 import { centre, toOverlay, type DisplayInfo, type Point } from "./displays";
 
@@ -138,6 +138,9 @@ export function sendToOverlay(displayId: number, channel: string, payload: unkno
   overlays.get(displayId)?.webContents.send(channel, payload);
 }
 
+/** Where a display's overlay window starts, in global points (macOS may keep it under the menu bar). */
+export const overlayTop = (displayId: number) => overlays.get(displayId)?.getContentBounds().y;
+
 /** Every display that has an overlay. */
 export const overlayDisplayIds = () => [...overlays.keys()];
 
@@ -167,17 +170,13 @@ export function clearPointer() {
 }
 
 /** Draws the pointer at a global point (in points), on whichever display shows it. */
-export function showPointer(
-  at: Point,
-  caption?: string,
-  box?: { width: number; height: number },
-  step?: number,
-) {
+export function showPointer(at: Point, caption?: string, annotation: PointAnnotation = {}) {
   clearTimeout(clearTimer);
   const target = toOverlay(at, displayInfo());
   for (const id of overlays.keys())
-    send(id, target?.displayId === id ? { ...target.point, caption, box, step } : null);
-  clearTimer = setTimeout(clearPointer, ANSWER_POINTER_MS);
+    send(id, target?.displayId === id ? { ...target.point, caption, ...annotation } : null);
+  // An annotation stays as long as it was asked to (longer while teaching), then it's gone.
+  clearTimer = setTimeout(clearPointer, annotation.hold ?? ANSWER_POINTER_MS);
 }
 
 let workAt: Point | null = null;

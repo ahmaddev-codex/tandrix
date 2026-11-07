@@ -6,7 +6,10 @@
 // (@tandrix/core pickVoice). Without one of those, the reply is text only: Tandrix never speaks in
 // a robotic voice.
 import { LOOK_ACKS, lookAck, speechPieces } from "@tandrix/core";
+// A real "Mhm", recorded: a speech model can only spell it out.
+import mhmUrl from "../assets/mhm.wav?url";
 import { api } from "./api";
+import { voiceVolume } from "./loudness";
 import { takeReply } from "./timings";
 
 let ctx: AudioContext | undefined;
@@ -20,11 +23,32 @@ let ack: AudioBufferSourceNode | undefined;
 let ackEndsAt = 0;
 let lastAck: string | undefined;
 
+/** What Tandrix is saying now, so a wake word can be told from its own voice saying the name. */
+let saying = "";
+
+/** Whether what Tandrix is saying now could be heard as its own name. */
+export function sayingName(name = "Tandrix"): boolean {
+  if (!isSpeaking()) return false;
+  const key = name.toLowerCase().slice(0, 4);
+  return saying.toLowerCase().includes(key);
+}
+
 export function isSpeaking(): boolean {
   return Boolean(pending || Date.now() < speakingUntil);
 }
 
 const audioContext = () => (ctx ??= new AudioContext());
+let master: GainNode | undefined;
+/** Where every sound goes: one volume, set from quiet and night modes (VO7) as each one starts. */
+function output(): GainNode {
+  const audio = audioContext();
+  if (!master) {
+    master = audio.createGain();
+    master.connect(audio.destination);
+  }
+  master.gain.setValueAtTime(voiceVolume(), audio.currentTime);
+  return master;
+}
 
 /** Fetches lines in Tandrix's voice once and keeps them, one at a time; failures are tried later. */
 export async function preloadVoice(lines: readonly string[] = LOOK_ACKS) {
@@ -56,7 +80,7 @@ export function acknowledgeNow(): boolean {
   if (audio.state === "suspended") void audio.resume().catch(() => undefined);
   const source = audio.createBufferSource();
   source.buffer = clips.get(line)!;
-  source.connect(audio.destination);
+  source.connect(output());
   source.start();
   ack = source;
   lastAck = line;
@@ -68,7 +92,69 @@ export function acknowledgeNow(): boolean {
   return true;
 }
 
+/**
+ * A soft two-note chime: Tandrix heard its name and is listening. Made on the spot, so it plays the
+ * instant it's asked for.
+ */
+export function chime() {
+  const audio = audioContext();
+  if (audio.state === "suspended") void audio.resume().catch(() => undefined);
+  const t = audio.currentTime + 0.01;
+  [880, 1318.5].forEach((hz, i) => {
+    const osc = audio.createOscillator();
+    const gain = audio.createGain();
+    osc.type = "sine";
+    osc.frequency.value = hz;
+    const at = t + i * 0.09;
+    gain.gain.setValueAtTime(0, at);
+    gain.gain.linearRampToValueAtTime(0.07, at + 0.012);
+    gain.gain.exponentialRampToValueAtTime(0.0001, at + 0.22);
+    osc.connect(gain).connect(output());
+    osc.start(at);
+    osc.stop(at + 0.24);
+  });
+}
+
+let mhm: AudioBuffer | undefined;
+/** Loads the "Mhm" once, at start, so answering the name is instant. */
+export async function loadMhm() {
+  if (mhm) return;
+  const audio = audioContext();
+  mhm = await fetch(mhmUrl)
+    .then((r) => r.arrayBuffer())
+    .then((b) => audio.decodeAudioData(b))
+    .catch(() => undefined);
+}
+
+/**
+ * Tandrix heard its name: "Mhm", as a person would, from audio already on this Mac; the chime if
+ * that isn't loaded yet.
+ */
+export function answerName() {
+  const clip = mhm;
+  if (!clip) return chime();
+  const audio = audioContext();
+  if (audio.state === "suspended") void audio.resume().catch(() => undefined);
+  const source = audio.createBufferSource();
+  source.buffer = clip;
+  source.connect(output());
+  source.start();
+}
+
+/** Changes whenever speech is stopped on purpose (Esc, a new question, the wake word). */
+let stops = 0;
+export const speechStops = () => stops;
+
+/** Says it and waits until it's been said (or stopped); false when it was stopped. */
+export async function speakAndWait(text: string): Promise<boolean> {
+  const before = stops;
+  await speak(text);
+  while (isSpeaking() && stops === before) await new Promise((r) => setTimeout(r, 100));
+  return stops === before;
+}
+
 export function stopSpeaking() {
+  stops++;
   halt();
   try {
     ack?.stop();
@@ -104,12 +190,23 @@ function halt() {
 
 /** A rough length for text in the device's voice, so the wake word ignores Tandrix saying it. */
 const estimateMs = (text: string) =>
-  Math.max(1800, Math.min(12_000, 900 + text.split(/\s+/).length * 360));
+  Math.max(1800, Math.min(180_000, 900 + text.split(/\s+/).length * 360));
 
-export function speak(text: string) {
+/**
+ * `stale`: a progress line that may be out of date by the time its voice is ready; it's checked
+ * then, and the line is dropped rather than said late.
+ */
+/**
+ * Says something; the promise settles when its sound starts, or when it won't (dropped,
+ * interrupted, no voice), so a task can say what it's about to do before it does it.
+ */
+export function speak(text: string, opts: { stale?: () => boolean } = {}): Promise<void> {
   const trimmed = text.trim();
-  if (!trimmed) return;
+  if (!trimmed) return Promise.resolve();
+  let begun!: () => void;
+  const began = new Promise<void>((r) => (begun = r));
   halt();
+  saying = trimmed;
   // The reply being timed, if any, is timed up to this voice's first sound.
   const watch = takeReply();
   const ctl = new AbortController();
@@ -134,6 +231,11 @@ export function speak(text: string) {
       const wav = await next;
       if (i === 0) watch?.mark("voiced");
       if (ctl.signal.aborted) return watch?.end();
+      if (i === 0 && opts.stale?.()) {
+        if (pending === ctl) pending = undefined;
+        speakingUntil = 0;
+        return watch?.end();
+      }
       if (i + 1 < pieces.length) next = voiceOf(pieces[i + 1]!);
       const buffer =
         wav instanceof AudioBuffer
@@ -153,14 +255,15 @@ export function speak(text: string) {
         if (ctl.signal.aborted) return watch?.end();
         pending = undefined;
         if (!started) watch?.mark("sounding");
+        begun();
         watch?.end();
         speakingUntil = Date.now() + estimateMs(rest);
-        await window.tandrix.voice.speak(rest).catch(() => false);
+        await window.tandrix.voice.speak(rest, voiceVolume()).catch(() => false);
         return;
       }
       const source = audio.createBufferSource();
       source.buffer = buffer;
-      source.connect(audio.destination);
+      source.connect(output());
       const at = Math.max(audio.currentTime + 0.02, endsAt, ackEndsAt);
       source.start(at);
       sources.push(source);
@@ -172,9 +275,11 @@ export function speak(text: string) {
       if (!started) {
         started = true;
         watch?.mark("sounding");
+        begun();
         watch?.end();
       }
     }
     if (pending === ctl) pending = undefined;
-  })();
+  })().finally(() => begun());
+  return began;
 }

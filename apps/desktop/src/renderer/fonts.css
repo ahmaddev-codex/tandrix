@@ -29,3 +29,16 @@
   src: url("../../node_modules/@expo-google-fonts/geist-mono/500Medium/GeistMono_500Medium.ttf")
     format("truetype");
 }
+
+/* Balsamiq Sans (SIL Open Font License, assets/fonts/balsamiq-sans/OFL.txt): what Tandrix writes
+   beside an annotation, so it reads as handwriting. Bundled, like Geist. */
+@font-face {
+  font-family: "Balsamiq Sans";
+  font-weight: 400;
+  src: url("./assets/fonts/balsamiq-sans/BalsamiqSans-Regular.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Balsamiq Sans";
+  font-weight: 700;
+  src: url("./assets/fonts/balsamiq-sans/BalsamiqSans-Bold.ttf") format("truetype");
+}

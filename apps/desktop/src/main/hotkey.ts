@@ -9,14 +9,15 @@ export function registerAskHotkey(onPress: () => void): boolean {
   return globalShortcut.register(ASK_ACCELERATOR, onPress);
 }
 
-type CancelOwner = "listening" | "task";
+type CancelOwner = "listening" | "task" | "answer";
 const cancels = new Map<CancelOwner, () => void>();
 const pressedEsc = () => {
   for (const cancel of [...cancels.values()]) cancel();
 };
 
 /**
- * Esc is only taken while listening or during a task, so it keeps working everywhere else. Each
+ * Esc is only taken while listening, answering (working out, speaking, touring) or during a task,
+ * so it keeps working everywhere else. Each
  * keeps its own claim: talking during a task must not take Esc away from the task.
  */
 export function setCancelKey(owner: CancelOwner, onCancel: (() => void) | null) {

@@ -50,8 +50,8 @@ const bridge: TandrixBridge = {
   },
   overlay: {
     testPointer: () => ipcRenderer.invoke(channels.testPointer),
-    pointAt: (geometry, point, caption) =>
-      ipcRenderer.invoke(channels.pointAt, geometry, point, caption),
+    pointAt: (geometry, point, caption, annotation) =>
+      ipcRenderer.invoke(channels.pointAt, geometry, point, caption, annotation ?? {}),
     clear: () => ipcRenderer.invoke(channels.clearPointer),
     setPresence: (presence) => ipcRenderer.invoke(channels.setPresence, presence),
     onPresence: (listener) => {
@@ -96,6 +96,8 @@ const bridge: TandrixBridge = {
       };
     },
     onWakeIgnored: (listener) => subscribe(channels.wakeIgnored, listener),
+    onWakeHeard: (listener) => subscribe(channels.wakeHeard, listener),
+    setWakeName: (name) => ipcRenderer.invoke(channels.wakeName, name),
     voiceprint: () => ipcRenderer.invoke(channels.voiceprint),
     voicePhrase: (index, action) => ipcRenderer.invoke(channels.voicePhrase, index, action),
     voiceFinish: () => ipcRenderer.invoke(channels.voiceFinish),
@@ -106,7 +108,7 @@ const bridge: TandrixBridge = {
     talkKeysAccess: (ask) => ipcRenderer.invoke(channels.talkKeysAccess, ask),
     micAccess: () => ipcRenderer.invoke(channels.micAccess),
     hear: {
-      begin: () => ipcRenderer.invoke(channels.hearBegin),
+      begin: (words) => ipcRenderer.invoke(channels.hearBegin, words ?? []),
       audio: (id, pcm) => ipcRenderer.send(channels.hearAudio, id, pcm),
       end: (id) => ipcRenderer.invoke(channels.hearEnd, id),
       cancel: (id) => ipcRenderer.invoke(channels.hearCancel, id),
@@ -115,7 +117,9 @@ const bridge: TandrixBridge = {
     setListening: (listening) => ipcRenderer.invoke(channels.listening, listening),
     onHotkey: (listener) => subscribe(channels.askHotkey, listener),
     onCancel: (listener) => subscribe(channels.askCancel, listener),
-    speak: (text) => ipcRenderer.invoke(channels.speak, text),
+    setAnswering: (on) => ipcRenderer.invoke(channels.answering, on),
+    onAnswerStop: (listener) => subscribe(channels.answerStop, listener),
+    speak: (text, volume = 1) => ipcRenderer.invoke(channels.speak, text, volume),
     stopSpeaking: () => ipcRenderer.invoke(channels.stopSpeaking),
   },
 };

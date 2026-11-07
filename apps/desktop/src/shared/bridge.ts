@@ -28,6 +28,8 @@ export const channels = {
   listening: "voice:listening",
   askHotkey: "voice:ask-hotkey",
   askCancel: "voice:ask-cancel",
+  answering: "voice:answering",
+  answerStop: "voice:answer-stop",
   speak: "voice:speak",
   stopSpeaking: "voice:stop-speaking",
   talkStart: "voice:talk-start",
@@ -41,6 +43,8 @@ export const channels = {
   wakeStatus: "voice:wake-status",
   wake: "voice:wake",
   wakeIgnored: "voice:wake-ignored",
+  wakeHeard: "voice:wake-heard",
+  wakeName: "voice:wake-name",
   voiceprint: "voice:print",
   voicePhrase: "voice:print-phrase",
   voiceFinish: "voice:print-finish",
@@ -86,6 +90,45 @@ export interface OverlayPointer {
   working?: { act: "click" | "type" | "keys" | "move" | "scroll" | "drag"; seq: number };
   box?: { width: number; height: number };
   step?: number;
+  /** An annotation's name tag ("Equation") and written note, beside its frame. */
+  label?: string;
+  note?: string;
+  /** How long it stays before it fades, in milliseconds. */
+  hold?: number;
+  /** Each part marked up, drawn one after another. */
+  regions?: AnnotatedRegion[];
+}
+
+/**
+ * A part marked up: its frame in display points, centred `dx`, `dy` from the pointer, its name
+ * and what it is or does.
+ */
+export interface AnnotatedRegion {
+  dx: number;
+  dy: number;
+  width: number;
+  height: number;
+  label: string;
+  detail?: string;
+  /** Where the pen touches the part, from its centre, in display points. */
+  ax?: number;
+  ay?: number;
+  /**
+   * How it's marked, and the strokes the pen draws, each a flat run of x, y in display points
+   * from the part's centre (empty for a dot).
+   */
+  mark?: { kind: string; strokes: number[][] };
+}
+
+/** What a pointer can carry besides where it points (Show me's annotations). */
+export interface PointAnnotation {
+  /** A frame drawn round what it's about, in display points, centred on the point. */
+  box?: { width: number; height: number };
+  label?: string;
+  note?: string;
+  hold?: number;
+  step?: number;
+  regions?: AnnotatedRegion[];
 }
 
 /** What Tandrix is doing, for the presence bar at the top of the screen. Null: idle, nothing shown. */
@@ -194,8 +237,7 @@ export interface TandrixBridge {
       geometry: ScreenGeometry,
       point: { x: number; y: number },
       caption: string,
-      box?: { width: number; height: number },
-      step?: number,
+      annotation?: PointAnnotation,
     ): Promise<void>;
     clear(): Promise<void>;
     /** Overlay windows only: called with the pointer to draw, or null to clear it. */
@@ -232,8 +274,12 @@ export interface TandrixBridge {
     onHotkey(listener: () => void): () => void;
     /** Esc while listening. */
     onCancel(listener: () => void): () => void;
-    /** Speaks a reply in the best macOS voice installed; false if it can't. */
-    speak(text: string): Promise<boolean>;
+    /** Tandrix is answering (working it out, speaking, touring): Esc stops it while it is. */
+    setAnswering(on: boolean): Promise<void>;
+    /** Esc while answering. */
+    onAnswerStop(listener: () => void): () => void;
+    /** Speaks a reply in the best macOS voice installed, at a volume 0.1–1; false if it can't. */
+    speak(text: string, volume?: number): Promise<boolean>;
     stopSpeaking(): Promise<void>;
     /**
      * The question being asked, heard on this Mac as it's said (no upload): `begin` when listening
@@ -241,7 +287,8 @@ export interface TandrixBridge {
      * for its text when the user lets go (null: upload the recording instead).
      */
     hear: {
-      begin(): Promise<number>;
+      /** `words`: the user's own words to hear right (VO5). */
+      begin(words?: string[]): Promise<number>;
       audio(id: number, pcm: Uint8Array): void;
       end(id: number): Promise<{ text: string; ms: number; engine: string } | null>;
       cancel(id: number): Promise<void>;
@@ -257,6 +304,10 @@ export interface TandrixBridge {
     ): () => void;
     /** "Hey Tandrix" was heard; `rest` is anything said after it in the same breath. */
     onWake(listener: (rest: string) => void): () => void;
+    /** The name the wake word listens for (one word; Tandrix unless the user chose another). */
+    setWakeName(name: string): Promise<void>;
+    /** The name was just heard, before the user has finished: chime and show it's listening. */
+    onWakeHeard(listener: () => void): () => void;
     /** "Hey Tandrix" was heard in a voice that isn't the user's, and only-my-voice is on. */
     onWakeIgnored(listener: () => void): () => void;
     /** Whether this Mac knows the user's voice, and whether it answers only that voice. */

@@ -55,3 +55,16 @@ body,
     animation: none;
   }
 }
+
+/* A mark on its way out: it fades while the next one is drawn. */
+.tx-leaving {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  animation: tx-leave 400ms ease-in forwards;
+}
+@keyframes tx-leave {
+  to {
+    opacity: 0;
+  }
+}
