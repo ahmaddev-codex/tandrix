@@ -498,51 +498,14 @@ button.tx-visual-frame:focus-visible {
   pointer-events: none;
   font-family: var(--font-sans);
 }
-.tx-annot-frame {
-  position: absolute;
-  left: calc(var(--tx-w) / -2);
-  top: calc(var(--tx-h) / -2);
-  width: var(--tx-w);
-  height: var(--tx-h);
-  box-sizing: border-box;
-  border: 1.5px solid var(--highlight);
-  border-radius: 2px;
-  background: color-mix(in srgb, var(--highlight) 7%, transparent);
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--highlight-halo) 60%, transparent);
-}
-.tx-annot-handle {
-  position: absolute;
-  width: 7px;
-  height: 7px;
-  box-sizing: border-box;
-  border: 1.5px solid var(--highlight);
-  border-radius: 1px;
-  background: var(--highlight-halo);
-}
-.tx-annot-handle[data-corner="tl"] {
-  left: -4px;
-  top: -4px;
-}
-.tx-annot-handle[data-corner="tr"] {
-  right: -4px;
-  top: -4px;
-}
-.tx-annot-handle[data-corner="bl"] {
-  left: -4px;
-  bottom: -4px;
-}
-.tx-annot-handle[data-corner="br"] {
-  right: -4px;
-  bottom: -4px;
-}
 .tx-annot-tag {
   position: absolute;
   left: calc(var(--tx-w) / -2 - 1px);
   top: calc(var(--tx-h) / -2 - 22px);
   padding: 2px 6px;
   border-radius: 3px 3px 3px 0;
-  background: var(--highlight);
-  color: var(--highlight-halo);
+  background: var(--tx-mark);
+  color: #fff;
   font-size: 11px;
   line-height: 16px;
   font-weight: 600;
@@ -609,24 +572,44 @@ button.tx-visual-frame:focus-visible {
   inset: 0;
   overflow: visible;
 }
-/* The teacher's marks: a hand-drawn ring round each part, in marker. */
+/* The marks: clean green lines on the part itself. A dashed box or outline round a part, a solid
+   line along a curve or under words. */
+.tx-diagram,
+.tx-annot {
+  --tx-mark: #1a9c4a;
+}
 .tx-marker {
   fill: none;
-  stroke: var(--highlight);
-  stroke-width: 3;
+  stroke: var(--tx-mark);
+  stroke-width: 2;
+  stroke-linecap: butt;
+  stroke-linejoin: round;
+}
+[data-kind="outline"] .tx-marker,
+[data-kind="outline"] .tx-marker-halo,
+[data-kind="box"] .tx-marker,
+[data-kind="box"] .tx-marker-halo,
+.tx-annot-edges .tx-marker,
+.tx-annot-edges .tx-marker-halo {
+  stroke-dasharray: 7 4;
+}
+/* What reveals a mark as the pen draws it: the mark's own path, wide, in the mask. */
+.tx-reveal {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 28;
   stroke-linecap: round;
   stroke-linejoin: round;
-  opacity: 0.92;
 }
 /* A white edge under each mark, so it reads on dark and busy screens. (No CSS filters anywhere in
    the overlay: in a transparent window on macOS they can draw as black boxes.) */
 .tx-marker-halo {
   fill: none;
-  stroke: var(--highlight-halo);
-  stroke-width: 6;
-  stroke-linecap: round;
+  stroke: #fff;
+  stroke-width: 4.5;
+  stroke-linecap: butt;
   stroke-linejoin: round;
-  opacity: 0.7;
+  opacity: 0.85;
 }
 /* And what it writes beside each one, by hand: no card, just words on the screen, haloed so they
    read on anything. */
@@ -648,7 +631,7 @@ button.tx-visual-frame:focus-visible {
   font-size: 17px;
   line-height: 21px;
   font-weight: 700;
-  color: var(--highlight);
+  color: var(--tx-mark);
 }
 .tx-writing-detail {
   font-size: 15px;
@@ -688,7 +671,7 @@ button.tx-visual-frame:focus-visible {
 }
 .tx-pen path,
 .tx-writing-pen path {
-  fill: var(--highlight);
+  fill: var(--tx-mark, var(--highlight));
   stroke: var(--highlight-halo);
   stroke-width: 2px;
   stroke-linejoin: round;
@@ -697,25 +680,24 @@ button.tx-visual-frame:focus-visible {
 /* Along a curve: a wide translucent band with a fine line on it, so it shows over a curve of any
    colour (even one Tandrix's own blue). */
 [data-kind="trace"] .tx-marker-halo {
-  stroke: var(--highlight);
-  stroke-width: 12;
-  opacity: 0.22;
+  stroke: var(--tx-mark);
+  stroke-width: 10;
+  stroke-linecap: round;
+  opacity: 0.2;
 }
 [data-kind="trace"] .tx-marker {
   stroke-width: 2.5;
-  stroke: var(--highlight-halo);
-  opacity: 1;
+  stroke-linecap: round;
 }
 /* A highlighter swipe: wide, translucent, flat-ended. */
 [data-kind="highlight"] .tx-marker {
   stroke-width: 16;
-  stroke-linecap: butt;
-  opacity: 0.32;
+  opacity: 0.3;
 }
-/* The pen's first touch on the part. */
+/* A dot, only for something tiny. */
 .tx-touch {
-  fill: var(--highlight);
-  stroke: var(--highlight-halo);
+  fill: var(--tx-mark);
+  stroke: #fff;
   stroke-width: 2;
 }
 /* The single frame's edges, drawn by the pen. */
@@ -725,16 +707,8 @@ button.tx-visual-frame:focus-visible {
   top: 0;
   overflow: visible;
 }
-.tx-annot-edges path {
-  fill: none;
-  stroke: var(--highlight);
-  stroke-width: 1.75;
-  stroke-linejoin: round;
-}
-.tx-annot .tx-annot-frame {
-  border-color: transparent;
-}
-@media (prefers-reduced-motion: no-preference) {
+
+.tx-annot @media (prefers-reduced-motion: no-preference) {
   /* Every stroke and the pen that draws it share one duration and easing, so the cursor's tip
      stays on the end of the line as it grows. */
   .tx-touch {
@@ -742,9 +716,7 @@ button.tx-visual-frame:focus-visible {
     transform-origin: center;
     animation: tx-touch 180ms ease-out var(--tx-delay, 0ms) both;
   }
-  .tx-marker,
-  .tx-marker-halo,
-  .tx-annot-edges path {
+  .tx-reveal {
     stroke-dasharray: 1;
     animation: tx-diagram-line var(--tx-draw, 620ms) cubic-bezier(0.45, 0.05, 0.4, 1)
       var(--tx-delay, 0ms) both;
@@ -758,11 +730,9 @@ button.tx-visual-frame:focus-visible {
   .tx-pen-frame {
     animation: tx-follow 900ms cubic-bezier(0.45, 0.05, 0.4, 1) var(--tx-delay, 0ms) both;
   }
-  .tx-annot-edges path {
+  .tx-annot-edges .tx-reveal {
     animation-duration: 900ms;
   }
-  .tx-annot-frame,
-  .tx-annot-handle,
   .tx-annot-tag {
     animation: tx-annot-show 220ms ease-out 860ms both;
   }

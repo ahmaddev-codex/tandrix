@@ -136,6 +136,7 @@ function Diagram({
   regions: Region[];
   note?: string;
 }) {
+  const uid = useId().replace(/:/g, "");
   const ox = typeof x === "number" ? x : 0;
   const oy = typeof y === "number" ? y : 0;
   const vw = typeof window === "undefined" ? 1e4 : window.innerWidth;
@@ -196,10 +197,21 @@ function Diagram({
               data-kind={m.kind}
               style={{ ["--tx-delay" as string]: "0ms", ["--tx-draw" as string]: `${m.time}ms` }}
             >
-              {m.kind !== "highlight" ? (
-                <path className="tx-marker-halo" d={d} pathLength={1} />
-              ) : null}
-              <path className="tx-marker" d={d} pathLength={1} />
+              {/* Revealed along its length as the pen draws it, so a dashed line stays clean. */}
+              <mask
+                id={`${uid}-${m.i}`}
+                maskUnits="userSpaceOnUse"
+                x={-vw}
+                y={-vh}
+                width={vw * 3}
+                height={vh * 3}
+              >
+                <path className="tx-reveal" d={d} pathLength={1} />
+              </mask>
+              <g mask={`url(#${uid}-${m.i})`}>
+                {m.kind !== "highlight" ? <path className="tx-marker-halo" d={d} /> : null}
+                <path className="tx-marker" d={d} />
+              </g>
               {m.kind === "point" ? (
                 <circle className="tx-touch" cx={m.ax} cy={m.ay} r={5} />
               ) : null}
@@ -263,6 +275,7 @@ function Diagram({
 }
 
 export function PointerBuddy({ x, y, box, step, label, note, hold, regions }: PointerBuddyProps) {
+  const uid = useId().replace(/:/g, "");
   const style = { left: x, top: y, ["--tx-hold" as string]: `${hold ?? 15_000}ms` };
   if (regions?.length) return <Diagram x={x} y={y} hold={hold} regions={regions} note={note} />;
   // The note goes where there's room: right of what it's about, else left.
@@ -282,13 +295,21 @@ export function PointerBuddy({ x, y, box, step, label, note, hold, regions }: Po
         role="status"
         aria-live="polite"
       >
-        <div className="tx-annot-frame">
-          {(["tl", "tr", "bl", "br"] as const).map((c) => (
-            <span key={c} className="tx-annot-handle" data-corner={c} />
-          ))}
-        </div>
         <svg className="tx-annot-edges" width={1} height={1} aria-hidden>
-          <path d={edges} pathLength={1} />
+          <mask
+            id={`${uid}-frame`}
+            maskUnits="userSpaceOnUse"
+            x={-w}
+            y={-h}
+            width={w * 2}
+            height={h * 2}
+          >
+            <path className="tx-reveal" d={edges} pathLength={1} />
+          </mask>
+          <g mask={`url(#${uid}-frame)`}>
+            <path className="tx-marker-halo" d={edges} />
+            <path className="tx-marker" d={edges} />
+          </g>
         </svg>
         {label ? <span className="tx-annot-tag">{label}</span> : null}
         <Pen path={edges} className="tx-pen tx-pen-frame" />

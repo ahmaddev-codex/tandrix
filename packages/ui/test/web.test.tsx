@@ -411,7 +411,7 @@ describe("PresenceBar and PointerBuddy", () => {
   it("points with the arrow, adds a step badge, and frames a region with its name and note", () => {
     const { container: plain } = render(<PointerBuddy x={100} y={120} />);
     expect(plain.querySelector(".tx-ptr-arrow")).toBeTruthy();
-    expect(plain.querySelector(".tx-annot-frame")).toBeNull();
+    expect(plain.querySelector(".tx-annot-edges")).toBeNull();
 
     render(<PointerBuddy x={100} y={120} step={2} />);
     expect(screen.getByText("2")).toBeTruthy();
@@ -426,8 +426,10 @@ describe("PresenceBar and PointerBuddy", () => {
         hold={20000}
       />,
     );
-    expect(framed.querySelector(".tx-annot-frame")).toBeTruthy();
-    expect(framed.querySelectorAll(".tx-annot-handle")).toHaveLength(4);
+    // A clean dashed frame, revealed as the pen draws round it.
+    const edges = framed.querySelector(".tx-annot-edges")!;
+    expect(edges.querySelector(".tx-marker")).toBeTruthy();
+    expect(edges.querySelector("mask .tx-reveal")).toBeTruthy();
     expect(screen.getByText("Equation")).toBeTruthy();
     expect(screen.getByText("x = 11")).toBeTruthy();
     const annot = framed.querySelector<HTMLElement>(".tx-annot")!;
