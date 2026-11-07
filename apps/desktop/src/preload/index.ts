@@ -38,6 +38,7 @@ const bridge: TandrixBridge = {
     openSettings: () => ipcRenderer.invoke(channels.screenSettings),
     capture: () => ipcRenderer.invoke(channels.screenCapture),
     text: (image, mimeType) => ipcRenderer.invoke(channels.screenText, image, mimeType),
+    sketch: (displayId) => ipcRenderer.invoke(channels.screenSketch, displayId),
   },
   device: {
     name: () => ipcRenderer.invoke(channels.deviceName),

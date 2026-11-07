@@ -581,7 +581,7 @@ button.tx-visual-frame:focus-visible {
 .tx-marker {
   fill: none;
   stroke: var(--tx-mark);
-  stroke-width: 2;
+  stroke-width: 2.75;
   stroke-linecap: butt;
   stroke-linejoin: round;
 }
@@ -591,7 +591,16 @@ button.tx-visual-frame:focus-visible {
 [data-kind="box"] .tx-marker-halo,
 .tx-annot-edges .tx-marker,
 .tx-annot-edges .tx-marker-halo {
-  stroke-dasharray: 7 4;
+  stroke-dasharray: 9 5;
+}
+/* Inside a box or outline, a soft green, so the part itself stands out. */
+.tx-marker-fill {
+  fill: color-mix(in srgb, var(--tx-mark) 11%, transparent);
+  stroke: none;
+}
+/* Everything but the marked part, a little dimmer. */
+.tx-spotlight {
+  fill: rgb(0 0 0 / 0.14);
 }
 /* What reveals a mark as the pen draws it: the mark's own path, wide, in the mask. */
 .tx-reveal {
@@ -606,10 +615,10 @@ button.tx-visual-frame:focus-visible {
 .tx-marker-halo {
   fill: none;
   stroke: #fff;
-  stroke-width: 4.5;
+  stroke-width: 5.5;
   stroke-linecap: butt;
   stroke-linejoin: round;
-  opacity: 0.85;
+  opacity: 0.9;
 }
 /* And what it writes beside each one, by hand: no card, just words on the screen, haloed so they
    read on anything. */
@@ -715,6 +724,11 @@ button.tx-visual-frame:focus-visible {
     transform-origin: center;
     animation: tx-touch 180ms ease-out var(--tx-delay, 0ms) both;
   }
+  /* The dim and the tint come in as the pen draws round the part, and go with it. */
+  .tx-spotlight,
+  .tx-marker-fill {
+    animation: tx-appear-soft 420ms ease-out calc(var(--tx-delay, 0ms) + 120ms) both;
+  }
   .tx-reveal {
     stroke-dasharray: 1;
     animation: tx-diagram-line var(--tx-draw, 620ms) cubic-bezier(0.45, 0.05, 0.4, 1)
@@ -784,6 +798,14 @@ button.tx-visual-frame:focus-visible {
 @keyframes tx-pen {
   from {
     left: 0;
+  }
+}
+@keyframes tx-appear-soft {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }
 @keyframes tx-diagram-line {

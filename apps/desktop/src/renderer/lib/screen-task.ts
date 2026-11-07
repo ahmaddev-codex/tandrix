@@ -171,6 +171,18 @@ export function screenChanged(a: number[] | undefined, b: number[] | undefined):
   return moved > 3;
 }
 
+/**
+ * Whether the screen now is a different view from the screenshot's: a good share of its sketch
+ * (48×30 brightness) changed, as when a page scrolls or zooms. A cursor, a caret or a menu-bar
+ * clock is a few cells, not a moved page.
+ */
+export function pageMoved(before: number[] | undefined, now: number[] | null): boolean {
+  if (!before || !now || before.length !== now.length) return false;
+  let changed = 0;
+  for (let i = 0; i < before.length; i++) if (Math.abs(before[i]! - now[i]!) > 14) changed++;
+  return changed > before.length * 0.12;
+}
+
 /** A batch as a pattern: positions to about 16 px, so the same step aimed a pixel away still counts. */
 export function batchPattern(actions: DesktopAction[]): string {
   return JSON.stringify(

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { ScreenCapture } from "../src/shared/bridge";
 import {
   notesIn,
+  pageMoved,
   spokenPart,
   circling,
   fingerprint,
@@ -378,5 +379,25 @@ describe("actionLabel", () => {
   });
   it("falls back to the action", () => {
     expect(actionLabel("", [{ type: "type", text: "Acme" }])).toBe("Typing");
+  });
+});
+
+describe("pageMoved", () => {
+  const page: number[] = Array.from({ length: 48 * 30 }, (_, i) => (i % 48 < 24 ? 240 : 60));
+  it("sees a scrolled page", () => {
+    // Everything shifted down by three rows.
+    const scrolled = page.map(
+      (_, i) => page[(i + 48 * 30 - 48 * 3) % page.length]! + ((i / 48) % 2 ? 40 : 0),
+    );
+    expect(pageMoved(page, scrolled)).toBe(true);
+  });
+  it("ignores a cursor, a caret or a clock", () => {
+    const nudged = [...page];
+    for (const i of [5, 6, 300, 1439]) nudged[i] = nudged[i]! + 80;
+    expect(pageMoved(page, nudged)).toBe(false);
+  });
+  it("can't tell without both sketches, so it doesn't stop", () => {
+    expect(pageMoved(undefined, page)).toBe(false);
+    expect(pageMoved(page, null)).toBe(false);
   });
 });

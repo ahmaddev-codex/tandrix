@@ -25,6 +25,20 @@ export function sketchOf(image: NativeImage): number[] {
   return out;
 }
 
+/**
+ * A display as it is now, as a sketch only (48×30 brightness, never an image): to tell whether
+ * the page has moved since a question's screenshot. Tandrix's own overlay isn't in it.
+ */
+export async function sketchNow(displayId: string): Promise<number[] | null> {
+  const sources = await desktopCapturer.getSources({
+    types: ["screen"],
+    thumbnailSize: { width: SKETCH.width * 4, height: SKETCH.height * 4 },
+  });
+  const source = sources.find((s) => s.display_id === displayId) ?? sources[0];
+  if (!source || source.thumbnail.isEmpty()) return null;
+  return sketchOf(source.thumbnail);
+}
+
 export const captureDisplayUnderCursor = (maxWidth = CAPTURE_MAX_WIDTH) =>
   captureDisplayAt(screen.getCursorScreenPoint(), maxWidth);
 

@@ -29,6 +29,7 @@ import {
   setupShowMe,
 } from "./show-me";
 import { readScreenText } from "./screen-text";
+import { sketchNow } from "./capture";
 import {
   clearPointer,
   createPanel,
@@ -194,6 +195,11 @@ function registerIpc() {
   );
   handle(channels.testPointer, testPointer, none);
   handle(channels.screenCapture, captureForQuestion, none);
+  handle(
+    channels.screenSketch,
+    (id: string) => sketchNow(id).catch(() => null),
+    (a): a is [string] => a.length === 1 && typeof a[0] === "string" && a[0].length < 40,
+  );
   handle(
     channels.screenText,
     readScreenText,

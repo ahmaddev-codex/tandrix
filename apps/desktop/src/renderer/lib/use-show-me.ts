@@ -24,7 +24,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { ScreenCapture } from "../../shared/bridge";
 import { createBoard, type AgentTask, type Board } from "./agents";
 import { api, locateParts } from "./api";
-import { runScreenTask, STOPPED_REPLY, type ScreenTaskResult } from "./screen-task";
+import { pageMoved, runScreenTask, STOPPED_REPLY, type ScreenTaskResult } from "./screen-task";
 import { startRecording, type Recording } from "./recorder";
 import { startHearing, type Hearing } from "./hear";
 import { markFor, nearestInk, readPixels } from "./ink";
@@ -78,6 +78,7 @@ const TEACHING_HOLD_MS = 20_000;
  * about six to nine seconds after the answer, while the intro is said; later parts are ready.
  */
 const LOCATE_WAIT_MS = 6000;
+const PAGE_MOVED = "The page moved, so I'll stop pointing and just talk you through the rest.";
 
 /** Asked to do something while in Show me: said before showing the way. */
 export const DO_IT_FOR_ME_OFF =
@@ -448,6 +449,7 @@ export function useShowMe(jobId: string | undefined) {
         try {
           // Stopped (Esc, a new question, the wake word): the tour ends and its mark goes.
           if (opening && !(await speakAndWait(opening))) return void window.tandrix.overlay.clear();
+          let moved = false;
           for (const [k, first] of r.regions.entries()) {
             const found = first.quote
               ? null
@@ -475,46 +477,57 @@ export function useShowMe(jobId: string | undefined) {
                 }
               : given;
             const c = { x: part.box.x + part.box.w / 2, y: part.box.y + part.box.h / 2 };
-            await window.tandrix.overlay.pointAt(
-              g,
-              { x: Math.round(c.x), y: Math.round(c.y) },
-              "",
-              {
-                hold: 60_000,
-                regions: [
-                  {
-                    dx: 0,
-                    dy: 0,
-                    width: Math.round(part.box.w * sx),
-                    height: Math.round(part.box.h * sy),
-                    label: part.label,
-                    ...(part.detail ? { detail: part.detail } : {}),
-                    // Where the pen touches it: the model's spot on the part, moved onto the nearest
-                    // thing actually drawn there (a thin bone or line can be missed by 30 px);
-                    // and the mark itself, from what's really on screen: along the curve, round
-                    // the group, under the words.
-                    ...(() => {
-                      const want = part.point ?? c;
-                      const on = pixels ? nearestInk(pixels, want) : want;
-                      const strokes = pixels ? markFor(pixels, part.mark, part.box, want) : [];
-                      return {
-                        ax: Math.round((on.x - c.x) * sx),
-                        ay: Math.round((on.y - c.y) * sy),
-                        mark: {
-                          kind: part.mark,
-                          strokes: strokes.map((st) =>
-                            st.flatMap(([x, y]) => [
-                              Math.round((x - c.x) * sx),
-                              Math.round((y - c.y) * sy),
-                            ]),
-                          ),
-                        },
-                      };
-                    })(),
-                  },
-                ],
-              },
-            );
+            // The page moved since the screenshot (scrolled, zoomed, another page): a mark now
+            // would land where the part used to be. Say so once, and go on in words only.
+            if (!moved) {
+              const now = await window.tandrix.screen.sketch(g.displayId).catch(() => null);
+              if (pageMoved(capture.sketch, now)) {
+                moved = true;
+                await window.tandrix.overlay.clear();
+                if (!(await speakAndWait(PAGE_MOVED))) return;
+              }
+            }
+            if (!moved)
+              await window.tandrix.overlay.pointAt(
+                g,
+                { x: Math.round(c.x), y: Math.round(c.y) },
+                "",
+                {
+                  hold: 60_000,
+                  regions: [
+                    {
+                      dx: 0,
+                      dy: 0,
+                      width: Math.round(part.box.w * sx),
+                      height: Math.round(part.box.h * sy),
+                      label: part.label,
+                      ...(part.detail ? { detail: part.detail } : {}),
+                      // Where the pen touches it: the model's spot on the part, moved onto the nearest
+                      // thing actually drawn there (a thin bone or line can be missed by 30 px);
+                      // and the mark itself, from what's really on screen: along the curve, round
+                      // the group, under the words.
+                      ...(() => {
+                        const want = part.point ?? c;
+                        const on = pixels ? nearestInk(pixels, want) : want;
+                        const strokes = pixels ? markFor(pixels, part.mark, part.box, want) : [];
+                        return {
+                          ax: Math.round((on.x - c.x) * sx),
+                          ay: Math.round((on.y - c.y) * sy),
+                          mark: {
+                            kind: part.mark,
+                            strokes: strokes.map((st) =>
+                              st.flatMap(([x, y]) => [
+                                Math.round((x - c.x) * sx),
+                                Math.round((y - c.y) * sy),
+                              ]),
+                            ),
+                          },
+                        };
+                      })(),
+                    },
+                  ],
+                },
+              );
             const words =
               part.say ?? (part.detail ? `${part.label}: ${part.detail}.` : `${part.label}.`);
             if (!(await speakAndWait(words))) return void window.tandrix.overlay.clear();

@@ -17,6 +17,7 @@ export const channels = {
   screenSettings: "screen:settings",
   screenCapture: "screen:capture",
   screenText: "screen:text",
+  screenSketch: "screen:sketch",
   panelShow: "panel:show",
   deviceName: "device:name",
   notify: "panel:notify",
@@ -215,6 +216,8 @@ export interface TandrixBridge {
      * fresh capture (with the panel put away first).
      */
     capture(): Promise<ScreenCapture>;
+    /** A display's sketch now (48×30 brightness), to tell whether the page moved. */
+    sketch(displayId: string): Promise<number[] | null>;
     /** The text on a capture and where each line (and character) is, read on this Mac. */
     text(
       image: Uint8Array,
