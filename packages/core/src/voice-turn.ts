@@ -5,8 +5,18 @@
 
 /** Louder than this (dBFS) counts as speech; quieter is the room. */
 export const SPEECH_DB = -42;
+/**
+ * And it must stand this far above the room itself (the quietest of the last few seconds): a fan,
+ * air conditioning or a hum louder than SPEECH_DB would otherwise count as talking, and the turn
+ * would never hear the pause that ends it.
+ */
+export const ABOVE_ROOM_DB = 10;
+/** How far back the room's level is judged from. */
+const ROOM_WINDOW_MS = 5000;
+/** Never set the bar above this: a voice is louder still, however noisy the room. */
+const MAX_BAR_DB = -26;
 /** A pause this long after speaking ends a tapped turn. */
-export const END_PAUSE_MS = 1400;
+export const END_PAUSE_MS = 1000;
 /** A tapped turn with no speech by now gives up. */
 export const NO_SPEECH_MS = 7000;
 /** After an answer, how long Tandrix keeps listening for a follow-up said without the wake word. */
@@ -25,17 +35,35 @@ export interface TurnLevels {
   speechMs: number;
   /** Time since the level was last above SPEECH_DB; equals elapsedMs before any speech. */
   quietMs: number;
+  /** Recent levels (dBFS, newest last) and their spans, to judge the room by. */
+  recent?: Array<[number, number]>;
+}
+
+/** The room's level: the quietest tenth of the recent window (the gaps between words). */
+export function roomDb(recent: Array<[number, number]> | undefined): number | null {
+  if (!recent || recent.length < 8) return null;
+  const sorted = recent.map(([db]) => db).sort((a, b) => a - b);
+  return sorted[Math.floor(sorted.length * 0.1)]!;
 }
 
 export type TurnStep = "listen" | "send" | "nothing_heard";
 
 /** Adds one meter reading taken `dtMs` after the last. */
 export function addLevel(t: TurnLevels, db: number | undefined, dtMs: number): TurnLevels {
-  const loud = db !== undefined && db > SPEECH_DB;
+  const room = roomDb(t.recent);
+  const above = Math.min(
+    MAX_BAR_DB,
+    Math.max(SPEECH_DB, room === null ? SPEECH_DB : room + ABOVE_ROOM_DB),
+  );
+  const loud = db !== undefined && db > above;
+  const recent = [...(t.recent ?? []), [db ?? -160, dtMs] as [number, number]];
+  let span = recent.reduce((a, [, ms]) => a + ms, 0);
+  while (recent.length > 1 && span - recent[0]![1] >= ROOM_WINDOW_MS) span -= recent.shift()![1];
   return {
     elapsedMs: t.elapsedMs + dtMs,
     speechMs: t.speechMs + (loud ? dtMs : 0),
     quietMs: loud ? 0 : t.quietMs + dtMs,
+    recent,
   };
 }
 

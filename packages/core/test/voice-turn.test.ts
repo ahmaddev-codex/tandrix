@@ -45,11 +45,43 @@ describe("a tapped turn", () => {
   });
 
   it("treats a meter with no reading as quiet", () => {
-    expect(addLevel(startLevels(), undefined, 100)).toEqual({
+    expect(addLevel(startLevels(), undefined, 100)).toMatchObject({
       elapsedMs: 100,
       speechMs: 0,
       quietMs: 100,
     });
+  });
+
+  it("hears the pause over a fan or hum louder than the speech threshold", () => {
+    // A noisy room at -36 dBFS (over SPEECH_DB), speech at -18 from 1 s to 3 s, then the room.
+    let t = startLevels();
+    let sent = -1;
+    for (let at = 0; at < 8000; at += 50) {
+      t = addLevel(t, at >= 1000 && at < 3000 ? -18 : -36, 50);
+      if (sent < 0 && tappedTurn(t) === "send") sent = at;
+    }
+    // About a second after the user stopped, not never.
+    expect(sent).toBeGreaterThanOrEqual(3000 + END_PAUSE_MS - 100);
+    expect(sent).toBeLessThan(3000 + END_PAUSE_MS + 300);
+  });
+
+  it("never takes a long, unbroken stretch of talking for the room", () => {
+    let t = startLevels();
+    for (let at = 0; at < 8000; at += 50) {
+      t = addLevel(t, -18, 50);
+      expect(tappedTurn(t)).toBe("listen");
+    }
+  });
+
+  it("still counts speech with natural gaps between words in a noisy room", () => {
+    let t = startLevels();
+    for (let at = 0; at < 1000; at += 50) t = addLevel(t, -36, 50);
+    // Two seconds of talking: words with short dips back to the room between them.
+    for (let at = 0; at < 2000; at += 50) {
+      t = addLevel(t, at % 400 < 300 ? -18 : -36, 50);
+      expect(tappedTurn(t)).toBe("listen");
+    }
+    expect(t.speechMs).toBeGreaterThan(1200);
   });
 });
 
