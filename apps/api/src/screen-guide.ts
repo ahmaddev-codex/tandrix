@@ -2,6 +2,8 @@
 // where. Model failures become "unavailable"; nothing the model proposes is executed here.
 import {
   askScreen,
+  locateParts,
+  type PartBox,
   imageData,
   MetaApiError,
   MetaClient,
@@ -36,14 +38,28 @@ export type ScreenGuideOutcome =
         say?: string;
         point?: { x: number; y: number };
         mark?: MarkKind;
+        quote?: string;
         box: { x: number; y: number; w: number; h: number };
       }>;
       intro?: string;
     }
   | { status: "unavailable"; message: string };
 
+/** A part of an answer to land a mark on: its name and where the model first placed it. */
+export interface PartToLocate {
+  label: string;
+  detail: string | null;
+  box: { x: number; y: number; w: number; h: number };
+}
+
 export interface ScreenGuide {
   ask(input: ScreenQuestionInput): Promise<ScreenGuideOutcome>;
+  /** Each part clicked on the screenshot; each resolves on its own, never rejects. Without it,
+   * parts stay where the answer placed them. */
+  locate?(input: {
+    screenshot: { bytes: Uint8Array; mimeType: string; width: number; height: number };
+    parts: PartToLocate[];
+  }): Array<Promise<{ point: { x: number; y: number } | null; box: PartToLocate["box"] }>>;
 }
 
 export const SCREEN_UNAVAILABLE =
@@ -105,11 +121,33 @@ export function metaScreenGuide(
         throw e;
       }
     },
+    locate({ screenshot, parts }) {
+      const mime = screenshot.mimeType === "image/png" ? "image/png" : "image/jpeg";
+      const size = { width: screenshot.width, height: screenshot.height };
+      return locateParts(
+        client,
+        config.models.computerUse,
+        imageData(screenshot.bytes, mime),
+        size,
+        parts.map((p) => ({
+          label: p.label,
+          ...(p.detail ? { detail: p.detail } : {}),
+          box: p.box,
+        })),
+      ).map((found, i) =>
+        found
+          .then((p: PartBox) => ({ point: p.point ?? null, box: p.box }))
+          .catch(() => ({ point: null, box: parts[i]!.box })),
+      );
+    },
   };
 }
 
 export const noModelScreenGuide: ScreenGuide = {
   async ask() {
     return { status: "unavailable", message: SCREEN_UNAVAILABLE };
+  },
+  locate({ parts }) {
+    return parts.map((p) => Promise.resolve({ point: null, box: p.box }));
   },
 };

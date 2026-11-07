@@ -130,10 +130,11 @@ Task: the user is looking at something on their computer screen (the screenshot)
 
   outlineScreen: `${shared}
 Task: the user is asking about something on their computer screen (the screenshot). Mark up the screen so they can see exactly which part is which, like a teacher labelling a diagram.
-- regions: if they ask about the parts of something (a skeleton, a diagram, a chart, a form, an interface), one region per part your answer would name, at most six, the most important first. If they ask about one thing (an equation, an error message), one region for just that thing.
+- regions: if they ask about the parts of something (a skeleton, a diagram, a chart, a form, an interface), one region per part your answer would name, at most eight, the most important first. Each region is exactly one part: never two in one ("Atlas and axis" is two regions). If they ask about one thing (an equation, an error message), one region for just that thing.
+- When the picture shows the same thing more than once (several views of a spine, two copies of a molecule), mark each part in the one view where it is clearest, and use that view for all the parts.
 - label: the part's name, one to three words ("Skull", "Rib cage", "Femur").
 - detail: what it is or does, under ten words ("Protects the brain"), or null for a single thing.
-- box: tight round that part alone, never the whole picture or page, in thousandths of the screenshot's width and height (0 to 1000): x1, y1 the top-left corner, x2, y2 the bottom-right.
+- box: tight round that part alone, in thousandths of the screenshot's width and height (0 to 1000): x1, y1 the top-left corner, x2, y2 the bottom-right. Round the drawing of the part itself: never its printed label, the leader line from a label, a bracket beside it, a neighbouring part, or the whole picture or page. For a region of something (the lumbar spine), from its first piece to its last.
 - mark: how a teacher would mark this part on a whiteboard, the one that fits it best:
   trace: along a curve or line itself (a sine wave, a graph's line, a bond, a bone, a wire). The point must be on that line.
   outline: a loop round a group or area (a functional group, an organ, a region of a map, a cluster of points).
@@ -146,6 +147,7 @@ Task: the user is asking about something on their computer screen (the screensho
   arrow: pointing at a small thing that needs a pointer more than a ring (a single atom, a pixel-sized detail, a symbol).
   span_x / span_y: a measuring arrow across or up the part (a wavelength, an amplitude, a distance, a period).
   point: a dot, only for something tiny where any other mark would cover it.
+- quote: when the part is words, a line or lines of code, or a formula or step of working: the exact text as it appears on screen, character for character (one line of it per line: every line of a block of up to four lines, the first and last lines of a longer one). A part of code is all the lines that do that job (a base case is its if and its return).. Null for a drawing.
 - point: one spot that is clearly on the part itself (on the bone, the line of code, the bar of the chart, never the empty space beside it), where a teacher's pen would touch it, in the same thousandths: x, y.
 - say: what you'd say about this part while pointing at it, one or two short spoken sentences pitched at the user's level (plain words for a beginner, precise terms for someone advanced). Never start with the part's name alone; say something about it ("This is the skull, the bony case that protects your brain.").
 - intro: one short spoken sentence introducing what's on screen before the parts ("This is a diagram of the human skeleton; let's go through the main parts."), or null for a single thing.`,
@@ -226,4 +228,6 @@ Task: match the laid-out parts in the photo to the parts list.
 - Candidate boxes are listed with index and coordinates.
 - status "found" when you can see the part; "possible" when a box might be it but you are not sure; "missing" when no box is it.
 - Assign each box to at most one part. Report every part on the list exactly once.`,
+  pointPart: `${shared}
+Task: point at exactly the part of the screen named below, with a single move action on the part itself: on the drawing of it (the bone, the organelle, the atom, the curve), never on its printed label, a leader line, a bracket or empty space beside it. If the picture shows it more than once, point at the clearest one.`,
 } as const;

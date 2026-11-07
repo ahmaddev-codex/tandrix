@@ -1,0 +1,128 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Preview</title>
+    <link rel="stylesheet" href="teach.css" />
+    <style>
+      .content {
+        background: #3a3a3a;
+      }
+      .page {
+        position: absolute;
+        left: 367px;
+        top: 8px;
+        width: 586px;
+        height: 742px;
+      }
+      .page img,
+      .page svg {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="menubar">
+      <b>Preview</b><span>File</span><span>Edit</span><span>View</span><span>Go</span>
+    </div>
+    <div class="win">
+      <div class="titlebar"><span class="title">Anatomy atlas — page 22</span></div>
+      <div class="content">
+        <div class="page">
+          <!-- A textbook plate (fixtures/screens/teach/samples, not in git). -->
+          <img src="samples/spine.png" />
+          <!-- The truth, in the plate's own pixels (745 × 943), measured by hand; invisible. Each
+               part's main box is in view B (front); data-alt lists the same part in A or C. -->
+          <svg viewBox="0 0 745 943" fill="none" stroke="none">
+            <rect
+              data-part="atlas"
+              data-names="atlas|c1"
+              x="336"
+              y="120"
+              width="82"
+              height="27"
+              data-alt="535 118 80 24"
+            />
+            <rect
+              data-part="axis"
+              data-names="axis|c2"
+              x="344"
+              y="147"
+              width="66"
+              height="21"
+              data-alt="548 143 57 22"
+            />
+            <rect
+              data-part="prominens"
+              data-names="prominens|c7"
+              x="333"
+              y="225"
+              width="86"
+              height="25"
+              data-alt="540 210 70 25"
+            />
+            <rect
+              data-part="cervical"
+              data-names="cervical|neck|cervicalis"
+              x="333"
+              y="122"
+              width="87"
+              height="141"
+              data-alt="100 115 115 150"
+            />
+            <rect
+              data-part="thoracic"
+              data-names="thoracic|thoracica|chest"
+              x="330"
+              y="266"
+              width="92"
+              height="281"
+              data-alt="75 265 125 283"
+            />
+            <rect
+              data-part="lumbar"
+              data-names="lumbar|lumbalis|lower back"
+              x="320"
+              y="547"
+              width="110"
+              height="173"
+              data-alt="85 548 120 170"
+            />
+            <rect
+              data-part="promontory"
+              data-names="promontor"
+              x="340"
+              y="712"
+              width="32"
+              height="20"
+            />
+            <rect
+              data-part="sacrum"
+              data-names="sacrum|sacral|sacralis"
+              x="304"
+              y="693"
+              width="143"
+              height="125"
+              data-alt="510 622 150 168"
+            />
+            <rect
+              data-part="coccyx"
+              data-names="coccyx|coccyg|tailbone"
+              x="360"
+              y="815"
+              width="31"
+              height="32"
+              data-alt="572 795 33 40"
+            />
+          </svg>
+        </div>
+      </div>
+    </div>
+    <script>
+      window.__ask = "Show me the parts of this spine and what each one does";
+    </script>
+  </body>
+</html>

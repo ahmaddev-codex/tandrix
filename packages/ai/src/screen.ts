@@ -52,6 +52,8 @@ export interface ScreenRegion {
   /** A spot clearly on the part, in screenshot pixels: where the pen touches it. */
   point?: { x: number; y: number };
   /** How to mark it. */
+  /** For words, code or a formula: the exact text on screen. */
+  quote?: string;
   mark?: MarkKind;
   box: { x: number; y: number; w: number; h: number };
 }
@@ -68,6 +70,7 @@ const Marked = z.object({
         detail: z.string().max(160).nullable(),
         say: z.string().max(400).nullable().optional(),
         mark: MarkKind.nullable().optional(),
+        quote: z.string().max(400).nullable().optional(),
         point: z
           .object({ x: z.number().min(0).max(1000), y: z.number().min(0).max(1000) })
           .nullable()
@@ -80,7 +83,7 @@ const Marked = z.object({
         }),
       }),
     )
-    .max(6),
+    .max(8),
   intro: z.string().max(300).nullable().optional(),
 });
 
@@ -103,6 +106,7 @@ export function regionsIn(
       ...(detail ? { detail } : {}),
       ...(say ? { say: cleanSpokenReply(say) } : {}),
       ...(r.mark ? { mark: r.mark } : {}),
+      ...(r.quote?.trim() ? { quote: r.quote.trim() } : {}),
       ...(r.point
         ? {
             point: {
@@ -114,7 +118,7 @@ export function regionsIn(
       box: { x: Math.round(x), y: Math.round(y), w: Math.round(w), h: Math.round(h) },
     });
   }
-  return out.slice(0, 6);
+  return out.slice(0, 8);
 }
 
 export function regionsFrom(
@@ -188,6 +192,9 @@ export const EXPLAIN_REPLY_RULE =
  */
 export const SHOW_FIRST_BYTE_MS = 4500;
 
+/** The parts of an explanation, asked again when the first call hasn't answered by then. */
+export const REGIONS_HEDGE_MS = 16_000;
+
 export async function askScreen(
   client: MetaClient,
   model: string,
@@ -227,8 +234,19 @@ export async function askScreen(
           input: [user(text(`The user asks: ${q.question}`), q.screenshot)],
           // Where each part is matters: a little thought places thin parts (an arm, a line) better.
           effort: "low",
+          // It usually answers in 10–14 s; one stuck call (76 s on the marking bench) is asked
+          // again rather than waited out.
+          hedgeMs: REGIONS_HEDGE_MS,
           ...(q.signal ? { signal: q.signal } : {}),
-        }).catch(() => null)
+        })
+          .catch(() => null)
+          // Each part is clicked afterwards (refine.ts, POST /screen/locate), while Tandrix is
+          // already speaking: the answer doesn't wait for it.
+          .then((m) =>
+            m?.ok && q.size
+              ? { intro: m.data.intro ?? null, regions: regionsIn(m.data, q.size) }
+              : null,
+          )
       : null;
   const pointing: Promise<MetaResponse> | null = q.explain
     ? null
@@ -253,7 +271,7 @@ export async function askScreen(
   if (said) {
     const actions = res ? pointsIn(res).actions : [];
     const { spoken, written } = splitWritten(outputText(said));
-    const regions = marked?.ok && q.size ? regionsIn(marked.data, q.size) : [];
+    const regions = marked?.regions ?? [];
     const label = regions[0]?.label ?? "";
     return {
       reply: cleanSpokenReply(spoken),
@@ -263,7 +281,7 @@ export async function askScreen(
       ...(written ? { note: written } : {}),
       ...(label && label.split(/\s+/).length <= 4 ? { label } : {}),
       ...(regions.length ? { regions } : {}),
-      ...(marked?.ok && marked.data.intro ? { intro: cleanSpokenReply(marked.data.intro) } : {}),
+      ...(marked?.intro ? { intro: cleanSpokenReply(marked.intro) } : {}),
     };
   }
   return finishAnswer(client, model, q, res!);
@@ -319,6 +337,10 @@ async function finishAnswer(
   // What the user hears: never tool-call markup, code or JSON the model let slip, and never
   // narration of what Tandrix is doing.
   let reply = cleanSpokenReply(outputText(res));
+  // Asked where to click, the model said it would teach ("I'll drag the functional group part to
+  // walk you through what you're seeing"): the user wanted it understood, not clicked. Explain it.
+  if (!q.lesson && !q.explain && wantsTeaching(reply))
+    return askScreen(client, model, { ...q, explain: true });
   // Only a plain Show me answer is an instruction to rewrite: a lesson or an explanation says more,
   // and a mechanical rewrite of it came out as "Click that to walk you through the step".
   if (!q.lesson && !q.explain && narrates(reply)) {
@@ -329,6 +351,12 @@ async function finishAnswer(
   }
   return { reply, actions, dropped, safetyChecks };
 }
+
+/** The pointing model announcing a lesson or explanation instead of giving a control. */
+export const wantsTeaching = (reply: string) =>
+  /\b(walk (you|them) through|go through (it|this|them|these|each)|explain|break (it|this) down|teach you|help you understand|what you'?re (seeing|looking at))\b/i.test(
+    reply,
+  );
 
 /** "I'll highlight the storage button so you can…": the model describing itself. */
 export const narrates = (reply: string) =>

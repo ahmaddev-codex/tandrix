@@ -235,6 +235,26 @@ describe("askScreen replies", () => {
     expect(r.actions).toEqual([{ type: "move", x: 40, y: 50 }]);
   });
 
+  it("explains instead when asked where to click but the model would rather teach", async () => {
+    const s = scriptedFetch([
+      streamed([
+        message("I'll drag the functional group part to walk you through what you're seeing."),
+      ]),
+      streamed([
+        message("These are the functional groups. The hydroxyl group makes it an alcohol."),
+      ]),
+    ]);
+    const client = new MetaClient({ apiKey: "k", fetch: s.fetch, sleep: noSleep });
+    const r = await askScreen(client, "muse-spark-1.3", {
+      screenshot,
+      question: "Can you do the functional groups?",
+    });
+    expect(s.calls[1]!.body.instructions).toBe(prompts.explainScreen);
+    expect(r.reply).toBe(
+      "These are the functional groups. The hydroxyl group makes it an alcohol.",
+    );
+  });
+
   it("keeps the first reply when the rewrite still narrates", async () => {
     const r = await ask("Save is the one I'll point at.", "I'll point at Save for you.");
     expect(r.reply).toBe("Save is the one I'll point at.");

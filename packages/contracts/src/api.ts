@@ -346,6 +346,47 @@ export const InlineScreenshot = z.strictObject({
     .regex(/^[A-Za-z0-9+/]+=*$/),
 });
 
+/**
+ * POST /screen/locate: each part of an answer clicked on the screenshot, so its mark lands on it.
+ * Asked once the answer has arrived (Tandrix is already speaking); the response is NDJSON, one
+ * ScreenLocated line per part as soon as it's found, in any order.
+ */
+export const ScreenLocateRequest = z.strictObject({
+  screenshot: InlineScreenshot,
+  geometry: ScreenGeometry,
+  parts: z
+    .array(
+      z.strictObject({
+        label: z.string().trim().min(1).max(60),
+        detail: z.string().max(160).nullable().default(null),
+        box: z.strictObject({
+          x: z.number().int().min(0),
+          y: z.number().int().min(0),
+          w: z.number().int().min(1),
+          h: z.number().int().min(1),
+        }),
+      }),
+    )
+    .min(1)
+    .max(8),
+});
+export type ScreenLocateRequest = z.infer<typeof ScreenLocateRequest>;
+
+export const ScreenLocated = z.strictObject({
+  /** Which part, by its place in the request. */
+  i: z.number().int().min(0),
+  /** Where it was clicked, in screenshot pixels; null when it couldn't be. */
+  point: z.strictObject({ x: z.number().int(), y: z.number().int() }).nullable(),
+  /** Its box, moved to the click when the first one missed it. */
+  box: z.strictObject({
+    x: z.number().int(),
+    y: z.number().int(),
+    w: z.number().int(),
+    h: z.number().int(),
+  }),
+});
+export type ScreenLocated = z.infer<typeof ScreenLocated>;
+
 export const ScreenAskInlineRequest = z.strictObject({
   screenshot: InlineScreenshot,
   transcript: text(2000),
@@ -409,6 +450,8 @@ export const ScreenAskResponse = z.discriminatedUnion("status", [
           say: z.string().max(400).nullable().default(null),
           /** How to mark it. */
           mark: MarkKind.default("outline"),
+          /** For words, code or a formula: the exact text on screen, so the Mac can find it. */
+          quote: z.string().max(400).nullable().default(null),
           /** A spot clearly on the part, in screenshot pixels: where the pen touches it. */
           point: z
             .strictObject({ x: z.number().int().min(0), y: z.number().int().min(0) })
@@ -422,7 +465,7 @@ export const ScreenAskResponse = z.discriminatedUnion("status", [
           }),
         }),
       )
-      .max(6)
+      .max(8)
       .default([]),
     /** Said before a tour of the parts. */
     intro: z.string().max(300).nullable().default(null),

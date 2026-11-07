@@ -1,0 +1,25 @@
+/* Teaching screens for the marking bench: things people ask Tandrix to explain. */
+@import url("../base.css");
+.content {
+  flex: 1;
+  position: relative;
+  background: #fff;
+}
+.content svg text {
+  font-family: -apple-system, "Helvetica Neue", Arial, sans-serif;
+}
+.caption {
+  position: absolute;
+  left: 40px;
+  top: 24px;
+  font-size: 22px;
+  font-weight: 600;
+  color: #222;
+}
+.sub {
+  position: absolute;
+  left: 40px;
+  top: 58px;
+  font-size: 14px;
+  color: #666;
+}
