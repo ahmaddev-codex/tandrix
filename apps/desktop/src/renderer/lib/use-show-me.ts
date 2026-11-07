@@ -15,8 +15,10 @@ import {
   parseWakePhrase,
   TAP_MS,
   FOLLOW_UP_MS,
+  continuesLesson,
   wantsExplanation,
   wantsLesson,
+  wantsReplay,
 } from "@tandrix/core";
 import type { ControlMode, Evidence } from "@tandrix/contracts";
 import type { VoiceTurn } from "@tandrix/ui/web";
@@ -24,12 +26,18 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { ScreenCapture } from "../../shared/bridge";
 import { createBoard, type AgentTask, type Board } from "./agents";
 import { api, locateParts } from "./api";
-import { pageMoved, runScreenTask, STOPPED_REPLY, type ScreenTaskResult } from "./screen-task";
+import {
+  pageMoved,
+  runScreenTask,
+  screenChanged,
+  STOPPED_REPLY,
+  type ScreenTaskResult,
+} from "./screen-task";
 import { startRecording, type Recording } from "./recorder";
 import { startHearing, type Hearing } from "./hear";
 import { markFor, nearestInk, readPixels } from "./ink";
 import { placeQuote } from "./text-place";
-import type { ScreenLocated } from "@tandrix/contracts";
+import type { ScreenAskResponse, ScreenLocated } from "@tandrix/contracts";
 import { loadWords } from "./words";
 import { uploadScreenshot } from "./screenshot";
 import { recentExchanges } from "./exchanges";
@@ -78,6 +86,28 @@ const TEACHING_HOLD_MS = 20_000;
  * about six to nine seconds after the answer, while the intro is said; later parts are ready.
  */
 const LOCATE_WAIT_MS = 6000;
+
+/**
+ * What's been worked out about a screenshot, kept while it's the one in use (a follow-up on an
+ * unchanged screen reuses the same screenshot): its pixels, its text, and each part already
+ * located, by name, so a part asked about again is drawn at once.
+ */
+interface ShotWork {
+  pixels?: Promise<Awaited<ReturnType<typeof readPixels>>>;
+  text?: Promise<Awaited<ReturnType<typeof window.tandrix.screen.text>>>;
+  located: Map<string, { box: ScreenLocated["box"]; point: ScreenLocated["point"] }>;
+}
+const shotWork = new WeakMap<Uint8Array, ShotWork>();
+const workOn = (image: Uint8Array): ShotWork => {
+  let w = shotWork.get(image);
+  if (!w) shotWork.set(image, (w = { located: new Map() }));
+  return w;
+};
+const partKey = (label: string) => label.trim().toLowerCase();
+/** A screenshot stays the one in use while the screen looks the same, up to this long. */
+const SHOT_REUSE_MS = 10 * 60_000;
+/** "Next" carries on a lesson or explanation given within this long. */
+const CARRY_ON_MS = 5 * 60_000;
 const PAGE_MOVED = "The page moved, so I'll stop pointing and just talk you through the rest.";
 
 /** Asked to do something while in Show me: said before showing the way. */
@@ -201,6 +231,14 @@ export function useShowMe(jobId: string | undefined) {
    * it's quiet, Esc is let go. An answer still on its way when Esc came is dropped (answerEpoch).
    */
   const answerEpoch = useRef(0);
+  /** When Tandrix last taught or explained (so "next" carries it on), and its last answer. */
+  const teachingAt = useRef(0);
+  const lastAnswerRef = useRef<{
+    r: Extract<ScreenAskResponse, { status: "answered" }>;
+    image: Uint8Array;
+    explain: boolean;
+    lesson: boolean;
+  } | null>(null);
   /** The question whose answer is still being worked out, if one is. */
   const askingRef = useRef<{ question: string; epoch: number } | null>(null);
   const answeringRef = useRef(false);
@@ -233,9 +271,25 @@ export function useShowMe(jobId: string | undefined) {
     presentAnswer(message);
   };
 
+  /** The last question's screenshot, reused while the screen looks just the same. */
+  const lastShotRef = useRef<{ shot: Shot; at: number; job: string | undefined } | null>(null);
   const shoot = useCallback(async (job: string | undefined): Promise<Shot> => {
     const capture = await window.tandrix.screen.capture();
-    return { capture, evidence: job ? await uploadScreenshot(job, capture) : null };
+    // Nothing on screen has changed since the last question (a follow-up, an update on the same
+    // thing): the same screenshot, so everything already worked out about it is used again and
+    // the API answers a repeat at once.
+    const last = lastShotRef.current;
+    if (
+      last &&
+      last.job === job &&
+      Date.now() - last.at < SHOT_REUSE_MS &&
+      last.shot.capture.geometry.displayId === capture.geometry.displayId &&
+      screenChanged(last.shot.capture.sketch, capture.sketch) === false
+    )
+      return last.shot;
+    const shot = { capture, evidence: job ? await uploadScreenshot(job, capture) : null };
+    lastShotRef.current = { shot, at: Date.now(), job };
+    return shot;
   }, []);
 
   const turnsRef = useRef(turns);
@@ -364,11 +418,28 @@ export function useShowMe(jobId: string | undefined) {
       markReply("captured");
       // Understanding something on screen is explained; learning an app is a lesson; the rest is
       // where to click.
-      const explain = wantsExplanation(question);
-      const lesson = !explain && wantsLesson(question);
+      let explain = wantsExplanation(question);
+      let lesson = !explain && wantsLesson(question);
+      // "Next", "go on", "okay, what's next?" just after a lesson or explanation carries it on,
+      // still teaching (asked as where to click, it came back as "Click the next region").
+      if (
+        !explain &&
+        !lesson &&
+        Date.now() - teachingAt.current < CARRY_ON_MS &&
+        continuesLesson(question)
+      )
+        lesson = true;
+      // "Show me again" on the same screen: the last answer, again, at once.
+      const last = lastAnswerRef.current;
+      const replay = !!last && last.image === capture.image && wantsReplay(question);
+      if (replay) {
+        explain = last.explain;
+        lesson = last.lesson;
+      }
       const named = userNameRef.current ? { userName: userNameRef.current } : {};
-      const r =
-        job && evidence
+      const r = replay
+        ? last.r
+        : job && evidence
           ? await api.screenAsk(job, {
               evidenceId: evidence.id,
               transcript: question,
@@ -396,6 +467,8 @@ export function useShowMe(jobId: string | undefined) {
       if (epoch !== answerEpoch.current) return;
       if (r.status === "unavailable") return reply(r.message);
       answeredRef.current = true;
+      teachingAt.current = lesson || explain ? Date.now() : 0;
+      lastAnswerRef.current = { r, image: capture.image, explain, lesson };
       // While a task has the pointer, answer in words and leave the pointer to it.
       const said = intro ? `${intro} ${r.reply}` : r.reply;
       if (!point) return reply(said);
@@ -420,9 +493,10 @@ export function useShowMe(jobId: string | undefined) {
         const opening = [intro, about].filter(Boolean).join(" ");
         // The screenshot's pixels, so each touch lands on what's actually drawn there.
         // And its text, read on this Mac, so quoted words, code or a formula are marked exactly.
-        const read = r.regions.some((p) => p.quote)
-          ? window.tandrix.screen.text(capture.image, capture.mimeType).catch(() => [])
-          : Promise.resolve([]);
+        const work = workOn(capture.image);
+        if (r.regions.some((p) => p.quote))
+          work.text ??= window.tandrix.screen.text(capture.image, capture.mimeType).catch(() => []);
+        const read = work.text ?? Promise.resolve([]);
         // Each drawn part clicked while Tandrix speaks (POST /screen/locate), so its mark lands on
         // it: drawn the moment its click is in, else after a short wait where it was first placed.
         const clicked = r.regions.map(() => {
@@ -430,7 +504,15 @@ export function useShowMe(jobId: string | undefined) {
           const wait = new Promise<ScreenLocated | null>((res) => (done = res));
           return { wait, done };
         });
-        const toClick = r.regions.flatMap((p, i) => (p.quote ? [] : [i]));
+        // Parts already located on this screenshot are drawn from what's known; only new ones are
+        // clicked.
+        r.regions.forEach((p, i) => {
+          const known = work.located.get(partKey(p.label));
+          if (known) clicked[i]!.done({ i, ...known });
+        });
+        const toClick = r.regions.flatMap((p, i) =>
+          p.quote || work.located.has(partKey(p.label)) ? [] : [i],
+        );
         if (toClick.length)
           void locateParts(
             {
@@ -441,10 +523,15 @@ export function useShowMe(jobId: string | undefined) {
                 return { label: p.label, detail: p.detail ?? null, box: p.box };
               }),
             },
-            (l) => clicked[toClick[l.i]!]?.done(l),
+            (l) => {
+              const i = toClick[l.i]!;
+              work.located.set(partKey(r.regions[i]!.label), { box: l.box, point: l.point });
+              clicked[i]?.done({ ...l, i });
+            },
           ).finally(() => clicked.forEach((c) => c.done(null)));
         else clicked.forEach((c) => c.done(null));
-        const pixels = await readPixels(capture.image, capture.mimeType);
+        work.pixels ??= readPixels(capture.image, capture.mimeType);
+        const pixels = await work.pixels;
         touringRef.current = true;
         try {
           // Stopped (Esc, a new question, the wake word): the tour ends and its mark goes.
