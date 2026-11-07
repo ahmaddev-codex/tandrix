@@ -356,6 +356,127 @@ const NEAR_MISSES = [
   "Wake up, it's ten",
 ];
 
+/**
+ * --model-set: clips for the dedicated wake-word model (apps/desktop/scripts/wake/model), every
+ * English voice except the eight held out for testing. Written whole, unmixed; the trainer adds
+ * the noise, room and level. Each wake clip ends as "Tandrix" ends, where the model must fire.
+ *   model/pos/*.wav     the name, alone and after a lead ("Hey", "Okay", "Wake up"…)
+ *   model/near/*.wav    words that sound close ("Hendrix", "tantrum", "hand tricks")
+ *   model/speech/*.wav  ordinary sentences
+ */
+const MODEL_SAY = [
+  ...SAY_TRAIN,
+  "Flo (English (US))",
+  "Eddy (English (UK))",
+  "Reed (English (US))",
+  "Sandy (English (UK))",
+  "Shelley (English (US))",
+  "Grandma (English (UK))",
+  "Aman (English (India))",
+  "Whisper",
+];
+const MODEL_KOKORO = [
+  "af_alloy",
+  "af_aoede",
+  "af_bella",
+  "af_heart",
+  "af_jessica",
+  "af_kore",
+  "af_nicole",
+  "af_nova",
+  "af_river",
+  "af_sarah",
+  "af_sky",
+  "am_adam",
+  "am_echo",
+  "am_eric",
+  "am_fenrir",
+  "am_liam",
+  "am_onyx",
+  "am_puck",
+  "am_santa",
+  "bf_alice",
+  "bf_emma",
+  "bf_isabella",
+  "bf_lily",
+  "bm_daniel",
+  "bm_fable",
+  "bm_george",
+].filter((v) => !KOKORO_TEST.includes(v));
+const MODEL_WAKES = [
+  "Tandrix",
+  "Tandrix.",
+  "Tandrix?",
+  "Hey Tandrix",
+  "Hey, Tandrix.",
+  "Hi Tandrix",
+  "Okay Tandrix",
+  "Wake up Tandrix",
+  "Hey Tandrix!",
+];
+const MODEL_NEAR = [
+  ...NEAR_MISSES,
+  "Hendrix",
+  "Tandy",
+  "Tantrum",
+  "Sandra",
+  "Andrex",
+  "Kendrick",
+  "Cedric",
+  "Patrick",
+  "Tenderness",
+  "Hey Tandy",
+  "Hey Sandra",
+  "Hey Rick",
+  "Hey Hendricks",
+  "Hand drills",
+  "Ten drinks",
+  "Tan trucks",
+  "Matrix",
+  "Hey Trixie",
+  "Wake up Patrick",
+  "Okay then",
+  "Tundra",
+  "Tandem",
+  "Fantastic",
+];
+
+async function modelSet() {
+  const dir = join(out, "model");
+  rmSync(dir, { recursive: true, force: true });
+  for (const d of ["pos", "near", "speech"]) mkdirSync(join(dir, d), { recursive: true });
+  mkdirSync(tmp, { recursive: true });
+  const all = voices(MODEL_SAY, MODEL_KOKORO);
+  const paces = [0.8, 1, 1.2];
+  const write = async (label: string, jobs: Array<{ v: Voice; pace: number; text: string }>) => {
+    let n = 0;
+    await limited(
+      jobs.map((j) => async () => {
+        const s = await clip(j.v, j.pace, j.text);
+        if (s.length < RATE * 0.25) return;
+        const name = `${j.v.name.replace(/\W+/g, "_")}-${j.pace}-${n++}.wav`;
+        writeFileSync(join(dir, label, name), wav(s));
+      }),
+      8,
+    );
+    console.log(label, n);
+  };
+  await write(
+    "pos",
+    all.flatMap((v) => MODEL_WAKES.flatMap((text) => paces.map((pace) => ({ v, pace, text })))),
+  );
+  await write(
+    "near",
+    all.flatMap((v) => MODEL_NEAR.map((text) => ({ v, pace: pick(paces), text }))),
+  );
+  await write(
+    "speech",
+    all.flatMap((v) =>
+      Array.from({ length: 24 }, () => ({ v, pace: pick(paces), text: pick(SENTENCES) })),
+    ),
+  );
+}
+
 async function trainMore() {
   const dir = join(out, "train2");
   rmSync(dir, { recursive: true, force: true });
@@ -425,6 +546,7 @@ async function trainMore() {
 }
 
 async function main() {
+  if (process.argv.includes("--model-set")) return modelSet();
   if (process.argv.includes("--train-more")) return trainMore();
   rmSync(out, { recursive: true, force: true });
   for (const d of ["train/pos", "train/neg"]) mkdirSync(join(out, d), { recursive: true });

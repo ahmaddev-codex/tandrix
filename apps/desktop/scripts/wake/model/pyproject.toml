@@ -1,0 +1,16 @@
+[project]
+name = "tandrix-wake-model"
+version = "0.1.0"
+description = "Trains Tandrix's wake-word detector and converts it to Core ML. Tooling only; nothing here ships."
+requires-python = ">=3.11,<3.12"
+dependencies = [
+  "numpy<2",
+  "scipy",
+  "soundfile",
+  "onnxruntime",
+  "onnx",
+  "onnx2torch",
+  "torch==2.7.0",
+  "coremltools",
+  "tqdm",
+]

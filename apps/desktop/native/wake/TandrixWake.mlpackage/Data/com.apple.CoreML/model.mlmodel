@@ -1,0 +1,6619 @@
+©
+
+audio*	
+‡†Ä
+
+mels*	
+D †Ä
+
+embs*	
+`†ÄR
+frames*	
+ †ÄR
+emb
+*
+`†ÄR
+score	*
+†Ä¢ß
+GTandrix wake word: the chance "Tandrix" has just been said, each 80 ms.¢:
+,com.github.apple.coremltools.conversion_date
+2026-11-07¢+
+$com.github.apple.coremltools.version9.0¢3
+#com.github.apple.coremltools.sourcetorch==2.7.0¢:
++com.github.apple.coremltools.source_dialectTorchScript≤åªûπ
+mainîπ
+
+audio
+
+
+‡
+ 
+mels
+
+
+D
+ 
+ 
+embs
+
+
+
+`CoreML7•∏
+CoreML7ò∏framesembscoreò
+const&
+mel_imag
+
+Å
+
+Ä*
+name
+
+"
+
+mel_imag*G
+val@
+
+Å
+
+Ä*"
+@model_path/weights/weight.bin@ö
+const&
+mel_real
+
+Å
+
+Ä*
+name
+
+"
+
+mel_real*I
+valB
+
+Å
+
+Ä*$
+@model_path/weights/weight.binÄë ¶
+const,
+emb_model_conv2d_Conv2D_bias
+
+
+*2
+name*
+"
+ "
+emb_model_conv2d_Conv2D_bias*;
+val4
+
+
+*$
+@model_path/weights/weight.bin¿°@Œ
+const@
+emb_model_conv2d_Conv2D_weight
+
+
+
+
+*4
+name,
+$
+"" 
+emb_model_conv2d_Conv2D_weight*M
+valF
+
+
+
+
+*$
+@model_path/weights/weight.binÄ£@™
+const.
+emb_model_conv2d_1_Conv2D_bias
+
+
+*4
+name,
+$
+"" 
+emb_model_conv2d_1_Conv2D_bias*;
+val4
+
+
+*$
+@model_path/weights/weight.bin¿™@“
+constB
+ emb_model_conv2d_1_Conv2D_weight
+
+
+
+
+*6
+name.
+&
+$""
+ emb_model_conv2d_1_Conv2D_weight*M
+valF
+
+
+
+
+*$
+@model_path/weights/weight.binÄ¨@™
+const.
+emb_model_conv2d_2_Conv2D_bias
+
+
+*4
+name,
+$
+"" 
+emb_model_conv2d_2_Conv2D_bias*;
+val4
+
+
+*$
+@model_path/weights/weight.bin¿‚@“
+constB
+ emb_model_conv2d_2_Conv2D_weight
+
+
+
+
+*6
+name.
+&
+$""
+ emb_model_conv2d_2_Conv2D_weight*M
+valF
+
+
+
+
+*$
+@model_path/weights/weight.binÄ‰@™
+const.
+emb_model_conv2d_3_Conv2D_bias
+
+
+0*4
+name,
+$
+"" 
+emb_model_conv2d_3_Conv2D_bias*;
+val4
+
+
+0*$
+@model_path/weights/weight.bin¿öA“
+constB
+ emb_model_conv2d_3_Conv2D_weight
+
+0
+
+
+*6
+name.
+&
+$""
+ emb_model_conv2d_3_Conv2D_weight*M
+valF
+
+0
+
+
+*$
+@model_path/weights/weight.bin¿úA™
+const.
+emb_model_conv2d_4_Conv2D_bias
+
+
+0*4
+name,
+$
+"" 
+emb_model_conv2d_4_Conv2D_bias*;
+val4
+
+
+0*$
+@model_path/weights/weight.binÄâB“
+constB
+ emb_model_conv2d_4_Conv2D_weight
+
+0
+0
+
+*6
+name.
+&
+$""
+ emb_model_conv2d_4_Conv2D_weight*M
+valF
+
+0
+0
+
+*$
+@model_path/weights/weight.binÄãB™
+const.
+emb_model_conv2d_5_Conv2D_bias
+
+
+0*4
+name,
+$
+"" 
+emb_model_conv2d_5_Conv2D_bias*;
+val4
+
+
+0*$
+@model_path/weights/weight.bin¿„C“
+constB
+ emb_model_conv2d_5_Conv2D_weight
+
+0
+0
+
+*6
+name.
+&
+$""
+ emb_model_conv2d_5_Conv2D_weight*M
+valF
+
+0
+0
+
+*$
+@model_path/weights/weight.bin¿ÂC™
+const.
+emb_model_conv2d_6_Conv2D_bias
+
+
+0*4
+name,
+$
+"" 
+emb_model_conv2d_6_Conv2D_bias*;
+val4
+
+
+0*$
+@model_path/weights/weight.binÄæE“
+constB
+ emb_model_conv2d_6_Conv2D_weight
+
+0
+0
+
+*6
+name.
+&
+$""
+ emb_model_conv2d_6_Conv2D_weight*M
+valF
+
+0
+0
+
+*$
+@model_path/weights/weight.binÄ¿E™
+const.
+emb_model_conv2d_7_Conv2D_bias
+
+
+H*4
+name,
+$
+"" 
+emb_model_conv2d_7_Conv2D_bias*;
+val4
+
+
+H*$
+@model_path/weights/weight.bin¿òG“
+constB
+ emb_model_conv2d_7_Conv2D_weight
+
+H
+0
+
+*6
+name.
+&
+$""
+ emb_model_conv2d_7_Conv2D_weight*M
+valF
+
+H
+0
+
+*$
+@model_path/weights/weight.bin¿õG™
+const.
+emb_model_conv2d_8_Conv2D_bias
+
+
+H*4
+name,
+$
+"" 
+emb_model_conv2d_8_Conv2D_bias*;
+val4
+
+
+H*$
+@model_path/weights/weight.binÄ‡I“
+constB
+ emb_model_conv2d_8_Conv2D_weight
+
+H
+H
+
+*6
+name.
+&
+$""
+ emb_model_conv2d_8_Conv2D_weight*M
+valF
+
+H
+H
+
+*$
+@model_path/weights/weight.binÄ„I™
+const.
+emb_model_conv2d_9_Conv2D_bias
+
+
+H*4
+name,
+$
+"" 
+emb_model_conv2d_9_Conv2D_bias*;
+val4
+
+
+H*$
+@model_path/weights/weight.bin¿…M“
+constB
+ emb_model_conv2d_9_Conv2D_weight
+
+H
+H
+
+*6
+name.
+&
+$""
+ emb_model_conv2d_9_Conv2D_weight*M
+valF
+
+H
+H
+
+*$
+@model_path/weights/weight.bin¿ÃM¨
+const/
+emb_model_conv2d_10_Conv2D_bias
+
+
+H*5
+name-
+%
+#"!
+emb_model_conv2d_10_Conv2D_bias*;
+val4
+
+
+H*$
+@model_path/weights/weight.binÄ≥Q‘
+constC
+!emb_model_conv2d_10_Conv2D_weight
+
+H
+H
+
+*7
+name/
+'
+%"#
+!emb_model_conv2d_10_Conv2D_weight*M
+valF
+
+H
+H
+
+*$
+@model_path/weights/weight.binÄ∂Q¨
+const/
+emb_model_conv2d_11_Conv2D_bias
+
+
+`*5
+name-
+%
+#"!
+emb_model_conv2d_11_Conv2D_bias*;
+val4
+
+
+`*$
+@model_path/weights/weight.bin¿úU‘
+constC
+!emb_model_conv2d_11_Conv2D_weight
+
+`
+H
+
+*7
+name/
+'
+%"#
+!emb_model_conv2d_11_Conv2D_weight*M
+valF
+
+`
+H
+
+*$
+@model_path/weights/weight.binÄ†U¨
+const/
+emb_model_conv2d_12_Conv2D_bias
+
+
+`*5
+name-
+%
+#"!
+emb_model_conv2d_12_Conv2D_bias*;
+val4
+
+
+`*$
+@model_path/weights/weight.bin¿®Z‘
+constC
+!emb_model_conv2d_12_Conv2D_weight
+
+`
+`
+
+*7
+name/
+'
+%"#
+!emb_model_conv2d_12_Conv2D_weight*M
+valF
+
+`
+`
+
+*$
+@model_path/weights/weight.binÄ¨Z¨
+const/
+emb_model_conv2d_13_Conv2D_bias
+
+
+`*5
+name-
+%
+#"!
+emb_model_conv2d_13_Conv2D_bias*;
+val4
+
+
+`*$
+@model_path/weights/weight.bin¿åa‘
+constC
+!emb_model_conv2d_13_Conv2D_weight
+
+`
+`
+
+*7
+name/
+'
+%"#
+!emb_model_conv2d_13_Conv2D_weight*M
+valF
+
+`
+`
+
+*$
+@model_path/weights/weight.binÄêa¨
+const/
+emb_model_conv2d_14_Conv2D_bias
+
+
+`*5
+name-
+%
+#"!
+emb_model_conv2d_14_Conv2D_bias*;
+val4
+
+
+`*$
+@model_path/weights/weight.bin¿g‘
+constC
+!emb_model_conv2d_14_Conv2D_weight
+
+`
+`
+
+*7
+name/
+'
+%"#
+!emb_model_conv2d_14_Conv2D_weight*M
+valF
+
+`
+`
+
+*$
+@model_path/weights/weight.binÄÙg¨
+const/
+emb_model_conv2d_15_Conv2D_bias
+
+
+`*5
+name-
+%
+#"!
+emb_model_conv2d_15_Conv2D_bias*;
+val4
+
+
+`*$
+@model_path/weights/weight.bin¿‘n‘
+constC
+!emb_model_conv2d_15_Conv2D_weight
+
+`
+`
+
+*7
+name/
+'
+%"#
+!emb_model_conv2d_15_Conv2D_weight*M
+valF
+
+`
+`
+
+*$
+@model_path/weights/weight.binÄÿn¨
+const/
+emb_model_conv2d_16_Conv2D_bias
+
+
+`*5
+name-
+%
+#"!
+emb_model_conv2d_16_Conv2D_bias*;
+val4
+
+
+`*$
+@model_path/weights/weight.bin¿∏u‘
+constC
+!emb_model_conv2d_16_Conv2D_weight
+
+`
+`
+
+*7
+name/
+'
+%"#
+!emb_model_conv2d_16_Conv2D_weight*M
+valF
+
+`
+`
+
+*$
+@model_path/weights/weight.binÄºu¨
+const/
+emb_model_conv2d_17_Conv2D_bias
+
+
+`*5
+name-
+%
+#"!
+emb_model_conv2d_17_Conv2D_bias*;
+val4
+
+
+`*$
+@model_path/weights/weight.bin¿ú|‘
+constC
+!emb_model_conv2d_17_Conv2D_weight
+
+`
+`
+
+*7
+name/
+'
+%"#
+!emb_model_conv2d_17_Conv2D_weight*M
+valF
+
+`
+`
+
+*$
+@model_path/weights/weight.binÄ†|≠
+const/
+emb_model_conv2d_18_Conv2D_bias
+
+
+`*5
+name-
+%
+#"!
+emb_model_conv2d_18_Conv2D_bias*<
+val5
+
+
+`*%
+@model_path/weights/weight.bin¿ÄÉ’
+constC
+!emb_model_conv2d_18_Conv2D_weight
+
+`
+`
+
+*7
+name/
+'
+%"#
+!emb_model_conv2d_18_Conv2D_weight*N
+valG
+
+`
+`
+
+*%
+@model_path/weights/weight.binÄÑÉ’
+constC
+!emb_model_conv2d_19_Conv2D_weight
+
+`
+`
+
+*7
+name/
+'
+%"#
+!emb_model_conv2d_19_Conv2D_weight*N
+valG
+
+`
+`
+
+*%
+@model_path/weights/weight.bin¿‰âç
+const
+det_net_2_bias
+
+Ä*$
+name
+
+"
+det_net_2_bias*=
+val6
+
+Ä*%
+@model_path/weights/weight.binÄ≈êü
+const(
+det_net_2_weight
+
+Ä
+Ä*&
+name
+
+"
+det_net_2_weight*D
+val=
+
+Ä
+Ä*%
+@model_path/weights/weight.bin¿…êç
+const
+det_net_3_bias
+
+Ä*$
+name
+
+"
+det_net_3_bias*=
+val6
+
+Ä*%
+@model_path/weights/weight.binÄ ¿ë
+const!
+det_net_3_weight
+
+Ä*&
+name
+
+"
+det_net_3_weight*=
+val6
+
+Ä*%
+@model_path/weights/weight.bin¿Œ¿ç
+const
+det_net_6_bias
+
+Ä*$
+name
+
+"
+det_net_6_bias*=
+val6
+
+Ä*%
+@model_path/weights/weight.binÄ”¿ü
+const(
+det_net_6_weight
+
+Ä
+Ä*&
+name
+
+"
+det_net_6_weight*D
+val=
+
+Ä
+Ä*%
+@model_path/weights/weight.bin¿◊¿ç
+const
+det_net_7_bias
+
+Ä*$
+name
+
+"
+det_net_7_bias*=
+val6
+
+Ä*%
+@model_path/weights/weight.binÄÿƒë
+const!
+det_net_7_weight
+
+Ä*&
+name
+
+"
+det_net_7_weight*=
+val6
+
+Ä*%
+@model_path/weights/weight.bin¿‹ƒr
+const
+det_net_10_bias
+
+
+*%
+name
+
+"
+det_net_10_bias*!
+val
+
+
+
+
+
+
+••øü
+const(
+det_net_10_weight
+
+
+Ä*'
+name
+
+"
+det_net_10_weight*C
+val<
+
+
+Ä*%
+@model_path/weights/weight.binÄ·ƒM
+const
+var_7
+*
+name
+
+
+"
+op_7*
+val
+
+
+
+
+û…M
+const
+var_8
+*
+name
+
+
+"
+op_8*
+val
+
+
+
+
+ˇÊ€.L
+const
+var_10
+*
+name
+
+	"
+op_10*
+val
+
+
+a
+const
+x_axes_0
+
+
+*
+name
+
+"
+
+x_axes_0*
+val
+
+
+
+
+l
+expand_dims
+axes
+
+
+x_axes_0
+x	
+
+audio
+x
+
+
+
+‡*
+name
+
+"
+xf
+const
+var_24_pad_type_0
+*&
+name
+
+"
+op_24_pad_type_0*
+val
+
+	"
+validq
+const 
+var_24_strides_0
+
+
+*%
+name
+
+"
+op_24_strides_0*
+val
+
+
+
+
+†i
+const
+var_24_pad_0
+
+
+*!
+name
+
+"
+op_24_pad_0*
+val
+
+
+
+
+  t
+const"
+var_24_dilations_0
+
+
+*'
+name
+
+"
+op_24_dilations_0*
+val
+
+
+
+
+^
+const
+var_24_groups_0
+*$
+name
+
+"
+op_24_groups_0*
+val
+
+
+ç
+conv
+groups
+
+var_24_groups_0
+pad
+
+var_24_pad_0
+
+x
+
+x#
+	dilations
+
+var_24_dilations_0
+strides
+
+var_24_strides_0
+weight
+
+
+mel_real!
+pad_type
+
+var_24_pad_type_0#
+var_24
+
+
+Å
+*
+name
+
+	"
+op_24f
+const
+var_30_pad_type_0
+*&
+name
+
+"
+op_30_pad_type_0*
+val
+
+	"
+validq
+const 
+var_30_strides_0
+
+
+*%
+name
+
+"
+op_30_strides_0*
+val
+
+
+
+
+†i
+const
+var_30_pad_0
+
+
+*!
+name
+
+"
+op_30_pad_0*
+val
+
+
+
+
+  t
+const"
+var_30_dilations_0
+
+
+*'
+name
+
+"
+op_30_dilations_0*
+val
+
+
+
+
+^
+const
+var_30_groups_0
+*$
+name
+
+"
+op_30_groups_0*
+val
+
+
+ç
+conv
+groups
+
+var_30_groups_0
+pad
+
+var_30_pad_0
+
+x
+
+x#
+	dilations
+
+var_30_dilations_0
+strides
+
+var_30_strides_0
+weight
+
+
+mel_imag!
+pad_type
+
+var_30_pad_type_0#
+var_30
+
+
+Å
+*
+name
+
+	"
+op_30i
+mul
+x
+
+
+var_24
+y
+
+
+var_24#
+var_32
+
+
+Å
+*
+name
+
+	"
+op_32i
+mul
+x
+
+
+var_30
+y
+
+
+var_30#
+var_33
+
+
+Å
+*
+name
+
+	"
+op_33i
+add
+x
+
+
+var_32
+y
+
+
+var_33#
+var_34
+
+
+Å
+*
+name
+
+	"
+op_34ì
+const"
+transpose_0
+
+ 
+Å*!
+name
+
+"
+transpose_0*C
+val<
+
+ 
+Å*%
+@model_path/weights/weight.bin¿Âƒá
+const
+mel_1_bias_0
+
+
+ *"
+name
+
+"
+mel_1_bias_0*<
+val5
+
+
+ *%
+@model_path/weights/weight.binÄÁ∆w
+const"
+transpose_1_perm_0
+
+
+*(
+name 
+
+"
+transpose_1_perm_0* 
+val
+
+
+	
+
+ â
+	transpose
+x
+
+
+var_34
+perm
+
+transpose_1_perm_0(
+transpose_1
+
+
+
+Å*!
+name
+
+"
+transpose_2ì
+linear
+x
+
+transpose_1
+bias
+
+mel_1_bias_0
+weight
+
+transpose_0!
+mel_1
+
+
+
+ *
+name
+
+	"
+mel_1
+clip
+x	
+
+mel_1
+alpha	
+
+var_8
+beta	
+
+var_7"
+clip_0
+
+
+
+ *
+name
+
+
+"
+clip_0c
+const
+var_37_epsilon_0
+*%
+name
+
+"
+op_37_epsilon_0*
+val
+
+
+
+
+   x
+log
+x
+
+
+clip_0
+epsilon
+
+var_37_epsilon_0"
+var_37
+
+
+
+ *
+name
+
+	"
+op_37O
+const
+var_38
+*
+name
+
+	"
+op_38*
+val
+
+
+
+
+   Ah
+mul
+x
+
+
+var_37
+y
+
+
+var_38"
+var_39
+
+
+
+ *
+name
+
+	"
+op_39d
+const
+_inversed_41_y_0
+*&
+name
+
+"
+_inversed_41_y_0*
+val
+
+
+
+
+ÿ[ﬁ>
+mul
+x
+
+
+var_39
+y
+
+_inversed_41_y_0(
+_inversed_41
+
+
+
+ *"
+name
+
+"
+_inversed_41k
+const
+var_45_axes_0
+
+
+*"
+name
+
+"
+op_45_axes_0*
+val
+
+
+
+
+ò
+
+reduce_max
+	keep_dims
+
+
+var_10
+axes
+
+var_45_axes_0
+x
+
+_inversed_41"
+var_45
+
+
+
+*
+name
+
+	"
+op_45O
+const
+var_46
+*
+name
+
+	"
+op_46*
+val
+
+
+
+
+  †Bg
+sub
+x
+
+
+var_45
+y
+
+
+var_46!
+floor
+
+
+
+*
+name
+
+	"
+floorq
+maximum
+x
+
+_inversed_41
+y	
+
+floor"
+var_48
+
+
+
+ *
+name
+
+	"
+op_48d
+const
+_inversed_50_y_0
+*&
+name
+
+"
+_inversed_50_y_0*
+val
+
+
+
+
+ÕÃÃ=
+mul
+x
+
+
+var_48
+y
+
+_inversed_50_y_0(
+_inversed_50
+
+
+
+ *"
+name
+
+"
+_inversed_50O
+const
+var_51
+*
+name
+
+	"
+op_51*
+val
+
+
+
+
+   @o
+add
+x
+
+_inversed_50
+y
+
+
+var_51"
+frames
+
+
+
+ *
+name
+
+
+"
+framesL
+const
+var_54
+*
+name
+
+	"
+op_54*
+val
+
+
+f
+const
+var_55_interleave_0
+*(
+name 
+
+"
+op_55_interleave_0*
+val
+
+
+ ¢
+concat%
+
+interleave
+
+var_55_interleave_0
+axis
+
+
+var_54
+values
+
+mels
+
+frames"
+var_55
+
+
+L
+ *
+name
+
+	"
+op_55Ñ
+const%
+input_tensor_1_axes_0
+
+
+*+
+name#
+
+"
+input_tensor_1_axes_0*'
+val 
+
+
+
+
+
+ˇˇˇˇˇˇˇˇˇô
+expand_dims!
+axes
+
+input_tensor_1_axes_0
+x
+
+
+var_550
+input_tensor_1
+
+
+L
+ 
+*$
+name
+
+"
+input_tensor_1O
+const
+var_72
+*
+name
+
+	"
+op_72*
+val
+
+
+
+
+ÕÃL>L
+const
+var_74
+*
+name
+
+	"
+op_74*
+val
+
+
+ j
+const
+var_148
+
+
+*
+name
+
+
+"
+op_148**
+val#
+
+
+
+
+ˇˇˇˇˇˇˇˇˇL Ç
+reshape
+x
+
+input_tensor_1
+shape
+	
+var_148)
+input_1
+
+
+
+L
+ *
+name
+
+"	
+input_1j
+const
+input_3_pad_type_0
+*(
+name 
+
+"
+input_3_pad_type_0*
+val
+
+
+"
+customn
+const
+input_3_pad_0
+
+
+*#
+name
+
+"
+input_3_pad_0*!
+val
+
+
+
+
+
+  t
+const!
+input_3_strides_0
+
+
+*'
+name
+
+"
+input_3_strides_0*
+val
+
+
+
+
+x
+const#
+input_3_dilations_0
+
+
+*)
+name!
+
+"
+input_3_dilations_0*
+val
+
+
+
+
+a
+const
+input_3_groups_0
+*&
+name
+
+"
+input_3_groups_0*
+val
+
+
+‡
+conv
+x
+	
+input_1$
+	dilations
+
+input_3_dilations_0"
+pad_type
+
+input_3_pad_type_0
+groups
+
+input_3_groups_0
+pad
+
+input_3_pad_0 
+strides
+
+input_3_strides_0(
+bias 
+
+emb_model_conv2d_Conv2D_bias,
+weight"
+ 
+emb_model_conv2d_Conv2D_weight)
+input_3
+
+
+
+J
+ *
+name
+
+"	
+input_3u
+
+leaky_relu
+x
+	
+input_3
+alpha
+
+
+var_72%
+t_1
+
+
+
+J
+ *
+name
+	
+"
+t_1†
+const)
+var_183
+
+
+
+J
+ *
+name
+
+
+"
+op_183*N
+valG
+
+
+
+J
+ *%
+@model_path/weights/weight.bin¿Ë∆q
+const 
+stacked_tensors_1_axis_0
+*.
+name&
+
+"
+stacked_tensors_1_axis_0*
+val
+
+
+ Ø
+stack$
+axis
+
+stacked_tensors_1_axis_0
+values
+
+t_1
+	
+var_1839
+stacked_tensors_1$
+"
+
+
+
+J
+ *'
+name
+
+"
+stacked_tensors_1m
+const
+input_5_axes_0
+
+
+*$
+name
+
+"
+input_5_axes_0*
+val
+
+
+
+
+ ß
+
+reduce_max
+	keep_dims
+
+
+var_74
+axes
+
+input_5_axes_0
+x
+
+stacked_tensors_1)
+input_5
+
+
+
+J
+ *
+name
+
+"	
+input_5j
+const
+input_7_pad_type_0
+*(
+name 
+
+"
+input_7_pad_type_0*
+val
+
+
+"
+customn
+const
+input_7_pad_0
+
+
+*#
+name
+
+"
+input_7_pad_0*!
+val
+
+
+
+
+
+  t
+const!
+input_7_strides_0
+
+
+*'
+name
+
+"
+input_7_strides_0*
+val
+
+
+
+
+x
+const#
+input_7_dilations_0
+
+
+*)
+name!
+
+"
+input_7_dilations_0*
+val
+
+
+
+
+a
+const
+input_7_groups_0
+*&
+name
+
+"
+input_7_groups_0*
+val
+
+
+‰
+conv
+x
+	
+input_5$
+	dilations
+
+input_7_dilations_0"
+pad_type
+
+input_7_pad_type_0
+groups
+
+input_7_groups_0
+pad
+
+input_7_pad_0 
+strides
+
+input_7_strides_0*
+bias"
+ 
+emb_model_conv2d_1_Conv2D_bias.
+weight$
+"
+ emb_model_conv2d_1_Conv2D_weight)
+input_7
+
+
+
+J
+ *
+name
+
+"	
+input_7u
+
+leaky_relu
+x
+	
+input_7
+alpha
+
+
+var_72%
+t_5
+
+
+
+J
+ *
+name
+	
+"
+t_5q
+const 
+stacked_tensors_3_axis_0
+*.
+name&
+
+"
+stacked_tensors_3_axis_0*
+val
+
+
+ Ø
+stack$
+axis
+
+stacked_tensors_3_axis_0
+values
+
+t_5
+	
+var_1839
+stacked_tensors_3$
+"
+
+
+
+J
+ *'
+name
+
+"
+stacked_tensors_3m
+const
+input_9_axes_0
+
+
+*$
+name
+
+"
+input_9_axes_0*
+val
+
+
+
+
+ ß
+
+reduce_max
+	keep_dims
+
+
+var_74
+axes
+
+input_9_axes_0
+x
+
+stacked_tensors_3)
+input_9
+
+
+
+J
+ *
+name
+
+"	
+input_9k
+const
+input_11_pad_type_0
+*)
+name!
+
+"
+input_11_pad_type_0*
+val
+
+	"
+validv
+const"
+input_11_strides_0
+
+
+*(
+name 
+
+"
+input_11_strides_0*
+val
+
+
+
+
+p
+const
+input_11_pad_0
+
+
+*$
+name
+
+"
+input_11_pad_0*!
+val
+
+
+
+
+
+    z
+const$
+input_11_dilations_0
+
+
+**
+name"
+
+"
+input_11_dilations_0*
+val
+
+
+
+
+c
+const
+input_11_groups_0
+*'
+name
+
+"
+input_11_groups_0*
+val
+
+
+Î
+conv
+x
+	
+input_9%
+	dilations
+
+input_11_dilations_0#
+pad_type
+
+input_11_pad_type_0
+groups
+
+input_11_groups_0
+pad
+
+input_11_pad_0!
+strides
+
+input_11_strides_0*
+bias"
+ 
+emb_model_conv2d_2_Conv2D_bias.
+weight$
+"
+ emb_model_conv2d_2_Conv2D_weight*
+input_11
+
+
+
+H
+ *
+name
+
+"
+
+input_11v
+
+leaky_relu
+x
+
+
+input_11
+alpha
+
+
+var_72%
+t_9
+
+
+
+H
+ *
+name
+	
+"
+t_9†
+const)
+var_259
+
+
+
+H
+ *
+name
+
+
+"
+op_259*N
+valG
+
+
+
+H
+ *%
+@model_path/weights/weight.binÄŸ‘q
+const 
+stacked_tensors_5_axis_0
+*.
+name&
+
+"
+stacked_tensors_5_axis_0*
+val
+
+
+ Ø
+stack$
+axis
+
+stacked_tensors_5_axis_0
+values
+
+t_9
+	
+var_2599
+stacked_tensors_5$
+"
+
+
+
+H
+ *'
+name
+
+"
+stacked_tensors_5o
+const
+input_13_axes_0
+
+
+*%
+name
+
+"
+input_13_axes_0*
+val
+
+
+
+
+ ™
+
+reduce_max
+	keep_dims
+
+
+var_74
+axes
+
+input_13_axes_0
+x
+
+stacked_tensors_5*
+input_13
+
+
+
+H
+ *
+name
+
+"
+
+input_13_
+const
+var_264
+
+
+*
+name
+
+
+"
+op_264*
+val
+
+
+
+
+_
+const
+var_265
+
+
+*
+name
+
+
+"
+op_265*
+val
+
+
+
+
+l
+const
+input_15_pad_type_0
+*)
+name!
+
+"
+input_15_pad_type_0*
+val
+
+
+"
+customp
+const
+input_15_pad_0
+
+
+*$
+name
+
+"
+input_15_pad_0*!
+val
+
+
+
+
+
+    i
+const
+input_15_ceil_mode_0
+**
+name"
+
+"
+input_15_ceil_mode_0*
+val
+
+
+ Ö
+max_pool%
+	ceil_mode
+
+input_15_ceil_mode_0
+pad
+
+input_15_pad_0
+kernel_sizes
+	
+var_264
+x
+
+
+input_13
+strides
+	
+var_265#
+pad_type
+
+input_15_pad_type_0*
+input_15
+
+
+
+$
+*
+name
+
+"
+
+input_15l
+const
+input_17_pad_type_0
+*)
+name!
+
+"
+input_17_pad_type_0*
+val
+
+
+"
+customp
+const
+input_17_pad_0
+
+
+*$
+name
+
+"
+input_17_pad_0*!
+val
+
+
+
+
+
+  v
+const"
+input_17_strides_0
+
+
+*(
+name 
+
+"
+input_17_strides_0*
+val
+
+
+
+
+z
+const$
+input_17_dilations_0
+
+
+**
+name"
+
+"
+input_17_dilations_0*
+val
+
+
+
+
+c
+const
+input_17_groups_0
+*'
+name
+
+"
+input_17_groups_0*
+val
+
+
+Ï
+conv
+x
+
+
+input_15%
+	dilations
+
+input_17_dilations_0#
+pad_type
+
+input_17_pad_type_0
+groups
+
+input_17_groups_0
+pad
+
+input_17_pad_0!
+strides
+
+input_17_strides_0*
+bias"
+ 
+emb_model_conv2d_3_Conv2D_bias.
+weight$
+"
+ emb_model_conv2d_3_Conv2D_weight*
+input_17
+
+
+0
+$
+*
+name
+
+"
+
+input_17x
+
+leaky_relu
+x
+
+
+input_17
+alpha
+
+
+var_72&
+t_13
+
+
+0
+$
+*
+name
+
+
+"
+t_13†
+const)
+var_302
+
+
+0
+$
+*
+name
+
+
+"
+op_302*N
+valG
+
+
+0
+$
+*%
+@model_path/weights/weight.bin¿ô‚q
+const 
+stacked_tensors_7_axis_0
+*.
+name&
+
+"
+stacked_tensors_7_axis_0*
+val
+
+
+ ∞
+stack$
+axis
+
+stacked_tensors_7_axis_0
+values
+
+t_13
+	
+var_3029
+stacked_tensors_7$
+"
+
+
+0
+$
+*'
+name
+
+"
+stacked_tensors_7o
+const
+input_19_axes_0
+
+
+*%
+name
+
+"
+input_19_axes_0*
+val
+
+
+
+
+ ™
+
+reduce_max
+	keep_dims
+
+
+var_74
+axes
+
+input_19_axes_0
+x
+
+stacked_tensors_7*
+input_19
+
+
+0
+$
+*
+name
+
+"
+
+input_19k
+const
+input_21_pad_type_0
+*)
+name!
+
+"
+input_21_pad_type_0*
+val
+
+	"
+validv
+const"
+input_21_strides_0
+
+
+*(
+name 
+
+"
+input_21_strides_0*
+val
+
+
+
+
+p
+const
+input_21_pad_0
+
+
+*$
+name
+
+"
+input_21_pad_0*!
+val
+
+
+
+
+
+    z
+const$
+input_21_dilations_0
+
+
+**
+name"
+
+"
+input_21_dilations_0*
+val
+
+
+
+
+c
+const
+input_21_groups_0
+*'
+name
+
+"
+input_21_groups_0*
+val
+
+
+Ï
+conv
+x
+
+
+input_19%
+	dilations
+
+input_21_dilations_0#
+pad_type
+
+input_21_pad_type_0
+groups
+
+input_21_groups_0
+pad
+
+input_21_pad_0!
+strides
+
+input_21_strides_0*
+bias"
+ 
+emb_model_conv2d_4_Conv2D_bias.
+weight$
+"
+ emb_model_conv2d_4_Conv2D_weight*
+input_21
+
+
+0
+"
+*
+name
+
+"
+
+input_21x
+
+leaky_relu
+x
+
+
+input_21
+alpha
+
+
+var_72&
+t_17
+
+
+0
+"
+*
+name
+
+
+"
+t_17†
+const)
+var_340
+
+
+0
+"
+*
+name
+
+
+"
+op_340*N
+valG
+
+
+0
+"
+*%
+@model_path/weights/weight.binÄ˙Ëq
+const 
+stacked_tensors_9_axis_0
+*.
+name&
+
+"
+stacked_tensors_9_axis_0*
+val
+
+
+ ∞
+stack$
+axis
+
+stacked_tensors_9_axis_0
+values
+
+t_17
+	
+var_3409
+stacked_tensors_9$
+"
+
+
+0
+"
+*'
+name
+
+"
+stacked_tensors_9o
+const
+input_23_axes_0
+
+
+*%
+name
+
+"
+input_23_axes_0*
+val
+
+
+
+
+ ™
+
+reduce_max
+	keep_dims
+
+
+var_74
+axes
+
+input_23_axes_0
+x
+
+stacked_tensors_9*
+input_23
+
+
+0
+"
+*
+name
+
+"
+
+input_23l
+const
+input_25_pad_type_0
+*)
+name!
+
+"
+input_25_pad_type_0*
+val
+
+
+"
+customp
+const
+input_25_pad_0
+
+
+*$
+name
+
+"
+input_25_pad_0*!
+val
+
+
+
+
+
+  v
+const"
+input_25_strides_0
+
+
+*(
+name 
+
+"
+input_25_strides_0*
+val
+
+
+
+
+z
+const$
+input_25_dilations_0
+
+
+**
+name"
+
+"
+input_25_dilations_0*
+val
+
+
+
+
+c
+const
+input_25_groups_0
+*'
+name
+
+"
+input_25_groups_0*
+val
+
+
+Ï
+conv
+x
+
+
+input_23%
+	dilations
+
+input_25_dilations_0#
+pad_type
+
+input_25_pad_type_0
+groups
+
+input_25_groups_0
+pad
+
+input_25_pad_0!
+strides
+
+input_25_strides_0*
+bias"
+ 
+emb_model_conv2d_5_Conv2D_bias.
+weight$
+"
+ emb_model_conv2d_5_Conv2D_weight*
+input_25
+
+
+0
+"
+*
+name
+
+"
+
+input_25x
+
+leaky_relu
+x
+
+
+input_25
+alpha
+
+
+var_72&
+t_21
+
+
+0
+"
+*
+name
+
+
+"
+t_21s
+const!
+stacked_tensors_11_axis_0
+*/
+name'
+
+"
+stacked_tensors_11_axis_0*
+val
+
+
+ ≥
+stack%
+axis
+
+stacked_tensors_11_axis_0
+values
+
+t_21
+	
+var_340:
+stacked_tensors_11$
+"
+
+
+0
+"
+*(
+name 
+
+"
+stacked_tensors_11o
+const
+input_27_axes_0
+
+
+*%
+name
+
+"
+input_27_axes_0*
+val
+
+
+
+
+ ´
+
+reduce_max
+	keep_dims
+
+
+var_74
+axes
+
+input_27_axes_0
+x
+
+stacked_tensors_11*
+input_27
+
+
+0
+"
+*
+name
+
+"
+
+input_27k
+const
+input_29_pad_type_0
+*)
+name!
+
+"
+input_29_pad_type_0*
+val
+
+	"
+validv
+const"
+input_29_strides_0
+
+
+*(
+name 
+
+"
+input_29_strides_0*
+val
+
+
+
+
+p
+const
+input_29_pad_0
+
+
+*$
+name
+
+"
+input_29_pad_0*!
+val
+
+
+
+
+
+    z
+const$
+input_29_dilations_0
+
+
+**
+name"
+
+"
+input_29_dilations_0*
+val
+
+
+
+
+c
+const
+input_29_groups_0
+*'
+name
+
+"
+input_29_groups_0*
+val
+
+
+Ï
+conv
+x
+
+
+input_27%
+	dilations
+
+input_29_dilations_0#
+pad_type
+
+input_29_pad_type_0
+groups
+
+input_29_groups_0
+pad
+
+input_29_pad_0!
+strides
+
+input_29_strides_0*
+bias"
+ 
+emb_model_conv2d_6_Conv2D_bias.
+weight$
+"
+ emb_model_conv2d_6_Conv2D_weight*
+input_29
+
+
+0
+ 
+*
+name
+
+"
+
+input_29x
+
+leaky_relu
+x
+
+
+input_29
+alpha
+
+
+var_72&
+t_25
+
+
+0
+ 
+*
+name
+
+
+"
+t_25†
+const)
+var_416
+
+
+0
+ 
+*
+name
+
+
+"
+op_416*N
+valG
+
+
+0
+ 
+*%
+@model_path/weights/weight.bin¿™Ôs
+const!
+stacked_tensors_13_axis_0
+*/
+name'
+
+"
+stacked_tensors_13_axis_0*
+val
+
+
+ ≥
+stack%
+axis
+
+stacked_tensors_13_axis_0
+values
+
+t_25
+	
+var_416:
+stacked_tensors_13$
+"
+
+
+0
+ 
+*(
+name 
+
+"
+stacked_tensors_13o
+const
+input_31_axes_0
+
+
+*%
+name
+
+"
+input_31_axes_0*
+val
+
+
+
+
+ ´
+
+reduce_max
+	keep_dims
+
+
+var_74
+axes
+
+input_31_axes_0
+x
+
+stacked_tensors_13*
+input_31
+
+
+0
+ 
+*
+name
+
+"
+
+input_31_
+const
+var_421
+
+
+*
+name
+
+
+"
+op_421*
+val
+
+
+
+
+_
+const
+var_422
+
+
+*
+name
+
+
+"
+op_422*
+val
+
+
+
+
+l
+const
+input_33_pad_type_0
+*)
+name!
+
+"
+input_33_pad_type_0*
+val
+
+
+"
+customp
+const
+input_33_pad_0
+
+
+*$
+name
+
+"
+input_33_pad_0*!
+val
+
+
+
+
+
+    i
+const
+input_33_ceil_mode_0
+**
+name"
+
+"
+input_33_ceil_mode_0*
+val
+
+
+ Ö
+max_pool%
+	ceil_mode
+
+input_33_ceil_mode_0
+pad
+
+input_33_pad_0
+kernel_sizes
+	
+var_421
+x
+
+
+input_31
+strides
+	
+var_422#
+pad_type
+
+input_33_pad_type_0*
+input_33
+
+
+0
+ 
+*
+name
+
+"
+
+input_33l
+const
+input_35_pad_type_0
+*)
+name!
+
+"
+input_35_pad_type_0*
+val
+
+
+"
+customp
+const
+input_35_pad_0
+
+
+*$
+name
+
+"
+input_35_pad_0*!
+val
+
+
+
+
+
+  v
+const"
+input_35_strides_0
+
+
+*(
+name 
+
+"
+input_35_strides_0*
+val
+
+
+
+
+z
+const$
+input_35_dilations_0
+
+
+**
+name"
+
+"
+input_35_dilations_0*
+val
+
+
+
+
+c
+const
+input_35_groups_0
+*'
+name
+
+"
+input_35_groups_0*
+val
+
+
+Ï
+conv
+x
+
+
+input_33%
+	dilations
+
+input_35_dilations_0#
+pad_type
+
+input_35_pad_type_0
+groups
+
+input_35_groups_0
+pad
+
+input_35_pad_0!
+strides
+
+input_35_strides_0*
+bias"
+ 
+emb_model_conv2d_7_Conv2D_bias.
+weight$
+"
+ emb_model_conv2d_7_Conv2D_weight*
+input_35
+
+
+H
+ 
+*
+name
+
+"
+
+input_35x
+
+leaky_relu
+x
+
+
+input_35
+alpha
+
+
+var_72&
+t_29
+
+
+H
+ 
+*
+name
+
+
+"
+t_29†
+const)
+var_459
+
+
+H
+ 
+*
+name
+
+
+"
+op_459*N
+valG
+
+
+H
+ 
+*%
+@model_path/weights/weight.binÄ´ıs
+const!
+stacked_tensors_15_axis_0
+*/
+name'
+
+"
+stacked_tensors_15_axis_0*
+val
+
+
+ ≥
+stack%
+axis
+
+stacked_tensors_15_axis_0
+values
+
+t_29
+	
+var_459:
+stacked_tensors_15$
+"
+
+
+H
+ 
+*(
+name 
+
+"
+stacked_tensors_15o
+const
+input_37_axes_0
+
+
+*%
+name
+
+"
+input_37_axes_0*
+val
+
+
+
+
+ ´
+
+reduce_max
+	keep_dims
+
+
+var_74
+axes
+
+input_37_axes_0
+x
+
+stacked_tensors_15*
+input_37
+
+
+H
+ 
+*
+name
+
+"
+
+input_37k
+const
+input_39_pad_type_0
+*)
+name!
+
+"
+input_39_pad_type_0*
+val
+
+	"
+validv
+const"
+input_39_strides_0
+
+
+*(
+name 
+
+"
+input_39_strides_0*
+val
+
+
+
+
+p
+const
+input_39_pad_0
+
+
+*$
+name
+
+"
+input_39_pad_0*!
+val
+
+
+
+
+
+    z
+const$
+input_39_dilations_0
+
+
+**
+name"
+
+"
+input_39_dilations_0*
+val
+
+
+
+
+c
+const
+input_39_groups_0
+*'
+name
+
+"
+input_39_groups_0*
+val
+
+
+Ï
+conv
+x
+
+
+input_37%
+	dilations
+
+input_39_dilations_0#
+pad_type
+
+input_39_pad_type_0
+groups
+
+input_39_groups_0
+pad
+
+input_39_pad_0!
+strides
+
+input_39_strides_0*
+bias"
+ 
+emb_model_conv2d_8_Conv2D_bias.
+weight$
+"
+ emb_model_conv2d_8_Conv2D_weight*
+input_39
+
+
+H
+
+*
+name
+
+"
+
+input_39x
+
+leaky_relu
+x
+
+
+input_39
+alpha
+
+
+var_72&
+t_33
+
+
+H
+
+*
+name
+
+
+"
+t_33†
+const)
+var_497
+
+
+H
+
+*
+name
+
+
+"
+op_497*N
+valG
+
+
+H
+
+*%
+@model_path/weights/weight.bin¿Î˘s
+const!
+stacked_tensors_17_axis_0
+*/
+name'
+
+"
+stacked_tensors_17_axis_0*
+val
+
+
+ ≥
+stack%
+axis
+
+stacked_tensors_17_axis_0
+values
+
+t_33
+	
+var_497:
+stacked_tensors_17$
+"
+
+
+H
+
+*(
+name 
+
+"
+stacked_tensors_17o
+const
+input_41_axes_0
+
+
+*%
+name
+
+"
+input_41_axes_0*
+val
+
+
+
+
+ ´
+
+reduce_max
+	keep_dims
+
+
+var_74
+axes
+
+input_41_axes_0
+x
+
+stacked_tensors_17*
+input_41
+
+
+H
+
+*
+name
+
+"
+
+input_41l
+const
+input_43_pad_type_0
+*)
+name!
+
+"
+input_43_pad_type_0*
+val
+
+
+"
+customp
+const
+input_43_pad_0
+
+
+*$
+name
+
+"
+input_43_pad_0*!
+val
+
+
+
+
+
+  v
+const"
+input_43_strides_0
+
+
+*(
+name 
+
+"
+input_43_strides_0*
+val
+
+
+
+
+z
+const$
+input_43_dilations_0
+
+
+**
+name"
+
+"
+input_43_dilations_0*
+val
+
+
+
+
+c
+const
+input_43_groups_0
+*'
+name
+
+"
+input_43_groups_0*
+val
+
+
+Ï
+conv
+x
+
+
+input_41%
+	dilations
+
+input_43_dilations_0#
+pad_type
+
+input_43_pad_type_0
+groups
+
+input_43_groups_0
+pad
+
+input_43_pad_0!
+strides
+
+input_43_strides_0*
+bias"
+ 
+emb_model_conv2d_9_Conv2D_bias.
+weight$
+"
+ emb_model_conv2d_9_Conv2D_weight*
+input_43
+
+
+H
+
+*
+name
+
+"
+
+input_43x
+
+leaky_relu
+x
+
+
+input_43
+alpha
+
+
+var_72&
+t_37
+
+
+H
+
+*
+name
+
+
+"
+t_37s
+const!
+stacked_tensors_19_axis_0
+*/
+name'
+
+"
+stacked_tensors_19_axis_0*
+val
+
+
+ ≥
+stack%
+axis
+
+stacked_tensors_19_axis_0
+values
+
+t_37
+	
+var_497:
+stacked_tensors_19$
+"
+
+
+H
+
+*(
+name 
+
+"
+stacked_tensors_19o
+const
+input_45_axes_0
+
+
+*%
+name
+
+"
+input_45_axes_0*
+val
+
+
+
+
+ ´
+
+reduce_max
+	keep_dims
+
+
+var_74
+axes
+
+input_45_axes_0
+x
+
+stacked_tensors_19*
+input_45
+
+
+H
+
+*
+name
+
+"
+
+input_45k
+const
+input_47_pad_type_0
+*)
+name!
+
+"
+input_47_pad_type_0*
+val
+
+	"
+validv
+const"
+input_47_strides_0
+
+
+*(
+name 
+
+"
+input_47_strides_0*
+val
+
+
+
+
+p
+const
+input_47_pad_0
+
+
+*$
+name
+
+"
+input_47_pad_0*!
+val
+
+
+
+
+
+    z
+const$
+input_47_dilations_0
+
+
+**
+name"
+
+"
+input_47_dilations_0*
+val
+
+
+
+
+c
+const
+input_47_groups_0
+*'
+name
+
+"
+input_47_groups_0*
+val
+
+
+Ó
+conv
+x
+
+
+input_45%
+	dilations
+
+input_47_dilations_0#
+pad_type
+
+input_47_pad_type_0
+groups
+
+input_47_groups_0
+pad
+
+input_47_pad_0!
+strides
+
+input_47_strides_0+
+bias#
+!
+emb_model_conv2d_10_Conv2D_bias/
+weight%
+#
+!emb_model_conv2d_10_Conv2D_weight*
+input_47
+
+
+H
+
+*
+name
+
+"
+
+input_47x
+
+leaky_relu
+x
+
+
+input_47
+alpha
+
+
+var_72&
+t_41
+
+
+H
+
+*
+name
+
+
+"
+t_41†
+const)
+var_573
+
+
+H
+
+*
+name
+
+
+"
+op_573*N
+valG
+
+
+H
+
+*%
+@model_path/weights/weight.binÄà˛s
+const!
+stacked_tensors_21_axis_0
+*/
+name'
+
+"
+stacked_tensors_21_axis_0*
+val
+
+
+ ≥
+stack%
+axis
+
+stacked_tensors_21_axis_0
+values
+
+t_41
+	
+var_573:
+stacked_tensors_21$
+"
+
+
+H
+
+*(
+name 
+
+"
+stacked_tensors_21o
+const
+input_49_axes_0
+
+
+*%
+name
+
+"
+input_49_axes_0*
+val
+
+
+
+
+ ´
+
+reduce_max
+	keep_dims
+
+
+var_74
+axes
+
+input_49_axes_0
+x
+
+stacked_tensors_21*
+input_49
+
+
+H
+
+*
+name
+
+"
+
+input_49_
+const
+var_578
+
+
+*
+name
+
+
+"
+op_578*
+val
+
+
+
+
+_
+const
+var_579
+
+
+*
+name
+
+
+"
+op_579*
+val
+
+
+
+
+l
+const
+input_51_pad_type_0
+*)
+name!
+
+"
+input_51_pad_type_0*
+val
+
+
+"
+customp
+const
+input_51_pad_0
+
+
+*$
+name
+
+"
+input_51_pad_0*!
+val
+
+
+
+
+
+    i
+const
+input_51_ceil_mode_0
+**
+name"
+
+"
+input_51_ceil_mode_0*
+val
+
+
+ Ö
+max_pool%
+	ceil_mode
+
+input_51_ceil_mode_0
+pad
+
+input_51_pad_0
+kernel_sizes
+	
+var_578
+x
+
+
+input_49
+strides
+	
+var_579#
+pad_type
+
+input_51_pad_type_0*
+input_51
+
+
+H
+
+*
+name
+
+"
+
+input_51l
+const
+input_53_pad_type_0
+*)
+name!
+
+"
+input_53_pad_type_0*
+val
+
+
+"
+customp
+const
+input_53_pad_0
+
+
+*$
+name
+
+"
+input_53_pad_0*!
+val
+
+
+
+
+
+  v
+const"
+input_53_strides_0
+
+
+*(
+name 
+
+"
+input_53_strides_0*
+val
+
+
+
+
+z
+const$
+input_53_dilations_0
+
+
+**
+name"
+
+"
+input_53_dilations_0*
+val
+
+
+
+
+c
+const
+input_53_groups_0
+*'
+name
+
+"
+input_53_groups_0*
+val
+
+
+Ó
+conv
+x
+
+
+input_51%
+	dilations
+
+input_53_dilations_0#
+pad_type
+
+input_53_pad_type_0
+groups
+
+input_53_groups_0
+pad
+
+input_53_pad_0!
+strides
+
+input_53_strides_0+
+bias#
+!
+emb_model_conv2d_11_Conv2D_bias/
+weight%
+#
+!emb_model_conv2d_11_Conv2D_weight*
+input_53
+
+
+`
+
+*
+name
+
+"
+
+input_53x
+
+leaky_relu
+x
+
+
+input_53
+alpha
+
+
+var_72&
+t_45
+
+
+`
+
+*
+name
+
+
+"
+t_45†
+const)
+var_616
+
+
+`
+
+*
+name
+
+
+"
+op_616*N
+valG
+
+
+`
+
+*%
+@model_path/weights/weight.bin¿ÄÇs
+const!
+stacked_tensors_23_axis_0
+*/
+name'
+
+"
+stacked_tensors_23_axis_0*
+val
+
+
+ ≥
+stack%
+axis
+
+stacked_tensors_23_axis_0
+values
+
+t_45
+	
+var_616:
+stacked_tensors_23$
+"
+
+
+`
+
+*(
+name 
+
+"
+stacked_tensors_23o
+const
+input_55_axes_0
+
+
+*%
+name
+
+"
+input_55_axes_0*
+val
+
+
+
+
+ ´
+
+reduce_max
+	keep_dims
+
+
+var_74
+axes
+
+input_55_axes_0
+x
+
+stacked_tensors_23*
+input_55
+
+
+`
+
+*
+name
+
+"
+
+input_55k
+const
+input_57_pad_type_0
+*)
+name!
+
+"
+input_57_pad_type_0*
+val
+
+	"
+validv
+const"
+input_57_strides_0
+
+
+*(
+name 
+
+"
+input_57_strides_0*
+val
+
+
+
+
+p
+const
+input_57_pad_0
+
+
+*$
+name
+
+"
+input_57_pad_0*!
+val
+
+
+
+
+
+    z
+const$
+input_57_dilations_0
+
+
+**
+name"
+
+"
+input_57_dilations_0*
+val
+
+
+
+
+c
+const
+input_57_groups_0
+*'
+name
+
+"
+input_57_groups_0*
+val
+
+
+Ó
+conv
+x
+
+
+input_55%
+	dilations
+
+input_57_dilations_0#
+pad_type
+
+input_57_pad_type_0
+groups
+
+input_57_groups_0
+pad
+
+input_57_pad_0!
+strides
+
+input_57_strides_0+
+bias#
+!
+emb_model_conv2d_12_Conv2D_bias/
+weight%
+#
+!emb_model_conv2d_12_Conv2D_weight*
+input_57
+
+
+`
+
+*
+name
+
+"
+
+input_57x
+
+leaky_relu
+x
+
+
+input_57
+alpha
+
+
+var_72&
+t_49
+
+
+`
+
+*
+name
+
+
+"
+t_49†
+const)
+var_654
+
+
+`
+
+*
+name
+
+
+"
+op_654*N
+valG
+
+
+`
+
+*%
+@model_path/weights/weight.binÄ©És
+const!
+stacked_tensors_25_axis_0
+*/
+name'
+
+"
+stacked_tensors_25_axis_0*
+val
+
+
+ ≥
+stack%
+axis
+
+stacked_tensors_25_axis_0
+values
+
+t_49
+	
+var_654:
+stacked_tensors_25$
+"
+
+
+`
+
+*(
+name 
+
+"
+stacked_tensors_25o
+const
+input_59_axes_0
+
+
+*%
+name
+
+"
+input_59_axes_0*
+val
+
+
+
+
+ ´
+
+reduce_max
+	keep_dims
+
+
+var_74
+axes
+
+input_59_axes_0
+x
+
+stacked_tensors_25*
+input_59
+
+
+`
+
+*
+name
+
+"
+
+input_59l
+const
+input_61_pad_type_0
+*)
+name!
+
+"
+input_61_pad_type_0*
+val
+
+
+"
+customp
+const
+input_61_pad_0
+
+
+*$
+name
+
+"
+input_61_pad_0*!
+val
+
+
+
+
+
+  v
+const"
+input_61_strides_0
+
+
+*(
+name 
+
+"
+input_61_strides_0*
+val
+
+
+
+
+z
+const$
+input_61_dilations_0
+
+
+**
+name"
+
+"
+input_61_dilations_0*
+val
+
+
+
+
+c
+const
+input_61_groups_0
+*'
+name
+
+"
+input_61_groups_0*
+val
+
+
+Ó
+conv
+x
+
+
+input_59%
+	dilations
+
+input_61_dilations_0#
+pad_type
+
+input_61_pad_type_0
+groups
+
+input_61_groups_0
+pad
+
+input_61_pad_0!
+strides
+
+input_61_strides_0+
+bias#
+!
+emb_model_conv2d_13_Conv2D_bias/
+weight%
+#
+!emb_model_conv2d_13_Conv2D_weight*
+input_61
+
+
+`
+
+*
+name
+
+"
+
+input_61x
+
+leaky_relu
+x
+
+
+input_61
+alpha
+
+
+var_72&
+t_53
+
+
+`
+
+*
+name
+
+
+"
+t_53s
+const!
+stacked_tensors_27_axis_0
+*/
+name'
+
+"
+stacked_tensors_27_axis_0*
+val
+
+
+ ≥
+stack%
+axis
+
+stacked_tensors_27_axis_0
+values
+
+t_53
+	
+var_654:
+stacked_tensors_27$
+"
+
+
+`
+
+*(
+name 
+
+"
+stacked_tensors_27o
+const
+input_63_axes_0
+
+
+*%
+name
+
+"
+input_63_axes_0*
+val
+
+
+
+
+ ´
+
+reduce_max
+	keep_dims
+
+
+var_74
+axes
+
+input_63_axes_0
+x
+
+stacked_tensors_27*
+input_63
+
+
+`
+
+*
+name
+
+"
+
+input_63k
+const
+input_65_pad_type_0
+*)
+name!
+
+"
+input_65_pad_type_0*
+val
+
+	"
+validv
+const"
+input_65_strides_0
+
+
+*(
+name 
+
+"
+input_65_strides_0*
+val
+
+
+
+
+p
+const
+input_65_pad_0
+
+
+*$
+name
+
+"
+input_65_pad_0*!
+val
+
+
+
+
+
+    z
+const$
+input_65_dilations_0
+
+
+**
+name"
+
+"
+input_65_dilations_0*
+val
+
+
+
+
+c
+const
+input_65_groups_0
+*'
+name
+
+"
+input_65_groups_0*
+val
+
+
+Ó
+conv
+x
+
+
+input_63%
+	dilations
+
+input_65_dilations_0#
+pad_type
+
+input_65_pad_type_0
+groups
+
+input_65_groups_0
+pad
+
+input_65_pad_0!
+strides
+
+input_65_strides_0+
+bias#
+!
+emb_model_conv2d_14_Conv2D_bias/
+weight%
+#
+!emb_model_conv2d_14_Conv2D_weight*
+input_65
+
+
+`
+
+
+*
+name
+
+"
+
+input_65x
+
+leaky_relu
+x
+
+
+input_65
+alpha
+
+
+var_72&
+t_57
+
+
+`
+
+
+*
+name
+
+
+"
+t_57†
+const)
+var_730
+
+
+`
+
+
+*
+name
+
+
+"
+op_730*N
+valG
+
+
+`
+
+
+*%
+@model_path/weights/weight.bin¿πÑs
+const!
+stacked_tensors_29_axis_0
+*/
+name'
+
+"
+stacked_tensors_29_axis_0*
+val
+
+
+ ≥
+stack%
+axis
+
+stacked_tensors_29_axis_0
+values
+
+t_57
+	
+var_730:
+stacked_tensors_29$
+"
+
+
+`
+
+
+*(
+name 
+
+"
+stacked_tensors_29o
+const
+input_67_axes_0
+
+
+*%
+name
+
+"
+input_67_axes_0*
+val
+
+
+
+
+ ´
+
+reduce_max
+	keep_dims
+
+
+var_74
+axes
+
+input_67_axes_0
+x
+
+stacked_tensors_29*
+input_67
+
+
+`
+
+
+*
+name
+
+"
+
+input_67_
+const
+var_735
+
+
+*
+name
+
+
+"
+op_735*
+val
+
+
+
+
+_
+const
+var_736
+
+
+*
+name
+
+
+"
+op_736*
+val
+
+
+
+
+l
+const
+input_69_pad_type_0
+*)
+name!
+
+"
+input_69_pad_type_0*
+val
+
+
+"
+customp
+const
+input_69_pad_0
+
+
+*$
+name
+
+"
+input_69_pad_0*!
+val
+
+
+
+
+
+    i
+const
+input_69_ceil_mode_0
+**
+name"
+
+"
+input_69_ceil_mode_0*
+val
+
+
+ Ö
+max_pool%
+	ceil_mode
+
+input_69_ceil_mode_0
+pad
+
+input_69_pad_0
+kernel_sizes
+	
+var_735
+x
+
+
+input_67
+strides
+	
+var_736#
+pad_type
+
+input_69_pad_type_0*
+input_69
+
+
+`
+
+
+*
+name
+
+"
+
+input_69l
+const
+input_71_pad_type_0
+*)
+name!
+
+"
+input_71_pad_type_0*
+val
+
+
+"
+customp
+const
+input_71_pad_0
+
+
+*$
+name
+
+"
+input_71_pad_0*!
+val
+
+
+
+
+
+  v
+const"
+input_71_strides_0
+
+
+*(
+name 
+
+"
+input_71_strides_0*
+val
+
+
+
+
+z
+const$
+input_71_dilations_0
+
+
+**
+name"
+
+"
+input_71_dilations_0*
+val
+
+
+
+
+c
+const
+input_71_groups_0
+*'
+name
+
+"
+input_71_groups_0*
+val
+
+
+Ó
+conv
+x
+
+
+input_69%
+	dilations
+
+input_71_dilations_0#
+pad_type
+
+input_71_pad_type_0
+groups
+
+input_71_groups_0
+pad
+
+input_71_pad_0!
+strides
+
+input_71_strides_0+
+bias#
+!
+emb_model_conv2d_15_Conv2D_bias/
+weight%
+#
+!emb_model_conv2d_15_Conv2D_weight*
+input_71
+
+
+`
+
+
+*
+name
+
+"
+
+input_71x
+
+leaky_relu
+x
+
+
+input_71
+alpha
+
+
+var_72&
+t_61
+
+
+`
+
+
+*
+name
+
+
+"
+t_61†
+const)
+var_773
+
+
+`
+
+
+*
+name
+
+
+"
+op_773*N
+valG
+
+
+`
+
+
+*%
+@model_path/weights/weight.binÄ≤Ös
+const!
+stacked_tensors_31_axis_0
+*/
+name'
+
+"
+stacked_tensors_31_axis_0*
+val
+
+
+ ≥
+stack%
+axis
+
+stacked_tensors_31_axis_0
+values
+
+t_61
+	
+var_773:
+stacked_tensors_31$
+"
+
+
+`
+
+
+*(
+name 
+
+"
+stacked_tensors_31o
+const
+input_73_axes_0
+
+
+*%
+name
+
+"
+input_73_axes_0*
+val
+
+
+
+
+ ´
+
+reduce_max
+	keep_dims
+
+
+var_74
+axes
+
+input_73_axes_0
+x
+
+stacked_tensors_31*
+input_73
+
+
+`
+
+
+*
+name
+
+"
+
+input_73k
+const
+input_75_pad_type_0
+*)
+name!
+
+"
+input_75_pad_type_0*
+val
+
+	"
+validv
+const"
+input_75_strides_0
+
+
+*(
+name 
+
+"
+input_75_strides_0*
+val
+
+
+
+
+p
+const
+input_75_pad_0
+
+
+*$
+name
+
+"
+input_75_pad_0*!
+val
+
+
+
+
+
+    z
+const$
+input_75_dilations_0
+
+
+**
+name"
+
+"
+input_75_dilations_0*
+val
+
+
+
+
+c
+const
+input_75_groups_0
+*'
+name
+
+"
+input_75_groups_0*
+val
+
+
+Ó
+conv
+x
+
+
+input_73%
+	dilations
+
+input_75_dilations_0#
+pad_type
+
+input_75_pad_type_0
+groups
+
+input_75_groups_0
+pad
+
+input_75_pad_0!
+strides
+
+input_75_strides_0+
+bias#
+!
+emb_model_conv2d_16_Conv2D_bias/
+weight%
+#
+!emb_model_conv2d_16_Conv2D_weight*
+input_75
+
+
+`
+
+*
+name
+
+"
+
+input_75x
+
+leaky_relu
+x
+
+
+input_75
+alpha
+
+
+var_72&
+t_65
+
+
+`
+
+*
+name
+
+
+"
+t_65†
+const)
+var_811
+
+
+`
+
+*
+name
+
+
+"
+op_811*N
+valG
+
+
+`
+
+*%
+@model_path/weights/weight.bin¿ÓÖs
+const!
+stacked_tensors_33_axis_0
+*/
+name'
+
+"
+stacked_tensors_33_axis_0*
+val
+
+
+ ≥
+stack%
+axis
+
+stacked_tensors_33_axis_0
+values
+
+t_65
+	
+var_811:
+stacked_tensors_33$
+"
+
+
+`
+
+*(
+name 
+
+"
+stacked_tensors_33o
+const
+input_77_axes_0
+
+
+*%
+name
+
+"
+input_77_axes_0*
+val
+
+
+
+
+ ´
+
+reduce_max
+	keep_dims
+
+
+var_74
+axes
+
+input_77_axes_0
+x
+
+stacked_tensors_33*
+input_77
+
+
+`
+
+*
+name
+
+"
+
+input_77l
+const
+input_79_pad_type_0
+*)
+name!
+
+"
+input_79_pad_type_0*
+val
+
+
+"
+customp
+const
+input_79_pad_0
+
+
+*$
+name
+
+"
+input_79_pad_0*!
+val
+
+
+
+
+
+  v
+const"
+input_79_strides_0
+
+
+*(
+name 
+
+"
+input_79_strides_0*
+val
+
+
+
+
+z
+const$
+input_79_dilations_0
+
+
+**
+name"
+
+"
+input_79_dilations_0*
+val
+
+
+
+
+c
+const
+input_79_groups_0
+*'
+name
+
+"
+input_79_groups_0*
+val
+
+
+Ó
+conv
+x
+
+
+input_77%
+	dilations
+
+input_79_dilations_0#
+pad_type
+
+input_79_pad_type_0
+groups
+
+input_79_groups_0
+pad
+
+input_79_pad_0!
+strides
+
+input_79_strides_0+
+bias#
+!
+emb_model_conv2d_17_Conv2D_bias/
+weight%
+#
+!emb_model_conv2d_17_Conv2D_weight*
+input_79
+
+
+`
+
+*
+name
+
+"
+
+input_79x
+
+leaky_relu
+x
+
+
+input_79
+alpha
+
+
+var_72&
+t_69
+
+
+`
+
+*
+name
+
+
+"
+t_69s
+const!
+stacked_tensors_35_axis_0
+*/
+name'
+
+"
+stacked_tensors_35_axis_0*
+val
+
+
+ ≥
+stack%
+axis
+
+stacked_tensors_35_axis_0
+values
+
+t_69
+	
+var_811:
+stacked_tensors_35$
+"
+
+
+`
+
+*(
+name 
+
+"
+stacked_tensors_35o
+const
+input_81_axes_0
+
+
+*%
+name
+
+"
+input_81_axes_0*
+val
+
+
+
+
+ ´
+
+reduce_max
+	keep_dims
+
+
+var_74
+axes
+
+input_81_axes_0
+x
+
+stacked_tensors_35*
+input_81
+
+
+`
+
+*
+name
+
+"
+
+input_81k
+const
+input_83_pad_type_0
+*)
+name!
+
+"
+input_83_pad_type_0*
+val
+
+	"
+validv
+const"
+input_83_strides_0
+
+
+*(
+name 
+
+"
+input_83_strides_0*
+val
+
+
+
+
+p
+const
+input_83_pad_0
+
+
+*$
+name
+
+"
+input_83_pad_0*!
+val
+
+
+
+
+
+    z
+const$
+input_83_dilations_0
+
+
+**
+name"
+
+"
+input_83_dilations_0*
+val
+
+
+
+
+c
+const
+input_83_groups_0
+*'
+name
+
+"
+input_83_groups_0*
+val
+
+
+Ó
+conv
+x
+
+
+input_81%
+	dilations
+
+input_83_dilations_0#
+pad_type
+
+input_83_pad_type_0
+groups
+
+input_83_groups_0
+pad
+
+input_83_pad_0!
+strides
+
+input_83_strides_0+
+bias#
+!
+emb_model_conv2d_18_Conv2D_bias/
+weight%
+#
+!emb_model_conv2d_18_Conv2D_weight*
+input_83
+
+
+`
+
+*
+name
+
+"
+
+input_83x
+
+leaky_relu
+x
+
+
+input_83
+alpha
+
+
+var_72&
+t_73
+
+
+`
+
+*
+name
+
+
+"
+t_73†
+const)
+var_887
+
+
+`
+
+*
+name
+
+
+"
+op_887*N
+valG
+
+
+`
+
+*%
+@model_path/weights/weight.binÄüÜm
+const
+stacked_tensors_axis_0
+*,
+name$
+
+"
+stacked_tensors_axis_0*
+val
+
+
+ ™
+stack"
+axis
+
+stacked_tensors_axis_0
+values
+
+t_73
+	
+var_8877
+stacked_tensors$
+"
+
+
+`
+
+*%
+name
+
+"
+stacked_tensorso
+const
+input_85_axes_0
+
+
+*%
+name
+
+"
+input_85_axes_0*
+val
+
+
+
+
+ ®
+
+reduce_max
+	keep_dims
+
+
+var_74
+axes
+
+input_85_axes_0
+x
+
+stacked_tensors*
+input_85
+
+
+`
+
+*
+name
+
+"
+
+input_85_
+const
+var_892
+
+
+*
+name
+
+
+"
+op_892*
+val
+
+
+
+
+_
+const
+var_893
+
+
+*
+name
+
+
+"
+op_893*
+val
+
+
+
+
+l
+const
+input_87_pad_type_0
+*)
+name!
+
+"
+input_87_pad_type_0*
+val
+
+
+"
+customp
+const
+input_87_pad_0
+
+
+*$
+name
+
+"
+input_87_pad_0*!
+val
+
+
+
+
+
+    i
+const
+input_87_ceil_mode_0
+**
+name"
+
+"
+input_87_ceil_mode_0*
+val
+
+
+ Ö
+max_pool%
+	ceil_mode
+
+input_87_ceil_mode_0
+pad
+
+input_87_pad_0
+kernel_sizes
+	
+var_892
+x
+
+
+input_85
+strides
+	
+var_893#
+pad_type
+
+input_87_pad_type_0*
+input_87
+
+
+`
+
+*
+name
+
+"
+
+input_87s
+const
+input_tensor_pad_type_0
+*-
+name%
+
+"
+input_tensor_pad_type_0*
+val
+
+	"
+valid~
+const&
+input_tensor_strides_0
+
+
+*,
+name$
+
+"
+input_tensor_strides_0*
+val
+
+
+
+
+x
+const"
+input_tensor_pad_0
+
+
+*(
+name 
+
+"
+input_tensor_pad_0*!
+val
+
+
+
+
+
+    Ç
+const(
+input_tensor_dilations_0
+
+
+*.
+name&
+
+"
+input_tensor_dilations_0*
+val
+
+
+
+
+k
+const
+input_tensor_groups_0
+*+
+name#
+
+"
+input_tensor_groups_0*
+val
+
+
+›
+conv#
+groups
+
+input_tensor_groups_0
+pad
+
+input_tensor_pad_0
+x
+
+
+input_87)
+	dilations
+
+input_tensor_dilations_0%
+strides
+
+input_tensor_strides_0/
+weight%
+#
+!emb_model_conv2d_19_Conv2D_weight'
+pad_type
+
+input_tensor_pad_type_0.
+input_tensor
+
+
+`
+
+*"
+name
+
+"
+input_tensor_
+const
+var_916
+
+
+*
+name
+
+
+"
+op_916*
+val
+
+
+
+
+`l
+reshape
+x
+
+input_tensor
+shape
+	
+var_916
+emb
+
+
+`*
+name
+	
+"
+embl
+const
+var_919_axes_0
+
+
+*#
+name
+
+"
+op_919_axes_0*
+val
+
+
+
+
+z
+expand_dims
+axes
+
+var_919_axes_0
+x
+
+emb#
+var_919
+
+
+
+`*
+name
+
+
+"
+op_919N
+const
+var_921
+*
+name
+
+
+"
+op_921*
+val
+
+
+k
+const
+input_89_interleave_0
+*+
+name#
+
+"
+input_89_interleave_0*
+val
+
+
+ ´
+concat'
+
+interleave
+
+input_89_interleave_0
+axis
+	
+var_921
+values
+
+embs
+	
+var_919$
+input_89
+
+
+
+`*
+name
+
+"
+
+input_89Q
+const
+var_928
+*
+name
+
+
+"
+op_928*
+val
+
+
+
+
+¨≈'7e
+const
+	concat_57
+
+
+*
+name
+
+"
+	concat_57* 
+val
+
+
+	
+
+Äu
+reshape
+x
+
+
+input_89
+shape
+
+	concat_57
+input_91
+
+
+Ä*
+name
+
+"
+
+input_91ò
+linear
+x
+
+
+input_91
+bias
+
+det_net_2_bias
+weight
+
+det_net_2_weight
+input_95
+
+
+Ä*
+name
+
+"
+
+linear_0x
+const
+input_97_axes_0
+
+
+*%
+name
+
+"
+input_97_axes_0*'
+val 
+
+
+
+
+
+ˇˇˇˇˇˇˇˇˇ–
+
+layer_norm
+gamma
+
+det_net_3_weight
+axes
+
+input_97_axes_0
+x
+
+
+input_95
+beta
+
+det_net_3_bias
+epsilon
+	
+var_928
+input_97
+
+
+Ä*
+name
+
+"
+
+input_97Z
+relu
+x
+
+
+input_97
+input_99
+
+
+Ä*
+name
+
+"
+
+input_99ô
+linear
+x
+
+
+input_99
+bias
+
+det_net_6_bias
+weight
+
+det_net_6_weight 
+	input_103
+
+
+Ä*
+name
+
+"
+
+linear_1z
+const 
+input_105_axes_0
+
+
+*&
+name
+
+"
+input_105_axes_0*'
+val 
+
+
+
+
+
+ˇˇˇˇˇˇˇˇˇ‘
+
+layer_norm
+gamma
+
+det_net_7_weight
+axes
+
+input_105_axes_0
+x
+
+	input_103
+beta
+
+det_net_7_bias
+epsilon
+	
+var_928 
+	input_105
+
+
+Ä*
+name
+
+"
+	input_105]
+relu
+x
+
+	input_105 
+	input_107
+
+
+Ä*
+name
+
+"
+	input_107ô
+linear
+x
+
+	input_107
+bias
+
+det_net_10_bias
+weight
+
+det_net_10_weight
+var_959
+
+
+*
+name
+
+"
+
+linear_2u
+const
+var_960_axes_0
+
+
+*#
+name
+
+"
+op_960_axes_0*'
+val 
+
+
+
+
+
+ˇˇˇˇˇˇˇˇˇn
+squeeze
+axes
+
+var_960_axes_0
+x
+	
+var_959
+var_960
+
+
+*
+name
+
+
+"
+op_960P
+sigmoid
+x
+	
+var_960
+score
+
+
+*
+name
+
+
+"
+op_961"Â
+	buildInfo◊"
+
+
+ƒ"¡
+6
+!
+
+"
+coremltools-version
+	
+"
+9.0
+@
+)
+!
+"
+coremltools-component-torch
+
+	"
+2.7.0
+E
+(
+ 
+"
+coremltools-source-dialect
+
+"
+TorchScript

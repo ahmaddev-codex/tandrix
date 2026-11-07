@@ -137,7 +137,7 @@ final class ContinuousListener: WakeListening {
   /// Partial results as they form, and sooner (fastResults), for the earliest "heard".
   let transcriber = SpeechTranscriber(
     locale: Locale(identifier: "en-US"), transcriptionOptions: [],
-    reportingOptions: [.volatileResults, .fastResults], attributeOptions: [])
+    reportingOptions: [.volatileResults, .fastResults], attributeOptions: [.audioTimeRange])
   var feed: AsyncStream<AnalyzerInput>.Continuation?
   var format = hearFormat
   var converter: AVAudioConverter?
@@ -146,6 +146,13 @@ final class ContinuousListener: WakeListening {
   /// The phrase heard and waiting for a pause: its start (seconds into the analysis), text, and
   /// when it last changed.
   var pending: (start: Double, text: String, changed: Date)?
+  /// The wake-word model (model.swift), when it's here and the name is Tandrix's own: it fires as
+  /// the name ends, at this many seconds into the analysis; the words said after that are the
+  /// request, by their times, however the recogniser spelled the name.
+  var model: WakeModel?
+  var modelAt: Double?
+  /// The words of the pending phrase with when each began.
+  var words: [(text: String, at: Double)] = []
   /// Phrases already acted on, by start, so one phrase wakes once.
   var done: [Double] = []
 
@@ -171,6 +178,10 @@ final class ContinuousListener: WakeListening {
     Task { try? await analyzer.start(inputSequence: input) }
 
     startIndex = recent.now
+    model = WakeModel.bundled(threshold: WakeModel.defaultThreshold, inARow: WakeModel.defaultInARow)
+    model?.onWake = { [weak self] at, score in
+      DispatchQueue.main.async { self?.modelWoke(at: at, score: score) }
+    }
     // Tests: TANDRIX_WAKE_FILE plays a 16 kHz WAV in place of the microphone, at real speed.
     if let file = ProcessInfo.processInfo.environment["TANDRIX_WAKE_FILE"] {
       let pieces = streamPieces(file)
@@ -180,6 +191,7 @@ final class ContinuousListener: WakeListening {
           let samples = Array(UnsafeBufferPointer(start: b.floatChannelData![0], count: Int(b.frameLength)))
           self.recent.append(samples)
           self.push(samples)
+          self.model?.feed(samples)
           try? await Task.sleep(nanoseconds: 100_000_000)
         }
       }
@@ -187,6 +199,7 @@ final class ContinuousListener: WakeListening {
       let mic = Mic { [weak self] _, samples in
         self?.recent.append(samples)
         self?.push(samples)
+        self?.model?.feed(samples)
       }
       guard mic.start() else { fail("microphone_unavailable") }
       self.mic = mic
@@ -196,7 +209,13 @@ final class ContinuousListener: WakeListening {
     Task { @MainActor [weak self] in
       do {
         for try await r in results {
-          self?.handle(text: String(r.text.characters), start: r.range.start.seconds, final: r.isFinal)
+          let words = r.text.runs.compactMap { run -> (String, Double)? in
+            guard let range = run.audioTimeRange else { return nil }
+            return (String(r.text[run.range].characters), range.start.seconds)
+          }
+          self?.handle(
+            text: String(r.text.characters), start: r.range.start.seconds, end: r.range.end.seconds,
+            final: r.isFinal, words: words)
         }
       } catch {}
     }
@@ -239,8 +258,28 @@ final class ContinuousListener: WakeListening {
     if out.frameLength > 0 { feed?.yield(AnalyzerInput(buffer: out)) }
   }
 
-  func handle(text: String, start: Double, final: Bool) {
+  /// The model heard the name end: Tandrix is listening now. The request said in the same breath
+  /// is waited for, as for a phrase the recogniser matched.
+  func modelWoke(at: Double, score: Float) {
+    guard WakeRule.nameWord.lowercased() == "tandrix" else { return }
+    if debug { FileHandle.standardError.write("model: \(score) at \(at)\n".data(using: .utf8)!) }
+    // Already caught by the recogniser, or just woken for this phrase.
+    if pending != nil || done.contains(where: { at - $0 > -1 && at - $0 < 4 }) { return }
+    modelAt = at
+    words = []
+    pending = (at - 1, "", Date())
+    emit(["heard": true])
+  }
+
+  func handle(text: String, start: Double, end: Double, final: Bool, words heard: [(String, Double)]) {
     if debug { FileHandle.standardError.write("heard: \(text)\n".data(using: .utf8)!) }
+    // A phrase the model woke for: whatever the recogniser makes of the speech around that moment.
+    if let at = modelAt, pending != nil, start < at + 0.5, end > at - 2 {
+      if text != pending!.text { pending = (pending!.start, text, Date()) }
+      words = heard.map { (text: $0.0, at: $0.1) }
+      if final { fire() }
+      return
+    }
     if done.contains(where: { abs($0 - start) < 1 }) { return }
     // One phrase waits at a time: while it does, what's heard is that phrase as it grows (the
     // recogniser may move its start as it revises).
@@ -261,7 +300,23 @@ final class ContinuousListener: WakeListening {
     pending = nil
     done.append(p.start)
     if done.count > 50 { done.removeFirst(done.count - 50) }
-    var event: [String: Any] = ["wake": true, "rest": WakeRule.match(p.text).rest]
+    // The request: after the name as the rule reads it; for a model wake the rule may not know the
+    // spelling, so the words begun after the name ended.
+    let rule = WakeRule.match(p.text)
+    var rest = rule.rest
+    if let at = modelAt, !rule.woke {
+      rest = words.filter { $0.at >= at - 0.1 }.map(\.text).joined()
+        .trimmingCharacters(in: CharacterSet(charactersIn: " ,.!?;:-–—").union(.whitespacesAndNewlines))
+    }
+    if let at = modelAt { done.append(at) }
+    let byModel = modelAt != nil
+    modelAt = nil
+    words = []
+    var event: [String: Any] = ["wake": true, "rest": rest]
+    if debug {
+      let at = Double(recent.now - startIndex) / PRINT_RATE
+      FileHandle.standardError.write("wake at \(at) by \(byModel ? "model" : "words")\n".data(using: .utf8)!)
+    }
     // The phrase's voice: from its start (a beat before) to now, at most 6 s.
     let from = startIndex + Int((p.start - 0.15) * PRINT_RATE)
     let phrase = recent.since(max(from, recent.now - Int(6 * PRINT_RATE)))
